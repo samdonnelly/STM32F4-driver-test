@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "..\\STM32F4-driver-library"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"user_init.h": "c"
+		}
+	}
+}
