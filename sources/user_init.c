@@ -23,5 +23,6 @@
 // User init function 
 void user_init()
 {
-    // Setup code here
+    // Enable UART communication for serial terminal debugging 
+    uart2_init();
 }
