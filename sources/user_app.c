@@ -23,5 +23,7 @@
 // User application 
 void user_app()
 {
-    // Looped code here
+    // 
+    uart2_sendchar('G');
+    HAL_Delay(1000);
 }

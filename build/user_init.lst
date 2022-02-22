@@ -1,4 +1,4 @@
-ARM GAS  C:\Users\samue\AppData\Local\Temp\ccDfnGpc.s 			page 1
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccUNsg7w.s 			page 1
 
 
    1              		.cpu cortex-m4
@@ -26,7 +26,7 @@ ARM GAS  C:\Users\samue\AppData\Local\Temp\ccDfnGpc.s 			page 1
   23              		.thumb
   24              		.thumb_func
   26              	user_init:
-  27              	.LFB0:
+  27              	.LFB130:
   28              		.file 1 "sources/user_init.c"
    1:sources/user_init.c **** /**
    2:sources/user_init.c ****  * @file user_init.c
@@ -57,24 +57,34 @@ ARM GAS  C:\Users\samue\AppData\Local\Temp\ccDfnGpc.s 			page 1
   30              		.cfi_startproc
   31              		@ args = 0, pretend = 0, frame = 0
   32              		@ frame_needed = 0, uses_anonymous_args = 0
-  33              		@ link register save eliminated.
-ARM GAS  C:\Users\samue\AppData\Local\Temp\ccDfnGpc.s 			page 2
+  33 0000 08B5     		push	{r3, lr}
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccUNsg7w.s 			page 2
 
 
-  26:sources/user_init.c ****     // Setup code here
-  27:sources/user_init.c **** }
-  34              		.loc 1 27 1 view .LVU1
-  35 0000 7047     		bx	lr
-  36              		.cfi_endproc
-  37              	.LFE0:
-  39              		.text
-  40              	.Letext0:
-ARM GAS  C:\Users\samue\AppData\Local\Temp\ccDfnGpc.s 			page 3
+  34              	.LCFI0:
+  35              		.cfi_def_cfa_offset 8
+  36              		.cfi_offset 3, -8
+  37              		.cfi_offset 14, -4
+  26:sources/user_init.c ****     // Enable UART communication for serial terminal debugging 
+  27:sources/user_init.c ****     uart2_init();
+  38              		.loc 1 27 5 view .LVU1
+  39 0002 FFF7FEFF 		bl	uart2_init
+  40              	.LVL0:
+  28:sources/user_init.c **** }
+  41              		.loc 1 28 1 is_stmt 0 view .LVU2
+  42 0006 08BD     		pop	{r3, pc}
+  43              		.cfi_endproc
+  44              	.LFE130:
+  46              		.text
+  47              	.Letext0:
+  48              		.file 2 "../STM32F4-driver-library/headers/uart_comm.h"
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccUNsg7w.s 			page 3
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 user_init.c
-C:\Users\samue\AppData\Local\Temp\ccDfnGpc.s:20     .text.user_init:00000000 $t
-C:\Users\samue\AppData\Local\Temp\ccDfnGpc.s:26     .text.user_init:00000000 user_init
+C:\Users\samue\AppData\Local\Temp\ccUNsg7w.s:20     .text.user_init:00000000 $t
+C:\Users\samue\AppData\Local\Temp\ccUNsg7w.s:26     .text.user_init:00000000 user_init
 
-NO UNDEFINED SYMBOLS
+UNDEFINED SYMBOLS
+uart2_init

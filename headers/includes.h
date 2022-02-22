@@ -27,6 +27,9 @@
 // Communication drivers 
 #include "uart_comm.h"
 
+// STM32 code 
+#include "stm32f4xx_hal.h"
+
 //=======================================================================================
 
 #endif  // _INCLUDES_H_

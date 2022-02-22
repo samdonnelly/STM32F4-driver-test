@@ -1,4 +1,4 @@
-ARM GAS  C:\Users\samue\AppData\Local\Temp\ccNo60YF.s 			page 1
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccyKnE9L.s 			page 1
 
 
    1              		.cpu cortex-m4
@@ -26,7 +26,7 @@ ARM GAS  C:\Users\samue\AppData\Local\Temp\ccNo60YF.s 			page 1
   23              		.thumb
   24              		.thumb_func
   26              	user_app:
-  27              	.LFB0:
+  27              	.LFB130:
   28              		.file 1 "sources/user_app.c"
    1:sources/user_app.c **** /**
    2:sources/user_app.c ****  * @file user_app.c
@@ -57,24 +57,42 @@ ARM GAS  C:\Users\samue\AppData\Local\Temp\ccNo60YF.s 			page 1
   30              		.cfi_startproc
   31              		@ args = 0, pretend = 0, frame = 0
   32              		@ frame_needed = 0, uses_anonymous_args = 0
-  33              		@ link register save eliminated.
-ARM GAS  C:\Users\samue\AppData\Local\Temp\ccNo60YF.s 			page 2
+  33 0000 08B5     		push	{r3, lr}
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccyKnE9L.s 			page 2
 
 
-  26:sources/user_app.c ****     // Looped code here
-  27:sources/user_app.c **** }
-  34              		.loc 1 27 1 view .LVU1
-  35 0000 7047     		bx	lr
-  36              		.cfi_endproc
-  37              	.LFE0:
-  39              		.text
-  40              	.Letext0:
-ARM GAS  C:\Users\samue\AppData\Local\Temp\ccNo60YF.s 			page 3
+  34              	.LCFI0:
+  35              		.cfi_def_cfa_offset 8
+  36              		.cfi_offset 3, -8
+  37              		.cfi_offset 14, -4
+  26:sources/user_app.c ****     // 
+  27:sources/user_app.c ****     uart2_sendchar('G');
+  38              		.loc 1 27 5 view .LVU1
+  39 0002 4720     		movs	r0, #71
+  40 0004 FFF7FEFF 		bl	uart2_sendchar
+  41              	.LVL0:
+  28:sources/user_app.c ****     HAL_Delay(1000);
+  42              		.loc 1 28 5 view .LVU2
+  43 0008 4FF47A70 		mov	r0, #1000
+  44 000c FFF7FEFF 		bl	HAL_Delay
+  45              	.LVL1:
+  29:sources/user_app.c **** }
+  46              		.loc 1 29 1 is_stmt 0 view .LVU3
+  47 0010 08BD     		pop	{r3, pc}
+  48              		.cfi_endproc
+  49              	.LFE130:
+  51              		.text
+  52              	.Letext0:
+  53              		.file 2 "../STM32F4-driver-library/headers/uart_comm.h"
+  54              		.file 3 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h"
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccyKnE9L.s 			page 3
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 user_app.c
-C:\Users\samue\AppData\Local\Temp\ccNo60YF.s:20     .text.user_app:00000000 $t
-C:\Users\samue\AppData\Local\Temp\ccNo60YF.s:26     .text.user_app:00000000 user_app
+C:\Users\samue\AppData\Local\Temp\ccyKnE9L.s:20     .text.user_app:00000000 $t
+C:\Users\samue\AppData\Local\Temp\ccyKnE9L.s:26     .text.user_app:00000000 user_app
 
-NO UNDEFINED SYMBOLS
+UNDEFINED SYMBOLS
+uart2_sendchar
+HAL_Delay
