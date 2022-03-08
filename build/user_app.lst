@@ -1,4 +1,4 @@
-ARM GAS  C:\Users\samue\AppData\Local\Temp\ccvZyDPx.s 			page 1
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccJkc7Wj.s 			page 1
 
 
    1              		.cpu cortex-m4
@@ -22,8 +22,10 @@ ARM GAS  C:\Users\samue\AppData\Local\Temp\ccvZyDPx.s 			page 1
   19              		.section	.rodata.user_app.str1.4,"aMS",%progbits,1
   20              		.align	2
   21              	.LC0:
-  22 0000 68656C6C 		.ascii	"hello\015\012\000"
-  22      6F0D0A00 
+  22 0000 68656C6C 		.ascii	"hello world!\015\012\000"
+  22      6F20776F 
+  22      726C6421 
+  22      0D0A00
   23              		.section	.text.user_app,"ax",%progbits
   24              		.align	1
   25              		.global	user_app
@@ -56,11 +58,11 @@ ARM GAS  C:\Users\samue\AppData\Local\Temp\ccvZyDPx.s 			page 1
   21:sources/user_app.c **** 
   22:sources/user_app.c **** 
   23:sources/user_app.c **** // User application 
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccJkc7Wj.s 			page 2
+
+
   24:sources/user_app.c **** void user_app()
   25:sources/user_app.c **** {
-ARM GAS  C:\Users\samue\AppData\Local\Temp\ccvZyDPx.s 			page 2
-
-
   33              		.loc 1 25 1 view -0
   34              		.cfi_startproc
   35              		@ args = 0, pretend = 0, frame = 0
@@ -78,7 +80,7 @@ ARM GAS  C:\Users\samue\AppData\Local\Temp\ccvZyDPx.s 			page 1
   30:sources/user_app.c ****     static uint8_t input = 0;
   43              		.loc 1 30 5 view .LVU2
   31:sources/user_app.c **** 
-  32:sources/user_app.c ****     // Choose whoch test to run based on test_mode
+  32:sources/user_app.c ****     // Choose which test to run based on test_mode
   33:sources/user_app.c ****     switch (test_mode)
   44              		.loc 1 33 5 view .LVU3
   34:sources/user_app.c ****     {
@@ -90,35 +92,33 @@ ARM GAS  C:\Users\samue\AppData\Local\Temp\ccvZyDPx.s 			page 1
   40:sources/user_app.c ****         
   41:sources/user_app.c ****         // Send string 
   42:sources/user_app.c ****         case SEND_STRING:
-  43:sources/user_app.c ****             // TODO figure out why first character of string being sent over serial gets 
-  44:sources/user_app.c ****             // skipped. 
-  45:sources/user_app.c ****             uart2_sendstring("hello\r\n");
-  45              		.loc 1 45 13 view .LVU4
+  43:sources/user_app.c ****             uart2_sendstring("hello world!\r\n");
+  45              		.loc 1 43 13 view .LVU4
   46 0002 0448     		ldr	r0, .L3
   47 0004 FFF7FEFF 		bl	uart2_sendstring
   48              	.LVL0:
-  46:sources/user_app.c ****             HAL_Delay(1000);
-  49              		.loc 1 46 13 view .LVU5
+  44:sources/user_app.c ****             HAL_Delay(1000);
+  49              		.loc 1 44 13 view .LVU5
   50 0008 4FF47A70 		mov	r0, #1000
   51 000c FFF7FEFF 		bl	HAL_Delay
   52              	.LVL1:
-  47:sources/user_app.c ****             break;
-  53              		.loc 1 47 13 view .LVU6
-  48:sources/user_app.c ****         
-  49:sources/user_app.c ****         // Read character and resend 
-  50:sources/user_app.c ****         case GET_CHAR:
-  51:sources/user_app.c ****             // TODO set up enter key inputs in putty 
-  52:sources/user_app.c ****             input = uart2_getchar();
-  53:sources/user_app.c ****             uart2_sendchar(input);
-  54:sources/user_app.c ****             break;
-  55:sources/user_app.c ****         
-  56:sources/user_app.c ****         // Do nothing 
-  57:sources/user_app.c ****         default:
-  58:sources/user_app.c ****             break;
-  59:sources/user_app.c ****     }
-  60:sources/user_app.c **** }
-  54              		.loc 1 60 1 is_stmt 0 view .LVU7
-ARM GAS  C:\Users\samue\AppData\Local\Temp\ccvZyDPx.s 			page 3
+  45:sources/user_app.c ****             break;
+  53              		.loc 1 45 13 view .LVU6
+  46:sources/user_app.c ****         
+  47:sources/user_app.c ****         // Read character and resend 
+  48:sources/user_app.c ****         case GET_CHAR:
+  49:sources/user_app.c ****             // TODO set up enter key inputs in putty 
+  50:sources/user_app.c ****             input = uart2_getchar();
+  51:sources/user_app.c ****             uart2_sendchar(input);
+  52:sources/user_app.c ****             break;
+  53:sources/user_app.c ****         
+  54:sources/user_app.c ****         // Do nothing 
+  55:sources/user_app.c ****         default:
+  56:sources/user_app.c ****             break;
+  57:sources/user_app.c ****     }
+  58:sources/user_app.c **** }
+  54              		.loc 1 58 1 is_stmt 0 view .LVU7
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccJkc7Wj.s 			page 3
 
 
   55 0010 08BD     		pop	{r3, pc}
@@ -135,15 +135,15 @@ ARM GAS  C:\Users\samue\AppData\Local\Temp\ccvZyDPx.s 			page 1
   67              		.file 4 "headers/user_app.h"
   68              		.file 5 "../STM32F4-driver-library/headers/uart_comm.h"
   69              		.file 6 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h"
-ARM GAS  C:\Users\samue\AppData\Local\Temp\ccvZyDPx.s 			page 4
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccJkc7Wj.s 			page 4
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 user_app.c
-C:\Users\samue\AppData\Local\Temp\ccvZyDPx.s:20     .rodata.user_app.str1.4:00000000 $d
-C:\Users\samue\AppData\Local\Temp\ccvZyDPx.s:24     .text.user_app:00000000 $t
-C:\Users\samue\AppData\Local\Temp\ccvZyDPx.s:30     .text.user_app:00000000 user_app
-C:\Users\samue\AppData\Local\Temp\ccvZyDPx.s:59     .text.user_app:00000014 $d
+C:\Users\samue\AppData\Local\Temp\ccJkc7Wj.s:20     .rodata.user_app.str1.4:00000000 $d
+C:\Users\samue\AppData\Local\Temp\ccJkc7Wj.s:24     .text.user_app:00000000 $t
+C:\Users\samue\AppData\Local\Temp\ccJkc7Wj.s:30     .text.user_app:00000000 user_app
+C:\Users\samue\AppData\Local\Temp\ccJkc7Wj.s:59     .text.user_app:00000014 $d
 
 UNDEFINED SYMBOLS
 uart2_sendstring

@@ -29,7 +29,7 @@ void user_app()
     static test_mode_t test_mode = SEND_STRING;
     static uint8_t input = 0;
 
-    // Choose whoch test to run based on test_mode
+    // Choose which test to run based on test_mode
     switch (test_mode)
     {
         // Send character 
@@ -40,9 +40,7 @@ void user_app()
         
         // Send string 
         case SEND_STRING:
-            // TODO figure out why first character of string being sent over serial gets 
-            // skipped. 
-            uart2_sendstring("hello\r\n");
+            uart2_sendstring("hello world!\r\n");
             HAL_Delay(1000);
             break;
         
