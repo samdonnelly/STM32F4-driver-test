@@ -26,8 +26,10 @@ void user_app()
     // This code is continuously looped
 
     // Local variables 
-    static test_mode_t test_mode = SEND_STRING;
+    static test_mode_t test_mode = GET_STR;
     static uint8_t input = 0;
+    // static char string_read[STR_READ_LEN] = {'\0'};
+    static char string_read[STR_READ_LEN];
 
     // Choose which test to run based on test_mode
     switch (test_mode)
@@ -44,11 +46,39 @@ void user_app()
             HAL_Delay(1000);
             break;
         
-        // Read character and resend 
+        // Read character from seriala and resend 
         case GET_CHAR:
-            // TODO set up enter key inputs in putty 
-            input = uart2_getchar();
-            uart2_sendchar(input);
+            // Check if data is waiting to be read
+            if (USART2->SR & (SET_BIT << SHIFT_5))
+            {
+                input = uart2_getchar();
+                uart2_sendchar(input);
+                uart2_sendchar(*("\r"));
+                uart2_sendchar(*("\n"));
+            }
+
+            break;
+        
+        // Read string from serial and resend 
+        case GET_STR:
+            // Check if data is waiting to be read
+            if (USART2->SR & (SET_BIT << SHIFT_5))
+            {
+                // Pass a pointer to cleared string to uart2_getstr()
+                uart2_getstr(string_read);
+
+                input = *string_read;
+
+                // Relay read string back over serial to verify contents 
+                uart2_sendstring(string_read);
+
+                // Clear previous contents of string
+                for (uint8_t i = 0; i < STR_READ_LEN; i++)
+                {
+                    string_read[i] = '\0';
+                }
+            }
+
             break;
         
         // Do nothing 
