@@ -1,4 +1,4 @@
-ARM GAS  C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s 			page 1
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s 			page 1
 
 
    1              		.cpu cortex-m4
@@ -58,7 +58,7 @@ ARM GAS  C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s 			page 1
   30              		.cfi_startproc
   31              		@ args = 0, pretend = 0, frame = 0
   32              		@ frame_needed = 0, uses_anonymous_args = 0
-ARM GAS  C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s 			page 2
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s 			page 2
 
 
   33              		@ link register save eliminated.
@@ -118,7 +118,7 @@ ARM GAS  C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s 			page 1
   69 0038 42F4E062 		orr	r2, r2, #1792
   70 003c 1A62     		str	r2, [r3, #32]
   45:../STM32F4-driver-library/sources/uart_comm.c ****     GPIOA->AFR[0] |= (SET_7 << SHIFT_12);   // pin PA3
-ARM GAS  C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s 			page 3
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s 			page 3
 
 
   71              		.loc 1 45 5 is_stmt 1 view .LVU15
@@ -178,7 +178,7 @@ ARM GAS  C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s 			page 1
  104 0072 DA68     		ldr	r2, [r3, #12]
  105 0074 42F00402 		orr	r2, r2, #4
  106 0078 DA60     		str	r2, [r3, #12]
-ARM GAS  C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s 			page 4
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s 			page 4
 
 
   67:../STM32F4-driver-library/sources/uart_comm.c ****     USART2->CR1 |= (SET_BIT << SHIFT_3);  // Set TE
@@ -238,7 +238,7 @@ ARM GAS  C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s 			page 1
  147              		.loc 1 82 5 view .LVU38
  148              		.loc 1 82 16 is_stmt 0 view .LVU39
  149 0000 034B     		ldr	r3, .L7
-ARM GAS  C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s 			page 5
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s 			page 5
 
 
  150 0002 5860     		str	r0, [r3, #4]
@@ -298,7 +298,7 @@ ARM GAS  C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s 			page 1
  194              	.LVL2:
  195              	.L11:
   95:../STM32F4-driver-library/sources/uart_comm.c ****     {
-ARM GAS  C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s 			page 6
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s 			page 6
 
 
   96:../STM32F4-driver-library/sources/uart_comm.c ****         // Send characters one at a time. 
@@ -348,203 +348,249 @@ ARM GAS  C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s 			page 1
  227              		@ args = 0, pretend = 0, frame = 0
  228              		@ frame_needed = 0, uses_anonymous_args = 0
  229              		@ link register save eliminated.
- 230              	.L14:
  108:../STM32F4-driver-library/sources/uart_comm.c ****     // Character input 
  109:../STM32F4-driver-library/sources/uart_comm.c ****     static uint8_t input = 0;
+ 230              		.loc 1 109 5 view .LVU59
  110:../STM32F4-driver-library/sources/uart_comm.c **** 
  111:../STM32F4-driver-library/sources/uart_comm.c ****     // Wait for bit to set indicating data is ready
- 112:../STM32F4-driver-library/sources/uart_comm.c ****     while (!(USART2->SR & (SET_BIT << SHIFT_5)));
- 231              		.loc 1 112 49 discriminator 1 view .LVU59
- 232              		.loc 1 112 11 discriminator 1 view .LVU60
- 233              		.loc 1 112 20 is_stmt 0 discriminator 1 view .LVU61
- 234 0000 054B     		ldr	r3, .L15
-ARM GAS  C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s 			page 7
-
-
- 235 0002 1B68     		ldr	r3, [r3]
- 236              		.loc 1 112 11 discriminator 1 view .LVU62
- 237 0004 13F0200F 		tst	r3, #32
- 238 0008 FAD0     		beq	.L14
+ 112:../STM32F4-driver-library/sources/uart_comm.c ****     // while (!(USART2->SR & (SET_BIT << SHIFT_5)));
  113:../STM32F4-driver-library/sources/uart_comm.c **** 
  114:../STM32F4-driver-library/sources/uart_comm.c ****     // Read data from data register 
- 115:../STM32F4-driver-library/sources/uart_comm.c ****     input = USART2->DR; 
- 239              		.loc 1 115 5 is_stmt 1 view .LVU63
- 240              		.loc 1 115 19 is_stmt 0 view .LVU64
- 241 000a 034B     		ldr	r3, .L15
- 242 000c 5868     		ldr	r0, [r3, #4]
- 243              		.loc 1 115 11 view .LVU65
- 244 000e C0B2     		uxtb	r0, r0
- 245 0010 024B     		ldr	r3, .L15+4
- 246 0012 1870     		strb	r0, [r3]
+ 115:../STM32F4-driver-library/sources/uart_comm.c ****     input = USART2->DR;
+ 231              		.loc 1 115 5 view .LVU60
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s 			page 7
+
+
+ 232              		.loc 1 115 19 is_stmt 0 view .LVU61
+ 233 0000 044B     		ldr	r3, .L14
+ 234 0002 5A68     		ldr	r2, [r3, #4]
+ 235              		.loc 1 115 11 view .LVU62
+ 236 0004 0449     		ldr	r1, .L14+4
+ 237 0006 0A70     		strb	r2, [r1]
  116:../STM32F4-driver-library/sources/uart_comm.c **** 
- 117:../STM32F4-driver-library/sources/uart_comm.c ****     return input;
- 247              		.loc 1 117 5 is_stmt 1 view .LVU66
- 118:../STM32F4-driver-library/sources/uart_comm.c **** }
- 248              		.loc 1 118 1 is_stmt 0 view .LVU67
- 249 0014 7047     		bx	lr
- 250              	.L16:
- 251 0016 00BF     		.align	2
- 252              	.L15:
- 253 0018 00440040 		.word	1073759232
- 254 001c 00000000 		.word	.LANCHOR0
- 255              		.cfi_endproc
- 256              	.LFE133:
- 258              		.section	.text.uart2_getstr,"ax",%progbits
- 259              		.align	1
- 260              		.global	uart2_getstr
- 261              		.syntax unified
- 262              		.thumb
- 263              		.thumb_func
- 265              	uart2_getstr:
- 266              	.LVL5:
- 267              	.LFB134:
+ 117:../STM32F4-driver-library/sources/uart_comm.c ****     // Clear the EXNE bit 
+ 118:../STM32F4-driver-library/sources/uart_comm.c ****     USART2->SR &= ~(SET_BIT << SHIFT_5);
+ 238              		.loc 1 118 5 is_stmt 1 view .LVU63
+ 239              		.loc 1 118 16 is_stmt 0 view .LVU64
+ 240 0008 1A68     		ldr	r2, [r3]
+ 241 000a 22F02002 		bic	r2, r2, #32
+ 242 000e 1A60     		str	r2, [r3]
  119:../STM32F4-driver-library/sources/uart_comm.c **** 
- 120:../STM32F4-driver-library/sources/uart_comm.c **** 
- 121:../STM32F4-driver-library/sources/uart_comm.c **** // 
- 122:../STM32F4-driver-library/sources/uart_comm.c **** void uart2_getstr(char *string_to_fill)
- 123:../STM32F4-driver-library/sources/uart_comm.c **** {
- 268              		.loc 1 123 1 is_stmt 1 view -0
- 269              		.cfi_startproc
- 270              		@ args = 0, pretend = 0, frame = 0
- 271              		@ frame_needed = 0, uses_anonymous_args = 0
- 272              		.loc 1 123 1 is_stmt 0 view .LVU69
- 273 0000 10B5     		push	{r4, lr}
- 274              	.LCFI1:
- 275              		.cfi_def_cfa_offset 8
- 276              		.cfi_offset 4, -8
- 277              		.cfi_offset 14, -4
- 278 0002 0446     		mov	r4, r0
- 279 0004 02E0     		b	.L19
- 280              	.LVL6:
- 281              	.L18:
- 124:../STM32F4-driver-library/sources/uart_comm.c ****     // 
-ARM GAS  C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s 			page 8
+ 120:../STM32F4-driver-library/sources/uart_comm.c ****     return input;
+ 243              		.loc 1 120 5 is_stmt 1 view .LVU65
+ 121:../STM32F4-driver-library/sources/uart_comm.c **** }
+ 244              		.loc 1 121 1 is_stmt 0 view .LVU66
+ 245 0010 0878     		ldrb	r0, [r1]	@ zero_extendqisi2
+ 246 0012 7047     		bx	lr
+ 247              	.L15:
+ 248              		.align	2
+ 249              	.L14:
+ 250 0014 00440040 		.word	1073759232
+ 251 0018 00000000 		.word	.LANCHOR0
+ 252              		.cfi_endproc
+ 253              	.LFE133:
+ 255              		.section	.text.uart2_getstr,"ax",%progbits
+ 256              		.align	1
+ 257              		.global	uart2_getstr
+ 258              		.syntax unified
+ 259              		.thumb
+ 260              		.thumb_func
+ 262              	uart2_getstr:
+ 263              	.LVL5:
+ 264              	.LFB134:
+ 122:../STM32F4-driver-library/sources/uart_comm.c **** 
+ 123:../STM32F4-driver-library/sources/uart_comm.c **** 
+ 124:../STM32F4-driver-library/sources/uart_comm.c **** // 
+ 125:../STM32F4-driver-library/sources/uart_comm.c **** void uart2_getstr(char *string_to_fill)
+ 126:../STM32F4-driver-library/sources/uart_comm.c **** {
+ 265              		.loc 1 126 1 is_stmt 1 view -0
+ 266              		.cfi_startproc
+ 267              		@ args = 0, pretend = 0, frame = 0
+ 268              		@ frame_needed = 0, uses_anonymous_args = 0
+ 269              		.loc 1 126 1 is_stmt 0 view .LVU68
+ 270 0000 10B5     		push	{r4, lr}
+ 271              	.LCFI1:
+ 272              		.cfi_def_cfa_offset 8
+ 273              		.cfi_offset 4, -8
+ 274              		.cfi_offset 14, -4
+ 275 0002 0446     		mov	r4, r0
+ 276 0004 0AE0     		b	.L19
+ 277              	.LVL6:
+ 278              	.L23:
+ 127:../STM32F4-driver-library/sources/uart_comm.c ****     // 
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s 			page 8
 
 
- 125:../STM32F4-driver-library/sources/uart_comm.c ****     static uint8_t input = 0;
- 126:../STM32F4-driver-library/sources/uart_comm.c **** 
- 127:../STM32F4-driver-library/sources/uart_comm.c ****     // Get a character from the string 
- 128:../STM32F4-driver-library/sources/uart_comm.c ****     // input = uart2_getchar();
+ 128:../STM32F4-driver-library/sources/uart_comm.c ****     static uint8_t input = 0;
+ 129:../STM32F4-driver-library/sources/uart_comm.c ****     static uint8_t over_run = 0;
+ 130:../STM32F4-driver-library/sources/uart_comm.c **** 
+ 131:../STM32F4-driver-library/sources/uart_comm.c ****     // Loop through string 
+ 132:../STM32F4-driver-library/sources/uart_comm.c ****     do 
+ 133:../STM32F4-driver-library/sources/uart_comm.c ****     {
+ 134:../STM32F4-driver-library/sources/uart_comm.c ****         // // Get a character from the string 
+ 135:../STM32F4-driver-library/sources/uart_comm.c ****         // input = uart2_getchar();
+ 136:../STM32F4-driver-library/sources/uart_comm.c **** 
+ 137:../STM32F4-driver-library/sources/uart_comm.c ****         // 
+ 138:../STM32F4-driver-library/sources/uart_comm.c ****         if (USART2->SR & (SET_BIT << SHIFT_3))
+ 139:../STM32F4-driver-library/sources/uart_comm.c ****         {
+ 140:../STM32F4-driver-library/sources/uart_comm.c ****             over_run = 1;
+ 279              		.loc 1 140 13 is_stmt 1 view .LVU69
+ 280              		.loc 1 140 22 is_stmt 0 view .LVU70
+ 281 0006 0C4B     		ldr	r3, .L24
+ 282 0008 0122     		movs	r2, #1
+ 283 000a 1A70     		strb	r2, [r3]
+ 284              	.L17:
+ 141:../STM32F4-driver-library/sources/uart_comm.c ****         }
+ 142:../STM32F4-driver-library/sources/uart_comm.c **** 
+ 143:../STM32F4-driver-library/sources/uart_comm.c ****         // Don't read unless there is data available 
+ 144:../STM32F4-driver-library/sources/uart_comm.c ****         if (USART2->SR & (SET_BIT << SHIFT_5))
+ 285              		.loc 1 144 9 is_stmt 1 view .LVU71
+ 286              		.loc 1 144 19 is_stmt 0 view .LVU72
+ 287 000c 0B4B     		ldr	r3, .L24+4
+ 288 000e 1B68     		ldr	r3, [r3]
+ 289              		.loc 1 144 12 view .LVU73
+ 290 0010 13F0200F 		tst	r3, #32
+ 291 0014 08D1     		bne	.L21
+ 292              	.L18:
+ 145:../STM32F4-driver-library/sources/uart_comm.c ****         {
+ 146:../STM32F4-driver-library/sources/uart_comm.c ****             // Get a character from the string 
+ 147:../STM32F4-driver-library/sources/uart_comm.c ****             input = uart2_getchar();
+ 148:../STM32F4-driver-library/sources/uart_comm.c **** 
+ 149:../STM32F4-driver-library/sources/uart_comm.c ****             // Assign character from string to a space in memeory 
+ 150:../STM32F4-driver-library/sources/uart_comm.c ****             *string_to_fill = input;
+ 151:../STM32F4-driver-library/sources/uart_comm.c **** 
+ 152:../STM32F4-driver-library/sources/uart_comm.c ****             // Increment to next space in memeory 
+ 153:../STM32F4-driver-library/sources/uart_comm.c ****             string_to_fill++;
+ 154:../STM32F4-driver-library/sources/uart_comm.c ****         }
+ 155:../STM32F4-driver-library/sources/uart_comm.c ****     } 
+ 156:../STM32F4-driver-library/sources/uart_comm.c ****     while (input);
+ 293              		.loc 1 156 11 is_stmt 1 view .LVU74
+ 294              		.loc 1 156 12 is_stmt 0 view .LVU75
+ 295 0016 0A4B     		ldr	r3, .L24+8
+ 296 0018 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 297              		.loc 1 156 5 view .LVU76
+ 298 001a 63B1     		cbz	r3, .L22
+ 299              	.L19:
+ 128:../STM32F4-driver-library/sources/uart_comm.c ****     static uint8_t over_run = 0;
+ 300              		.loc 1 128 5 is_stmt 1 view .LVU77
  129:../STM32F4-driver-library/sources/uart_comm.c **** 
- 130:../STM32F4-driver-library/sources/uart_comm.c ****     // Loop until full string is read 
- 131:../STM32F4-driver-library/sources/uart_comm.c ****     do
+ 301              		.loc 1 129 5 view .LVU78
  132:../STM32F4-driver-library/sources/uart_comm.c ****     {
- 133:../STM32F4-driver-library/sources/uart_comm.c ****         if (USART2->SR & (SET_BIT << SHIFT_5))
- 134:../STM32F4-driver-library/sources/uart_comm.c ****         {
- 135:../STM32F4-driver-library/sources/uart_comm.c ****             // Get a character from the string 
- 136:../STM32F4-driver-library/sources/uart_comm.c ****             input = uart2_getchar();
- 137:../STM32F4-driver-library/sources/uart_comm.c **** 
- 138:../STM32F4-driver-library/sources/uart_comm.c ****             // Assign the charater to a space in memory 
- 139:../STM32F4-driver-library/sources/uart_comm.c ****             *string_to_fill = input;
- 140:../STM32F4-driver-library/sources/uart_comm.c **** 
- 141:../STM32F4-driver-library/sources/uart_comm.c ****             // increment to next space in memory 
- 142:../STM32F4-driver-library/sources/uart_comm.c ****             string_to_fill++;
- 143:../STM32F4-driver-library/sources/uart_comm.c ****         }
- 144:../STM32F4-driver-library/sources/uart_comm.c ****         // // Get a character from the string 
- 145:../STM32F4-driver-library/sources/uart_comm.c ****         // input = uart2_getchar();
- 146:../STM32F4-driver-library/sources/uart_comm.c **** 
- 147:../STM32F4-driver-library/sources/uart_comm.c ****         // // Assign the charater to a space in memory 
- 148:../STM32F4-driver-library/sources/uart_comm.c ****         // *string_to_fill = input;
- 149:../STM32F4-driver-library/sources/uart_comm.c **** 
- 150:../STM32F4-driver-library/sources/uart_comm.c ****         // // increment to next space in memory 
- 151:../STM32F4-driver-library/sources/uart_comm.c ****         // string_to_fill++;
- 152:../STM32F4-driver-library/sources/uart_comm.c **** 
- 153:../STM32F4-driver-library/sources/uart_comm.c ****     } while(input);
- 282              		.loc 1 153 12 is_stmt 1 view .LVU70
- 283              		.loc 1 153 13 is_stmt 0 view .LVU71
- 284 0006 084B     		ldr	r3, .L22
- 285 0008 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
- 286              		.loc 1 153 5 view .LVU72
- 287 000a 5BB1     		cbz	r3, .L21
- 288              	.L19:
- 125:../STM32F4-driver-library/sources/uart_comm.c **** 
- 289              		.loc 1 125 5 is_stmt 1 view .LVU73
- 131:../STM32F4-driver-library/sources/uart_comm.c ****     {
- 290              		.loc 1 131 5 view .LVU74
- 133:../STM32F4-driver-library/sources/uart_comm.c ****         {
- 291              		.loc 1 133 9 view .LVU75
- 133:../STM32F4-driver-library/sources/uart_comm.c ****         {
- 292              		.loc 1 133 19 is_stmt 0 view .LVU76
- 293 000c 074B     		ldr	r3, .L22+4
- 294 000e 1B68     		ldr	r3, [r3]
- 133:../STM32F4-driver-library/sources/uart_comm.c ****         {
- 295              		.loc 1 133 12 view .LVU77
- 296 0010 13F0200F 		tst	r3, #32
- 297 0014 F7D0     		beq	.L18
- 136:../STM32F4-driver-library/sources/uart_comm.c **** 
- 298              		.loc 1 136 13 is_stmt 1 view .LVU78
- 136:../STM32F4-driver-library/sources/uart_comm.c **** 
- 299              		.loc 1 136 21 is_stmt 0 view .LVU79
- 300 0016 FFF7FEFF 		bl	uart2_getchar
- 301              	.LVL7:
- 136:../STM32F4-driver-library/sources/uart_comm.c **** 
-ARM GAS  C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s 			page 9
+ 302              		.loc 1 132 5 view .LVU79
+ 138:../STM32F4-driver-library/sources/uart_comm.c ****         {
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s 			page 9
 
 
- 302              		.loc 1 136 19 view .LVU80
- 303 001a 034B     		ldr	r3, .L22
- 304 001c 1870     		strb	r0, [r3]
- 139:../STM32F4-driver-library/sources/uart_comm.c **** 
- 305              		.loc 1 139 13 is_stmt 1 view .LVU81
- 139:../STM32F4-driver-library/sources/uart_comm.c **** 
- 306              		.loc 1 139 29 is_stmt 0 view .LVU82
- 307 001e 04F8010B 		strb	r0, [r4], #1
- 308              	.LVL8:
- 142:../STM32F4-driver-library/sources/uart_comm.c ****         }
- 309              		.loc 1 142 13 is_stmt 1 view .LVU83
- 142:../STM32F4-driver-library/sources/uart_comm.c ****         }
- 310              		.loc 1 142 13 is_stmt 0 view .LVU84
- 311 0022 F0E7     		b	.L18
+ 303              		.loc 1 138 9 view .LVU80
+ 138:../STM32F4-driver-library/sources/uart_comm.c ****         {
+ 304              		.loc 1 138 19 is_stmt 0 view .LVU81
+ 305 001c 074B     		ldr	r3, .L24+4
+ 306 001e 1B68     		ldr	r3, [r3]
+ 138:../STM32F4-driver-library/sources/uart_comm.c ****         {
+ 307              		.loc 1 138 12 view .LVU82
+ 308 0020 13F0080F 		tst	r3, #8
+ 309 0024 F2D0     		beq	.L17
+ 138:../STM32F4-driver-library/sources/uart_comm.c ****         {
+ 310              		.loc 1 138 12 view .LVU83
+ 311 0026 EEE7     		b	.L23
  312              	.L21:
- 154:../STM32F4-driver-library/sources/uart_comm.c **** }
- 313              		.loc 1 154 1 view .LVU85
- 314 0024 10BD     		pop	{r4, pc}
- 315              	.LVL9:
- 316              	.L23:
- 317              		.loc 1 154 1 view .LVU86
- 318 0026 00BF     		.align	2
- 319              	.L22:
- 320 0028 00000000 		.word	.LANCHOR1
- 321 002c 00440040 		.word	1073759232
- 322              		.cfi_endproc
- 323              	.LFE134:
- 325              		.section	.bss.input.0,"aw",%nobits
- 326              		.set	.LANCHOR1,. + 0
- 329              	input.0:
- 330 0000 00       		.space	1
- 331              		.section	.bss.input.1,"aw",%nobits
- 332              		.set	.LANCHOR0,. + 0
- 335              	input.1:
- 336 0000 00       		.space	1
- 337              		.text
- 338              	.Letext0:
- 339              		.file 2 "c:\\dev_tools\\gcc-arm-none-eabi-10.3-2021.10-win32\\gcc-arm-none-eabi-10.3-2021.10\\arm-
- 340              		.file 3 "c:\\dev_tools\\gcc-arm-none-eabi-10.3-2021.10-win32\\gcc-arm-none-eabi-10.3-2021.10\\arm-
- 341              		.file 4 "Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f411xe.h"
- 342              		.file 5 "../STM32F4-driver-library/headers/tools.h"
- 343              		.file 6 "../STM32F4-driver-library/headers/uart_comm.h"
-ARM GAS  C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s 			page 10
+ 147:../STM32F4-driver-library/sources/uart_comm.c **** 
+ 313              		.loc 1 147 13 is_stmt 1 view .LVU84
+ 147:../STM32F4-driver-library/sources/uart_comm.c **** 
+ 314              		.loc 1 147 21 is_stmt 0 view .LVU85
+ 315 0028 FFF7FEFF 		bl	uart2_getchar
+ 316              	.LVL7:
+ 147:../STM32F4-driver-library/sources/uart_comm.c **** 
+ 317              		.loc 1 147 19 view .LVU86
+ 318 002c 044B     		ldr	r3, .L24+8
+ 319 002e 1870     		strb	r0, [r3]
+ 150:../STM32F4-driver-library/sources/uart_comm.c **** 
+ 320              		.loc 1 150 13 is_stmt 1 view .LVU87
+ 150:../STM32F4-driver-library/sources/uart_comm.c **** 
+ 321              		.loc 1 150 29 is_stmt 0 view .LVU88
+ 322 0030 04F8010B 		strb	r0, [r4], #1
+ 323              	.LVL8:
+ 153:../STM32F4-driver-library/sources/uart_comm.c ****         }
+ 324              		.loc 1 153 13 is_stmt 1 view .LVU89
+ 153:../STM32F4-driver-library/sources/uart_comm.c ****         }
+ 325              		.loc 1 153 13 is_stmt 0 view .LVU90
+ 326 0034 EFE7     		b	.L18
+ 327              	.L22:
+ 157:../STM32F4-driver-library/sources/uart_comm.c **** 
+ 158:../STM32F4-driver-library/sources/uart_comm.c ****     // // Get a character from the string 
+ 159:../STM32F4-driver-library/sources/uart_comm.c ****     // input = uart2_getchar();
+ 160:../STM32F4-driver-library/sources/uart_comm.c **** 
+ 161:../STM32F4-driver-library/sources/uart_comm.c ****     // // Loop until full string is read 
+ 162:../STM32F4-driver-library/sources/uart_comm.c ****     // while(input);
+ 163:../STM32F4-driver-library/sources/uart_comm.c ****     // {
+ 164:../STM32F4-driver-library/sources/uart_comm.c ****     //     // Get a character from the string 
+ 165:../STM32F4-driver-library/sources/uart_comm.c ****     //     input = uart2_getchar();
+ 166:../STM32F4-driver-library/sources/uart_comm.c **** 
+ 167:../STM32F4-driver-library/sources/uart_comm.c ****     //     // Assign the charater to a space in memory 
+ 168:../STM32F4-driver-library/sources/uart_comm.c ****     //     *string_to_fill = input;
+ 169:../STM32F4-driver-library/sources/uart_comm.c **** 
+ 170:../STM32F4-driver-library/sources/uart_comm.c ****     //     // increment to next space in memory 
+ 171:../STM32F4-driver-library/sources/uart_comm.c ****     //     string_to_fill++;
+ 172:../STM32F4-driver-library/sources/uart_comm.c ****     // } 
+ 173:../STM32F4-driver-library/sources/uart_comm.c **** }
+ 328              		.loc 1 173 1 view .LVU91
+ 329 0036 10BD     		pop	{r4, pc}
+ 330              	.LVL9:
+ 331              	.L25:
+ 332              		.loc 1 173 1 view .LVU92
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s 			page 10
+
+
+ 333              		.align	2
+ 334              	.L24:
+ 335 0038 00000000 		.word	.LANCHOR1
+ 336 003c 00440040 		.word	1073759232
+ 337 0040 00000000 		.word	.LANCHOR2
+ 338              		.cfi_endproc
+ 339              	.LFE134:
+ 341              		.section	.bss.input.0,"aw",%nobits
+ 342              		.set	.LANCHOR2,. + 0
+ 345              	input.0:
+ 346 0000 00       		.space	1
+ 347              		.section	.bss.input.2,"aw",%nobits
+ 348              		.set	.LANCHOR0,. + 0
+ 351              	input.2:
+ 352 0000 00       		.space	1
+ 353              		.section	.bss.over_run.1,"aw",%nobits
+ 354              		.set	.LANCHOR1,. + 0
+ 357              	over_run.1:
+ 358 0000 00       		.space	1
+ 359              		.text
+ 360              	.Letext0:
+ 361              		.file 2 "c:\\dev_tools\\gcc-arm-none-eabi-10.3-2021.10-win32\\gcc-arm-none-eabi-10.3-2021.10\\arm-
+ 362              		.file 3 "c:\\dev_tools\\gcc-arm-none-eabi-10.3-2021.10-win32\\gcc-arm-none-eabi-10.3-2021.10\\arm-
+ 363              		.file 4 "Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f411xe.h"
+ 364              		.file 5 "../STM32F4-driver-library/headers/tools.h"
+ 365              		.file 6 "../STM32F4-driver-library/headers/uart_comm.h"
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s 			page 11
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 uart_comm.c
-C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s:20     .text.uart2_init:00000000 $t
-C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s:26     .text.uart2_init:00000000 uart2_init
-C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s:127    .text.uart2_init:00000090 $d
-C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s:133    .text.uart2_sendchar:00000000 $t
-C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s:139    .text.uart2_sendchar:00000000 uart2_sendchar
-C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s:166    .text.uart2_sendchar:00000010 $d
-C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s:171    .text.uart2_sendstring:00000000 $t
-C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s:177    .text.uart2_sendstring:00000000 uart2_sendstring
-C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s:217    .text.uart2_getchar:00000000 $t
-C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s:223    .text.uart2_getchar:00000000 uart2_getchar
-C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s:253    .text.uart2_getchar:00000018 $d
-C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s:259    .text.uart2_getstr:00000000 $t
-C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s:265    .text.uart2_getstr:00000000 uart2_getstr
-C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s:320    .text.uart2_getstr:00000028 $d
-C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s:329    .bss.input.0:00000000 input.0
-C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s:330    .bss.input.0:00000000 $d
-C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s:335    .bss.input.1:00000000 input.1
-C:\Users\samue\AppData\Local\Temp\ccX2Rdj9.s:336    .bss.input.1:00000000 $d
+C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s:20     .text.uart2_init:00000000 $t
+C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s:26     .text.uart2_init:00000000 uart2_init
+C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s:127    .text.uart2_init:00000090 $d
+C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s:133    .text.uart2_sendchar:00000000 $t
+C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s:139    .text.uart2_sendchar:00000000 uart2_sendchar
+C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s:166    .text.uart2_sendchar:00000010 $d
+C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s:171    .text.uart2_sendstring:00000000 $t
+C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s:177    .text.uart2_sendstring:00000000 uart2_sendstring
+C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s:217    .text.uart2_getchar:00000000 $t
+C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s:223    .text.uart2_getchar:00000000 uart2_getchar
+C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s:250    .text.uart2_getchar:00000014 $d
+C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s:256    .text.uart2_getstr:00000000 $t
+C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s:262    .text.uart2_getstr:00000000 uart2_getstr
+C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s:335    .text.uart2_getstr:00000038 $d
+C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s:345    .bss.input.0:00000000 input.0
+C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s:346    .bss.input.0:00000000 $d
+C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s:351    .bss.input.2:00000000 input.2
+C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s:352    .bss.input.2:00000000 $d
+C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s:357    .bss.over_run.1:00000000 over_run.1
+C:\Users\samue\AppData\Local\Temp\ccBBJIWG.s:358    .bss.over_run.1:00000000 $d
 
 NO UNDEFINED SYMBOLS

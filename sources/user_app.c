@@ -46,15 +46,14 @@ void user_app()
             HAL_Delay(1000);
             break;
         
-        // Read character from seriala and resend 
+        // Read character from serial and resend 
         case GET_CHAR:
             // Check if data is waiting to be read
             if (USART2->SR & (SET_BIT << SHIFT_5))
             {
                 input = uart2_getchar();
                 uart2_sendchar(input);
-                uart2_sendchar(*("\r"));
-                uart2_sendchar(*("\n"));
+                uart2_sendstring("\r\n");
             }
 
             break;
@@ -66,17 +65,19 @@ void user_app()
             {
                 // Pass a pointer to cleared string to uart2_getstr()
                 uart2_getstr(string_read);
-
-                input = *string_read;
-
-                // Relay read string back over serial to verify contents 
                 uart2_sendstring(string_read);
+                uart2_sendstring("\r\n");
+
+                // input = *string_read;
+
+                // // Relay read string back over serial to verify contents 
+                // uart2_sendstring(string_read);
 
                 // Clear previous contents of string
-                for (uint8_t i = 0; i < STR_READ_LEN; i++)
-                {
-                    string_read[i] = '\0';
-                }
+                // for (uint8_t i = 0; i < STR_READ_LEN; i++)
+                // {
+                //     string_read[i] = '\0';
+                // }
             }
 
             break;
