@@ -53,6 +53,30 @@ typedef enum {
  */
 void user_app(void);
 
+/**
+ * @brief 
+ * 
+ */
+void send_character(void);
+
+/**
+ * @brief 
+ * 
+ */
+void send_string(void);
+
+/**
+ * @brief Get the char object
+ * 
+ */
+void get_character(void);
+
+/**
+ * @brief Get the str object
+ * 
+ */
+void get_string(void);
+
 //=======================================================================================
 
 

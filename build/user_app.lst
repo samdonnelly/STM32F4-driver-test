@@ -1,4 +1,4 @@
-ARM GAS  C:\Users\samue\AppData\Local\Temp\ccaG8inA.s 			page 1
+ARM GAS  C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s 			page 1
 
 
    1              		.cpu cortex-m4
@@ -19,25 +19,21 @@ ARM GAS  C:\Users\samue\AppData\Local\Temp\ccaG8inA.s 			page 1
   16              		.text
   17              	.Ltext0:
   18              		.cfi_sections	.debug_frame
-  19              		.section	.rodata.user_app.str1.4,"aMS",%progbits,1
-  20              		.align	2
-  21              	.LC0:
-  22 0000 0D0A00   		.ascii	"\015\012\000"
-  23              		.section	.text.user_app,"ax",%progbits
-  24              		.align	1
-  25              		.global	user_app
-  26              		.syntax unified
-  27              		.thumb
-  28              		.thumb_func
-  30              	user_app:
-  31              	.LFB130:
-  32              		.file 1 "sources/user_app.c"
+  19              		.section	.text.send_character,"ax",%progbits
+  20              		.align	1
+  21              		.global	send_character
+  22              		.syntax unified
+  23              		.thumb
+  24              		.thumb_func
+  26              	send_character:
+  27              	.LFB131:
+  28              		.file 1 "sources/user_app.c"
    1:sources/user_app.c **** /**
    2:sources/user_app.c ****  * @file user_app.c
    3:sources/user_app.c ****  * 
    4:sources/user_app.c ****  * @author Sam Donnelly (samueldonnelly11@gmail.com)
    5:sources/user_app.c ****  * 
-   6:sources/user_app.c ****  * @brief 
+   6:sources/user_app.c ****  * @brief Tests the uart_comm.c driver 
    7:sources/user_app.c ****  * 
    8:sources/user_app.c ****  * @version 0.1
    9:sources/user_app.c ****  * @date 2022-02-12
@@ -54,158 +50,364 @@ ARM GAS  C:\Users\samue\AppData\Local\Temp\ccaG8inA.s 			page 1
   20:sources/user_app.c **** //=======================================================================================
   21:sources/user_app.c **** 
   22:sources/user_app.c **** 
-  23:sources/user_app.c **** // User application 
+  23:sources/user_app.c **** // User application - Run every loop 
   24:sources/user_app.c **** void user_app()
   25:sources/user_app.c **** {
-  33              		.loc 1 25 1 view -0
-ARM GAS  C:\Users\samue\AppData\Local\Temp\ccaG8inA.s 			page 2
+  26:sources/user_app.c ****     // Local variables 
+  27:sources/user_app.c ****     static test_mode_t test_mode = GET_STR;
+  28:sources/user_app.c **** 
+  29:sources/user_app.c ****     // Choose which test to run based on test_mode
+  30:sources/user_app.c ****     switch (test_mode)
+ARM GAS  C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s 			page 2
 
 
-  34              		.cfi_startproc
-  35              		@ args = 0, pretend = 0, frame = 0
-  36              		@ frame_needed = 0, uses_anonymous_args = 0
-  26:sources/user_app.c ****     // This code is continuously looped
-  27:sources/user_app.c **** 
-  28:sources/user_app.c ****     // Local variables 
-  29:sources/user_app.c ****     static test_mode_t test_mode = GET_STR;
-  37              		.loc 1 29 5 view .LVU1
-  30:sources/user_app.c ****     static uint8_t input = 0;
-  38              		.loc 1 30 5 view .LVU2
-  31:sources/user_app.c ****     // static char string_read[STR_READ_LEN] = {'\0'};
-  32:sources/user_app.c ****     static char string_read[STR_READ_LEN];
-  39              		.loc 1 32 5 view .LVU3
-  33:sources/user_app.c **** 
-  34:sources/user_app.c ****     // Choose which test to run based on test_mode
-  35:sources/user_app.c ****     switch (test_mode)
-  40              		.loc 1 35 5 view .LVU4
-  36:sources/user_app.c ****     {
-  37:sources/user_app.c ****         // Send character 
-  38:sources/user_app.c ****         case SEND_CHAR:
-  39:sources/user_app.c ****             uart2_sendchar('G');
-  40:sources/user_app.c ****             HAL_Delay(1000);
-  41:sources/user_app.c ****             break;
-  42:sources/user_app.c ****         
-  43:sources/user_app.c ****         // Send string 
-  44:sources/user_app.c ****         case SEND_STRING:
-  45:sources/user_app.c ****             uart2_sendstring("hello world!\r\n");
-  46:sources/user_app.c ****             HAL_Delay(1000);
-  47:sources/user_app.c ****             break;
-  48:sources/user_app.c ****         
-  49:sources/user_app.c ****         // Read character from serial and resend 
-  50:sources/user_app.c ****         case GET_CHAR:
-  51:sources/user_app.c ****             // Check if data is waiting to be read
-  52:sources/user_app.c ****             if (USART2->SR & (SET_BIT << SHIFT_5))
-  53:sources/user_app.c ****             {
-  54:sources/user_app.c ****                 input = uart2_getchar();
-  55:sources/user_app.c ****                 uart2_sendchar(input);
-  56:sources/user_app.c ****                 uart2_sendstring("\r\n");
-  57:sources/user_app.c ****             }
+  31:sources/user_app.c ****     {
+  32:sources/user_app.c ****         case SEND_CHAR:
+  33:sources/user_app.c ****             send_character();
+  34:sources/user_app.c ****             break;
+  35:sources/user_app.c ****         
+  36:sources/user_app.c ****         case SEND_STRING:
+  37:sources/user_app.c ****             send_string();
+  38:sources/user_app.c ****             break;
+  39:sources/user_app.c ****         
+  40:sources/user_app.c ****         case GET_CHAR:
+  41:sources/user_app.c ****             get_character();
+  42:sources/user_app.c ****             break;
+  43:sources/user_app.c ****         
+  44:sources/user_app.c ****         case GET_STR:
+  45:sources/user_app.c ****             get_string();
+  46:sources/user_app.c ****             break;
+  47:sources/user_app.c ****         
+  48:sources/user_app.c ****         default:
+  49:sources/user_app.c ****             break;
+  50:sources/user_app.c ****     }
+  51:sources/user_app.c **** }
+  52:sources/user_app.c **** 
+  53:sources/user_app.c **** // Send a single character to the serial terminal 
+  54:sources/user_app.c **** void send_character(void)
+  55:sources/user_app.c **** {
+  29              		.loc 1 55 1 view -0
+  30              		.cfi_startproc
+  31              		@ args = 0, pretend = 0, frame = 0
+  32              		@ frame_needed = 0, uses_anonymous_args = 0
+  33 0000 08B5     		push	{r3, lr}
+  34              	.LCFI0:
+  35              		.cfi_def_cfa_offset 8
+  36              		.cfi_offset 3, -8
+  37              		.cfi_offset 14, -4
+  56:sources/user_app.c ****     // Repeatedly send a character using uart2_sendchar()
+  57:sources/user_app.c ****     uart2_sendchar('G');
+  38              		.loc 1 57 5 view .LVU1
+  39 0002 4720     		movs	r0, #71
+  40 0004 FFF7FEFF 		bl	uart2_sendchar
+  41              	.LVL0:
   58:sources/user_app.c **** 
-  59:sources/user_app.c ****             break;
-  60:sources/user_app.c ****         
-  61:sources/user_app.c ****         // Read string from serial and resend 
-  62:sources/user_app.c ****         case GET_STR:
-  63:sources/user_app.c ****             // Check if data is waiting to be read
-  64:sources/user_app.c ****             if (USART2->SR & (SET_BIT << SHIFT_5))
-  41              		.loc 1 64 13 view .LVU5
-  42              		.loc 1 64 23 is_stmt 0 view .LVU6
-  43 0000 084B     		ldr	r3, .L8
-  44 0002 1B68     		ldr	r3, [r3]
-  45              		.loc 1 64 16 view .LVU7
-  46 0004 13F0200F 		tst	r3, #32
-  47 0008 00D1     		bne	.L7
-  48 000a 7047     		bx	lr
-  49              	.L7:
-  25:sources/user_app.c ****     // This code is continuously looped
-  50              		.loc 1 25 1 view .LVU8
-ARM GAS  C:\Users\samue\AppData\Local\Temp\ccaG8inA.s 			page 3
+  59:sources/user_app.c ****     // Delay 1 second 
+  60:sources/user_app.c ****     HAL_Delay(1000);
+  42              		.loc 1 60 5 view .LVU2
+  43 0008 4FF47A70 		mov	r0, #1000
+  44 000c FFF7FEFF 		bl	HAL_Delay
+  45              	.LVL1:
+  61:sources/user_app.c **** }
+  46              		.loc 1 61 1 is_stmt 0 view .LVU3
+  47 0010 08BD     		pop	{r3, pc}
+  48              		.cfi_endproc
+  49              	.LFE131:
+  51              		.section	.rodata.send_string.str1.4,"aMS",%progbits,1
+  52              		.align	2
+  53              	.LC0:
+  54 0000 68656C6C 		.ascii	"hello world!\015\012\000"
+  54      6F20776F 
+ARM GAS  C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s 			page 3
 
 
-  51 000c 10B5     		push	{r4, lr}
-  52              	.LCFI0:
-  53              		.cfi_def_cfa_offset 8
-  54              		.cfi_offset 4, -8
-  55              		.cfi_offset 14, -4
-  65:sources/user_app.c ****             {
-  66:sources/user_app.c ****                 // Pass a pointer to cleared string to uart2_getstr()
-  67:sources/user_app.c ****                 uart2_getstr(string_read);
-  56              		.loc 1 67 17 is_stmt 1 view .LVU9
-  57 000e 064C     		ldr	r4, .L8+4
-  58 0010 2046     		mov	r0, r4
-  59 0012 FFF7FEFF 		bl	uart2_getstr
-  60              	.LVL0:
-  68:sources/user_app.c ****                 uart2_sendstring(string_read);
-  61              		.loc 1 68 17 view .LVU10
-  62 0016 2046     		mov	r0, r4
-  63 0018 FFF7FEFF 		bl	uart2_sendstring
-  64              	.LVL1:
-  69:sources/user_app.c ****                 uart2_sendstring("\r\n");
-  65              		.loc 1 69 17 view .LVU11
-  66 001c 0348     		ldr	r0, .L8+8
-  67 001e FFF7FEFF 		bl	uart2_sendstring
-  68              	.LVL2:
-  70:sources/user_app.c **** 
-  71:sources/user_app.c ****                 // input = *string_read;
+  54      726C6421 
+  54      0D0A00
+  55              		.section	.text.send_string,"ax",%progbits
+  56              		.align	1
+  57              		.global	send_string
+  58              		.syntax unified
+  59              		.thumb
+  60              		.thumb_func
+  62              	send_string:
+  63              	.LFB132:
+  62:sources/user_app.c **** 
+  63:sources/user_app.c **** // Send a string to the serial terminal 
+  64:sources/user_app.c **** void send_string(void)
+  65:sources/user_app.c **** {
+  64              		.loc 1 65 1 is_stmt 1 view -0
+  65              		.cfi_startproc
+  66              		@ args = 0, pretend = 0, frame = 0
+  67              		@ frame_needed = 0, uses_anonymous_args = 0
+  68 0000 08B5     		push	{r3, lr}
+  69              	.LCFI1:
+  70              		.cfi_def_cfa_offset 8
+  71              		.cfi_offset 3, -8
+  72              		.cfi_offset 14, -4
+  66:sources/user_app.c ****     // Repeatedly send a string using uart2_sendstring()
+  67:sources/user_app.c ****     uart2_sendstring("hello world!\r\n");
+  73              		.loc 1 67 5 view .LVU5
+  74 0002 0448     		ldr	r0, .L5
+  75 0004 FFF7FEFF 		bl	uart2_sendstring
+  76              	.LVL2:
+  68:sources/user_app.c **** 
+  69:sources/user_app.c ****     // Delay 1 second
+  70:sources/user_app.c ****     HAL_Delay(1000);
+  77              		.loc 1 70 5 view .LVU6
+  78 0008 4FF47A70 		mov	r0, #1000
+  79 000c FFF7FEFF 		bl	HAL_Delay
+  80              	.LVL3:
+  71:sources/user_app.c **** }
+  81              		.loc 1 71 1 is_stmt 0 view .LVU7
+  82 0010 08BD     		pop	{r3, pc}
+  83              	.L6:
+  84 0012 00BF     		.align	2
+  85              	.L5:
+  86 0014 00000000 		.word	.LC0
+  87              		.cfi_endproc
+  88              	.LFE132:
+  90              		.section	.rodata.get_character.str1.4,"aMS",%progbits,1
+  91              		.align	2
+  92              	.LC1:
+  93 0000 0D0A00   		.ascii	"\015\012\000"
+  94              		.section	.text.get_character,"ax",%progbits
+  95              		.align	1
+  96              		.global	get_character
+  97              		.syntax unified
+  98              		.thumb
+  99              		.thumb_func
+ 101              	get_character:
+ 102              	.LFB133:
+ARM GAS  C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s 			page 4
+
+
   72:sources/user_app.c **** 
-  73:sources/user_app.c ****                 // // Relay read string back over serial to verify contents 
-  74:sources/user_app.c ****                 // uart2_sendstring(string_read);
-  75:sources/user_app.c **** 
-  76:sources/user_app.c ****                 // Clear previous contents of string
-  77:sources/user_app.c ****                 // for (uint8_t i = 0; i < STR_READ_LEN; i++)
-  78:sources/user_app.c ****                 // {
-  79:sources/user_app.c ****                 //     string_read[i] = '\0';
-  80:sources/user_app.c ****                 // }
-  81:sources/user_app.c ****             }
+  73:sources/user_app.c **** // Get a single character from the serial terminal 
+  74:sources/user_app.c **** void get_character(void)
+  75:sources/user_app.c **** {
+ 103              		.loc 1 75 1 is_stmt 1 view -0
+ 104              		.cfi_startproc
+ 105              		@ args = 0, pretend = 0, frame = 0
+ 106              		@ frame_needed = 0, uses_anonymous_args = 0
+ 107 0000 08B5     		push	{r3, lr}
+ 108              	.LCFI2:
+ 109              		.cfi_def_cfa_offset 8
+ 110              		.cfi_offset 3, -8
+ 111              		.cfi_offset 14, -4
+  76:sources/user_app.c ****     // To record the character from the serial terminal 
+  77:sources/user_app.c ****     static uint8_t input = 0;
+ 112              		.loc 1 77 5 view .LVU9
+  78:sources/user_app.c **** 
+  79:sources/user_app.c ****     // Check if data is waiting to be read
+  80:sources/user_app.c ****     if (USART2->SR & (SET_BIT << SHIFT_5))
+ 113              		.loc 1 80 5 view .LVU10
+ 114              		.loc 1 80 15 is_stmt 0 view .LVU11
+ 115 0002 084B     		ldr	r3, .L11
+ 116 0004 1B68     		ldr	r3, [r3]
+ 117              		.loc 1 80 8 view .LVU12
+ 118 0006 13F0200F 		tst	r3, #32
+ 119 000a 00D1     		bne	.L10
+ 120              	.L7:
+  81:sources/user_app.c ****     {
+  82:sources/user_app.c ****         input = uart2_getchar();
+  83:sources/user_app.c **** 
+  84:sources/user_app.c ****         // Resend information to serial terminal 
+  85:sources/user_app.c ****         uart2_sendchar(input);
+  86:sources/user_app.c ****         uart2_sendstring("\r\n");
+  87:sources/user_app.c ****     }
+  88:sources/user_app.c **** }
+ 121              		.loc 1 88 1 view .LVU13
+ 122 000c 08BD     		pop	{r3, pc}
+ 123              	.L10:
   82:sources/user_app.c **** 
-  83:sources/user_app.c ****             break;
-  84:sources/user_app.c ****         
-  85:sources/user_app.c ****         // Do nothing 
-  86:sources/user_app.c ****         default:
-  87:sources/user_app.c ****             break;
-  88:sources/user_app.c ****     }
-  89:sources/user_app.c **** }
-  69              		.loc 1 89 1 is_stmt 0 view .LVU12
-  70 0022 10BD     		pop	{r4, pc}
-  71              	.L9:
-  72              		.align	2
-  73              	.L8:
-  74 0024 00440040 		.word	1073759232
-  75 0028 00000000 		.word	.LANCHOR0
-  76 002c 00000000 		.word	.LC0
-  77              		.cfi_endproc
-  78              	.LFE130:
-  80              		.section	.bss.string_read.0,"aw",%nobits
-  81              		.align	2
-  82              		.set	.LANCHOR0,. + 0
-  85              	string_read.0:
-ARM GAS  C:\Users\samue\AppData\Local\Temp\ccaG8inA.s 			page 4
+ 124              		.loc 1 82 9 is_stmt 1 view .LVU14
+  82:sources/user_app.c **** 
+ 125              		.loc 1 82 17 is_stmt 0 view .LVU15
+ 126 000e FFF7FEFF 		bl	uart2_getchar
+ 127              	.LVL4:
+  82:sources/user_app.c **** 
+ 128              		.loc 1 82 15 view .LVU16
+ 129 0012 054B     		ldr	r3, .L11+4
+ 130 0014 1870     		strb	r0, [r3]
+  85:sources/user_app.c ****         uart2_sendstring("\r\n");
+ 131              		.loc 1 85 9 is_stmt 1 view .LVU17
+ 132 0016 FFF7FEFF 		bl	uart2_sendchar
+ 133              	.LVL5:
+  86:sources/user_app.c ****     }
+ 134              		.loc 1 86 9 view .LVU18
+ 135 001a 0448     		ldr	r0, .L11+8
+ 136 001c FFF7FEFF 		bl	uart2_sendstring
+ 137              	.LVL6:
+ARM GAS  C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s 			page 5
 
 
-  86 0000 00000000 		.space	20
-  86      00000000 
-  86      00000000 
-  86      00000000 
-  86      00000000 
-  87              		.text
-  88              	.Letext0:
-  89              		.file 2 "c:\\dev_tools\\gcc-arm-none-eabi-10.3-2021.10-win32\\gcc-arm-none-eabi-10.3-2021.10\\arm-
-  90              		.file 3 "c:\\dev_tools\\gcc-arm-none-eabi-10.3-2021.10-win32\\gcc-arm-none-eabi-10.3-2021.10\\arm-
-  91              		.file 4 "Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f411xe.h"
-  92              		.file 5 "../STM32F4-driver-library/headers/tools.h"
-  93              		.file 6 "headers/user_app.h"
-  94              		.file 7 "../STM32F4-driver-library/headers/uart_comm.h"
-ARM GAS  C:\Users\samue\AppData\Local\Temp\ccaG8inA.s 			page 5
+ 138              		.loc 1 88 1 is_stmt 0 view .LVU19
+ 139 0020 F4E7     		b	.L7
+ 140              	.L12:
+ 141 0022 00BF     		.align	2
+ 142              	.L11:
+ 143 0024 00440040 		.word	1073759232
+ 144 0028 00000000 		.word	.LANCHOR0
+ 145 002c 00000000 		.word	.LC1
+ 146              		.cfi_endproc
+ 147              	.LFE133:
+ 149              		.section	.text.get_string,"ax",%progbits
+ 150              		.align	1
+ 151              		.global	get_string
+ 152              		.syntax unified
+ 153              		.thumb
+ 154              		.thumb_func
+ 156              	get_string:
+ 157              	.LFB134:
+  89:sources/user_app.c **** 
+  90:sources/user_app.c **** // Get a string from the serial terminal 
+  91:sources/user_app.c **** void get_string(void)
+  92:sources/user_app.c **** {
+ 158              		.loc 1 92 1 is_stmt 1 view -0
+ 159              		.cfi_startproc
+ 160              		@ args = 0, pretend = 0, frame = 0
+ 161              		@ frame_needed = 0, uses_anonymous_args = 0
+  93:sources/user_app.c ****     // To record the string from the serial terminal 
+  94:sources/user_app.c ****     static char string_read[STR_READ_LEN];
+ 162              		.loc 1 94 5 view .LVU21
+  95:sources/user_app.c **** 
+  96:sources/user_app.c ****     // Check if data is waiting to be read
+  97:sources/user_app.c ****     if (USART2->SR & (SET_BIT << SHIFT_5))
+ 163              		.loc 1 97 5 view .LVU22
+ 164              		.loc 1 97 15 is_stmt 0 view .LVU23
+ 165 0000 084B     		ldr	r3, .L20
+ 166 0002 1B68     		ldr	r3, [r3]
+ 167              		.loc 1 97 8 view .LVU24
+ 168 0004 13F0200F 		tst	r3, #32
+ 169 0008 00D1     		bne	.L19
+ 170 000a 7047     		bx	lr
+ 171              	.L19:
+  92:sources/user_app.c ****     // To record the string from the serial terminal 
+ 172              		.loc 1 92 1 view .LVU25
+ 173 000c 10B5     		push	{r4, lr}
+ 174              	.LCFI3:
+ 175              		.cfi_def_cfa_offset 8
+ 176              		.cfi_offset 4, -8
+ 177              		.cfi_offset 14, -4
+  98:sources/user_app.c ****     {
+  99:sources/user_app.c ****         uart2_getstr(string_read);
+ 178              		.loc 1 99 9 is_stmt 1 view .LVU26
+ 179 000e 064C     		ldr	r4, .L20+4
+ 180 0010 2046     		mov	r0, r4
+ 181 0012 FFF7FEFF 		bl	uart2_getstr
+ 182              	.LVL7:
+ 100:sources/user_app.c **** 
+ 101:sources/user_app.c ****         // Resend information to serial terminal
+ARM GAS  C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s 			page 6
+
+
+ 102:sources/user_app.c ****         uart2_sendstring(string_read);
+ 183              		.loc 1 102 9 view .LVU27
+ 184 0016 2046     		mov	r0, r4
+ 185 0018 FFF7FEFF 		bl	uart2_sendstring
+ 186              	.LVL8:
+ 103:sources/user_app.c ****         uart2_sendchar(*("\n"));
+ 187              		.loc 1 103 9 view .LVU28
+ 188 001c 0A20     		movs	r0, #10
+ 189 001e FFF7FEFF 		bl	uart2_sendchar
+ 190              	.LVL9:
+ 104:sources/user_app.c ****     }
+ 105:sources/user_app.c **** }
+ 191              		.loc 1 105 1 is_stmt 0 view .LVU29
+ 192 0022 10BD     		pop	{r4, pc}
+ 193              	.L21:
+ 194              		.align	2
+ 195              	.L20:
+ 196 0024 00440040 		.word	1073759232
+ 197 0028 00000000 		.word	.LANCHOR1
+ 198              		.cfi_endproc
+ 199              	.LFE134:
+ 201              		.section	.text.user_app,"ax",%progbits
+ 202              		.align	1
+ 203              		.global	user_app
+ 204              		.syntax unified
+ 205              		.thumb
+ 206              		.thumb_func
+ 208              	user_app:
+ 209              	.LFB130:
+  25:sources/user_app.c ****     // Local variables 
+ 210              		.loc 1 25 1 is_stmt 1 view -0
+ 211              		.cfi_startproc
+ 212              		@ args = 0, pretend = 0, frame = 0
+ 213              		@ frame_needed = 0, uses_anonymous_args = 0
+ 214 0000 08B5     		push	{r3, lr}
+ 215              	.LCFI4:
+ 216              		.cfi_def_cfa_offset 8
+ 217              		.cfi_offset 3, -8
+ 218              		.cfi_offset 14, -4
+  27:sources/user_app.c **** 
+ 219              		.loc 1 27 5 view .LVU31
+  30:sources/user_app.c ****     {
+ 220              		.loc 1 30 5 view .LVU32
+  45:sources/user_app.c ****             break;
+ 221              		.loc 1 45 13 view .LVU33
+ 222 0002 FFF7FEFF 		bl	get_string
+ 223              	.LVL10:
+  46:sources/user_app.c ****         
+ 224              		.loc 1 46 13 view .LVU34
+  51:sources/user_app.c **** 
+ 225              		.loc 1 51 1 is_stmt 0 view .LVU35
+ 226 0006 08BD     		pop	{r3, pc}
+ 227              		.cfi_endproc
+ 228              	.LFE130:
+ 230              		.section	.bss.input.1,"aw",%nobits
+ 231              		.set	.LANCHOR0,. + 0
+ 234              	input.1:
+ARM GAS  C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s 			page 7
+
+
+ 235 0000 00       		.space	1
+ 236              		.section	.bss.string_read.0,"aw",%nobits
+ 237              		.align	2
+ 238              		.set	.LANCHOR1,. + 0
+ 241              	string_read.0:
+ 242 0000 00000000 		.space	20
+ 242      00000000 
+ 242      00000000 
+ 242      00000000 
+ 242      00000000 
+ 243              		.text
+ 244              	.Letext0:
+ 245              		.file 2 "c:\\dev_tools\\gcc-arm-none-eabi-10.3-2021.10-win32\\gcc-arm-none-eabi-10.3-2021.10\\arm-
+ 246              		.file 3 "c:\\dev_tools\\gcc-arm-none-eabi-10.3-2021.10-win32\\gcc-arm-none-eabi-10.3-2021.10\\arm-
+ 247              		.file 4 "Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f411xe.h"
+ 248              		.file 5 "../STM32F4-driver-library/headers/tools.h"
+ 249              		.file 6 "headers/user_app.h"
+ 250              		.file 7 "../STM32F4-driver-library/headers/uart_comm.h"
+ 251              		.file 8 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h"
+ARM GAS  C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s 			page 8
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 user_app.c
-C:\Users\samue\AppData\Local\Temp\ccaG8inA.s:20     .rodata.user_app.str1.4:00000000 $d
-C:\Users\samue\AppData\Local\Temp\ccaG8inA.s:24     .text.user_app:00000000 $t
-C:\Users\samue\AppData\Local\Temp\ccaG8inA.s:30     .text.user_app:00000000 user_app
-C:\Users\samue\AppData\Local\Temp\ccaG8inA.s:74     .text.user_app:00000024 $d
-C:\Users\samue\AppData\Local\Temp\ccaG8inA.s:81     .bss.string_read.0:00000000 $d
-C:\Users\samue\AppData\Local\Temp\ccaG8inA.s:85     .bss.string_read.0:00000000 string_read.0
+C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:20     .text.send_character:00000000 $t
+C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:26     .text.send_character:00000000 send_character
+C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:52     .rodata.send_string.str1.4:00000000 $d
+C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:56     .text.send_string:00000000 $t
+C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:62     .text.send_string:00000000 send_string
+C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:86     .text.send_string:00000014 $d
+C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:91     .rodata.get_character.str1.4:00000000 $d
+C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:95     .text.get_character:00000000 $t
+C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:101    .text.get_character:00000000 get_character
+C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:143    .text.get_character:00000024 $d
+C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:150    .text.get_string:00000000 $t
+C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:156    .text.get_string:00000000 get_string
+C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:196    .text.get_string:00000024 $d
+C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:202    .text.user_app:00000000 $t
+C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:208    .text.user_app:00000000 user_app
+C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:234    .bss.input.1:00000000 input.1
+C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:235    .bss.input.1:00000000 $d
+C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:237    .bss.string_read.0:00000000 $d
+C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:241    .bss.string_read.0:00000000 string_read.0
 
 UNDEFINED SYMBOLS
-uart2_getstr
+uart2_sendchar
+HAL_Delay
 uart2_sendstring
+uart2_getchar
+uart2_getstr
