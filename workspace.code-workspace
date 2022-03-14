@@ -10,7 +10,8 @@
 	"settings": {
 		"files.associations": {
 			"user_init.h": "c",
-			"includes.h": "c"
+			"includes.h": "c",
+			"uart_comm.h": "c"
 		}
 	}
 }

@@ -25,6 +25,7 @@
 #include "wayintop_lcd_driver.h"
 
 // Communication drivers 
+#include "i2c_comm.h"
 #include "uart_comm.h"
 
 // STM32 code 
