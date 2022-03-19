@@ -11,7 +11,8 @@
 		"files.associations": {
 			"user_init.h": "c",
 			"includes.h": "c",
-			"uart_comm.h": "c"
+			"uart_comm.h": "c",
+			"stm32f4xx_hal.h": "c"
 		}
 	}
 }

@@ -1,4 +1,4 @@
-ARM GAS  C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s 			page 1
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s 			page 1
 
 
    1              		.cpu cortex-m4
@@ -58,7 +58,7 @@ ARM GAS  C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s 			page 1
   28:sources/user_app.c **** 
   29:sources/user_app.c ****     // Choose which test to run based on test_mode
   30:sources/user_app.c ****     switch (test_mode)
-ARM GAS  C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s 			page 2
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s 			page 2
 
 
   31:sources/user_app.c ****     {
@@ -118,7 +118,7 @@ ARM GAS  C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s 			page 1
   53              	.LC0:
   54 0000 68656C6C 		.ascii	"hello world!\015\012\000"
   54      6F20776F 
-ARM GAS  C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s 			page 3
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s 			page 3
 
 
   54      726C6421 
@@ -178,7 +178,7 @@ ARM GAS  C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s 			page 1
   99              		.thumb_func
  101              	get_character:
  102              	.LFB133:
-ARM GAS  C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s 			page 4
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s 			page 4
 
 
   72:sources/user_app.c **** 
@@ -238,7 +238,7 @@ ARM GAS  C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s 			page 1
  135 001a 0448     		ldr	r0, .L11+8
  136 001c FFF7FEFF 		bl	uart2_sendstring
  137              	.LVL6:
-ARM GAS  C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s 			page 5
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s 			page 5
 
 
  138              		.loc 1 88 1 is_stmt 0 view .LVU19
@@ -298,7 +298,7 @@ ARM GAS  C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s 			page 1
  182              	.LVL7:
  100:sources/user_app.c **** 
  101:sources/user_app.c ****         // Resend information to serial terminal
-ARM GAS  C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s 			page 6
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s 			page 6
 
 
  102:sources/user_app.c ****         uart2_sendstring(string_read);
@@ -358,7 +358,7 @@ ARM GAS  C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s 			page 1
  230              		.section	.bss.input.1,"aw",%nobits
  231              		.set	.LANCHOR0,. + 0
  234              	input.1:
-ARM GAS  C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s 			page 7
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s 			page 7
 
 
  235 0000 00       		.space	1
@@ -380,30 +380,30 @@ ARM GAS  C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s 			page 1
  249              		.file 6 "headers/user_app.h"
  250              		.file 7 "../STM32F4-driver-library/headers/uart_comm.h"
  251              		.file 8 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h"
-ARM GAS  C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s 			page 8
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s 			page 8
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 user_app.c
-C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:20     .text.send_character:00000000 $t
-C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:26     .text.send_character:00000000 send_character
-C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:52     .rodata.send_string.str1.4:00000000 $d
-C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:56     .text.send_string:00000000 $t
-C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:62     .text.send_string:00000000 send_string
-C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:86     .text.send_string:00000014 $d
-C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:91     .rodata.get_character.str1.4:00000000 $d
-C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:95     .text.get_character:00000000 $t
-C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:101    .text.get_character:00000000 get_character
-C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:143    .text.get_character:00000024 $d
-C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:150    .text.get_string:00000000 $t
-C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:156    .text.get_string:00000000 get_string
-C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:196    .text.get_string:00000024 $d
-C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:202    .text.user_app:00000000 $t
-C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:208    .text.user_app:00000000 user_app
-C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:234    .bss.input.1:00000000 input.1
-C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:235    .bss.input.1:00000000 $d
-C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:237    .bss.string_read.0:00000000 $d
-C:\Users\samue\AppData\Local\Temp\cce0O2ZL.s:241    .bss.string_read.0:00000000 string_read.0
+C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s:20     .text.send_character:00000000 $t
+C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s:26     .text.send_character:00000000 send_character
+C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s:52     .rodata.send_string.str1.4:00000000 $d
+C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s:56     .text.send_string:00000000 $t
+C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s:62     .text.send_string:00000000 send_string
+C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s:86     .text.send_string:00000014 $d
+C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s:91     .rodata.get_character.str1.4:00000000 $d
+C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s:95     .text.get_character:00000000 $t
+C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s:101    .text.get_character:00000000 get_character
+C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s:143    .text.get_character:00000024 $d
+C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s:150    .text.get_string:00000000 $t
+C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s:156    .text.get_string:00000000 get_string
+C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s:196    .text.get_string:00000024 $d
+C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s:202    .text.user_app:00000000 $t
+C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s:208    .text.user_app:00000000 user_app
+C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s:234    .bss.input.1:00000000 input.1
+C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s:235    .bss.input.1:00000000 $d
+C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s:237    .bss.string_read.0:00000000 $d
+C:\Users\samue\AppData\Local\Temp\ccjgDVQn.s:241    .bss.string_read.0:00000000 string_read.0
 
 UNDEFINED SYMBOLS
 uart2_sendchar

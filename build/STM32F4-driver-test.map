@@ -1058,19 +1058,19 @@ LOAD c:/dev_tools/gcc-arm-none-eabi-10.3-2021.10-win32/gcc-arm-none-eabi-10.3-20
 LOAD c:/dev_tools/gcc-arm-none-eabi-10.3-2021.10-win32/gcc-arm-none-eabi-10.3-2021.10/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libm.a
 LOAD c:/dev_tools/gcc-arm-none-eabi-10.3-2021.10-win32/gcc-arm-none-eabi-10.3-2021.10/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v7e-m+fp/hard\libgcc.a
 
-.debug_info     0x00000000     0x4e6c
+.debug_info     0x00000000     0x4e78
  .debug_info    0x00000000      0x8a5 build/main.o
  .debug_info    0x000008a5      0x15a build/stm32f4xx_it.o
  .debug_info    0x000009ff      0x343 build/stm32f4xx_hal_msp.o
  .debug_info    0x00000d42       0xaa build/user_init.o
- .debug_info    0x00000dec      0x445 build/user_app.o
- .debug_info    0x00001231      0x663 build/uart_comm.o
- .debug_info    0x00001894      0xc14 build/stm32f4xx_hal_rcc.o
- .debug_info    0x000024a8      0x872 build/stm32f4xx_hal_gpio.o
- .debug_info    0x00002d1a     0x10e4 build/stm32f4xx_hal_cortex.o
- .debug_info    0x00003dfe      0xa67 build/stm32f4xx_hal.o
- .debug_info    0x00004865      0x5e5 build/system_stm32f4xx.o
- .debug_info    0x00004e4a       0x22 build/startup_stm32f411xe.o
+ .debug_info    0x00000dec      0x451 build/user_app.o
+ .debug_info    0x0000123d      0x663 build/uart_comm.o
+ .debug_info    0x000018a0      0xc14 build/stm32f4xx_hal_rcc.o
+ .debug_info    0x000024b4      0x872 build/stm32f4xx_hal_gpio.o
+ .debug_info    0x00002d26     0x10e4 build/stm32f4xx_hal_cortex.o
+ .debug_info    0x00003e0a      0xa67 build/stm32f4xx_hal.o
+ .debug_info    0x00004871      0x5e5 build/system_stm32f4xx.o
+ .debug_info    0x00004e56       0x22 build/startup_stm32f411xe.o
 
 .debug_abbrev   0x00000000     0x123e
  .debug_abbrev  0x00000000      0x1fd build/main.o
@@ -1153,7 +1153,7 @@ LOAD c:/dev_tools/gcc-arm-none-eabi-10.3-2021.10-win32/gcc-arm-none-eabi-10.3-20
  .debug_line    0x00002d42      0x28c build/system_stm32f4xx.o
  .debug_line    0x00002fce       0x76 build/startup_stm32f411xe.o
 
-.debug_str      0x00000000     0x17e9
+.debug_str      0x00000000     0x17f6
  .debug_str     0x00000000      0x507 build/main.o
                                 0x566 (size before relaxing)
  .debug_str     0x00000507       0xb4 build/stm32f4xx_it.o
@@ -1162,21 +1162,21 @@ LOAD c:/dev_tools/gcc-arm-none-eabi-10.3-2021.10-win32/gcc-arm-none-eabi-10.3-20
                                 0x2f2 (size before relaxing)
  .debug_str     0x00000601       0x1f build/user_init.o
                                 0x1ac (size before relaxing)
- .debug_str     0x00000620      0x240 build/user_app.o
-                                0x3f7 (size before relaxing)
- .debug_str     0x00000860       0x69 build/uart_comm.o
+ .debug_str     0x00000620      0x24d build/user_app.o
+                                0x404 (size before relaxing)
+ .debug_str     0x0000086d       0x69 build/uart_comm.o
                                 0x50d (size before relaxing)
- .debug_str     0x000008c9      0x250 build/stm32f4xx_hal_rcc.o
+ .debug_str     0x000008d6      0x250 build/stm32f4xx_hal_rcc.o
                                 0x720 (size before relaxing)
- .debug_str     0x00000b19      0x135 build/stm32f4xx_hal_gpio.o
+ .debug_str     0x00000b26      0x135 build/stm32f4xx_hal_gpio.o
                                 0x4fa (size before relaxing)
- .debug_str     0x00000c4e      0x89b build/stm32f4xx_hal_cortex.o
+ .debug_str     0x00000c5b      0x89b build/stm32f4xx_hal_cortex.o
                                 0xadc (size before relaxing)
- .debug_str     0x000014e9      0x295 build/stm32f4xx_hal.o
+ .debug_str     0x000014f6      0x295 build/stm32f4xx_hal.o
                                 0xa1c (size before relaxing)
- .debug_str     0x0000177e       0x47 build/system_stm32f4xx.o
+ .debug_str     0x0000178b       0x47 build/system_stm32f4xx.o
                                 0x38f (size before relaxing)
- .debug_str     0x000017c5       0x24 build/startup_stm32f411xe.o
+ .debug_str     0x000017d2       0x24 build/startup_stm32f411xe.o
                                  0x72 (size before relaxing)
 
 .comment        0x00000000       0x49
