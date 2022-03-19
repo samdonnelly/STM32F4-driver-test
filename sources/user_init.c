@@ -24,4 +24,5 @@
 void user_init()
 {
     // Setup code here
+    i2c1_init_master_mode();
 }
