@@ -24,4 +24,6 @@
 void user_init()
 {
     // Setup code here
+
+    // wayintop LCD screen init. 
 }

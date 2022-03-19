@@ -1,4 +1,4 @@
-ARM GAS  C:\Users\samue\AppData\Local\Temp\cc3EEB3f.s 			page 1
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccX3kqvf.s 			page 1
 
 
    1              		.cpu cortex-m4
@@ -58,23 +58,25 @@ ARM GAS  C:\Users\samue\AppData\Local\Temp\cc3EEB3f.s 			page 1
   31              		@ args = 0, pretend = 0, frame = 0
   32              		@ frame_needed = 0, uses_anonymous_args = 0
   33              		@ link register save eliminated.
-ARM GAS  C:\Users\samue\AppData\Local\Temp\cc3EEB3f.s 			page 2
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccX3kqvf.s 			page 2
 
 
   26:sources/user_init.c ****     // Setup code here
-  27:sources/user_init.c **** }
-  34              		.loc 1 27 1 view .LVU1
+  27:sources/user_init.c **** 
+  28:sources/user_init.c ****     // wayintop LCD screen init. 
+  29:sources/user_init.c **** }
+  34              		.loc 1 29 1 view .LVU1
   35 0000 7047     		bx	lr
   36              		.cfi_endproc
   37              	.LFE130:
   39              		.text
   40              	.Letext0:
-ARM GAS  C:\Users\samue\AppData\Local\Temp\cc3EEB3f.s 			page 3
+ARM GAS  C:\Users\samue\AppData\Local\Temp\ccX3kqvf.s 			page 3
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 user_init.c
-C:\Users\samue\AppData\Local\Temp\cc3EEB3f.s:20     .text.user_init:00000000 $t
-C:\Users\samue\AppData\Local\Temp\cc3EEB3f.s:26     .text.user_init:00000000 user_init
+C:\Users\samue\AppData\Local\Temp\ccX3kqvf.s:20     .text.user_init:00000000 $t
+C:\Users\samue\AppData\Local\Temp\ccX3kqvf.s:26     .text.user_init:00000000 user_init
 
 NO UNDEFINED SYMBOLS
