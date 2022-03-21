@@ -1,3 +1,7 @@
 # .gitignore 
 
-# Project files 
+# VS Code files 
+.vscode/
+
+# Build files 
+build/
