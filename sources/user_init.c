@@ -23,5 +23,9 @@
 // User init function 
 void user_init()
 {
-    // Setup code here
+    // Initialize timer 6 
+    timer6_init();
+
+    // 0.1 second startup delay 
+    tim6_delay_ms(STARTUP_DELAY);
 }

@@ -23,5 +23,9 @@
 // User application 
 void user_app()
 {
-    // Looped code here
+    // Toggle on-board green LED (PA5)
+    HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+
+    // 1 second delay between LED toggles 
+    tim6_delay_ms(TOGGLE_DELAY);
 }

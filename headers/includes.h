@@ -28,6 +28,12 @@
 #include "i2c_comm.h"
 #include "uart_comm.h"
 
+// Other drivers 
+#include "timers.h"
+
+// STM32 headers 
+#include "stm32f4xx_hal.h"
+
 //=======================================================================================
 
 #endif  // _INCLUDES_H_
