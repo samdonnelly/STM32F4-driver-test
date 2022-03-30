@@ -23,9 +23,9 @@
 // User init function 
 void user_init()
 {
-    // Initialize timer 6 
-    timer6_init();
+    // Initialize timer 9 based on the APB2 clock frequency 
+    tim9_init(TIMERS_APB2_84MHZ_1US_PRESCALAR);
 
     // 0.1 second startup delay 
-    tim6_delay_ms(STARTUP_DELAY);
+    tim9_delay_ms(STARTUP_DELAY);
 }

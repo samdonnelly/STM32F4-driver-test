@@ -27,5 +27,5 @@ void user_app()
     HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 
     // 1 second delay between LED toggles 
-    tim6_delay_ms(TOGGLE_DELAY);
+    tim9_delay_ms(TOGGLE_DELAY);
 }
