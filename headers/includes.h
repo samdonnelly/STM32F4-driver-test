@@ -28,6 +28,9 @@
 #include "i2c_comm.h"
 #include "uart_comm.h"
 
+// Other drivers 
+#include "timers.h"
+
 //=======================================================================================
 
 #endif  // _INCLUDES_H_
