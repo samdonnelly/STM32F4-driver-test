@@ -25,6 +25,9 @@ void user_init()
 {
     // Setup code here
 
+    // I2C1 init
+    i2c1_init_master_mode();
+
     // wayintop LCD screen init. 
     hd44780u_init();
 }
