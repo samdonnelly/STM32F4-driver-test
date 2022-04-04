@@ -32,7 +32,7 @@ void user_init()
     uart2_init();
 
     // Verify that UART init is complete 
-    uart2_sendstring("uart2 init complete\r\n");
+    uart2_sendstring("uart2\r\n");
     tim9_delay_ms(500);
 
     // I2C1 init
