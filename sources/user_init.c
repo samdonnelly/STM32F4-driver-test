@@ -25,6 +25,9 @@ void user_init()
 {
     // Setup code here
 
+    // Delay timer init 
+    tim9_init(TIMERS_APB2_84MHZ_1US_PRESCALAR);
+
     // UART2 init 
     uart2_init();
 
