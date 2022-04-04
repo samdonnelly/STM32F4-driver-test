@@ -23,6 +23,9 @@
 // User application 
 void user_app()
 {
-    // Looped code here
-    tim9_delay_ms(HD44780U_DELAY_001MS);
+    // Write to terminal 
+    // uart2_sendstring("Hello\r\n");
+
+    // Delay 
+    tim9_delay_ms(100);
 }
