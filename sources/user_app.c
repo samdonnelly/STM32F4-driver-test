@@ -24,7 +24,7 @@
 void user_app()
 {
     // Local variables 
-    static test_mode_t test_mode = GET_STR;
+    static test_mode_t test_mode = SEND_STRING;
 
     // Choose which test to run based on test_mode
     switch (test_mode)
