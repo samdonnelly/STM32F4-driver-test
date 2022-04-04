@@ -24,4 +24,5 @@
 void user_app()
 {
     // Looped code here
+    tim9_delay_ms(HD44780U_DELAY_001MS);
 }
