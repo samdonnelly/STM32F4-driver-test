@@ -27,13 +27,13 @@ void user_app()
     static uint8_t data_list[4];
 
     // Delay 
-    tim9_delay_ms(100);
+    tim9_delay_ms(1000);
 
     // Test print 
-    data_list[0] = (uint8_t)(0x4D);
-    data_list[1] = (uint8_t)(0x49);
-    data_list[2] = (uint8_t)(0x9D);
-    data_list[3] = (uint8_t)(0x99);
+    data_list[0] = (0x49 & 0xF0) | HD44780U_CONFIG_CMD_0X0D;
+    data_list[1] = (0x49 & 0xF0) | HD44780U_CONFIG_CMD_0X09;
+    data_list[2] = ((0x49 << SHIFT_4) & 0xF0) | HD44780U_CONFIG_CMD_0X0D;
+    data_list[3] = ((0x49 << SHIFT_4) & 0xF0) | HD44780U_CONFIG_CMD_0X09;
     i2c1_write_master_mode(
         data_list, 
         I2C_4_BYTE, 
