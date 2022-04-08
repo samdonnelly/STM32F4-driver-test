@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief 
+ * @brief Code that gets called once per loop
  * 
  * @version 0.1
  * @date 2022-02-12
@@ -27,7 +27,7 @@
 // Function Prototypes
 
 /**
- * @brief 
+ * @brief Function that gets called once per loop
  * 
  */
 void user_app(void);

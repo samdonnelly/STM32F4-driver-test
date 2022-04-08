@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief 
+ * @brief Code that gets called once at the beginning of the program
  * 
  * @version 0.1
  * @date 2022-02-12

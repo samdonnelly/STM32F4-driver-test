@@ -47,6 +47,7 @@ sources/user_app.c \
 ../STM32F4-driver-library/sources/wayintop_lcd_driver.c \
 ../STM32F4-driver-library/sources/uart_comm.c \
 ../STM32F4-driver-library/sources/i2c_comm.c \
+../STM32F4-driver-library/sources/timers.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c \
