@@ -27,7 +27,7 @@
 // Function Prototypes
 
 /**
- * @brief 
+ * @brief Contains all the calls to initialization functions 
  * 
  */
 void user_init(void);
