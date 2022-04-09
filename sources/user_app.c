@@ -23,5 +23,10 @@
 // User application 
 void user_app()
 {
-    // Looped code here
+    // Read from the accelerometer
+
+    // Print data to serial terminal 
+
+    // Delay 
+    tim9_delay_ms(100);
 }

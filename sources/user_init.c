@@ -23,5 +23,15 @@
 // User init function 
 void user_init()
 {
-    // Setup code here
+    // Initialize timers 
+    tim9_init(TIMERS_APB2_84MHZ_1US_PRESCALAR);
+
+    // Initialize UART2
+    uart2_init();
+
+    // Initialize I2C1
+    i2c1_init_master_mode();
+
+    // Initialize the accelerometer 
+    mpu6050_init();
 }
