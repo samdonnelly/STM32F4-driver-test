@@ -23,6 +23,15 @@
 // User application 
 void user_app()
 {
+    //==============================================================
+    // Control Code 
+    //  1. Read temperature once at the start (see uaer_init)
+    //  2. Read accelerometer data once per loop (keep in mind max speed of sensor)
+    //  3. Display the data over serial for viewing
+    //  4. Delay 
+    //  5. Repeat 
+    //==============================================================
+    
     // Read from the accelerometer
 
     // Print data to serial terminal 

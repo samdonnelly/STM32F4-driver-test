@@ -34,4 +34,8 @@ void user_init()
 
     // Initialize the accelerometer 
     mpu6050_init();
+
+    // Read the temperature from the accelerometer once 
+
+    // Display the temperature data to the serial terminal
 }
