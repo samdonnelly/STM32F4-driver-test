@@ -23,6 +23,9 @@
 // User init function 
 void user_init()
 {
+    // Store the result of the accelerometer initialization 
+    uint8_t mpu6050_init_status;
+
     // Initialize timers 
     tim9_init(TIMERS_APB2_84MHZ_1US_PRESCALAR);
 
@@ -33,7 +36,8 @@ void user_init()
     i2c1_init_master_mode();
 
     // Initialize the accelerometer 
-    mpu6050_init();
+    // The return value can be used to enter an error state
+    mpu6050_init_status = mpu6050_init(MPU6050_1_ADDRESS);
 
     // Read the temperature from the accelerometer once 
 
