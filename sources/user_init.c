@@ -39,6 +39,23 @@ void user_init()
     // The return value can be used to enter an error state
     mpu6050_init_status = mpu6050_init(MPU6050_1_ADDRESS);
 
+    // Return the status of the accelerometer WHO_AM_I register 
+    switch(mpu6050_init_status)
+    {
+        case TRUE:
+            // 
+            uart2_sendstring("Device seen\r\n");
+            break;
+        
+        case FALSE:
+            // 
+            uart2_sendstring("Device not seen\r\n");
+            break;
+
+        default:
+            break;
+    }
+
     // Read the temperature from the accelerometer once 
 
     // Display the temperature data to the serial terminal
