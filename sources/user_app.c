@@ -31,11 +31,36 @@ void user_app()
     //  4. Delay 
     //  5. Repeat 
     //==============================================================
+
+    // Local variables 
+    static uint16_t mpu6050_temp_sensor;
+    static uint8_t  mpu6050_temp_sensor_digits[5];
     
     // Read from the accelerometer
 
-    // Print data to serial terminal 
+    // Read the temperature from the accelerometer once 
+    // TODO make a send number function to the uart driver 
+    mpu6050_temp_sensor = mpu6050_temp_read(MPU6050_1_ADDRESS);
+    mpu6050_temp_sensor_digits[0] = (uint8_t)(
+        ((mpu6050_temp_sensor % 100000) / 10000) + 48);
+    mpu6050_temp_sensor_digits[1] = (uint8_t)(
+        ((mpu6050_temp_sensor % 10000) / 1000) + 48);
+    mpu6050_temp_sensor_digits[2] = (uint8_t)(
+        ((mpu6050_temp_sensor % 1000) / 100) + 48);
+    mpu6050_temp_sensor_digits[3] = (uint8_t)(
+        ((mpu6050_temp_sensor % 100) / 10) + 48);
+    mpu6050_temp_sensor_digits[4] = (uint8_t)(
+        ((mpu6050_temp_sensor % 10) / 1) + 48);
+
+    // Display the temperature data to the serial terminal
+    uart2_sendstring("Temp Sensor Value = ");
+    uart2_sendchar(mpu6050_temp_sensor_digits[0]);
+    uart2_sendchar(mpu6050_temp_sensor_digits[1]);
+    uart2_sendchar(mpu6050_temp_sensor_digits[2]);
+    uart2_sendchar(mpu6050_temp_sensor_digits[3]);
+    uart2_sendchar(mpu6050_temp_sensor_digits[4]);
+    uart2_sendstring("\r\n");
 
     // Delay 
-    tim9_delay_ms(100);
+    tim9_delay_ms(1000);
 }
