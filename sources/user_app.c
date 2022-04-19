@@ -36,9 +36,7 @@ void user_app()
     static uint16_t mpu6050_temp_sensor;
     // static uint8_t  mpu6050_temp_sensor_digits[5];
     static uint16_t mpu6050_accel[3];
-    static uint8_t  mpu6050_accel_digits[5];
     // static uint16_t mpu6050_gyro[3];
-    // static uint8_t  mpu6050_gyro_digits[5];
     
     // Read from the accelerometer
 
@@ -66,33 +64,91 @@ void user_app()
     // uart2_sendchar(mpu6050_temp_sensor_digits[4]);
     // uart2_sendstring("\r\n");
 
+    //==============================================================
     // Accelerometer 
     mpu6050_accel_read(MPU6050_1_ADDRESS, mpu6050_accel);
-    mpu6050_accel[2] = (uint16_t)(
-                        mpu6050_accel_z_calc(MPU6050_1_ADDRESS, mpu6050_accel[2]) * 
-                        100);
-    mpu6050_accel_digits[0] = (uint8_t)(
-        ((mpu6050_accel[2] % 100000) / 10000) + 48);
-    mpu6050_accel_digits[1] = (uint8_t)(
-        ((mpu6050_accel[2] % 10000) / 1000) + 48);
-    mpu6050_accel_digits[2] = (uint8_t)(
-        ((mpu6050_accel[2] % 1000) / 100) + 48);
-    mpu6050_accel_digits[3] = (uint8_t)(
-        ((mpu6050_accel[2] % 100) / 10) + 48);
-    mpu6050_accel_digits[4] = (uint8_t)(
-        ((mpu6050_accel[2] % 10) / 1) + 48);
 
-    uart2_sendstring("Accel Z-Axis Value = ");
-    uart2_sendchar(mpu6050_accel_digits[0]);
-    uart2_sendchar(mpu6050_accel_digits[1]);
-    uart2_sendchar(mpu6050_accel_digits[2]);
-    uart2_sendchar(mpu6050_accel_digits[3]);
-    uart2_sendchar(mpu6050_accel_digits[4]);
-    uart2_sendstring("\r\n");
+    // X-axis
+    mpu6050_accel[ACCEL_X_AXIS] = (uint16_t)(
+            mpu6050_accel_x_calc(MPU6050_1_ADDRESS, mpu6050_accel[ACCEL_X_AXIS]) * 
+            NO_DECIMAL_SCALAR);
+    
+    uart2_sendstring("ax = ");
+    separate_digits(mpu6050_accel[ACCEL_X_AXIS]); 
 
+    // Y-axis 
+    mpu6050_accel[ACCEL_Y_AXIS] = (uint16_t)(
+            mpu6050_accel_y_calc(MPU6050_1_ADDRESS, mpu6050_accel[ACCEL_Y_AXIS]) * 
+            NO_DECIMAL_SCALAR);
+    
+    uart2_sendstring("ay = ");
+    separate_digits(mpu6050_accel[ACCEL_Y_AXIS]);
+
+    // Z-axis 
+    mpu6050_accel[ACCEL_Z_AXIS] = (uint16_t)(
+            mpu6050_accel_z_calc(MPU6050_1_ADDRESS, mpu6050_accel[ACCEL_Z_AXIS]) * 
+            NO_DECIMAL_SCALAR);
+    
+    uart2_sendstring("az = ");
+    separate_digits(mpu6050_accel[ACCEL_Z_AXIS]);
+
+    //==============================================================
+
+    //==============================================================
     // Gyroscope 
-    // mpu6050_gyro_read(MPU6050_1_ADDRESS, mpu6050_gyro);
+
+    //==============================================================
+
+    // 
+    print_new_line();
 
     // Delay 
     tim9_delay_ms(1000);
+}
+
+//
+void separate_digits(uint16_t value_to_print)
+{
+    // 
+    static uint8_t  mpu6050_sensor_digits[UINT16_DEC_DIGITS];
+
+    // 
+    mpu6050_sensor_digits[0] = (uint8_t)(
+        ((value_to_print % REMAINDER_100000) / DIVIDE_10000) + CHAR_OFFSET);
+    
+    mpu6050_sensor_digits[1] = (uint8_t)(
+        ((value_to_print % REMAINDER_10000)  / DIVIDE_1000)  + CHAR_OFFSET);
+    
+    mpu6050_sensor_digits[2] = (uint8_t)(
+        ((value_to_print % REMAINDER_1000)   / DIVIDE_100)   + CHAR_OFFSET);
+    
+    mpu6050_sensor_digits[3] = (uint8_t)(
+        ((value_to_print % REMAINDER_100)    / DIVIDE_10)    + CHAR_OFFSET);
+    
+    mpu6050_sensor_digits[4] = (uint8_t)(
+        ((value_to_print % REMAINDER_10)     / DIVIDE_1)     + CHAR_OFFSET);
+    
+    // 
+    print_to_serial(mpu6050_sensor_digits);
+}
+
+// 
+void print_to_serial(uint8_t *print_values)
+{
+    // 
+    uart2_sendstring("  ");
+
+    // 
+    for (uint8_t i = 0; i < UINT16_DEC_DIGITS; i++)
+    {
+        // 
+        uart2_sendchar(*print_values);
+        print_values++;
+    }
+}
+
+// 
+void print_new_line(void)
+{
+    uart2_sendstring("\r\n");
 }
