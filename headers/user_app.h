@@ -26,10 +26,15 @@
 //=======================================================================================
 // Macros 
 
-#define UINT16_DEC_DIGITS 5
+#define LOOP_DELAY 1000
+
+#define UINT16_DEC_DIGITS 6
 #define NO_DECIMAL_SCALAR 100
 
+#define NEGATIVE_SIGN 45
+#define POSITIVE_SIGN 43
 #define CHAR_OFFSET 48
+
 #define REMAINDER_100000 100000
 #define REMAINDER_10000 10000
 #define REMAINDER_1000 1000
@@ -84,7 +89,7 @@ void user_app(void);
  * 
  * @param value_to_print 
  */
-void separate_digits(uint16_t value_to_print);
+void separate_digits(int16_t value_to_print);
 
 /**
  * @brief 

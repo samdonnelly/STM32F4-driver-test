@@ -25,51 +25,40 @@ void user_app()
 {
     //==============================================================
     // Control Code 
-    //  1. Read temperature once at the start (see uaer_init)
-    //  2. Read accelerometer data once per loop (keep in mind max speed of sensor)
-    //  3. Display the data over serial for viewing
-    //  4. Delay 
-    //  5. Repeat 
+    //  1. Read raw temperature feedback, format it into degC, print it to serial 
+    //  2. Read raw acceleromater feedback, format it into g's, print it to serial 
+    //  3. Read raw gyroscope feedback, format it into deg/s, print it to serial 
+    //  4. Start a new serial terminal line 
+    //  5. Delay 
+    //  6. Repeat 
     //==============================================================
+
+    // TODO make a send number function to the uart driver 
 
     // Local variables 
     static uint16_t mpu6050_temp_sensor;
-    // static uint8_t  mpu6050_temp_sensor_digits[5];
-    static uint16_t mpu6050_accel[3];
-    // static uint16_t mpu6050_gyro[3];
-    
-    // Read from the accelerometer
+    static int16_t mpu6050_accel[3];
+    static int16_t mpu6050_gyro[3];
+    // static int16_t  raw_sensor_value;
 
-    // Read the temperature from the accelerometer once 
-    // TODO make a send number function to the uart driver 
+    //==============================================================
+    // Temperature 
     mpu6050_temp_sensor = mpu6050_temp_read(MPU6050_1_ADDRESS);
-    mpu6050_temp_sensor = (uint16_t)(mpu6050_temp_calc(mpu6050_temp_sensor) * 100);
-    // mpu6050_temp_sensor_digits[0] = (uint8_t)(
-    //     ((mpu6050_temp_sensor % 100000) / 10000) + 48);
-    // mpu6050_temp_sensor_digits[1] = (uint8_t)(
-    //     ((mpu6050_temp_sensor % 10000) / 1000) + 48);
-    // mpu6050_temp_sensor_digits[2] = (uint8_t)(
-    //     ((mpu6050_temp_sensor % 1000) / 100) + 48);
-    // mpu6050_temp_sensor_digits[3] = (uint8_t)(
-    //     ((mpu6050_temp_sensor % 100) / 10) + 48);
-    // mpu6050_temp_sensor_digits[4] = (uint8_t)(
-    //     ((mpu6050_temp_sensor % 10) / 1) + 48);
+    mpu6050_temp_sensor = (uint16_t)(mpu6050_temp_calc(mpu6050_temp_sensor) * 
+                                     NO_DECIMAL_SCALAR);
+    
+    uart2_sendstring("temp = ");
+    separate_digits(mpu6050_temp_sensor); 
 
-    // // Display the temperature data to the serial terminal
-    // uart2_sendstring("Temp Sensor Value = ");
-    // uart2_sendchar(mpu6050_temp_sensor_digits[0]);
-    // uart2_sendchar(mpu6050_temp_sensor_digits[1]);
-    // uart2_sendchar(mpu6050_temp_sensor_digits[2]);
-    // uart2_sendchar(mpu6050_temp_sensor_digits[3]);
-    // uart2_sendchar(mpu6050_temp_sensor_digits[4]);
-    // uart2_sendstring("\r\n");
+    //==============================================================
+
 
     //==============================================================
     // Accelerometer 
     mpu6050_accel_read(MPU6050_1_ADDRESS, mpu6050_accel);
 
     // X-axis
-    mpu6050_accel[ACCEL_X_AXIS] = (uint16_t)(
+    mpu6050_accel[ACCEL_X_AXIS] = (int16_t)(
             mpu6050_accel_x_calc(MPU6050_1_ADDRESS, mpu6050_accel[ACCEL_X_AXIS]) * 
             NO_DECIMAL_SCALAR);
     
@@ -77,7 +66,7 @@ void user_app()
     separate_digits(mpu6050_accel[ACCEL_X_AXIS]); 
 
     // Y-axis 
-    mpu6050_accel[ACCEL_Y_AXIS] = (uint16_t)(
+    mpu6050_accel[ACCEL_Y_AXIS] = (int16_t)(
             mpu6050_accel_y_calc(MPU6050_1_ADDRESS, mpu6050_accel[ACCEL_Y_AXIS]) * 
             NO_DECIMAL_SCALAR);
     
@@ -85,7 +74,7 @@ void user_app()
     separate_digits(mpu6050_accel[ACCEL_Y_AXIS]);
 
     // Z-axis 
-    mpu6050_accel[ACCEL_Z_AXIS] = (uint16_t)(
+    mpu6050_accel[ACCEL_Z_AXIS] = (int16_t)(
             mpu6050_accel_z_calc(MPU6050_1_ADDRESS, mpu6050_accel[ACCEL_Z_AXIS]) * 
             NO_DECIMAL_SCALAR);
     
@@ -94,38 +83,75 @@ void user_app()
 
     //==============================================================
 
+
     //==============================================================
     // Gyroscope 
+    mpu6050_gyro_read(MPU6050_1_ADDRESS, mpu6050_gyro);
+
+    // X-axis
+    mpu6050_gyro[GYRO_X_AXIS] = (int16_t)(
+            mpu6050_gyro_x_calc(MPU6050_1_ADDRESS, mpu6050_gyro[GYRO_X_AXIS]) * 
+            NO_DECIMAL_SCALAR);
+    
+    uart2_sendstring("gx = ");
+    separate_digits(mpu6050_gyro[GYRO_X_AXIS]); 
+
+    // Y-axis 
+    mpu6050_gyro[GYRO_Y_AXIS] = (int16_t)(
+            mpu6050_gyro_y_calc(MPU6050_1_ADDRESS, mpu6050_gyro[GYRO_Y_AXIS]) * 
+            NO_DECIMAL_SCALAR);
+    
+    uart2_sendstring("gy = ");
+    separate_digits(mpu6050_gyro[GYRO_Y_AXIS]);
+
+    // Z-axis 
+    mpu6050_gyro[GYRO_Z_AXIS] = (int16_t)(
+            mpu6050_gyro_z_calc(MPU6050_1_ADDRESS, mpu6050_gyro[GYRO_Z_AXIS]) * 
+            NO_DECIMAL_SCALAR);
+    
+    uart2_sendstring("gz = ");
+    separate_digits(mpu6050_gyro[GYRO_Z_AXIS]);
 
     //==============================================================
 
-    // 
+    // Go to a new line in the serial terminal 
     print_new_line();
 
     // Delay 
-    tim9_delay_ms(1000);
+    tim9_delay_ms(LOOP_DELAY);
 }
 
 //
-void separate_digits(uint16_t value_to_print)
+void separate_digits(int16_t value_to_print)
 {
     // 
-    static uint8_t  mpu6050_sensor_digits[UINT16_DEC_DIGITS];
+    static uint8_t mpu6050_sensor_digits[UINT16_DEC_DIGITS];
+
+    // Determine the sign of the number 
+    if (value_to_print < 0)
+    {
+        mpu6050_sensor_digits[0] = NEGATIVE_SIGN;
+        value_to_print = -(value_to_print);
+    }
+    else 
+    {
+        mpu6050_sensor_digits[0] = POSITIVE_SIGN;
+    }
 
     // 
-    mpu6050_sensor_digits[0] = (uint8_t)(
+    mpu6050_sensor_digits[1] = (uint8_t)(
         ((value_to_print % REMAINDER_100000) / DIVIDE_10000) + CHAR_OFFSET);
     
-    mpu6050_sensor_digits[1] = (uint8_t)(
+    mpu6050_sensor_digits[2] = (uint8_t)(
         ((value_to_print % REMAINDER_10000)  / DIVIDE_1000)  + CHAR_OFFSET);
     
-    mpu6050_sensor_digits[2] = (uint8_t)(
+    mpu6050_sensor_digits[3] = (uint8_t)(
         ((value_to_print % REMAINDER_1000)   / DIVIDE_100)   + CHAR_OFFSET);
     
-    mpu6050_sensor_digits[3] = (uint8_t)(
+    mpu6050_sensor_digits[4] = (uint8_t)(
         ((value_to_print % REMAINDER_100)    / DIVIDE_10)    + CHAR_OFFSET);
     
-    mpu6050_sensor_digits[4] = (uint8_t)(
+    mpu6050_sensor_digits[5] = (uint8_t)(
         ((value_to_print % REMAINDER_10)     / DIVIDE_1)     + CHAR_OFFSET);
     
     // 
@@ -136,15 +162,15 @@ void separate_digits(uint16_t value_to_print)
 void print_to_serial(uint8_t *print_values)
 {
     // 
-    uart2_sendstring("  ");
-
-    // 
     for (uint8_t i = 0; i < UINT16_DEC_DIGITS; i++)
     {
         // 
         uart2_sendchar(*print_values);
         print_values++;
     }
+
+    // 
+    uart2_sendstring("  ");
 }
 
 // 
