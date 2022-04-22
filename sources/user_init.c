@@ -55,4 +55,7 @@ void user_init()
         default:
             break;
     }
+
+    // Take initial measurements of the accelerometer to account for drift
+    // This should be used in each application to ensure accurate analysis
 }

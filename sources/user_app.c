@@ -36,16 +36,29 @@ void user_app()
     // TODO make a send number function to the uart driver 
 
     // Local variables 
-    static uint16_t mpu6050_temp_sensor;
+    static int16_t mpu6050_temp_sensor;
     static int16_t mpu6050_accel[3];
+    static int16_t mpu6050_accel_offset[3];
     static int16_t mpu6050_gyro[3];
-    // static int16_t  raw_sensor_value;
+    static int16_t mpu6050_gyro_offset[3];
+    static uint8_t one_time = 0;
+
+    // Run once 
+    if (one_time == 0)
+    {
+        mpu6050_calibrate(
+            MPU6050_1_ADDRESS, 
+            mpu6050_accel_offset,
+            mpu6050_gyro_offset);
+        
+        one_time++;
+    }
 
     //==============================================================
     // Temperature 
     mpu6050_temp_sensor = mpu6050_temp_read(MPU6050_1_ADDRESS);
-    mpu6050_temp_sensor = (uint16_t)(mpu6050_temp_calc(mpu6050_temp_sensor) * 
-                                     NO_DECIMAL_SCALAR);
+    mpu6050_temp_sensor = (int16_t)(mpu6050_temp_calc(mpu6050_temp_sensor) * 
+                                    NO_DECIMAL_SCALAR);
     
     uart2_sendstring("temp = ");
     separate_digits(mpu6050_temp_sensor); 
@@ -89,25 +102,31 @@ void user_app()
     mpu6050_gyro_read(MPU6050_1_ADDRESS, mpu6050_gyro);
 
     // X-axis
-    mpu6050_gyro[GYRO_X_AXIS] = (int16_t)(
-            mpu6050_gyro_x_calc(MPU6050_1_ADDRESS, mpu6050_gyro[GYRO_X_AXIS]) * 
-            NO_DECIMAL_SCALAR);
+    mpu6050_gyro[GYRO_X_AXIS] = (int16_t)(mpu6050_gyro_x_calc(
+                                              MPU6050_1_ADDRESS, 
+                                              mpu6050_gyro[GYRO_X_AXIS],
+                                              mpu6050_gyro_offset[GYRO_X_AXIS]) * 
+                                          NO_DECIMAL_SCALAR);
     
     uart2_sendstring("gx = ");
     separate_digits(mpu6050_gyro[GYRO_X_AXIS]); 
 
     // Y-axis 
-    mpu6050_gyro[GYRO_Y_AXIS] = (int16_t)(
-            mpu6050_gyro_y_calc(MPU6050_1_ADDRESS, mpu6050_gyro[GYRO_Y_AXIS]) * 
-            NO_DECIMAL_SCALAR);
+    mpu6050_gyro[GYRO_Y_AXIS] = (int16_t)(mpu6050_gyro_y_calc(
+                                              MPU6050_1_ADDRESS, 
+                                              mpu6050_gyro[GYRO_Y_AXIS],
+                                              mpu6050_gyro_offset[GYRO_Y_AXIS]) * 
+                                          NO_DECIMAL_SCALAR);
     
     uart2_sendstring("gy = ");
     separate_digits(mpu6050_gyro[GYRO_Y_AXIS]);
 
     // Z-axis 
-    mpu6050_gyro[GYRO_Z_AXIS] = (int16_t)(
-            mpu6050_gyro_z_calc(MPU6050_1_ADDRESS, mpu6050_gyro[GYRO_Z_AXIS]) * 
-            NO_DECIMAL_SCALAR);
+    mpu6050_gyro[GYRO_Z_AXIS] = (int16_t)(mpu6050_gyro_z_calc(
+                                              MPU6050_1_ADDRESS, 
+                                              mpu6050_gyro[GYRO_Z_AXIS],
+                                              mpu6050_gyro_offset[GYRO_Z_AXIS]) * 
+                                          NO_DECIMAL_SCALAR);
     
     uart2_sendstring("gz = ");
     separate_digits(mpu6050_gyro[GYRO_Z_AXIS]);
