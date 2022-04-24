@@ -33,7 +33,14 @@ void user_init()
     uart2_init();
 
     // Initialize I2C1
-    i2c1_init_master_mode();
+    i2c1_init(
+        I2C1_SDA_PB9,
+        I2C1_SCL_PB8,
+        I2C_SM_MODE,
+        I2C_APB1_42MHZ,
+        I2C_FM_DUTY_2,
+        I2C_CCR_SM_42_100,
+        I2C_TRISE_1000_42);
 
     // Initialize the accelerometer 
     // The return value can be used to enter an error state
