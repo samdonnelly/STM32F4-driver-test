@@ -33,8 +33,6 @@ void user_app()
     //  6. Repeat 
     //==============================================================
 
-    // TODO make a send number function to the uart driver 
-
     // Local variables 
     static int16_t mpu6050_temp_sensor;
     static int16_t mpu6050_accel[3];
@@ -134,7 +132,7 @@ void user_app()
     //==============================================================
 
     // Go to a new line in the serial terminal 
-    print_new_line();
+    uart2_print_new_line();
 
     // Delay 
     tim9_delay_ms(LOOP_DELAY);
@@ -189,11 +187,5 @@ void print_to_serial(uint8_t *print_values)
     }
 
     // 
-    uart2_sendstring("  ");
-}
-
-// 
-void print_new_line(void)
-{
-    uart2_sendstring("\r\n");
+    uart2_send_spaces(UART2_2_SPACES);
 }

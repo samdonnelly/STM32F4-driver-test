@@ -98,12 +98,6 @@ void separate_digits(int16_t value_to_print);
  */
 void print_to_serial(uint8_t *print_values);
 
-/**
- * @brief 
- * 
- */
-void print_new_line(void);
-
 //=======================================================================================
 
 
