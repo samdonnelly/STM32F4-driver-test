@@ -59,7 +59,8 @@ void user_app()
                                     NO_DECIMAL_SCALAR);
     
     uart2_sendstring("temp = ");
-    separate_digits(mpu6050_temp_sensor); 
+    uart2_send_integer(mpu6050_temp_sensor);
+    uart2_send_spaces(UART2_2_SPACES);
 
     //==============================================================
 
@@ -74,7 +75,8 @@ void user_app()
             NO_DECIMAL_SCALAR);
     
     uart2_sendstring("ax = ");
-    separate_digits(mpu6050_accel[ACCEL_X_AXIS]); 
+    uart2_send_integer(mpu6050_accel[ACCEL_X_AXIS]); 
+    uart2_send_spaces(UART2_2_SPACES);
 
     // Y-axis 
     mpu6050_accel[ACCEL_Y_AXIS] = (int16_t)(
@@ -82,7 +84,8 @@ void user_app()
             NO_DECIMAL_SCALAR);
     
     uart2_sendstring("ay = ");
-    separate_digits(mpu6050_accel[ACCEL_Y_AXIS]);
+    uart2_send_integer(mpu6050_accel[ACCEL_Y_AXIS]);
+    uart2_send_spaces(UART2_2_SPACES);
 
     // Z-axis 
     mpu6050_accel[ACCEL_Z_AXIS] = (int16_t)(
@@ -90,7 +93,8 @@ void user_app()
             NO_DECIMAL_SCALAR);
     
     uart2_sendstring("az = ");
-    separate_digits(mpu6050_accel[ACCEL_Z_AXIS]);
+    uart2_send_integer(mpu6050_accel[ACCEL_Z_AXIS]);
+    uart2_send_spaces(UART2_2_SPACES);
 
     //==============================================================
 
@@ -107,7 +111,8 @@ void user_app()
                                           NO_DECIMAL_SCALAR);
     
     uart2_sendstring("gx = ");
-    separate_digits(mpu6050_gyro[GYRO_X_AXIS]); 
+    uart2_send_integer(mpu6050_gyro[GYRO_X_AXIS]); 
+    uart2_send_spaces(UART2_2_SPACES);
 
     // Y-axis 
     mpu6050_gyro[GYRO_Y_AXIS] = (int16_t)(mpu6050_gyro_y_calc(
@@ -117,7 +122,8 @@ void user_app()
                                           NO_DECIMAL_SCALAR);
     
     uart2_sendstring("gy = ");
-    separate_digits(mpu6050_gyro[GYRO_Y_AXIS]);
+    uart2_send_integer(mpu6050_gyro[GYRO_Y_AXIS]);
+    uart2_send_spaces(UART2_2_SPACES);
 
     // Z-axis 
     mpu6050_gyro[GYRO_Z_AXIS] = (int16_t)(mpu6050_gyro_z_calc(
@@ -127,65 +133,14 @@ void user_app()
                                           NO_DECIMAL_SCALAR);
     
     uart2_sendstring("gz = ");
-    separate_digits(mpu6050_gyro[GYRO_Z_AXIS]);
+    uart2_send_integer(mpu6050_gyro[GYRO_Z_AXIS]);
+    uart2_send_spaces(UART2_2_SPACES);
 
     //==============================================================
 
     // Go to a new line in the serial terminal 
-    uart2_print_new_line();
+    uart2_send_new_line();
 
     // Delay 
     tim9_delay_ms(LOOP_DELAY);
-}
-
-//
-void separate_digits(int16_t value_to_print)
-{
-    // 
-    static uint8_t mpu6050_sensor_digits[UINT16_DEC_DIGITS];
-
-    // Determine the sign of the number 
-    if (value_to_print < 0)
-    {
-        mpu6050_sensor_digits[0] = NEGATIVE_SIGN;
-        value_to_print = -(value_to_print);
-    }
-    else 
-    {
-        mpu6050_sensor_digits[0] = POSITIVE_SIGN;
-    }
-
-    // 
-    mpu6050_sensor_digits[1] = (uint8_t)(
-        ((value_to_print % REMAINDER_100000) / DIVIDE_10000) + CHAR_OFFSET);
-    
-    mpu6050_sensor_digits[2] = (uint8_t)(
-        ((value_to_print % REMAINDER_10000)  / DIVIDE_1000)  + CHAR_OFFSET);
-    
-    mpu6050_sensor_digits[3] = (uint8_t)(
-        ((value_to_print % REMAINDER_1000)   / DIVIDE_100)   + CHAR_OFFSET);
-    
-    mpu6050_sensor_digits[4] = (uint8_t)(
-        ((value_to_print % REMAINDER_100)    / DIVIDE_10)    + CHAR_OFFSET);
-    
-    mpu6050_sensor_digits[5] = (uint8_t)(
-        ((value_to_print % REMAINDER_10)     / DIVIDE_1)     + CHAR_OFFSET);
-    
-    // 
-    print_to_serial(mpu6050_sensor_digits);
-}
-
-// 
-void print_to_serial(uint8_t *print_values)
-{
-    // 
-    for (uint8_t i = 0; i < UINT16_DEC_DIGITS; i++)
-    {
-        // 
-        uart2_sendchar(*print_values);
-        print_values++;
-    }
-
-    // 
-    uart2_send_spaces(UART2_2_SPACES);
 }

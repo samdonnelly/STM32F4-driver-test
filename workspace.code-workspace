@@ -10,7 +10,8 @@
 	"settings": {
 		"files.associations": {
 			"user_init.h": "c",
-			"stm32f411xe.h": "c"
+			"stm32f411xe.h": "c",
+			"cmath": "c"
 		}
 	}
 }
