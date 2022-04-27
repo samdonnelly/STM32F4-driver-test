@@ -44,7 +44,12 @@ void user_init()
 
     // Initialize the accelerometer 
     // The return value can be used to enter an error state
-    mpu6050_init_status = mpu6050_init(MPU6050_1_ADDRESS);
+    mpu6050_init_status = mpu6050_init(
+                            MPU6050_1_ADDRESS,
+                            DLPF_CFG_1,
+                            SMPLRT_DIV_0,
+                            AFS_SEL_4,
+                            FS_SEL_500);
 
     // Return the status of the accelerometer WHO_AM_I register 
     switch(mpu6050_init_status)
