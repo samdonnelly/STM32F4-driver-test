@@ -35,10 +35,10 @@ void user_app()
 
     // Local variables 
     static int16_t mpu6050_temp_sensor;
-    static int16_t mpu6050_accel[3];
-    static int16_t mpu6050_accel_offset[3];
-    static int16_t mpu6050_gyro[3];
-    static int16_t mpu6050_gyro_offset[3];
+    static int16_t mpu6050_accel[MPU6050_NUM_ACCEL_AXIS];
+    static int16_t mpu6050_accel_offset[MPU6050_NUM_ACCEL_AXIS];
+    static int16_t mpu6050_gyro[MPU6050_NUM_GYRO_AXIS];
+    static int16_t mpu6050_gyro_offset[MPU6050_NUM_GYRO_AXIS];
     static uint8_t one_time = 0;
 
     // Run once 
