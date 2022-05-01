@@ -24,7 +24,10 @@
 void user_init()
 {
     // Store the result of the accelerometer initialization 
-    uint8_t  mpu6050_init_status;
+    uint8_t mpu6050_init_status;
+
+    // Store the results of the accelerometer self-test 
+    uint8_t mpu_self_test_result;
 
     // Initialize timers 
     tim9_init(TIMERS_APB2_84MHZ_1US_PRESCALAR);
@@ -68,6 +71,9 @@ void user_init()
             break;
     }
 
-    // Take initial measurements of the accelerometer to account for drift
-    // This should be used in each application to ensure accurate analysis
+    // MPU6050 self-test 
+    mpu_self_test_result = mpu6050_self_test(MPU6050_1_ADDRESS);
+    uart2_sendstring("MPU6050 Self-Test Result = ");
+    uart2_send_integer((int16_t)(mpu_self_test_result));
+    uart2_send_new_line();
 }
