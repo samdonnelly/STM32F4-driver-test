@@ -33,7 +33,7 @@ void user_init()
     tim9_init(TIMERS_APB2_84MHZ_1US_PRESCALAR);
 
     // Initialize UART2
-    uart2_init();
+    uart2_init(UART2_BAUD_9600);
 
     // Initialize I2C1
     i2c1_init(
