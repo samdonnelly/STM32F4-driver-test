@@ -27,6 +27,7 @@
 // Communication drivers 
 #include "i2c_comm.h"
 #include "uart_comm.h"
+#include "spi_comm.h"
 
 // Other drivers 
 #include "timers.h"
