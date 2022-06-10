@@ -10,7 +10,8 @@
 	"settings": {
 		"files.associations": {
 			"user_init.h": "c",
-			"timers.h": "c"
+			"timers.h": "c",
+			"hw_125_microsd_driver.h": "c"
 		}
 	}
 }
