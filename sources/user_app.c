@@ -24,4 +24,7 @@
 void user_app()
 {
     // Looped code here
+
+    // Random delay 
+    tim9_delay_ms(1);
 }
