@@ -33,10 +33,10 @@ void user_init()
 
     // Communication initialization
     uart2_init(UART2_BAUD_9600); 
-    spi2_init(SPI2_1_SLAVE, BR_FPCLK_4, SPI_CLOCK_MODE_0);
+    spi2_init(SPI2_1_SLAVE, BR_FPCLK_8, SPI_CLOCK_MODE_0);
 
     // Device initialization 
-    card_type = hw125_init(GPIOB_PIN_12);
+    card_type = hw125_init(GPIOB_PIN_9);
 
     // Check the SD card initialization status 
     switch (card_type)
