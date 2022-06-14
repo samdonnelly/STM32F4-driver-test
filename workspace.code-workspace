@@ -12,7 +12,9 @@
 			"user_init.h": "c",
 			"timers.h": "c",
 			"hw_125_microsd_driver.h": "c",
-			"uart_comm.h": "c"
+			"uart_comm.h": "c",
+			"stm32f411xe.h": "c",
+			"core_cm4.h": "c"
 		}
 	}
 }
