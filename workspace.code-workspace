@@ -9,7 +9,8 @@
 	],
 	"settings": {
 		"files.associations": {
-			"user_init.h": "c"
+			"user_init.h": "c",
+			"ff_gen_drv.h": "c"
 		}
 	}
 }
