@@ -83,6 +83,9 @@ int main(void)
 
   /* USER CODE BEGIN SysInit */
 
+  // Run setup code
+  user_init();
+
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -90,14 +93,11 @@ int main(void)
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
 
-  // Run setup code
-  user_init();
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
+  while (TRUE)
   {
     // Run looped code
     user_app();
