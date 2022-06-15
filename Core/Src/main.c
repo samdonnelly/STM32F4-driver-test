@@ -82,14 +82,14 @@ int main(void)
 
   /* USER CODE BEGIN SysInit */
 
+  // Run setup code
+  user_init();
+
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   /* USER CODE BEGIN 2 */
-
-  // Run setup code
-  user_init();
 
   /* USER CODE END 2 */
 
