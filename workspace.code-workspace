@@ -4,6 +4,7 @@
 			"path": "."
 		},
 		{
+<<<<<<< HEAD
 			"path": "..\\STM32F4-driver-library"
 		}
 	],
@@ -17,4 +18,10 @@
 			"core_cm4.h": "c"
 		}
 	}
+=======
+			"path": "../STM32F4-driver-library"
+		}
+	],
+	"settings": {}
+>>>>>>> template
 }

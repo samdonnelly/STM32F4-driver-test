@@ -6,9 +6,6 @@
 # VS Code files 
 .vscode/
 
-# Workspace 
-workspace.code-workspace
-
 #========================================================================================
 
 
@@ -17,9 +14,5 @@ workspace.code-workspace
 
 # Build files 
 build/
-
-# STM files 
-startup_stm32f411xe.s
-STM32F411RETx_FLASH.ld
 
 #========================================================================================
