@@ -33,6 +33,9 @@
 #include "timers.h"
 #include "gpio_driver.h"
 
+// STM drivers 
+#include "fatfs.h"
+
 //=======================================================================================
 
 #endif  // _INCLUDES_H_
