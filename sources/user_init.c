@@ -33,7 +33,7 @@ void user_init()
 
     // Communication initialization
     uart2_init(UART2_BAUD_9600); 
-    spi2_init(SPI2_1_SLAVE, BR_FPCLK_4, SPI_CLOCK_MODE_0);
+    spi2_init(SPI2_1_SLAVE, BR_FPCLK_16, SPI_CLOCK_MODE_0);
 
     // Device initialization 
     hw125_user_init(GPIOB_PIN_9);
