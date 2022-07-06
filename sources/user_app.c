@@ -42,6 +42,9 @@ FIL     file;                // File
 FRESULT fresult;             // Store the result of each operation 
 char    buffer[BUFF_SIZE];   // To store the data that we can read or write
 UINT    br, bw;              // Stores the counter to the read and write in the file 
+BYTE    work[512]; 
+UINT    len = sizeof(work);  // 
+DWORD   cluster = 32768;     // 
 
 // Capacity related variables 
 FATFS    *pfs; 
@@ -62,10 +65,15 @@ void user_app()
     // Run once - code is here to put everything in the same file 
     if (count)
     {
-        // Mount the SD card 
-        fresult = f_mount(&file_sys, "/", 1); 
-        if (fresult != FR_OK) uart2_sendstring("Error in mounting SD Card.\r\n");
-        else uart2_sendstring("SD Card mounted successfully.\r\n"); 
+        // Create a FAT volume on the drive 
+        fresult = f_mkfs("/", 1, cluster, work, len); 
+        if (fresult != FR_OK) uart2_sendstring("Error in making as file system.\r\n");
+        else uart2_sendstring("File system created successfully.\r\n"); 
+
+        // // Mount the SD card 
+        // fresult = f_mount(&file_sys, "/", 1); 
+        // if (fresult != FR_OK) uart2_sendstring("Error in mounting SD Card.\r\n");
+        // else uart2_sendstring("SD Card mounted successfully.\r\n"); 
 
         // Check card capacity 
         // f_getfree("/", &fre_clust, &pfs); 
