@@ -1,5 +1,6 @@
 #MicroXplorer Configuration settings - do not modify
-FATFS.IPParameters=_USE_LFN,_MAX_SS
+FATFS.IPParameters=_USE_LFN,_MAX_SS,_FS_EXFAT
+FATFS._FS_EXFAT=1
 FATFS._MAX_SS=512
 FATFS._USE_LFN=1
 File.Version=6

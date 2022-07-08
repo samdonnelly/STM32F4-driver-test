@@ -7,5 +7,10 @@
 			"path": "../STM32F4-driver-library"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"files.associations": {
+			"includes.h": "c",
+			"fatfs.h": "c"
+		}
+	}
 }

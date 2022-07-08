@@ -53,6 +53,17 @@ uint32_t total, free_space;
 
 DWORD clust = 512; 
 
+// Debugging 
+volatile uint8_t fail_state = 255; 
+volatile uint8_t init_calls = 0; 
+volatile uint8_t inin_calls = 0; 
+volatile uint8_t pwon_calls = 0; 
+volatile uint8_t scmd_calls = 0; 
+volatile uint8_t read_calls = 0; 
+volatile uint8_t rdpa_calls = 0; 
+volatile uint8_t writ_calls = 0; 
+volatile uint8_t wdpc_calls = 0; 
+
 //=======================================================================================
 
 
@@ -67,22 +78,28 @@ void user_app()
     // Run once - code is here to put everything in the same file 
     if (count)
     {
-        // Create a FAT volume on the drive 
-        while (clust < 1000000000)
-        {
-            fresult = f_mkfs("/", FM_FAT32, clust, work, len); 
-            if (fresult == FR_OK) break;
-            clust *= 2; 
-        }
+        // Short delay to let the system set up 
+        tim9_delay_ms(500); 
+
+        // 
+        disk_initialize(0); 
+
+        // // Create a FAT volume on the drive 
+        // while (clust < 1000000000)
+        // {
+        //     fresult = f_mkfs("/", FM_FAT32, clust, work, len); 
+        //     if (fresult == FR_OK) break;
+        //     clust *= 2; 
+        // }
 
         // fresult = f_mkfs("/", FM_FAT, 4096, work, len); 
         // if (fresult != FR_OK) uart2_sendstring("Error in making as file system.\r\n");
         // else uart2_sendstring("File system created successfully.\r\n"); 
 
-        // // Mount the SD card 
-        // fresult = f_mount(&file_sys, "/", 1); 
-        // if (fresult != FR_OK) uart2_sendstring("Error in mounting SD Card.\r\n");
-        // else uart2_sendstring("SD Card mounted successfully.\r\n"); 
+        // Mount the SD card 
+        fresult = f_mount(&file_sys, "", 1); 
+        if (fresult != FR_OK) uart2_sendstring("Error in mounting SD Card.\r\n");
+        else uart2_sendstring("SD Card mounted successfully.\r\n"); 
 
         // Check card capacity 
         // f_getfree("/", &fre_clust, &pfs); 
