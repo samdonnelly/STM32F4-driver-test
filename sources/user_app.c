@@ -55,14 +55,9 @@ DWORD clust = 512;
 
 // Debugging 
 volatile uint8_t fail_state = 255; 
-volatile uint8_t init_calls = 0; 
-volatile uint8_t inin_calls = 0; 
-volatile uint8_t pwon_calls = 0; 
-volatile uint8_t scmd_calls = 0; 
-volatile uint8_t read_calls = 0; 
-volatile uint8_t rdpa_calls = 0; 
-volatile uint8_t writ_calls = 0; 
-volatile uint8_t wdpc_calls = 0; 
+volatile uint8_t func_num[30]; 
+volatile uint8_t mount_seq[100]; 
+volatile uint8_t mount_it = 0; 
 
 //=======================================================================================
 
@@ -84,32 +79,12 @@ void user_app()
         // 
         disk_initialize(0); 
 
-        // // Create a FAT volume on the drive 
-        // while (clust < 1000000000)
-        // {
-        //     fresult = f_mkfs("/", FM_FAT32, clust, work, len); 
-        //     if (fresult == FR_OK) break;
-        //     clust *= 2; 
-        // }
-
-        // fresult = f_mkfs("/", FM_FAT, 4096, work, len); 
-        // if (fresult != FR_OK) uart2_sendstring("Error in making as file system.\r\n");
-        // else uart2_sendstring("File system created successfully.\r\n"); 
-
         // Mount the SD card 
         fresult = f_mount(&file_sys, "", 1); 
         if (fresult != FR_OK) uart2_sendstring("Error in mounting SD Card.\r\n");
         else uart2_sendstring("SD Card mounted successfully.\r\n"); 
 
-        // Check card capacity 
-        // f_getfree("/", &fre_clust, &pfs); 
-        // total = (uint32_t)((pfs->n_fatent - 2) * pfs->csize * 0.5); 
-        // sprintf(buffer, "SD Card total size: \t%lu\r\n", total); 
-        // uart2_sendstring(buffer); 
-        // buff_clear(); 
-        // free_space = (uint32_t)(fre_clust * pfs->csize * 0.5); 
-        // sprintf(buffer, "SD Card free space: \t%lu\r\n", free_space); 
-        // uart2_sendstring(buffer); 
+        mount_seq[mount_it] = 255;
 
         count = 0; 
     }

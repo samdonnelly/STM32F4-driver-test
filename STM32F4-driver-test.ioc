@@ -1,8 +1,9 @@
 #MicroXplorer Configuration settings - do not modify
-FATFS.IPParameters=_USE_LFN,_MAX_SS,_FS_EXFAT
+FATFS.IPParameters=_USE_LFN,_MAX_SS,_FS_EXFAT,_USE_MKFS
 FATFS._FS_EXFAT=1
 FATFS._MAX_SS=512
 FATFS._USE_LFN=1
+FATFS._USE_MKFS=0
 File.Version=6
 KeepUserPlacement=false
 Mcu.Family=STM32F4

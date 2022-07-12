@@ -10,7 +10,8 @@
 	"settings": {
 		"files.associations": {
 			"includes.h": "c",
-			"fatfs.h": "c"
+			"fatfs.h": "c",
+			"tools.h": "c"
 		}
 	}
 }
