@@ -58,6 +58,7 @@ volatile uint8_t fail_state = 255;
 volatile uint8_t func_num[30]; 
 volatile uint8_t mount_seq[100]; 
 volatile uint8_t mount_it = 0; 
+volatile uint8_t f_mount_steps[10];
 
 //=======================================================================================
 
