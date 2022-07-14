@@ -42,7 +42,7 @@ FIL     file;                // File
 FRESULT fresult;             // Store the result of each operation 
 char    buffer[BUFF_SIZE];   // To store the data that we can read or write
 UINT    br, bw;              // Stores the counter to the read and write in the file 
-BYTE    work[4096]; 
+BYTE    work[512];
 UINT    len = sizeof(work);  // 
 // DWORD   cluster = 32768;     // 
 
@@ -77,15 +77,22 @@ void user_app()
         // Short delay to let the system set up 
         tim9_delay_ms(500); 
 
-        // 
-        disk_initialize(0); 
-
-        // Mount the SD card 
-        fresult = f_mount(&file_sys, "", 1); 
+        // Format the drive 
+        fresult = f_mkfs("", FM_EXFAT, 0, work, sizeof work); 
         if (fresult != FR_OK) uart2_sendstring("Error in mounting SD Card.\r\n");
         else uart2_sendstring("SD Card mounted successfully.\r\n"); 
 
-        mount_seq[mount_it] = 255;
+        if (fresult == FR_OK)
+        {
+            // Mount the SD card 
+            fresult = f_mount(&file_sys, "", 1); 
+            if (fresult != FR_OK) uart2_sendstring("Error in mounting SD Card.\r\n");
+            else uart2_sendstring("SD Card mounted successfully.\r\n"); 
+
+            count = 0; 
+        }
+
+        // mount_seq[mount_it] = 255;
 
         count = 0; 
     }
