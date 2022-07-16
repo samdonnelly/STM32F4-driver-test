@@ -42,23 +42,14 @@ FIL     file;                // File
 FRESULT fresult;             // Store the result of each operation 
 char    buffer[BUFF_SIZE];   // To store the data that we can read or write
 UINT    br, bw;              // Stores the counter to the read and write in the file 
-BYTE    work[512];
-UINT    len = sizeof(work);  // 
-// DWORD   cluster = 32768;     // 
+
+// Format drive variables 
+BYTE    work[512];           // 
 
 // Capacity related variables 
 FATFS    *pfs; 
 DWORD    fre_clust; 
 uint32_t total, free_space; 
-
-DWORD clust = 512; 
-
-// Debugging 
-volatile uint8_t fail_state = 255; 
-volatile uint8_t func_num[30]; 
-volatile uint8_t mount_seq[100]; 
-volatile uint8_t mount_it = 0; 
-volatile uint8_t f_mount_steps[10];
 
 //=======================================================================================
 
@@ -77,22 +68,42 @@ void user_app()
         // Short delay to let the system set up 
         tim9_delay_ms(500); 
 
+#if FORMAT_EXFAT
         // Format the drive 
         fresult = f_mkfs("", FM_EXFAT, 0, work, sizeof work); 
+        if (fresult != FR_OK) uart2_sendstring("Error in formatting the SD Card.\r\n");
+        else uart2_sendstring("SD Card formatted successfully.\r\n"); 
+#endif
+
+        //=============================================
+        // Mount the SD card 
+
+        fresult = f_mount(&file_sys, "", 1); 
         if (fresult != FR_OK) uart2_sendstring("Error in mounting SD Card.\r\n");
         else uart2_sendstring("SD Card mounted successfully.\r\n"); 
 
-        if (fresult == FR_OK)
-        {
-            // Mount the SD card 
-            fresult = f_mount(&file_sys, "", 1); 
-            if (fresult != FR_OK) uart2_sendstring("Error in mounting SD Card.\r\n");
-            else uart2_sendstring("SD Card mounted successfully.\r\n"); 
+        //=============================================
 
-            count = 0; 
-        }
 
-        // mount_seq[mount_it] = 255;
+        //=============================================
+        // Card Capacity 
+
+        // These calcs assume 512 bytes/sector 
+
+        // Check free space 
+        f_getfree("", &fre_clust, &pfs);
+
+        total = (uint32_t)((pfs->n_fatent - 2) * pfs->csize * 0.5);
+        sprintf (buffer, "SD CARD Total Size: \t%lu KB\r\n", total);
+        uart2_sendstring(buffer);
+        buff_clear();
+        
+        free_space = (uint32_t)(fre_clust * pfs->csize * 0.5);
+        sprintf (buffer, "SD CARD Free Space: \t%lu KB\r\n\n", free_space);
+        uart2_sendstring(buffer);
+        buff_clear();
+
+        //=============================================
 
         count = 0; 
     }
