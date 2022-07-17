@@ -105,6 +105,45 @@ void user_app()
 
         //=============================================
 
+
+        //=============================================
+        // f_puts and f_gets (wrapper functions of f_read and f_write) 
+
+        // Open a file (and create if it doesn't exist) 
+        fresult = f_open(&file, "test_file.txt", FA_OPEN_ALWAYS | FA_READ | FA_WRITE); 
+
+        // Write a string 
+        f_puts("This string was written using f_puts.", &file); 
+
+        // Close the file 
+        fresult = f_close(&file); 
+
+        // Check the status of the operation 
+        if (fresult == FR_OK) uart2_sendstring("test_file.txt successfully written.\r\n\n"); 
+        else uart2_sendstring("Problems writing data to test_file.txt.\r\n\n"); 
+
+        // Open the file again to read the data 
+        fresult = f_open(&file, "test_file.txt", FA_READ); 
+
+        // Read the string from the file 
+        f_gets(buffer, f_size(&file), &file); 
+
+        // Display the data 
+        uart2_sendstring("test_file.txt has been read and the string inside says: \r\n"); 
+        uart2_sendstring(buffer); 
+        uart2_send_new_line(); 
+
+        // Close the file 
+        f_close(&file); 
+        buff_clear(); 
+
+        //=============================================
+
+
+        //=============================================
+        // f_write and f_read
+        //=============================================
+
         count = 0; 
     }
 
