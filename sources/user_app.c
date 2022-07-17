@@ -26,7 +26,7 @@
 // Function prototypes 
 
 // To find the size of data in the buffer 
-int buff_size(uint8_t *buff); 
+int buff_size(char *buff); 
 
 // Clear the buffer 
 void buff_clear(void); 
@@ -69,6 +69,7 @@ void user_app()
         tim9_delay_ms(500); 
 
 #if FORMAT_EXFAT
+        // TODO test to see if this will erase existing data 
         // Format the drive 
         fresult = f_mkfs("", FM_EXFAT, 0, work, sizeof work); 
         if (fresult != FR_OK) uart2_sendstring("Error in formatting the SD Card.\r\n");
@@ -132,6 +133,7 @@ void user_app()
         uart2_sendstring("test_file.txt has been read and the string inside says: \r\n"); 
         uart2_sendstring(buffer); 
         uart2_send_new_line(); 
+        uart2_send_new_line(); 
 
         // Close the file 
         f_close(&file); 
@@ -142,7 +144,94 @@ void user_app()
 
         //=============================================
         // f_write and f_read
+
+        // Create/open a second file 
+        fresult = f_open(&file, "test_file_2.txt", FA_OPEN_ALWAYS | FA_READ | FA_WRITE); 
+
+        // Create text to write to the file 
+        strcpy(buffer, "This file was written to using f_write and read using r_read.\n"); 
+
+        // Write the text 
+        fresult = f_write(&file, buffer, buff_size(buffer), &bw); 
+
+        // Close the file 
+        uart2_sendstring("test_file_2.txt written to.\r\n"); 
+        f_close(&file); 
+
+        // Clear the buffer so we can clearly see the contents read from the file 
+        buff_clear(); 
+
+        // Open the file 
+        fresult = f_open(&file, "test_file_2.txt", FA_READ); 
+        if (fresult == FR_OK) uart2_sendstring("test_file_2.txt successfully opened.\r\n"); 
+
+        // Read the data from the file 
+        uart2_sendstring("test_file_2.txt contents: \r\n"); 
+        uart2_sendstring("\t"); 
+        f_read(&file, buffer, f_size(&file), &br); 
+        uart2_sendstring(buffer); 
+        uart2_send_new_line(); 
+        uart2_send_new_line(); 
+
+        // Close the file 
+        f_close(&file); 
+        buff_clear(); 
+
         //=============================================
+
+
+        //=============================================
+        // Update an existing file 
+
+        // Open the file to edit 
+        fresult = f_open(&file, "test_file_2.txt", FA_OPEN_ALWAYS | FA_READ | FA_WRITE); 
+
+        // Move to the end of the file to append data 
+        fresult = f_lseek(&file, f_size(&file)); 
+        if (fresult == FR_OK) uart2_sendstring("test_file_2.txt will be appended\r\n"); 
+
+        // Write to the end of the file 
+        fresult = f_puts("Appended data.\r\n", &file); 
+
+        // Close the file 
+        f_close(&file); 
+        buff_clear(); 
+
+        // Open the file to read the contents 
+        fresult = f_open(&file, "test_file_2.txt", FA_READ); 
+
+        // Read the data on the file 
+        fresult = f_read(&file, buffer, f_size(&file), &br); 
+        if (fresult == FR_OK) uart2_sendstring("test_file_2.txt updated data: \r\n\t"); 
+        uart2_sendstring(buffer); 
+        uart2_send_new_line(); 
+
+        // Close the file 
+        f_close(&file); 
+        buff_clear(); 
+
+        //============================================= 
+
+
+        //============================================= 
+        // Remove files from the drive 
+
+        fresult = f_unlink("/test_file.txt"); 
+        if (fresult == FR_OK) uart2_sendstring("test_file.txt removed successfully.\r\n"); 
+
+        fresult = f_unlink("/test_file_2.txt"); 
+        if (fresult == FR_OK) uart2_sendstring("test_file_2.txt removed successfully.\r\n"); 
+
+        //============================================= 
+
+
+        //============================================= 
+        // Unmount the SD card 
+
+        fresult = f_mount(NULL, "", 1); 
+        if (fresult == FR_OK) uart2_sendstring("SD unmounted successfully.\r\n"); 
+        
+        //============================================= 
 
         count = 0; 
     }
@@ -153,7 +242,7 @@ void user_app()
 
 
 // To find the size of data in the buffer 
-int buff_size(uint8_t *buff)
+int buff_size(char *buff)
 {
     int i = 0; 
     while(*buff++ != '\0') i++; 
