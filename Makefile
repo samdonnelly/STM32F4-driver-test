@@ -41,7 +41,7 @@ Core/Src/stm32f4xx_it.c \
 Core/Src/stm32f4xx_hal_msp.c \
 sources/user_init.c \
 sources/user_app.c \
-../STM32F4-driver-library/sources/HW_125_microSD_driver.c \
+../STM32F4-driver-library/sources/hw125_driver.c \
 ../STM32F4-driver-library/sources/mpu6050_driver.c \
 ../STM32F4-driver-library/sources/potentiometer_reader.c \
 ../STM32F4-driver-library/sources/wayintop_lcd_driver.c \
