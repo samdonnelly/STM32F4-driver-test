@@ -4,7 +4,7 @@
 			"path": "."
 		},
 		{
-			"path": "..\\STM32F4-driver-library"
+			"path": "../STM32F4-driver-library"
 		}
 	],
 	"settings": {
