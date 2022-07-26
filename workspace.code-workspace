@@ -11,8 +11,9 @@
 		"files.associations": {
 			"user_init.h": "c",
 			"user_app.h": "c",
-			"hw_125_microsd_driver.h": "c",
-			"stm32f411xe.h": "c"
+			"hw125_driver.h": "c",
+			"stm32f411xe.h": "c",
+			"tools.h": "c"
 		}
 	}
 }

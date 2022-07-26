@@ -19,10 +19,12 @@
 // Includes 
 
 // Device drivers 
-#include "HW_125_microSD_driver.h"
+#include "hw125_driver.h"
 #include "mpu6050_driver.h"
 #include "potentiometer_read.h"
 #include "wayintop_lcd_driver.h"
+#include "hc05_driver.h"
+#include "m8q_driver.h"
 
 // Communication drivers 
 #include "i2c_comm.h"
