@@ -24,4 +24,9 @@
 void user_app()
 {
     // Looped code here
+#if HC05_AT_CMD_MODE  // AT command code 
+    uart2_send_new_line(); 
+#else  // Data mode 
+    uart2_send_new_line(); 
+#endif  // HC05_AT_CMD_MODE
 }

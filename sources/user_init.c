@@ -23,5 +23,6 @@
 // User init function 
 void user_init()
 {
-    // Setup code here
+    // Initialize UART2 for serial terminal communication 
+    uart2_init(UART2_BAUD_9600); 
 }
