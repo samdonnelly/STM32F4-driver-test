@@ -21,7 +21,6 @@
 // Device drivers 
 #include "hw125_driver.h"
 #include "mpu6050_driver.h"
-#include "potentiometer_read.h"
 #include "wayintop_lcd_driver.h"
 #include "hc05_driver.h"
 #include "m8q_driver.h"
@@ -34,6 +33,8 @@
 // Other drivers 
 #include "timers.h"
 #include "gpio_driver.h"
+#include "adc_driver.h"
+#include "data_filters.h"
 
 //=======================================================================================
 
