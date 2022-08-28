@@ -12,7 +12,9 @@
 			"user_init.h": "c",
 			"user_app.h": "c",
 			"stm32f411xe.h": "c",
-			"tools.h": "c"
+			"tools.h": "c",
+			"adc_test.h": "c",
+			"includes_drivers.h": "c"
 		}
 	}
 }

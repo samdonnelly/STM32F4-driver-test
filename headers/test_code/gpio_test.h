@@ -1,38 +1,44 @@
 /**
- * @file user_app.h
+ * @file gpio_test.h
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Code that gets called once per loop
+ * @brief GPIO test code header 
  * 
  * @version 0.1
- * @date 2022-02-12
+ * @date 2022-08-28
  * 
  * @copyright Copyright (c) 2022
  * 
  */
 
-#ifndef _USER_APP_H_
-#define _USER_APP_H_
+#ifndef _GPIO_TEST_H_
+#define _GPIO_TEST_H_
 
 //=======================================================================================
 // Includes 
 
-#include "includes_app.h"
+#include "includes_drivers.h"
 
 //=======================================================================================
 
 
 //=======================================================================================
-// Function Prototypes
+// Function prototypes 
 
 /**
- * @brief Function that gets called once per loop
+ * @brief GPIO setup code 
  * 
  */
-void user_app(void);
+void gpio_test_init(void); 
+
+
+/**
+ * @brief GPIO test code 
+ * 
+ */
+void gpio_test_app(void); 
 
 //=======================================================================================
 
-
-#endif  // _USER_APP_H_
+#endif  // _GPIO_TEST_H_ 

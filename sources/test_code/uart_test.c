@@ -1,12 +1,12 @@
 /**
- * @file user_init.c
+ * @file uart_test.c
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Code that gets called once at the beginning of the program
+ * @brief UART test code 
  * 
  * @version 0.1
- * @date 2022-02-12
+ * @date 2022-08-28
  * 
  * @copyright Copyright (c) 2022
  * 
@@ -15,14 +15,20 @@
 //=======================================================================================
 // Includes 
 
-#include "user_init.h"
+#include "uart_test.h"
 
 //=======================================================================================
 
 
-// User init function 
-void user_init()
+// Setup code
+void uart_test_init()
 {
-    // Setup code here
-    // Call application or test setup code here 
+    // Setup code for the uart_test here 
+} 
+
+
+// Test code 
+void uart_test_app()
+{
+    // Test code for the uart_test here 
 }

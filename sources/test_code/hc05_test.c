@@ -1,12 +1,12 @@
 /**
- * @file user_init.c
+ * @file hc05_test.c
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Code that gets called once at the beginning of the program
+ * @brief HC-05 test code 
  * 
  * @version 0.1
- * @date 2022-02-12
+ * @date 2022-08-28
  * 
  * @copyright Copyright (c) 2022
  * 
@@ -15,14 +15,20 @@
 //=======================================================================================
 // Includes 
 
-#include "user_init.h"
+#include "hc05_test.h"
 
 //=======================================================================================
 
 
-// User init function 
-void user_init()
+// Setup code
+void hc05_test_init()
 {
-    // Setup code here
-    // Call application or test setup code here 
+    // Setup code for the hc05_test here 
+} 
+
+
+// Test code 
+void hc05_test_app()
+{
+    // Test code for the hc05_test here 
 }

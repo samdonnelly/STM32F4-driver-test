@@ -1,38 +1,44 @@
 /**
- * @file user_app.h
+ * @file spi_test.h
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Code that gets called once per loop
+ * @brief SPI test code header 
  * 
  * @version 0.1
- * @date 2022-02-12
+ * @date 2022-08-28
  * 
  * @copyright Copyright (c) 2022
  * 
  */
 
-#ifndef _USER_APP_H_
-#define _USER_APP_H_
+#ifndef _SPI_TEST_H_
+#define _SPI_TEST_H_
 
 //=======================================================================================
 // Includes 
 
-#include "includes_app.h"
+#include "includes_drivers.h"
 
 //=======================================================================================
 
 
 //=======================================================================================
-// Function Prototypes
+// Function prototypes 
 
 /**
- * @brief Function that gets called once per loop
+ * @brief SPI setup code 
  * 
  */
-void user_app(void);
+void spi_test_init(void); 
+
+
+/**
+ * @brief SPI test code 
+ * 
+ */
+void spi_test_app(void); 
 
 //=======================================================================================
 
-
-#endif  // _USER_APP_H_
+#endif  // _SPI_TEST_H_ 

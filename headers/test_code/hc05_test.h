@@ -1,38 +1,44 @@
 /**
- * @file user_app.h
+ * @file hc05_test.h
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Code that gets called once per loop
+ * @brief HC-05 test code header 
  * 
  * @version 0.1
- * @date 2022-02-12
+ * @date 2022-08-28
  * 
  * @copyright Copyright (c) 2022
  * 
  */
 
-#ifndef _USER_APP_H_
-#define _USER_APP_H_
+#ifndef _HC05_TEST_H_
+#define _HC05_TEST_H_
 
 //=======================================================================================
 // Includes 
 
-#include "includes_app.h"
+#include "includes_drivers.h"
 
 //=======================================================================================
 
 
 //=======================================================================================
-// Function Prototypes
+// Function prototypes 
 
 /**
- * @brief Function that gets called once per loop
+ * @brief HC-05 setup code 
  * 
  */
-void user_app(void);
+void hc05_test_init(void); 
+
+
+/**
+ * @brief HC-05 test code 
+ * 
+ */
+void hc05_test_app(void); 
 
 //=======================================================================================
 
-
-#endif  // _USER_APP_H_
+#endif  // _HC05_TEST_H_ 

@@ -41,6 +41,18 @@ Core/Src/stm32f4xx_it.c \
 Core/Src/stm32f4xx_hal_msp.c \
 sources/user_init.c \
 sources/user_app.c \
+sources/test_code/adc_test.c \
+sources/test_code/data_filters_test.c \
+sources/test_code/gpio_test.c \
+sources/test_code/hc05_test.c \
+sources/test_code/hw125_test.c \
+sources/test_code/i2c_test.c \
+sources/test_code/m8q_test.c \
+sources/test_code/mpu6050_test.c \
+sources/test_code/spi_test.c \
+sources/test_code/timers_test.c \
+sources/test_code/uart_test.c \
+sources/test_code/wayintop_lcd_test.c \
 ../STM32F4-driver-library/sources/hw125_driver.c \
 ../STM32F4-driver-library/sources/mpu6050_driver.c \
 ../STM32F4-driver-library/sources/adc_driver.c \
@@ -134,6 +146,7 @@ AS_INCLUDES =
 C_INCLUDES =  \
 -ICore/Inc \
 -Iheaders \
+-Iheaders/test_code \
 -I../STM32F4-driver-library/headers \
 -IDrivers/STM32F4xx_HAL_Driver/Inc \
 -IDrivers/STM32F4xx_HAL_Driver/Inc/Legacy \

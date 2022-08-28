@@ -24,4 +24,5 @@
 void user_app()
 {
     // Looped code here
+    // Call application or test code from here 
 }

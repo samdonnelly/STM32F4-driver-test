@@ -1,12 +1,12 @@
 /**
- * @file user_init.c
+ * @file data_filters_test.c
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Code that gets called once at the beginning of the program
+ * @brief Data filters test code 
  * 
  * @version 0.1
- * @date 2022-02-12
+ * @date 2022-08-28
  * 
  * @copyright Copyright (c) 2022
  * 
@@ -15,14 +15,20 @@
 //=======================================================================================
 // Includes 
 
-#include "user_init.h"
+#include "data_filters_test.h"
 
 //=======================================================================================
 
 
-// User init function 
-void user_init()
+// Setup code
+void data_filters_test_init()
 {
-    // Setup code here
-    // Call application or test setup code here 
+    // Setup code for the data_filters_test here 
+} 
+
+
+// Test code 
+void data_filters_test_app()
+{
+    // Test code for the data_filters_test here 
 }
