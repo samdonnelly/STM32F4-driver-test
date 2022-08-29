@@ -25,4 +25,7 @@ void user_init()
 {
     // Setup code here
     // Call application or test setup code here 
+
+    // SAM-M8Q GPS 
+    m8q_test_init(); 
 }
