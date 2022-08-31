@@ -31,13 +31,13 @@ uint8_t reg_0xff = 0;
 // Setup code
 void m8q_test_init()
 {
-    // Timer initialization 
-    tim9_init(TIMERS_APB2_84MHZ_1US_PRESCALAR); 
+    // Initialize timers 
+    tim9_init(TIMERS_APB2_84MHZ_1US_PRESCALAR);
 
-    // Serial terminal (UART2) setup 
-    uart_init(USART2, UART_BAUD_9600, UART_CLOCK_42); 
+    // Initialize UART
+    uart_init(USART2, UART_BAUD_9600, UART_CLOCK_42);
 
-    // I2C communication setup 
+    // Initialize I2C
     i2c1_init(
         I2C1, 
         I2C1_SDA_PB9,

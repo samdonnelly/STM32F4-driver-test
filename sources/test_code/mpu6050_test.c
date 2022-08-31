@@ -168,7 +168,7 @@ void mpu6050_test_app()
                                               MPU6050_1_ADDRESS, 
                                               mpu6050_gyro[GYRO_X_AXIS],
                                               mpu6050_gyro_offset[GYRO_X_AXIS]) * 
-                                          NO_DECIMAL_SCALAR);
+                                                NO_DECIMAL_SCALAR);
     
     uart_sendstring(USART2, "gx = ");
     uart_send_integer(USART2, mpu6050_gyro[GYRO_X_AXIS]); 
@@ -179,7 +179,7 @@ void mpu6050_test_app()
                                               MPU6050_1_ADDRESS, 
                                               mpu6050_gyro[GYRO_Y_AXIS],
                                               mpu6050_gyro_offset[GYRO_Y_AXIS]) * 
-                                          NO_DECIMAL_SCALAR);
+                                                NO_DECIMAL_SCALAR);
     
     uart_sendstring(USART2, "gy = ");
     uart_send_integer(USART2, mpu6050_gyro[GYRO_Y_AXIS]);
@@ -190,7 +190,7 @@ void mpu6050_test_app()
                                               MPU6050_1_ADDRESS, 
                                               mpu6050_gyro[GYRO_Z_AXIS],
                                               mpu6050_gyro_offset[GYRO_Z_AXIS]) * 
-                                          NO_DECIMAL_SCALAR);
+                                                NO_DECIMAL_SCALAR);
     
     uart_sendstring(USART2, "gz = ");
     uart_send_integer(USART2, mpu6050_gyro[GYRO_Z_AXIS]);
