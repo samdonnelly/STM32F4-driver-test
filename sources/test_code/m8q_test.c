@@ -23,7 +23,8 @@
 //=======================================================================================
 // Variables 
 
-uint8_t reg_0xff = 0; 
+// uint8_t reg_0xff = 0; 
+uint8_t nmea_msg[100]; 
 
 //=======================================================================================
 
@@ -50,6 +51,12 @@ void m8q_test_init()
     // SAM-M8Q device setup 
     // Currently none 
 
+    // Other setup 
+    for (uint8_t i = 0; i < 100; i++)
+    {
+        nmea_msg[i] = 0; 
+    }
+
     // Delay to let everything finish setup before starting to send and receieve data 
     tim9_delay_ms(500); 
 } 
@@ -58,6 +65,9 @@ void m8q_test_init()
 // Test code 
 void m8q_test_app()
 {
+    // Local variables 
+    // uint8_t i = 0; 
+
     // Generate a start condition 
     i2c_start(I2C1); 
 
@@ -65,13 +75,12 @@ void m8q_test_app()
     i2c_write_address(I2C1, M8Q_I2C_8_BIT_ADDR + M8Q_R_OFFSET); 
     i2c_clear_addr(I2C1); 
 
-    // Read the 0xFF register 
-    i2c_read_master_mode(I2C1, &reg_0xff, I2C_1_BYTE); 
+    // Read a message from the M8Q (if it's available) 
+    i2c_read_to_term(I2C1, nmea_msg); 
 
     // Print the value of the register to see what was returned 
-    uart_sendchar(USART2, reg_0xff); 
-    uart_send_new_line(USART2); 
+    uart_sendstring(USART2, (char *)nmea_msg); 
 
     // Delay before starting over 
-    tim9_delay_ms(1000); 
+    tim9_delay_ms(10); 
 }

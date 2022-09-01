@@ -27,8 +27,8 @@ void user_init()
     // Call application or test setup code here 
 
     // SAM-M8Q GPS 
-    // m8q_test_init(); 
+    m8q_test_init(); 
 
     // MPU-6050
-    mpu6050_test_init(); 
+    // mpu6050_test_init(); 
 }
