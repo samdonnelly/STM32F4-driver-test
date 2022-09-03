@@ -67,8 +67,15 @@ void m8q_test_app()
     // Local variables 
 
     // Read available data 
-    m8q_read_nmea(I2C1, nmea_msg); 
+    if (m8q_read_nmea(I2C1, nmea_msg))
+    {
+        uart_sendstring(USART2, (char *)nmea_msg); 
+    } 
+    else
+    {
+        uart_send_new_line(USART2); 
+    }
 
     // Delay before starting over 
-    tim9_delay_ms(300); 
+    // tim9_delay_ms(5); 
 }
