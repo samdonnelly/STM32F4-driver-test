@@ -65,17 +65,25 @@ void m8q_test_init()
 void m8q_test_app()
 {
     // Local variables 
+    uint16_t data_size = 0; 
 
-    // Read available data 
-    if (m8q_read_nmea(I2C1, nmea_msg))
-    {
-        uart_sendstring(USART2, (char *)nmea_msg); 
-    } 
-    else
-    {
-        uart_send_new_line(USART2); 
-    }
+    // Read the size of the NMEA data steam 
+    m8q_read_nmea_ds(I2C1, &data_size); 
+
+    // Print the data size 
+    uart_send_integer(USART2, (int16_t)data_size); 
+    uart_send_new_line(USART2); 
+
+    // // Read available data 
+    // if (m8q_read_nmea(I2C1, nmea_msg))
+    // {
+    //     uart_sendstring(USART2, (char *)nmea_msg); 
+    // } 
+    // else
+    // {
+    //     uart_send_new_line(USART2); 
+    // }
 
     // Delay before starting over 
-    // tim9_delay_ms(5); 
+    tim9_delay_ms(1); 
 }
