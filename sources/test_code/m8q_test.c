@@ -24,6 +24,7 @@
 // Variables 
 
 uint8_t nmea_msg[100]; 
+// uint8_t nmea_test_msg[100]; 
 
 //=======================================================================================
 
@@ -50,11 +51,11 @@ void m8q_test_init()
     // SAM-M8Q device setup 
     // Currently none 
 
-    // Other setup 
-    for (uint8_t i = 0; i < 100; i++)
-    {
-        nmea_msg[i] = 0; 
-    }
+    // // Other setup 
+    // for (uint8_t i = 0; i < 100; i++)
+    // {
+    //     nmea_msg[i] = 0; 
+    // }
 
     // Delay to let everything finish setup before starting to send and receieve data 
     tim9_delay_ms(500); 
@@ -65,25 +66,42 @@ void m8q_test_init()
 void m8q_test_app()
 {
     // Local variables 
-    uint16_t data_size = 0; 
+    // uint16_t data_size = 0; 
+    // uint8_t data_check = 0; 
+    uint8_t read_status = 0; 
 
     // Read the size of the NMEA data steam 
-    m8q_read_nmea_ds(I2C1, &data_size); 
+    // m8q_read_nmea_ds(I2C1, &data_size); 
 
-    // Print the data size 
-    uart_send_integer(USART2, (int16_t)data_size); 
+    // 
+    // read_status = m8q_read_nmea(I2C1, nmea_msg); 
+    read_status = m8q_read_nmea(I2C1, nmea_msg); 
+
+    switch (read_status)
+    {
+        case 0: // Invalid read 
+            uart_sendstring(USART2, "Invalid"); 
+            break;
+
+        case 1: // Valid read 
+            uart_sendstring(USART2, "Valid"); 
+            break;
+
+        case 2: // Unknown read 
+            uart_sendstring(USART2, "Unknown"); 
+            break;
+
+        default: // Really unknown read 
+            uart_sendstring(USART2, "What the H"); 
+            break;
+    }
+
+    // // Print the data size and first data stream character 
+    // uart_send_integer(USART2, (int16_t)data_size); 
+    // uart_sendstring(USART2, "  "); 
+    // uart_send_integer(USART2, (int16_t)data_check); 
     uart_send_new_line(USART2); 
 
-    // // Read available data 
-    // if (m8q_read_nmea(I2C1, nmea_msg))
-    // {
-    //     uart_sendstring(USART2, (char *)nmea_msg); 
-    // } 
-    // else
-    // {
-    //     uart_send_new_line(USART2); 
-    // }
-
     // Delay before starting over 
-    tim9_delay_ms(1); 
+    tim9_delay_ms(10); 
 }
