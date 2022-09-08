@@ -23,8 +23,7 @@
 //=======================================================================================
 // Variables 
 
-uint8_t nmea_msg[100]; 
-// uint8_t nmea_test_msg[100]; 
+uint8_t nmea_msg[100];  // Store NMEA messages 
 
 //=======================================================================================
 
@@ -48,14 +47,14 @@ void m8q_test_init()
         I2C_CCR_SM_42_100,
         I2C_TRISE_1000_42);
     
-    // SAM-M8Q device setup 
-    // Currently none 
+    // M8Q device setup 
+    m8q_init(); 
 
-    // // Other setup 
-    // for (uint8_t i = 0; i < 100; i++)
-    // {
-    //     nmea_msg[i] = 0; 
-    // }
+    // Other setup 
+    for (uint8_t i = 0; i < 100; i++)
+    {
+        nmea_msg[i] = 255; 
+    }
 
     // Delay to let everything finish setup before starting to send and receieve data 
     tim9_delay_ms(500); 
@@ -66,16 +65,18 @@ void m8q_test_init()
 void m8q_test_app()
 {
     // Local variables 
-    // uint16_t data_size = 0; 
-    // uint8_t data_check = 0; 
+    uint16_t data_size = 0; 
     uint8_t read_status = 0; 
 
-    // Read the size of the NMEA data steam 
-    // m8q_read_nmea_ds(I2C1, &data_size); 
+    // Read the size of the NMEA data stream 
+    m8q_read_nmea_ds(I2C1, &data_size); 
 
-    // 
-    // read_status = m8q_read_nmea(I2C1, nmea_msg); 
+    // Read the data stream 
     read_status = m8q_read_nmea(I2C1, nmea_msg); 
+
+    // Print the results of the read registers 
+    uart_send_integer(USART2, (int16_t)data_size); 
+    uart_sendstring(USART2, "  "); 
 
     switch (read_status)
     {
@@ -96,12 +97,8 @@ void m8q_test_app()
             break;
     }
 
-    // // Print the data size and first data stream character 
-    // uart_send_integer(USART2, (int16_t)data_size); 
-    // uart_sendstring(USART2, "  "); 
-    // uart_send_integer(USART2, (int16_t)data_check); 
     uart_send_new_line(USART2); 
 
     // Delay before starting over 
-    tim9_delay_ms(10); 
+    tim9_delay_ms(25); 
 }
