@@ -64,6 +64,9 @@ void m8q_test_init()
 // Test code 
 void m8q_test_app()
 {
+#if M8Q_USER_CONFIG 
+    m8q_user_config(I2C1); 
+#else 
     // Local variables 
     uint16_t data_size = 0; 
     uint8_t read_status = 0; 
@@ -101,4 +104,6 @@ void m8q_test_app()
 
     // Delay before starting over 
     tim9_delay_ms(25); 
+
+#endif   // M8Q_USER_CONFIG
 }
