@@ -64,6 +64,7 @@ sources/test_code/wayintop_lcd_test.c \
 ../STM32F4-driver-library/sources/i2c_comm.c \
 ../STM32F4-driver-library/sources/spi_comm.c \
 ../STM32F4-driver-library/sources/timers.c \
+../STM32F4-driver-library/sources/tools.c \
 ../STM32F4-driver-library/sources/data_filters.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c \
