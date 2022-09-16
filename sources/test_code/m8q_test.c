@@ -56,6 +56,11 @@ void m8q_test_init()
         nmea_msg[i] = 255; 
     }
 
+    // M8Q configuration mode 
+#if M8Q_USER_CONFIG 
+    m8q_nmea_config_ui(); 
+#endif
+
     // Delay to let everything finish setup before starting to send and receieve data 
     tim9_delay_ms(500); 
 } 
@@ -72,10 +77,10 @@ void m8q_test_app()
     uint8_t read_status = 0; 
 
     // Read the size of the NMEA data stream 
-    m8q_read_nmea_ds(I2C1, &data_size); 
+    m8q_nmea_read_ds(I2C1, &data_size); 
 
     // Read the data stream 
-    read_status = m8q_read_nmea(I2C1, nmea_msg); 
+    read_status = m8q_nmea_read(I2C1, nmea_msg); 
 
     // Print the results of the read registers 
     uart_send_integer(USART2, (int16_t)data_size); 
