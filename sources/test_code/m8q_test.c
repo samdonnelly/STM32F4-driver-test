@@ -23,7 +23,7 @@
 //=======================================================================================
 // Variables 
 
-uint8_t nmea_msg[100];  // Store NMEA messages 
+uint8_t nmea_msg[150];  // Store NMEA messages 
 
 //=======================================================================================
 
@@ -51,7 +51,7 @@ void m8q_test_init()
     m8q_init(); 
 
     // Other setup 
-    for (uint8_t i = 0; i < 100; i++)
+    for (uint8_t i = 0; i < 150; i++)
     {
         nmea_msg[i] = 255; 
     }
@@ -77,10 +77,10 @@ void m8q_test_app()
     uint8_t read_status = 0; 
 
     // Read the size of the NMEA data stream 
-    m8q_nmea_read_ds(I2C1, &data_size); 
+    m8q_check_data_size(I2C1, &data_size); 
 
     // Read the data stream 
-    read_status = m8q_nmea_read(I2C1, nmea_msg); 
+    read_status = m8q_read(I2C1, nmea_msg); 
 
     // Print the results of the read registers 
     uart_send_integer(USART2, (int16_t)data_size); 
