@@ -85,25 +85,26 @@ void m8q_test_app()
     // Print the results of the read registers 
     uart_send_integer(USART2, (int16_t)data_size); 
     uart_sendstring(USART2, "  "); 
+    uart_sendstring(USART2, (char *)nmea_msg); 
 
-    switch (read_status)
-    {
-        case 0: // Invalid read 
-            uart_sendstring(USART2, "Invalid"); 
-            break;
+    // switch (read_status)
+    // {
+    //     case 0: // Invalid read 
+    //         uart_sendstring(USART2, "Invalid"); 
+    //         break;
 
-        case 1: // Valid read 
-            uart_sendstring(USART2, "Valid"); 
-            break;
+    //     case 1: // Valid read 
+    //         uart_sendstring(USART2, "Valid"); 
+    //         break;
 
-        case 2: // Unknown read 
-            uart_sendstring(USART2, "Unknown"); 
-            break;
+    //     case 2: // Unknown read 
+    //         uart_sendstring(USART2, "Unknown"); 
+    //         break;
 
-        default: // Really unknown read 
-            uart_sendstring(USART2, "What the H"); 
-            break;
-    }
+    //     default: // Really unknown read 
+    //         uart_sendstring(USART2, "What the H"); 
+    //         break;
+    // }
 
     uart_send_new_line(USART2); 
 
