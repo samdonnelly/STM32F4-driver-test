@@ -82,10 +82,14 @@ void m8q_test_app()
     // Read the data stream 
     read_status = m8q_read(I2C1, nmea_msg); 
 
-    // Print the results of the read registers 
     uart_send_integer(USART2, (int16_t)data_size); 
-    uart_sendstring(USART2, "  "); 
-    uart_sendstring(USART2, (char *)nmea_msg); 
+
+    // Print the results of the read registers 
+    if (read_status)
+    {
+        uart_sendstring(USART2, "  "); 
+        uart_sendstring(USART2, (char *)nmea_msg); 
+    }
 
     // switch (read_status)
     // {
