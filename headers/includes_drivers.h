@@ -18,12 +18,17 @@
 //=======================================================================================
 // Includes 
 
+// TODO as controllers are made, delete access to device and communication drivers 
+
 // Device drivers 
 #include "hw125_driver.h"
 #include "mpu6050_driver.h"
 #include "wayintop_lcd_driver.h"
 #include "hc05_driver.h"
 #include "m8q_driver.h"
+
+// Controllers 
+#include "m8q_controller.h" 
 
 // Communication drivers 
 #include "i2c_comm.h"
@@ -33,7 +38,7 @@
 // Other drivers 
 #include "timers.h"
 #include "gpio_driver.h"
-#include "adc_driver.h"
+#include "analog_driver.h"
 #include "data_filters.h"
 
 //=======================================================================================

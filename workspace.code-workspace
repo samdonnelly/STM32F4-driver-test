@@ -14,7 +14,9 @@
 			"stm32f411xe.h": "c",
 			"tools.h": "c",
 			"adc_test.h": "c",
-			"includes_drivers.h": "c"
+			"includes_drivers.h": "c",
+			"m8q_test.h": "c",
+			"hw125_driver.h": "c"
 		}
 	}
 }

@@ -60,6 +60,7 @@ sources/test_code/wayintop_lcd_test.c \
 ../STM32F4-driver-library/sources/wayintop_lcd_driver.c \
 ../STM32F4-driver-library/sources/hc05_driver.c \
 ../STM32F4-driver-library/sources/m8q_driver.c \
+../STM32F4-driver-library/sources/m8q_controller.c \
 ../STM32F4-driver-library/sources/uart_comm.c \
 ../STM32F4-driver-library/sources/i2c_comm.c \
 ../STM32F4-driver-library/sources/spi_comm.c \
