@@ -55,7 +55,7 @@ sources/test_code/uart_test.c \
 sources/test_code/wayintop_lcd_test.c \
 ../STM32F4-driver-library/sources/hw125_driver.c \
 ../STM32F4-driver-library/sources/mpu6050_driver.c \
-../STM32F4-driver-library/sources/adc_driver.c \
+../STM32F4-driver-library/sources/analog_driver.c \
 ../STM32F4-driver-library/sources/gpio_driver.c \
 ../STM32F4-driver-library/sources/wayintop_lcd_driver.c \
 ../STM32F4-driver-library/sources/hc05_driver.c \
