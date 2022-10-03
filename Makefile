@@ -53,6 +53,7 @@ sources/test_code/spi_test.c \
 sources/test_code/timers_test.c \
 sources/test_code/uart_test.c \
 sources/test_code/wayintop_lcd_test.c \
+sources/config_files/m8q_config.c \
 ../STM32F4-driver-library/sources/hw125_driver.c \
 ../STM32F4-driver-library/sources/mpu6050_driver.c \
 ../STM32F4-driver-library/sources/analog_driver.c \
@@ -149,6 +150,7 @@ C_INCLUDES =  \
 -ICore/Inc \
 -Iheaders \
 -Iheaders/test_code \
+-Iheaders/config_files \
 -I../STM32F4-driver-library/headers \
 -IDrivers/STM32F4xx_HAL_Driver/Inc \
 -IDrivers/STM32F4xx_HAL_Driver/Inc/Legacy \

@@ -41,6 +41,12 @@
 #include "analog_driver.h"
 #include "data_filters.h"
 
+// Configuration files 
+#include "m8q_config.h"
+
+// Tools 
+#include "tools.h"
+
 //=======================================================================================
 
 #endif  // _INCLUDES_DRIVERS_H_

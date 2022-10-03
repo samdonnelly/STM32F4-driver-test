@@ -16,7 +16,8 @@
 			"adc_test.h": "c",
 			"includes_drivers.h": "c",
 			"m8q_test.h": "c",
-			"hw125_driver.h": "c"
+			"hw125_driver.h": "c",
+			"stdio.h": "c"
 		}
 	}
 }
