@@ -27,7 +27,7 @@
 //=======================================================================================
 // Macros 
 
-#define M8Q_CONFIG_MSG_NUM 17       // Number of M8Q configuration messages on startup 
+#define M8Q_CONFIG_MSG_NUM 9        // Number of M8Q configuration messages on startup 
 #define M8Q_CONFIG_MSG_MAX_LEN 60   // Maximum length of an M8Q configuration message 
 
 //=======================================================================================

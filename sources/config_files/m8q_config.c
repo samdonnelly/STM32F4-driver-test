@@ -26,27 +26,17 @@
 static char* m8q_config_msgs[M8Q_CONFIG_MSG_NUM] = 
 {
     // Disable default NMEA messages 
-    "$PUBX,40,GGA,0,0,0,0,0,0*", 
-    "$PUBX,40,GLL,0,0,0,0,0,0*", 
-    "$PUBX,40,GSA,0,0,0,0,0,0*", 
-    "$PUBX,40,GSV,0,0,0,0,0,0*", 
-    "$PUBX,40,RMC,0,0,0,0,0,0*", 
-    "$PUBX,40,VTG,0,0,0,0,0,0*", 
+    "$PUBX,40,GGA,0,0,0,0,0,0*",    // GGA disable
+    "$PUBX,40,GLL,0,0,0,0,0,0*",    // GLL disable
+    "$PUBX,40,GSA,0,0,0,0,0,0*",    // GSA disable
+    "$PUBX,40,GSV,0,0,0,0,0,0*",    // GSV disable
+    "$PUBX,40,RMC,0,0,0,0,0,0*",    // RMC disable
+    "$PUBX,40,VTG,0,0,0,0,0,0*",    // VTG disable 
 
-    // UBX config messages 
-    "B5,62,06,01,0800,F0,00,00,00,00,00,00,00*",      // GGA disable
-    "B5,62,06,01,0800,F0,01,00,00,00,00,00,00*",      // GLL disable
-    "B5,62,06,01,0800,F0,02,00,00,00,00,00,00*",      // GSA disable
-    "B5,62,06,01,0800,F0,03,00,00,00,00,00,00*",      // GSV disable
-    "B5,62,06,01,0800,F0,04,00,00,00,00,00,00*",      // RMC disable
-    "B5,62,06,01,0800,F0,05,00,00,00,00,00,00*",      // VTG disable 
+    // UBX config messages   
     "B5,62,06,01,0800,F1,00,01,00,00,00,00,00*",      // POSITION enable 
-    "B5,62,06,01,0800,F1,04,01,00,00,00,00,00*",      // TIME enable 
-    "B5,62,06,09,0C00,00000000,FFFFFFFF,00000000*",   // Save mask 
-
-    // Enable configured NMEA messages 
-    "$PUBX,40,POSITION,1,0,0,0,0,0*", 
-    "$PUBX,40,TIME,1,0,0,0,0,0*"
+    "B5,62,06,01,0800,F1,04,0A,00,00,00,00,00*",      // TIME enable 
+    "B5,62,06,09,0C00,00000000,FFFFFFFF,00000000*"    // Save mask 
 };
 
 //=======================================================================================
