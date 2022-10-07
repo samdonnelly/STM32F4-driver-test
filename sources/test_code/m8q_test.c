@@ -72,22 +72,33 @@ void m8q_test_app()
     m8q_user_config(I2C1); 
 #else 
     // Local variables 
-    uint16_t data_size = 0; 
-    uint8_t read_status = 0; 
+    // uint16_t data_size = 0; 
+    uint8_t counter = 0; 
+    volatile float latitude = 0; 
 
     // Read the size of the NMEA data stream 
-    m8q_check_data_size(I2C1, &data_size); 
+    // m8q_check_data_size(I2C1, &data_size); 
 
-    // Read the data stream 
-    read_status = m8q_read(I2C1, nmea_msg);  
-
-    // Print the results of the read registers 
-    if (read_status)
+    // 
+    while (TRUE)
     {
-        uart_send_integer(USART2, (int16_t)data_size);
-        uart_sendstring(USART2, "  "); 
-        uart_sendstring(USART2, (char *)nmea_msg); 
-        uart_send_new_line(USART2); 
+        // 
+        if (m8q_read(I2C1, nmea_msg))
+        {
+            counter++; 
+        }
+        else
+        {
+            if (counter == 2)
+            {
+                latitude = m8q_get_lat(); 
+                // uart_sendstring(USART2, "latitude: "); 
+                // uart_send_integer(USART2, (int16_t)counter); 
+                // uart_send_new_line(USART2); 
+                counter = 0; 
+            }
+            break; 
+        }
     }
 
 #endif   // M8Q_USER_CONFIG
