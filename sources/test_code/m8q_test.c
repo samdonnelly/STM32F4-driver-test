@@ -74,7 +74,9 @@ void m8q_test_app()
     // Local variables 
     // uint16_t data_size = 0; 
     uint8_t counter = 0; 
-    volatile float latitude = 0; 
+    int16_t lat_deg_min = 0; 
+    int32_t lat_min_frac = 0; 
+    // volatile float latitude = 0; 
 
     // Read the size of the NMEA data stream 
     // m8q_check_data_size(I2C1, &data_size); 
@@ -91,7 +93,7 @@ void m8q_test_app()
         {
             if (counter == 2)
             {
-                latitude = m8q_get_lat(); 
+                m8q_get_lat(&lat_deg_min, &lat_min_frac); 
                 // uart_sendstring(USART2, "latitude: "); 
                 // uart_send_integer(USART2, (int16_t)counter); 
                 // uart_send_new_line(USART2); 
