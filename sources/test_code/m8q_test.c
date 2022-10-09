@@ -72,31 +72,34 @@ void m8q_test_app()
     m8q_user_config(I2C1); 
 #else 
     // Local variables 
-    // uint16_t data_size = 0; 
     uint8_t counter = 0; 
-    int16_t lat_deg_min = 0; 
-    int32_t lat_min_frac = 0; 
-    // volatile float latitude = 0; 
 
-    // Read the size of the NMEA data stream 
-    // m8q_check_data_size(I2C1, &data_size); 
+    // M8Q data 
+    uint16_t lat_deg_min = 0; 
+    uint32_t lat_min_frac = 0; 
+    volatile uint8_t NS = 0; 
+    uint16_t lon_deg_min = 0; 
+    uint32_t lon_min_frac = 0; 
+    volatile uint8_t EW = 0; 
+    volatile uint16_t navstat = 0; 
+    uint8_t utc_time[BYTE_9]; 
+    uint8_t utc_date[BYTE_6]; 
 
-    // 
     while (TRUE)
     {
-        // 
         if (m8q_read(I2C1, nmea_msg))
-        {
             counter++; 
-        }
         else
         {
             if (counter == 2)
             {
                 m8q_get_lat(&lat_deg_min, &lat_min_frac); 
-                // uart_sendstring(USART2, "latitude: "); 
-                // uart_send_integer(USART2, (int16_t)counter); 
-                // uart_send_new_line(USART2); 
+                NS = m8q_get_NS(); 
+                m8q_get_long(&lon_deg_min, &lon_min_frac); 
+                EW = m8q_get_EW(); 
+                navstat = m8q_get_navstat(); 
+                m8q_get_time(utc_time); 
+                m8q_get_date(utc_date); 
                 counter = 0; 
             }
             break; 
