@@ -71,40 +71,54 @@ void m8q_test_app()
 #if M8Q_USER_CONFIG 
     m8q_user_config(I2C1); 
 #else 
+    // TODO make the GPIO switching into a setter in the driver 
+    
     // Local variables 
-    uint8_t counter = 0; 
+    static uint8_t flipper = 0; 
 
-    // M8Q data 
-    uint16_t lat_deg_min = 0; 
-    uint32_t lat_min_frac = 0; 
-    volatile uint8_t NS = 0; 
-    uint16_t lon_deg_min = 0; 
-    uint32_t lon_min_frac = 0; 
-    volatile uint8_t EW = 0; 
-    volatile uint16_t navstat = 0; 
-    uint8_t utc_time[BYTE_9]; 
-    uint8_t utc_date[BYTE_6]; 
+    // Delay long enough to watch for low power mode results 
+    for (uint8_t timer = 0; timer < 250; timer++)
+        tim9_delay_ms(100); 
+    
+    // Toggle the EXTINT pin 
+    // gpio_write(GPIOC, GPIOX_PIN_12, flipper); 
+    gpio_write(GPIOA, GPIOX_PIN_8, flipper);
+    flipper = 1 - flipper; 
 
-    while (TRUE)
-    {
-        if (m8q_read(I2C1, nmea_msg))
-            counter++; 
-        else
-        {
-            if (counter == 2)
-            {
-                m8q_get_lat(&lat_deg_min, &lat_min_frac); 
-                NS = m8q_get_NS(); 
-                m8q_get_long(&lon_deg_min, &lon_min_frac); 
-                EW = m8q_get_EW(); 
-                navstat = m8q_get_navstat(); 
-                m8q_get_time(utc_time); 
-                m8q_get_date(utc_date); 
-                counter = 0; 
-            }
-            break; 
-        }
-    }
+    // // Local variables 
+    // uint8_t counter = 0; 
+
+    // // M8Q data 
+    // uint16_t lat_deg_min = 0; 
+    // uint32_t lat_min_frac = 0; 
+    // volatile uint8_t NS = 0; 
+    // uint16_t lon_deg_min = 0; 
+    // uint32_t lon_min_frac = 0; 
+    // volatile uint8_t EW = 0; 
+    // volatile uint16_t navstat = 0; 
+    // uint8_t utc_time[BYTE_9]; 
+    // uint8_t utc_date[BYTE_6]; 
+
+    // while (TRUE)
+    // {
+    //     if (m8q_read(I2C1, nmea_msg))
+    //         counter++; 
+    //     else
+    //     {
+    //         if (counter == 2)
+    //         {
+    //             m8q_get_lat(&lat_deg_min, &lat_min_frac); 
+    //             NS = m8q_get_NS(); 
+    //             m8q_get_long(&lon_deg_min, &lon_min_frac); 
+    //             EW = m8q_get_EW(); 
+    //             navstat = m8q_get_navstat(); 
+    //             m8q_get_time(utc_time); 
+    //             m8q_get_date(utc_date); 
+    //             counter = 0; 
+    //         }
+    //         break; 
+    //     }
+    // }
 
 #endif   // M8Q_USER_CONFIG
 }

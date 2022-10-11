@@ -36,6 +36,12 @@ static char* m8q_config_msgs[M8Q_CONFIG_MSG_NUM] =
     // UBX config messages   
     "B5,62,06,01,0800,F1,00,01,00,00,00,00,00*",      // POSITION enable 
     "B5,62,06,01,0800,F1,04,0A,00,00,00,00,00*",      // TIME enable 
+
+    // Power configuration 
+    "B5,62,06,3B,3000,02,00,00,00,60104201,E8030000,10270000,00000000,"
+    "0000,0000,0000000000000000000000000000000000000000,00000000*",
+
+    // Save the settings 
     "B5,62,06,09,0C00,00000000,FFFFFFFF,00000000*"    // Save mask 
 };
 
