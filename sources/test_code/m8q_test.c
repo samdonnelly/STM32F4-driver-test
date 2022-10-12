@@ -72,23 +72,96 @@ void m8q_test_app()
     m8q_user_config(I2C1); 
 #else 
     // TODO make the GPIO switching into a setter in the driver 
-    
-    // Local variables 
-    static uint8_t flipper = 0; 
 
-    // Delay long enough to watch for low power mode results 
-    for (uint8_t timer = 0; timer < 250; timer++)
-        tim9_delay_ms(100); 
+    //===================================================
+    // TX_READY testing 
+
+    // Local variables 
+    // static uint8_t identifier = 0; 
+    volatile uint8_t in_pin_stat = 0; 
+    // static uint8_t blocker = 1; 
+
+    // Check the pin 
+    in_pin_stat = gpio_read(GPIOA, GPIOX_PIN_11); 
+
+    if (in_pin_stat)
+    {
+        m8q_read(I2C1, nmea_msg); 
+        uart_sendstring(USART2, (char *)nmea_msg); 
+        uart_send_new_line(USART2); 
+    }
+
+    // if (blocker && in_pin_stat)
+    // {
+    //     uart_sendstring(USART2, "Input pin status: 1\r\n"); 
+    //     blocker = 0; 
+    // }
+    // else if (!blocker && !in_pin_stat)
+    // {
+    //     uart_sendstring(USART2, "Input pin status: 0\r\n"); 
+    //     blocker = 1; 
+    // }
+
+    // // Check if data is available 
+    // if (in_pin_stat)
+    // {
+    //     uart_sendstring(USART2, "Input pin status: "); 
+    //     uart_send_integer(USART2, (int16_t)in_pin_stat); 
+    //     uart_send_new_line(USART2); 
+
+    //     if (m8q_read(I2C1, nmea_msg))
+    //     {
+    //         if (identifier)
+    //             uart_sendstring(USART2, "++There is data!\r\n"); 
+    //         else 
+    //             uart_sendstring(USART2, "--There is data!\r\n"); 
+            
+    //         identifier = 1 - identifier; 
+    //     }
+    // }
+
+    // // Clear the data 
+    // while (m8q_read(I2C1, nmea_msg)); 
+
+    //===================================================
+
+    //===================================================
+    // Low Power mode testing
     
-    // Toggle the EXTINT pin 
-    // gpio_write(GPIOC, GPIOX_PIN_12, flipper); 
-    gpio_write(GPIOA, GPIOX_PIN_8, flipper);
-    flipper = 1 - flipper; 
+    // // Local variables 
+    // static uint8_t flipper = 0; 
+    // static uint16_t timer = 0x88B8; 
+
+    // // Display the message if it exists 
+    // if (!flipper)
+    // {
+    //     while (m8q_read(I2C1, nmea_msg))    
+    //     {
+    //         uart_sendstring(USART2, (char *)nmea_msg); 
+    //         uart_send_new_line(USART2); 
+    //     }
+    // }
+    
+    // // Toggle the EXTINT pin 
+    // if (!(--timer))
+    // {
+    //     gpio_write(GPIOA, GPIOX_PIN_8, flipper);
+    //     flipper = 1 - flipper; 
+    //     timer = 0x88B8; 
+    //     tim9_delay_ms(100); 
+    // }
+
+    // tim9_delay_ms(1); 
+
+    //===================================================
+
+
+    //===================================================
+    // Data record testing 
 
     // // Local variables 
     // uint8_t counter = 0; 
-
-    // // M8Q data 
+    // //  M8Q data 
     // uint16_t lat_deg_min = 0; 
     // uint32_t lat_min_frac = 0; 
     // volatile uint8_t NS = 0; 
@@ -119,6 +192,8 @@ void m8q_test_app()
     //         break; 
     //     }
     // }
+
+    //===================================================
 
 #endif   // M8Q_USER_CONFIG
 }
