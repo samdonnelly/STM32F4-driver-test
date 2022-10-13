@@ -166,7 +166,12 @@ void m8q_test_app()
         gpio_write(GPIOC, GPIOX_PIN_10, flipper);
         flipper = 1 - flipper; 
         timer = 0x48B8; 
-        tim9_delay_ms(100);  // Give time for the receiver to startup from sleep mode 
+        tim9_delay_ms(150);  // Give time for the receiver to startup from sleep mode 
+
+        // The following line of code was needed in order for the TX_READY input pin to start 
+        // functioning normally again after low power mode. Make this part of a state when 
+        // returning form low power mode. 
+        if (!flipper) while (!(m8q_read(I2C1, nmea_msg))); 
     }
 
     tim9_delay_ms(1); 
