@@ -76,29 +76,31 @@ void m8q_test_app()
     //===================================================
     // TX_READY testing 
 
-    // Local variables 
+    // // Local variables 
     // static uint8_t identifier = 0; 
-    volatile uint8_t in_pin_stat = 0; 
+    // volatile uint8_t in_pin_stat = 0; 
     // static uint8_t blocker = 1; 
 
-    // Check the pin 
-    in_pin_stat = gpio_read(GPIOA, GPIOX_PIN_11); 
+    // // Check the pin 
+    // in_pin_stat = gpio_read(GPIOC, GPIOX_PIN_11); 
 
-    if (in_pin_stat)
-    {
-        m8q_read(I2C1, nmea_msg); 
-        uart_sendstring(USART2, (char *)nmea_msg); 
-        uart_send_new_line(USART2); 
-    }
+    // if (in_pin_stat)
+    // {
+    //     m8q_read(I2C1, nmea_msg); 
+    //     uart_sendstring(USART2, (char *)nmea_msg); 
+    //     uart_send_new_line(USART2); 
+    // }
 
     // if (blocker && in_pin_stat)
     // {
     //     uart_sendstring(USART2, "Input pin status: 1\r\n"); 
+    //     gpio_write(GPIOC, GPIOX_PIN_10, GPIO_HIGH);
     //     blocker = 0; 
     // }
     // else if (!blocker && !in_pin_stat)
     // {
     //     uart_sendstring(USART2, "Input pin status: 0\r\n"); 
+    //     gpio_write(GPIOC, GPIOX_PIN_10, GPIO_LOW);
     //     blocker = 1; 
     // }
 
@@ -126,32 +128,48 @@ void m8q_test_app()
     //===================================================
 
     //===================================================
-    // Low Power mode testing
+    // Low Power mode and TX_READY testing
     
-    // // Local variables 
-    // static uint8_t flipper = 0; 
-    // static uint16_t timer = 0x88B8; 
+    // Local variables 
+    volatile uint8_t in_pin_stat = 0; 
+    static uint8_t flipper = 0; 
+    static uint16_t timer = 0x48B8; 
 
-    // // Display the message if it exists 
+    // Display the message if it exists 
     // if (!flipper)
     // {
-    //     while (m8q_read(I2C1, nmea_msg))    
-    //     {
-    //         uart_sendstring(USART2, (char *)nmea_msg); 
-    //         uart_send_new_line(USART2); 
-    //     }
+    // Check TX_READY pin 
+    in_pin_stat = gpio_read(GPIOC, GPIOX_PIN_11); 
+
+    if (in_pin_stat)
+    // {
+    // while (m8q_read(I2C1, nmea_msg))
+    {
+        m8q_read(I2C1, nmea_msg); 
+        uart_sendstring(USART2, (char *)nmea_msg); 
+        // uart_sendstring(USART2, "tx_ready status: "); 
+        // uart_send_integer(USART2, (int16_t)in_pin_stat); 
+        // uart_send_new_line(USART2); 
+        uart_send_new_line(USART2); 
+    }
+
+        // while (m8q_read(I2C1, nmea_msg))    
+        // {
+        //     uart_sendstring(USART2, (char *)nmea_msg); 
+        //     uart_send_new_line(USART2); 
+        // }
     // }
     
-    // // Toggle the EXTINT pin 
-    // if (!(--timer))
-    // {
-    //     gpio_write(GPIOA, GPIOX_PIN_8, flipper);
-    //     flipper = 1 - flipper; 
-    //     timer = 0x88B8; 
-    //     tim9_delay_ms(100); 
-    // }
+    // Toggle the EXTINT pin 
+    if (!(--timer))
+    {
+        gpio_write(GPIOC, GPIOX_PIN_10, flipper);
+        flipper = 1 - flipper; 
+        timer = 0x48B8; 
+        tim9_delay_ms(100);  // Give time for the receiver to startup from sleep mode 
+    }
 
-    // tim9_delay_ms(1); 
+    tim9_delay_ms(1); 
 
     //===================================================
 
