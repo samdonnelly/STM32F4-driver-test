@@ -82,7 +82,7 @@ void m8q_test_app()
     else gpio_write(GPIOA, GPIOX_PIN_5, GPIO_LOW); 
     flip = 1 - flip; 
 
-    tim9_delay_ms(1000); 
+    tim9_delay_ms(100); 
 
     //===================================================
 
