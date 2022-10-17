@@ -71,8 +71,6 @@ void m8q_test_app()
 #if M8Q_USER_CONFIG 
     m8q_user_config(I2C1); 
 #else 
-    // TODO make the GPIO switching into a setter in the driver 
-
     //===================================================
     // Low Power mode and TX_READY testing
     
