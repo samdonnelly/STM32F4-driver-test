@@ -73,52 +73,39 @@ void m8q_test_app()
 #else 
     // TODO make the GPIO switching into a setter in the driver 
 
-    //==================================================
-    // Test 
-
-    static uint8_t flip = 0; 
-
-    if (flip) gpio_write(GPIOA, GPIOX_PIN_5, GPIO_HIGH); 
-    else gpio_write(GPIOA, GPIOX_PIN_5, GPIO_LOW); 
-    flip = 1 - flip; 
-
-    tim9_delay_ms(250); 
-
-    //==================================================
-
     //===================================================
     // Low Power mode and TX_READY testing
     
-    // // Local variables 
-    // static uint8_t flipper = 0; 
-    // static uint16_t timer = 0x48B8; 
+    // Local variables 
+    static uint8_t flipper = 0; 
+    static uint16_t timer = 0x48B8; 
 
-    // // Display the message if it exists 
-    // // if (gpio_read(GPIOC, GPIOX_PIN_11))
-    // if (m8q_get_tx_ready())
-    // {
-    //     m8q_read(I2C1, nmea_msg); 
-    //     uart_sendstring(USART2, (char *)nmea_msg); 
-    //     uart_send_new_line(USART2); 
-    // }
+    // Display the message if it exists 
+    // if (gpio_read(GPIOC, GPIOX_PIN_11))
+    if (m8q_get_tx_ready())
+    {
+        m8q_read(I2C1, nmea_msg); 
+        uart_sendstring(USART2, (char *)nmea_msg); 
+        uart_send_new_line(USART2); 
+    }
     
-    // // Toggle the EXTINT pin 
-    // if (!(--timer))
-    // {
-    //     // gpio_write(GPIOC, GPIOX_PIN_10, flipper);
-    //     if (flipper) m8q_set_low_power(GPIO_HIGH); 
-    //     else m8q_set_low_power(GPIO_LOW); 
-    //     flipper = 1 - flipper; 
-    //     timer = 0x48B8; 
-    //     tim9_delay_ms(150);  // Give time for the receiver to startup from sleep mode 
+    // Toggle the EXTINT pin 
+    if (!(--timer))
+    {
+        // gpio_write(GPIOC, GPIOX_PIN_10, flipper);
+        if (flipper) m8q_set_low_power(GPIO_HIGH); 
+        else m8q_set_low_power(GPIO_LOW); 
+        flipper = 1 - flipper; 
+        timer = 0x48B8; 
+        tim9_delay_ms(150);  // Give time for the receiver to startup from sleep mode 
 
-    //     // The following line of code was needed in order for the TX_READY input pin to start 
-    //     // functioning normally again after low power mode. Make this part of a state when 
-    //     // returning form low power mode. 
-    //     if (!flipper) while (!(m8q_read(I2C1, nmea_msg))); 
-    // }
+        // The following line of code was needed in order for the TX_READY input pin to start 
+        // functioning normally again after low power mode. Make this part of a state when 
+        // returning form low power mode. 
+        if (!flipper) while (!(m8q_read(I2C1, nmea_msg))); 
+    }
 
-    // tim9_delay_ms(1); 
+    tim9_delay_ms(1); 
 
     //===================================================
 
