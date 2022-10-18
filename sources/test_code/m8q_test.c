@@ -77,23 +77,23 @@ void m8q_test_app()
     // Local variables 
     static uint8_t flipper = 0; 
     static uint16_t timer = 0x48B8; 
+    static uint8_t blink = 0; 
 
     // Display the message if it exists 
-    if (gpio_read(GPIOC, GPIOX_PIN_11))
-    // if (m8q_get_tx_ready())
+    if (m8q_get_tx_ready())
     {
         m8q_read(I2C1, nmea_msg); 
         uart_sendstring(USART2, (char *)nmea_msg); 
         uart_send_new_line(USART2); 
+        blink = GPIO_HIGH - blink; 
+        gpio_write(GPIOA, GPIOX_PIN_5, blink); 
     }
     
     // Toggle the EXTINT pin 
     if (!(--timer))
     {
-        gpio_write(GPIOC, GPIOX_PIN_10, flipper);
-        // if (flipper) m8q_set_low_power(GPIO_HIGH); 
-        // else m8q_set_low_power(GPIO_LOW);
-        flipper = 1 - flipper; 
+        m8q_set_low_power(flipper); 
+        flipper = GPIO_HIGH - flipper; 
         timer = 0x48B8; 
         tim9_delay_ms(150);  // Give time for the receiver to startup from sleep mode 
 
