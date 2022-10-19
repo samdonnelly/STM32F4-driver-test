@@ -34,6 +34,10 @@ void m8q_test_init()
     // Initialize timers 
     tim9_init(TIMERS_APB2_84MHZ_1US_PRESCALAR);
 
+    // Initialize GPIO ports 
+    // TODO remove this step from other comm and device inits 
+    gpio_port_init(); 
+
     // Initialize UART
     uart_init(USART2, UART_BAUD_9600, UART_CLOCK_42);
 
@@ -55,6 +59,9 @@ void m8q_test_init()
     char m8q_config_messages[M8Q_CONFIG_MSG_NUM][M8Q_CONFIG_MSG_MAX_LEN]; 
     m8q_config_copy(m8q_config_messages); 
     m8q_init(I2C1, 
+             GPIOC, 
+             PIN_10, 
+             PIN_11, 
              M8Q_CONFIG_MSG_NUM, 
              M8Q_CONFIG_MSG_MAX_LEN, 
              (uint8_t *)m8q_config_messages[0]); 
