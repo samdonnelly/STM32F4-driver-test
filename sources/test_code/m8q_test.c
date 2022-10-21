@@ -58,13 +58,14 @@ void m8q_test_init()
     // M8Q device setup 
     char m8q_config_messages[M8Q_CONFIG_MSG_NUM][M8Q_CONFIG_MSG_MAX_LEN]; 
     m8q_config_copy(m8q_config_messages); 
-    m8q_init(I2C1, 
-             GPIOC, 
-             PIN_10, 
-             PIN_11, 
-             M8Q_CONFIG_MSG_NUM, 
-             M8Q_CONFIG_MSG_MAX_LEN, 
-             (uint8_t *)m8q_config_messages[0]); 
+    uint16_t init_error_code = m8q_init(I2C1, 
+                                        GPIOC, 
+                                        PIN_10, 
+                                        PIN_11, 
+                                        M8Q_CONFIG_MSG_NUM, 
+                                        M8Q_CONFIG_MSG_MAX_LEN, 
+                                        (uint8_t *)m8q_config_messages[0]); 
+    if (init_error_code) uart_sendstring(USART2, "M8Q init fault.\r\n"); 
 #endif
 
     // Delay to let everything finish setup before starting to send and receieve data 
@@ -89,7 +90,7 @@ void m8q_test_app()
     // Display the message if it exists 
     if (m8q_get_tx_ready())
     {
-        m8q_read(I2C1, nmea_msg); 
+        m8q_read(nmea_msg); 
         uart_sendstring(USART2, (char *)nmea_msg); 
         uart_send_new_line(USART2); 
         blink = GPIO_HIGH - blink; 
@@ -107,7 +108,7 @@ void m8q_test_app()
         // The following line of code was needed in order for the TX_READY input pin to start 
         // functioning normally again after low power mode. Make this part of a state when 
         // returning form low power mode. 
-        if (!flipper) while (!(m8q_read(I2C1, nmea_msg))); 
+        if (!flipper) while (!(m8q_read(nmea_msg))); 
     }
 
     tim9_delay_ms(1); 
