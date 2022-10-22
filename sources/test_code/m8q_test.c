@@ -53,7 +53,7 @@ void m8q_test_init()
 
     // M8Q configuration mode 
 #if M8Q_USER_CONFIG 
-    m8q_nmea_config_ui(); 
+    m8q_user_config_init(I2C1); 
 #else
     // M8Q device setup 
     char m8q_config_messages[M8Q_CONFIG_MSG_NUM][M8Q_CONFIG_MSG_MAX_LEN]; 
@@ -77,7 +77,7 @@ void m8q_test_init()
 void m8q_test_app()
 {
 #if M8Q_USER_CONFIG 
-    m8q_user_config(I2C1); 
+    m8q_user_config(); 
 #else 
     //===================================================
     // Data record, power save mode and TX-Ready testing 
