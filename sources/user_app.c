@@ -24,11 +24,4 @@
 void user_app()
 {
     // Looped code here
-    // Call application or test code from here 
-
-    // SAM-M8Q GPS 
-    m8q_test_app(); 
-
-    // MPU6050 
-    // mpu6050_test_app(); 
 }

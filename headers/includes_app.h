@@ -21,7 +21,7 @@
 // Application code 
 
 // Test code 
-#include "adc_test.h"
+#include "analog_test.h"
 #include "data_filters_test.h"
 #include "gpio_test.h"
 #include "hc05_test.h"
