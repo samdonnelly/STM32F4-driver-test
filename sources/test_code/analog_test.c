@@ -24,6 +24,12 @@
 void analog_test_init()
 {
     // Setup code for the analog_test here 
+
+    // Initialize GPIO ports 
+    gpio_port_init(); 
+
+    // Initialize the ADC port 
+    adc_port_init(); 
 } 
 
 
