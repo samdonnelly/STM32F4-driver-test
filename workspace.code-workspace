@@ -18,7 +18,8 @@
 			"m8q_test.h": "c",
 			"hw125_driver.h": "c",
 			"stdio.h": "c",
-			"hc05_driver.h": "c"
+			"hc05_driver.h": "c",
+			"timers.h": "c"
 		}
 	}
 }

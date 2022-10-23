@@ -1,9 +1,9 @@
 /**
- * @file adc_test.h
+ * @file analog_test.h
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief ADC test code header 
+ * @brief Analog test code header 
  * 
  * @version 0.1
  * @date 2022-08-28
@@ -12,8 +12,8 @@
  * 
  */
 
-#ifndef _ADC_TEST_H_
-#define _ADC_TEST_H_
+#ifndef _ANALOG_TEST_H_
+#define _ANALOG_TEST_H_
 
 //=======================================================================================
 // Includes 
@@ -27,18 +27,18 @@
 // Function prototypes 
 
 /**
- * @brief ADC setup code 
+ * @brief Analog test setup code 
  * 
  */
-void adc_test_init(void); 
+void analog_test_init(void); 
 
 
 /**
- * @brief ADC test code 
+ * @brief Analog test code 
  * 
  */
-void adc_test_app(void); 
+void analog_test_app(void); 
 
 //=======================================================================================
 
-#endif  // _ADC_TEST_H_ 
+#endif  // _ANALOG_TEST_H_ 
