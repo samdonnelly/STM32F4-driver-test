@@ -41,7 +41,7 @@ Core/Src/stm32f4xx_it.c \
 Core/Src/stm32f4xx_hal_msp.c \
 sources/user_init.c \
 sources/user_app.c \
-sources/test_code/adc_test.c \
+sources/test_code/analog_test.c \
 sources/test_code/data_filters_test.c \
 sources/test_code/gpio_test.c \
 sources/test_code/hc05_test.c \
