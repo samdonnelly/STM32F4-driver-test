@@ -24,4 +24,5 @@
 void user_init()
 {
     // Setup code here
+    analog_test_init(); 
 }
