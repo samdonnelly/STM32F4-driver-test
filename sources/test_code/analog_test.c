@@ -36,7 +36,7 @@ void analog_test_init()
     // ADC Init 
 
     // Initialize the ADC port 
-    adc_port_init(ADC_PCLK2_4, ADC_RES_10, ADC_EOC_EACH); 
+    adc_port_init(ADC_PCLK2_4, ADC_RES_8, ADC_EOC_EACH); 
 
     // Initialize ADC pins and channels 
     adc_pin_init(ADC1, GPIOC, PIN_0, ADC_CHANNEL_10, ADC_SMP_15); 
@@ -47,12 +47,10 @@ void analog_test_init()
     // Set the sequence length 
     adc_seq_len_set(ADC1, ADC_SEQ_1); 
 
-    //==================================================
+    // Turn the ADC on 
+    adc_on(ADC1); 
 
-    gpio_pin_init(GPIOC, 
-                  PIN_10, 
-                  MODER_GPO, OTYPER_PP, OSPEEDR_HIGH, PUPDR_NO);
-    m8q_set_low_power(GPIO_HIGH); 
+    //================================================== 
 } 
 
 
@@ -67,11 +65,6 @@ void analog_test_app()
     // Local variables 
     uint16_t adc_result = 0; 
 
-    // Turn the ADC on 
-    adc_on(ADC1); 
-
-    tim9_delay_ms(100); 
-
     // Start and ADC conversion 
     adc_start(ADC1); 
 
@@ -84,8 +77,8 @@ void analog_test_app()
     // Read the data register 
     adc_result = adc_dr(ADC1); 
 
-    // Turn to ADC off 
-    adc_off(ADC1); 
+    // // Turn to ADC off 
+    // adc_off(ADC1); 
 
     // Display the result to the serial terminal 
     uart_sendstring(USART2, "ADC Result: "); 
