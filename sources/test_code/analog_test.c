@@ -48,6 +48,11 @@ void analog_test_init()
     adc_seq_len_set(ADC1, ADC_SEQ_1); 
 
     //==================================================
+
+    gpio_pin_init(GPIOC, 
+                  PIN_10, 
+                  MODER_GPO, OTYPER_PP, OSPEEDR_HIGH, PUPDR_NO);
+    m8q_set_low_power(GPIO_HIGH); 
 } 
 
 
