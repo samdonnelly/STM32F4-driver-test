@@ -35,16 +35,16 @@ void analog_test_init()
     //==================================================
     // ADC Init 
 
-    // Initialize the ADC port 
+    // Initialize the ADC port (called once) 
     adc_port_init(ADC_PCLK2_4, ADC_RES_8, ADC_EOC_EACH); 
 
-    // Initialize ADC pins and channels 
+    // Initialize ADC pins and channels (called for each pin/channel) 
     adc_pin_init(ADC1, GPIOC, PIN_0, ADC_CHANNEL_10, ADC_SMP_15); 
 
-    // Set the ADC conversion sequence 
+    // Set the ADC conversion sequence (called for each sequence entry) 
     adc_seq(ADC1, ADC_CHANNEL_10, ADC_SEQ_1); 
 
-    // Set the sequence length 
+    // Set the sequence length (called once) 
     adc_seq_len_set(ADC1, ADC_SEQ_1); 
 
     // Turn the ADC on 
@@ -65,17 +65,8 @@ void analog_test_app()
     // Local variables 
     uint16_t adc_result = 0; 
 
-    // Start and ADC conversion 
-    adc_start(ADC1); 
-
-    // Wait for start bit to set 
-    adc_start_wait(ADC1); 
-
-    // Wait for end of ADC conversion 
-    adc_eoc_wait(ADC1); 
-
-    // Read the data register 
-    adc_result = adc_dr(ADC1); 
+    // Read ADC 
+    adc_result = adc_read_single(ADC1);  
 
     // // Turn to ADC off 
     // adc_off(ADC1); 
