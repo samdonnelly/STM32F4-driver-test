@@ -66,7 +66,7 @@ void analog_test_app()
     uint16_t adc_result = 0; 
 
     // Read ADC 
-    adc_result = adc_read_single(ADC1);  
+    adc_result = adc_read_single_next(ADC1);  
 
     // // Turn to ADC off 
     // adc_off(ADC1); 

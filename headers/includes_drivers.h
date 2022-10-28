@@ -39,6 +39,7 @@
 #include "timers.h"
 #include "gpio_driver.h"
 #include "analog_driver.h"
+#include "dma_driver.h" 
 #include "data_filters.h"
 
 // Configuration files 
