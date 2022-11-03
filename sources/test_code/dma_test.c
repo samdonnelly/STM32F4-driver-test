@@ -20,6 +20,14 @@
 //=======================================================================================
 
 
+//================================================================================
+// Globals 
+
+uint16_t adc_data[2];  // Location for the DMA to store ADC values 
+
+//================================================================================
+
+
 // Setup code
 void dma_test_init()
 {
@@ -59,6 +67,27 @@ void dma_test_init()
     dma_port_init(DMA2); 
 
     // Initialze each DMA stream 
+    dma_stream_init(
+        DMA2, 
+        DMA2_Stream0, 
+        (uint32_t)(&ADC1->DR), 
+        DMA_DBM_DISABLE, 
+        (uint32_t)adc_data, 
+        (uint32_t)adc_data, 
+        SET_2, 
+        DMA_CHNL_0, 
+        DMA_FLOW_CTL_DMA, 
+        DMA_PRIOR_VHI, 
+        DMA_FTH_1, 
+        DMA_FIFO_MODE, 
+        DMA_DIR_PM, 
+        DMA_ADDR_INCREMENT,   // Mmeory increment - new data saved in new location 
+        DMA_ADDR_FIXED,   // No peripheral increment - copy from DR only 
+        DMA_BURST_1, 
+        DMA_BURST_1, 
+        DMA_DATA_SIZE_HALF, 
+        DMA_DATA_SIZE_HALF, 
+        DMA_CM_ENABLE); 
     
     //==================================================
 } 
