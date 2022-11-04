@@ -24,5 +24,6 @@
 void user_app()
 {
     // Looped code here
-    analog_test_app(); 
+    // analog_test_app(); 
+    dma_test_app(); 
 }

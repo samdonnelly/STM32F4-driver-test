@@ -44,51 +44,65 @@ void dma_test_init()
     // ADC Init 
 
     // Initialize the ADC port (called once) 
-    adc_port_init(ADC_PCLK2_4, ADC_RES_8, ADC_EOC_EACH); 
+    adc_port_init(ADC1, 
+                  ADC1_COMMON, 
+                  ADC_PCLK2_4, 
+                  ADC_RES_8, 
+                  ADC_EOC_EACH, 
+                  ADC_SCAN_ENABLE, 
+                  ADC_CONT_ENABLE, 
+                  ADC_DMA_ENABLE, 
+                  ADC_DDS_ENABLE); 
 
     // Initialize ADC pins and channels (called for each pin/channel) 
     adc_pin_init(ADC1, GPIOC, PIN_0, ADC_CHANNEL_10, ADC_SMP_15); 
+    adc_pin_init(ADC1, GPIOC, PIN_1, ADC_CHANNEL_11, ADC_SMP_15); 
 
     // Set the ADC conversion sequence (called for each sequence entry) 
     adc_seq(ADC1, ADC_CHANNEL_10, ADC_SEQ_1); 
+    adc_seq(ADC1, ADC_CHANNEL_11, ADC_SEQ_2); 
 
     // Set the sequence length (called once) 
-    adc_seq_len_set(ADC1, ADC_SEQ_1); 
-
-    // Turn the ADC on 
-    adc_on(ADC1); 
+    adc_seq_len_set(ADC1, ADC_SEQ_2); 
 
     //================================================== 
 
     //==================================================
     // DMA init 
 
-    // Initialize the DMA port(s) 
-    dma_port_init(DMA2); 
-
-    // Initialze each DMA stream 
+    // Initialize the DMA stream 
     dma_stream_init(
         DMA2, 
         DMA2_Stream0, 
-        (uint32_t)(&ADC1->DR), 
-        DMA_DBM_DISABLE, 
-        (uint32_t)adc_data, 
-        (uint32_t)adc_data, 
-        SET_2, 
         DMA_CHNL_0, 
-        DMA_FLOW_CTL_DMA, 
-        DMA_PRIOR_VHI, 
-        DMA_FTH_1, 
-        DMA_FIFO_MODE, 
         DMA_DIR_PM, 
-        DMA_ADDR_INCREMENT,   // Mmeory increment - new data saved in new location 
-        DMA_ADDR_FIXED,   // No peripheral increment - copy from DR only 
-        DMA_BURST_1, 
-        DMA_BURST_1, 
+        DMA_CM_ENABLE, 
+        DMA_PRIOR_VHI, 
+        DMA_ADDR_INCREMENT,   // Memory increment - new data saved in new location 
+        DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
         DMA_DATA_SIZE_HALF, 
-        DMA_DATA_SIZE_HALF, 
-        DMA_CM_ENABLE); 
+        DMA_DATA_SIZE_HALF,
+        DMA_FTH_1QTR, 
+        DMA_DIRECT_MODE); 
+
+    // Configure the DMA stream 
+    dma_stream_config(
+        DMA2_Stream0, 
+        (uint32_t)(&ADC1->DR), 
+        (uint32_t)adc_data, 
+        (uint16_t)SET_2); 
     
+    //==================================================
+
+    //==================================================
+    // Start the ADC after the DMA is set up 
+
+    // Turn the ADC on 
+    adc_on(ADC1); 
+
+    // Start and ADC conversion 
+    adc_start(ADC1); 
+
     //==================================================
 } 
 
@@ -96,23 +110,16 @@ void dma_test_init()
 // Test code 
 void dma_test_app()
 {
-    // Test code for the analog_test here 
-
-    // Turn the ADC on before trying to read 
-    // Use a trigger to turn it on and off 
-
     // Local variables 
-    uint16_t adc_result = 0; 
 
     // Read ADC 
-    adc_result = adc_read_single_next(ADC1);  
-
-    // // Turn to ADC off 
-    // adc_off(ADC1); 
 
     // Display the result to the serial terminal 
-    uart_sendstring(USART2, "ADC Result: "); 
-    uart_send_integer(USART2, (int16_t)adc_result); 
+    uart_sendstring(USART2, "ADC1_10: "); 
+    uart_send_integer(USART2, (int16_t)adc_data[0]); 
+    uart_send_spaces(USART2, 5); 
+    uart_sendstring(USART2, "ADC1_11: "); 
+    uart_send_integer(USART2, (int16_t)adc_data[1]); 
     uart_send_new_line(USART2); 
 
     // Delay 

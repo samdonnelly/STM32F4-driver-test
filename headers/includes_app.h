@@ -23,6 +23,7 @@
 // Test code 
 #include "analog_test.h"
 #include "data_filters_test.h"
+#include "dma_test.h"
 #include "gpio_test.h"
 #include "hc05_test.h"
 #include "hw125_test.h"

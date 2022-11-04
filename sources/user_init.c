@@ -24,5 +24,6 @@
 void user_init()
 {
     // Setup code here
-    analog_test_init(); 
+    // analog_test_init(); 
+    dma_test_init(); 
 }
