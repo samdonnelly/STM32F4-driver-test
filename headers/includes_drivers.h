@@ -40,6 +40,7 @@
 #include "gpio_driver.h"
 #include "analog_driver.h"
 #include "dma_driver.h" 
+#include "interrupt_driver.h"
 #include "data_filters.h"
 
 // Configuration files 

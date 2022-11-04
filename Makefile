@@ -60,6 +60,7 @@ sources/config_files/m8q_config.c \
 ../STM32F4-driver-library/sources/analog_driver.c \
 ../STM32F4-driver-library/sources/gpio_driver.c \
 ../STM32F4-driver-library/sources/dma_driver.c \
+../STM32F4-driver-library/sources/interrupt_driver.c \
 ../STM32F4-driver-library/sources/wayintop_lcd_driver.c \
 ../STM32F4-driver-library/sources/hc05_driver.c \
 ../STM32F4-driver-library/sources/m8q_driver.c \
