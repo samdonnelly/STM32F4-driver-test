@@ -28,6 +28,31 @@ uint16_t adc_data[2];  // Location for the DMA to store ADC values
 //================================================================================
 
 
+//==================================================
+// Modes & settings 
+// 1. ADC non-continuous & scan mode 
+//     - CONT disabled 
+//     - SCAN enabled 
+//     - Memory increment 
+//     - Two ADCs initialized 
+//     - Sequence defined 
+// 
+// 2. ADC continuous & scan mode 
+//     - CONT enabled 
+//     - SCAN enabled 
+//     - Memory increment 
+//     - Two ADCs initialized 
+//     - Sequence defined 
+// 
+// 3. ADC continuous & single read mode 
+//     - CONT enabled 
+//     - SCAN disabled 
+//     - Memory fixed 
+//     - One ADC initialized 
+//     - No sequence definition 
+//==================================================
+
+
 // Setup code
 void dma_test_init()
 {
@@ -49,21 +74,28 @@ void dma_test_init()
                   ADC_PCLK2_4, 
                   ADC_RES_8, 
                   ADC_EOC_EACH, 
-                  ADC_SCAN_ENABLE, 
+                  // Enable for ADC scan mode 
+                  ADC_SCAN_DISABLE, 
+                  // ADC_SCAN_ENABLE, 
+                  // Enable for ADC continuous mode 
+                  // ADC_CONT_DISABLE, 
                   ADC_CONT_ENABLE, 
                   ADC_DMA_ENABLE, 
                   ADC_DDS_ENABLE); 
 
     // Initialize ADC pins and channels (called for each pin/channel) 
     adc_pin_init(ADC1, GPIOC, PIN_0, ADC_CHANNEL_10, ADC_SMP_15); 
-    adc_pin_init(ADC1, GPIOC, PIN_1, ADC_CHANNEL_11, ADC_SMP_15); 
+    // adc_pin_init(ADC1, GPIOC, PIN_1, ADC_CHANNEL_11, ADC_SMP_15); 
 
     // Set the ADC conversion sequence (called for each sequence entry) 
     adc_seq(ADC1, ADC_CHANNEL_10, ADC_SEQ_1); 
-    adc_seq(ADC1, ADC_CHANNEL_11, ADC_SEQ_2); 
+    // adc_seq(ADC1, ADC_CHANNEL_11, ADC_SEQ_2); 
 
-    // Set the sequence length (called once) 
-    adc_seq_len_set(ADC1, ADC_SEQ_2); 
+    // // Set the sequence length (called once) 
+    // adc_seq_len_set(ADC1, ADC_SEQ_2); 
+
+    // Turn the ADC on 
+    adc_on(ADC1); 
 
     //================================================== 
 
@@ -76,9 +108,11 @@ void dma_test_init()
         DMA2_Stream0, 
         DMA_CHNL_0, 
         DMA_DIR_PM, 
-        DMA_CM_ENABLE, 
+        DMA_CM_ENABLE,
         DMA_PRIOR_VHI, 
-        DMA_ADDR_INCREMENT,   // Memory increment - new data saved in new location 
+        // Memory increment 
+        // DMA_ADDR_INCREMENT, 
+        DMA_ADDR_FIXED, 
         DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
         DMA_DATA_SIZE_HALF, 
         DMA_DATA_SIZE_HALF,
@@ -95,14 +129,8 @@ void dma_test_init()
     //==================================================
 
     //==================================================
-    // Start the ADC after the DMA is set up 
-
-    // Turn the ADC on 
-    adc_on(ADC1); 
-
-    // Start and ADC conversion 
+    // Start and ADC conversion - ADC continuous modes 
     adc_start(ADC1); 
-
     //==================================================
 } 
 
@@ -110,9 +138,27 @@ void dma_test_init()
 // Test code 
 void dma_test_app()
 {
-    // Local variables 
+    //==================================================
+    // Trigger the ADC conversion - ADC non-continuous & scan mode only 
 
-    // Read ADC 
+    // // Local variables 
+    // static uint8_t user_button = 0; 
+    // static uint8_t button_block = 0; 
+
+    // // Read the user button state 
+    // user_button = gpio_read(GPIOC, GPIOX_PIN_13); 
+
+    // // Start the ADC scan conversion through DMA if the button is pressed 
+    // if (!user_button && !button_block)
+    // {
+    //     adc_start(ADC1); 
+    //     button_block++; 
+    //     tim9_delay_ms(10);  // Wait for button bounce to settle 
+    // }
+    // else if (user_button && button_block)
+    //     button_block--; 
+
+    //==================================================
 
     // Display the result to the serial terminal 
     uart_sendstring(USART2, "ADC1_10: "); 
