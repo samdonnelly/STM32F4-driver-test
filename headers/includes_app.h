@@ -28,6 +28,7 @@
 #include "hc05_test.h"
 #include "hw125_test.h"
 #include "i2c_test.h"
+#include "interrupt_driver.h"
 #include "m8q_test.h"
 #include "mpu6050_test.h"
 #include "spi_test.h"
