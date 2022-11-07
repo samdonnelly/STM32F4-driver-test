@@ -44,7 +44,8 @@ void analog_test_init()
                   ADC_SCAN_ENABLE, 
                   ADC_CONT_DISABLE, 
                   ADC_DMA_DISABLE, 
-                  ADC_DDS_DISABLE); 
+                  ADC_DDS_DISABLE, 
+                  ADC_OVR_INT_DISABLE); 
 
     // Initialize ADC pins and channels (called for each pin/channel) 
     adc_pin_init(ADC1, GPIOC, PIN_0, ADC_CHANNEL_10, ADC_SMP_15); 
@@ -74,8 +75,8 @@ void analog_test_app()
 
     //==================================================
     // Read ADC - Single read mode, scan mode disabled 
-    // adc_result[0] = adc_read_single_select(ADC1, ADC_CHANNEL_10); 
-    // adc_result[1] = adc_read_single_select(ADC1, ADC_CHANNEL_11); 
+    // adc_result[0] = adc_read_single(ADC1, ADC_CHANNEL_10); 
+    // adc_result[1] = adc_read_single(ADC1, ADC_CHANNEL_11); 
     //==================================================
 
     //==================================================
