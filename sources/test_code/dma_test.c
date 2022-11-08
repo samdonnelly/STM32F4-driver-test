@@ -116,9 +116,7 @@ void dma_test_init()
         DMA_ADDR_FIXED, 
         DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
         DMA_DATA_SIZE_HALF, 
-        DMA_DATA_SIZE_HALF,
-        DMA_FTH_1QTR, 
-        DMA_DIRECT_MODE); 
+        DMA_DATA_SIZE_HALF); 
 
     // Configure the DMA stream 
     dma_stream_config(

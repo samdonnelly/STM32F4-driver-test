@@ -25,11 +25,12 @@ void int_test_init()
 {
     // Interrupt initialization code goes here 
 
+    //==================================================
     // Initialize timers 
     tim9_init(TIMERS_APB2_84MHZ_1US_PRESCALAR);
 
-    //==================================================
     // Timer interrupt enable 
+    
     //==================================================
 
     // Initialize GPIO ports 
