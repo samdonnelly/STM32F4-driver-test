@@ -41,14 +41,36 @@ void int_test_init()
 
     //==================================================
     // EXTI init 
+
+    // Enable external interrupts (called once) 
+    exti_init(); 
+
+    // Configure the external interrupt (called for each EXTI) 
+    exti_config(GPIOA, 
+                EXTI_PA, 
+                PIN_0, 
+                PUPDR_PD, 
+                EXTI_L0, 
+                EXTI_INT_NOT_MASKED, 
+                EXTI_EVENT_MASKED, 
+                EXTI_RISE_TRIG_ENABLE, 
+                EXTI_FALL_TRIG_DISABLE); 
+
     //==================================================
 
     //==================================================
-    // ADC Init --> Include ADC interrupts 
+    // ADC init --> Include ADC interrupts 
     //================================================== 
 
     //==================================================
     // DMA init --> Include DMA interrupts 
+    //==================================================
+
+    //==================================================
+    // Enable the interrupt handlers (called for each interrupt) 
+
+    nvic_config(EXTI0_IRQn, EXTI_PRIORITY_0);           // EXTI0 
+
     //==================================================
 }
 
@@ -58,9 +80,20 @@ void int_test_app()
 {
     // Interrupt application code goes here 
 
+    // Local variables 
+    static uint8_t exti_counter = 0; 
+
     // Timer interrupt 
 
     // External interrupt 
+    if (handler_flags.exti0_flag)
+    {
+        handler_flags.exti0_flag = 0; 
+        exti_counter++; 
+        uart_sendstring(USART2, "EXTI0: "); 
+        uart_send_integer(USART2, (int16_t)exti_counter); 
+        uart_send_new_line(USART2); 
+    }
 
     // ADC interrupt 
 
