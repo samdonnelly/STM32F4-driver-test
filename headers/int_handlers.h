@@ -24,6 +24,51 @@
 
 
 //================================================================================
+// Globals 
+
+// Interrupt flag data record 
+typedef struct int_handle_flags_s
+{
+    // EXTI interrupt flags 
+    uint8_t exti0_flag;              // Line 0 
+    uint8_t exti1_flag;              // Line 1 
+    uint8_t exti2_flag;              // Line 2 
+    uint8_t exti3_flag;              // Line 3 
+    uint8_t exti4_flag;              // Line 4 
+
+    // DMA1 interrupt flags 
+    uint8_t dma1_0_flag;             // Stream 0 
+    uint8_t dma1_1_flag;             // Stream 1 
+    uint8_t dma1_2_flag;             // Stream 2 
+    uint8_t dma1_3_flag;             // Stream 3 
+    uint8_t dma1_4_flag;             // Stream 4 
+    uint8_t dma1_5_flag;             // Stream 5 
+    uint8_t dma1_6_flag;             // Stream 6 
+    uint8_t dma1_7_flag;             // Stream 7 
+
+    // DMA2 interrupt flags 
+    uint8_t dma2_0_flag;             // Stream 0 
+    uint8_t dma2_1_flag;             // Stream 1 
+    uint8_t dma2_2_flag;             // Stream 2 
+    uint8_t dma2_3_flag;             // Stream 3 
+    uint8_t dma2_4_flag;             // Stream 4 
+    uint8_t dma2_5_flag;             // Stream 5 
+    uint8_t dma2_6_flag;             // Stream 6 
+    uint8_t dma2_7_flag;             // Stream 7 
+
+    // ADC interrupt flags 
+    uint8_t adc_flag; 
+} 
+int_handle_flags_t;
+
+
+// Instance of interrupt flag data record 
+static int_handle_flags_t handler_flags; 
+
+//================================================================================
+
+
+//================================================================================
 // Handlers 
 
 /**
