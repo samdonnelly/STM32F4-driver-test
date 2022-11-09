@@ -21,7 +21,8 @@
 			"hc05_driver.h": "c",
 			"timers.h": "c",
 			"analog_test.h": "c",
-			"includes_app.h": "c"
+			"includes_app.h": "c",
+			"gpio_driver.h": "c"
 		}
 	}
 }
