@@ -82,6 +82,7 @@ void dma_test_init()
                   ADC_CONT_ENABLE, 
                   ADC_DMA_ENABLE, 
                   ADC_DDS_ENABLE, 
+                  ADC_EOC_INT_DISABLE, 
                   ADC_OVR_INT_DISABLE); 
 
     // Initialize ADC pins and channels (called for each pin/channel) 

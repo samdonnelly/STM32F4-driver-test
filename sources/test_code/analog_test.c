@@ -45,6 +45,7 @@ void analog_test_init()
                   ADC_CONT_DISABLE, 
                   ADC_DMA_DISABLE, 
                   ADC_DDS_DISABLE, 
+                  ADC_EOC_INT_DISABLE, 
                   ADC_OVR_INT_DISABLE); 
 
     // Initialize ADC pins and channels (called for each pin/channel) 

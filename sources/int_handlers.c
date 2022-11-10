@@ -19,6 +19,8 @@
 
 //================================================================================
 
+// TODO
+// - No way to distinguish what flag triggered the DMA interrupts 
 
 //================================================================================
 // Globals 
@@ -117,112 +119,128 @@ void EXTI4_IRQHandler(void)
 // DMA1 Stream 0 
 void DMA1_Stream0_IRQHandler(void)
 {
-    handler_flags.dma1_0_flag = SET_BIT;  
+    handler_flags.dma1_0_flag = SET_BIT; 
+    dma_clear_int_flags(DMA1); 
 }
 
 
 // DMA1 Stream 1 
 void DMA1_Stream1_IRQHandler(void)
 {
-    handler_flags.dma1_1_flag = SET_BIT;  
+    handler_flags.dma1_1_flag = SET_BIT; 
+    dma_clear_int_flags(DMA1); 
 }
 
 
 // DMA1 Stream 2 
 void DMA1_Stream2_IRQHandler(void)
 {
-    handler_flags.dma1_2_flag = SET_BIT;  
+    handler_flags.dma1_2_flag = SET_BIT; 
+    dma_clear_int_flags(DMA1); 
 }
 
 
 // DMA1 Stream 3 
 void DMA1_Stream3_IRQHandler(void)
 {
-    handler_flags.dma1_3_flag = SET_BIT;  
+    handler_flags.dma1_3_flag = SET_BIT; 
+    dma_clear_int_flags(DMA1); 
 }
 
 
 // DMA1 Stream 4 
 void DMA1_Stream4_IRQHandler(void)
 {
-    handler_flags.dma1_4_flag = SET_BIT;  
+    handler_flags.dma1_4_flag = SET_BIT; 
+    dma_clear_int_flags(DMA1); 
 }
 
 
 // DMA1 Stream 5 
 void DMA1_Stream5_IRQHandler(void)
 {
-    handler_flags.dma1_5_flag = SET_BIT;  
+    handler_flags.dma1_5_flag = SET_BIT; 
+    dma_clear_int_flags(DMA1); 
 }
 
 
 // DMA1 Stream 6 
 void DMA1_Stream6_IRQHandler(void)
 {
-    handler_flags.dma1_6_flag = SET_BIT;  
+    handler_flags.dma1_6_flag = SET_BIT; 
+    dma_clear_int_flags(DMA1); 
 }
 
 
 // DMA1 Stream 7 
 void DMA1_Stream7_IRQHandler(void)
 {
-    handler_flags.dma1_7_flag = SET_BIT;  
+    handler_flags.dma1_7_flag = SET_BIT; 
+    dma_clear_int_flags(DMA1); 
 }
 
 
 // DMA2 Stream 0 
 void DMA2_Stream0_IRQHandler(void)
 {
-    handler_flags.dma2_0_flag = SET_BIT;  
+    handler_flags.dma2_0_flag = SET_BIT; 
+    dma_clear_int_flags(DMA2); 
 }
 
 
 // DMA2 Stream 1 
 void DMA2_Stream1_IRQHandler(void)
 {
-    handler_flags.dma2_1_flag = SET_BIT;  
+    handler_flags.dma2_1_flag = SET_BIT; 
+    dma_clear_int_flags(DMA2); 
 }
 
 
 // DMA2 Stream 2 
 void DMA2_Stream2_IRQHandler(void)
 {
-    handler_flags.dma2_2_flag = SET_BIT;  
+    handler_flags.dma2_2_flag = SET_BIT; 
+    dma_clear_int_flags(DMA2); 
 }
 
 
 // DMA2 Stream 3 
 void DMA2_Stream3_IRQHandler(void)
 {
-    handler_flags.dma2_3_flag = SET_BIT;  
+    handler_flags.dma2_3_flag = SET_BIT; 
+    dma_clear_int_flags(DMA2); 
 }
 
 
 // DMA2 Stream 4 
 void DMA2_Stream4_IRQHandler(void)
 {
-    handler_flags.dma2_4_flag = SET_BIT;  
+    handler_flags.dma2_4_flag = SET_BIT; 
+    dma_clear_int_flags(DMA2); 
 }
 
 
 // DMA2 Stream 5 
 void DMA2_Stream5_IRQHandler(void)
 {
-    handler_flags.dma2_5_flag = SET_BIT;  
+    handler_flags.dma2_5_flag = SET_BIT; 
+    dma_clear_int_flags(DMA2); 
 }
 
 
 // DMA2 Stream 6 
 void DMA2_Stream6_IRQHandler(void)
 {
-    handler_flags.dma2_6_flag = SET_BIT;  
+    handler_flags.dma2_6_flag = SET_BIT; 
+    dma_clear_int_flags(DMA2); 
 }
 
 
 // DMA2 Stream 7 
 void DMA2_Stream7_IRQHandler(void)
 {
-    handler_flags.dma2_7_flag = SET_BIT;  
+    handler_flags.dma2_7_flag = SET_BIT; 
+    dma_clear_int_flags(DMA2); 
 }
 
 
