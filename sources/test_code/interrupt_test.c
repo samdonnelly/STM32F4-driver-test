@@ -46,11 +46,11 @@ void int_test_init()
     exti_init(); 
 
     // Configure the external interrupt (called for each EXTI) 
-    exti_config(GPIOA, 
-                EXTI_PA, 
-                PIN_0, 
-                PUPDR_PD, 
-                EXTI_L0, 
+    exti_config(GPIOD, 
+                EXTI_PD, 
+                PIN_2, 
+                PUPDR_PU, 
+                EXTI_L2, 
                 EXTI_INT_NOT_MASKED, 
                 EXTI_EVENT_MASKED, 
                 EXTI_RISE_TRIG_ENABLE, 
@@ -67,9 +67,13 @@ void int_test_init()
     //==================================================
 
     //==================================================
-    // Enable the interrupt handlers (called for each interrupt) 
+    // Interrupts init 
 
-    nvic_config(EXTI0_IRQn, EXTI_PRIORITY_0);           // EXTI0 
+    // Initialize handler flags 
+    int_handler_init(); 
+
+    // Enable the interrupt handlers (called for each interrupt) 
+    nvic_config(EXTI2_IRQn, EXTI_PRIORITY_0);  // EXTI2 
 
     //==================================================
 }
@@ -86,11 +90,11 @@ void int_test_app()
     // Timer interrupt 
 
     // External interrupt 
-    if (handler_flags.exti0_flag)
+    if (handler_flags.exti2_flag)
     {
-        handler_flags.exti0_flag = 0; 
+        handler_flags.exti2_flag = CLEAR; 
         exti_counter++; 
-        uart_sendstring(USART2, "EXTI0: "); 
+        uart_sendstring(USART2, "EXTI2: "); 
         uart_send_integer(USART2, (int16_t)exti_counter); 
         uart_send_new_line(USART2); 
     }

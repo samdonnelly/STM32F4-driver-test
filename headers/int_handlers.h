@@ -19,6 +19,7 @@
 // Includes 
 
 #include "includes_app.h"
+#include "includes_drivers.h"
 
 //================================================================================
 
@@ -62,8 +63,22 @@ typedef struct int_handle_flags_s
 int_handle_flags_t;
 
 
-// Instance of interrupt flag data record 
-static int_handle_flags_t handler_flags; 
+// Instance of interrupt flag data record - defined for external use 
+extern int_handle_flags_t handler_flags; 
+
+//================================================================================
+
+
+//================================================================================
+// Initialization 
+
+/**
+ * @brief Interrupt handler flag initialization 
+ * 
+ * @details 
+ * 
+ */
+void int_handler_init(void); 
 
 //================================================================================
 

@@ -21,6 +21,15 @@
 
 
 //================================================================================
+// Globals 
+
+// Instance of interrupt flag data record 
+int_handle_flags_t handler_flags; 
+
+//================================================================================
+
+
+//================================================================================
 // Initialization 
 
 // Interrupt handler flag initialization 
@@ -28,10 +37,10 @@ void int_handler_init(void)
 {
     // EXTI interrupt flags 
     handler_flags.exti0_flag = 0; 
-    handler_flags.exti0_flag = 0; 
-    handler_flags.exti0_flag = 0; 
-    handler_flags.exti0_flag = 0; 
-    handler_flags.exti0_flag = 0; 
+    handler_flags.exti1_flag = 0; 
+    handler_flags.exti2_flag = 0; 
+    handler_flags.exti3_flag = 0; 
+    handler_flags.exti4_flag = 0; 
 
     // DMA1 interrupt flags 
     handler_flags.dma1_0_flag = 0; 
@@ -69,34 +78,39 @@ void int_handler_init(void)
 void EXTI0_IRQHandler(void)
 {
     handler_flags.exti0_flag = SET_BIT; 
+    exti_pr_clear(EXTI_L0); 
 }
 
 
 // EXTI Line 1 
 void EXTI1_IRQHandler(void)
 {
-    handler_flags.exti1_flag = SET_BIT;  
+    handler_flags.exti1_flag = SET_BIT; 
+    exti_pr_clear(EXTI_L1);  
 }
 
 
 // EXTI Line 2 
 void EXTI2_IRQHandler(void)
 {
-    handler_flags.exti2_flag = SET_BIT;  
+    handler_flags.exti2_flag = SET_BIT; 
+    exti_pr_clear(EXTI_L2); 
 }
 
 
 // EXTI Line 3 
 void EXTI3_IRQHandler(void)
 {
-    handler_flags.exti3_flag = SET_BIT;  
+    handler_flags.exti3_flag = SET_BIT; 
+    exti_pr_clear(EXTI_L3); 
 }
 
 
 // EXTI Line 4 
 void EXTI4_IRQHandler(void)
 {
-    handler_flags.exti4_flag = SET_BIT;  
+    handler_flags.exti4_flag = SET_BIT; 
+    exti_pr_clear(EXTI_L4); 
 }
 
 
