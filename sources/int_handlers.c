@@ -255,56 +255,57 @@ void DMA2_Stream7_IRQHandler(void)
 
 
 // Timer 1 break + timer 9 global 
-void TIM1_BRK_TIM9_IRQn(void)
+void TIM1_BRK_TIM9_IRQHandler(void)
 {
     handler_flags.tim1_brk_tim9_glbl_flag = SET_BIT; 
+    tim_uif_clear(TIM9); 
 }
 
 
 // Timer 1 update + timer 10 global 
-void TIM1_UP_TIM10_IRQn(void)
+void TIM1_UP_TIM10_IRQHandler(void)
 {
     handler_flags.tim1_up_tim10_glbl_flag = SET_BIT; 
 }
 
 
-// Timer 1 trigger and communication + global 
-void TIM1_TRG_COM_TIM11_IRQn(void)
+// Timer 1 trigger and communication + timer 11 global 
+void TIM1_TRG_COM_TIM11_IRQHandler(void)
 {
     handler_flags.tim1_trg_tim11_glbl_flag = SET_BIT; 
 }
 
 
 // Timer 1 capture compare 
-void TIM1_CC_IRQn(void)
+void TIM1_CC_IRQHandler(void)
 {
     handler_flags.tim1_cc_flag = SET_BIT; 
 }
 
 
 // Timer 2 
-void TIM2_IRQn(void)
+void TIM2_IRQHandler(void)
 {
     handler_flags.tim2_glbl_flag = SET_BIT; 
 }
 
 
 // Timer 3
-void TIM3_IRQn(void)
+void TIM3_IRQHandler(void)
 {
     handler_flags.tim3_glbl_flag = SET_BIT; 
 }
 
 
 // Timer 4
-void TIM4_IRQn(void)
+void TIM4_IRQHandler(void)
 {
     handler_flags.tim4_glbl_flag = SET_BIT; 
 }
 
 
 // Timer 5
-void TIM5_IRQn(void)
+void TIM5_IRQHandler(void)
 {
     handler_flags.tim5_glbl_flag = SET_BIT; 
 }

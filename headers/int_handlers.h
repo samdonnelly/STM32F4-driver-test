@@ -291,7 +291,7 @@ void DMA2_Stream7_IRQHandler(void);
  * @details 
  * 
  */
-void TIM1_BRK_TIM9_IRQn(void); 
+void TIM1_BRK_TIM9_IRQHandler(void); 
 
 
 /**
@@ -300,7 +300,7 @@ void TIM1_BRK_TIM9_IRQn(void);
  * @details 
  * 
  */
-void TIM1_UP_TIM10_IRQn(void); 
+void TIM1_UP_TIM10_IRQHandler(void); 
 
 
 /**
@@ -309,7 +309,7 @@ void TIM1_UP_TIM10_IRQn(void);
  * @details 
  * 
  */
-void TIM1_TRG_COM_TIM11_IRQn(void); 
+void TIM1_TRG_COM_TIM11_IRQHandler(void); 
 
 
 /**
@@ -318,7 +318,7 @@ void TIM1_TRG_COM_TIM11_IRQn(void);
  * @details 
  * 
  */
-void TIM1_CC_IRQn(void); 
+void TIM1_CC_IRQHandler(void); 
 
 
 /**
@@ -327,7 +327,7 @@ void TIM1_CC_IRQn(void);
  * @details 
  * 
  */
-void TIM2_IRQn(void); 
+void TIM2_IRQHandler(void); 
 
 
 /**
@@ -336,7 +336,7 @@ void TIM2_IRQn(void);
  * @details 
  * 
  */
-void TIM3_IRQn(void); 
+void TIM3_IRQHandler(void); 
 
 
 /**
@@ -345,7 +345,7 @@ void TIM3_IRQn(void);
  * @details 
  * 
  */
-void TIM4_IRQn(void); 
+void TIM4_IRQHandler(void); 
 
 
 /**
@@ -354,7 +354,7 @@ void TIM4_IRQn(void);
  * @details 
  * 
  */
-void TIM5_IRQn(void); 
+void TIM5_IRQHandler(void); 
 
 
 /**
