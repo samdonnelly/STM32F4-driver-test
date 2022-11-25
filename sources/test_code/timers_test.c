@@ -26,16 +26,22 @@ void timers_test_init()
     // Setup code for the timers_test here 
     
     // Initialize timers 
-    tim_9_to_11_init(
+    // tim_9_to_11_init(
+    //     TIM9, 
+    //     TIM_CHANNEL_1, 
+    //     TIMERS_APB2_84MHZ_100US_PRESCALAR, 
+    //     0x2710,  // ARR=10000, 10000*100us*84MHz = ~1s 
+    //     TIM_OCM_FROZEN, 
+    //     TIM_OCPE_DISABLE, 
+    //     TIM_ARPE_DISABLE, 
+    //     TIM_CCP_AH, 
+    //     TIM_CCE_OFF, 
+    //     TIM_UP_INT_ENABLE); 
+    
+    tim_9_to_11_counter_init(
         TIM9, 
-        TIM_CHANNEL_1, 
         TIMERS_APB2_84MHZ_100US_PRESCALAR, 
         0x2710,  // ARR=10000, 10000*100us*84MHz = ~1s 
-        TIM_OCM_FROZEN, 
-        TIM_OCPE_DISABLE, 
-        TIM_ARPE_DISABLE, 
-        TIM_CCP_AH, 
-        TIM_CCE_OFF, 
         TIM_UP_INT_ENABLE); 
 
     // Initialize UART

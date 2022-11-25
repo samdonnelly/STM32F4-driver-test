@@ -24,7 +24,8 @@
 			"includes_app.h": "c",
 			"gpio_driver.h": "c",
 			"interrupt_test.h": "c",
-			"timers_test.h": "c"
+			"timers_test.h": "c",
+			"interrupt_driver.h": "c"
 		}
 	}
 }
