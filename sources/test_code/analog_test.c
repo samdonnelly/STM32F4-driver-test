@@ -24,7 +24,12 @@
 void analog_test_init()
 {
     // Initialize timers 
-    tim9_init(TIMERS_APB2_84MHZ_1US_PRESCALAR);
+    tim_9_to_11_counter_init(
+        TIM9, 
+        TIMERS_APB2_84MHZ_1US_PRESCALAR, 
+        0xFFFF,  // Max ARR value 
+        TIM_UP_INT_DISABLE); 
+    tim_enable(TIM9); 
 
     // Initialize GPIO ports 
     gpio_port_init(); 
@@ -94,5 +99,5 @@ void analog_test_app()
     uart_send_new_line(USART2); 
 
     // Delay 
-    tim9_delay_ms(1000); 
+    tim_delay_ms(TIM9, 1000); 
 }

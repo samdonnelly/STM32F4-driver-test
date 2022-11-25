@@ -30,7 +30,12 @@ void mpu6050_test_init()
     uint8_t mpu_self_test_result;
 
     // Initialize timers 
-    tim9_init(TIMERS_APB2_84MHZ_1US_PRESCALAR);
+    tim_9_to_11_counter_init(
+        TIM9, 
+        TIMERS_APB2_84MHZ_1US_PRESCALAR, 
+        0xFFFF,  // Max ARR value 
+        TIM_UP_INT_DISABLE); 
+    tim_enable(TIM9); 
 
     // Initialize UART2
     uart_init(USART2, UART_BAUD_9600, UART_CLOCK_42);
@@ -202,5 +207,5 @@ void mpu6050_test_app()
     uart_send_new_line(USART2);
 
     // Delay 
-    tim9_delay_ms(LOOP_DELAY);
+    tim_delay_ms(TIM9, LOOP_DELAY);
 }

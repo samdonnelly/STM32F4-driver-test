@@ -27,7 +27,12 @@
 void m8q_test_init()
 {
     // Initialize timers 
-    tim9_init(TIMERS_APB2_84MHZ_1US_PRESCALAR);
+    tim_9_to_11_counter_init(
+        TIM9, 
+        TIMERS_APB2_84MHZ_1US_PRESCALAR, 
+        0xFFFF,  // Max ARR value 
+        TIM_UP_INT_DISABLE); 
+    tim_enable(TIM9); 
 
     // Initialize GPIO ports 
     // TODO remove this step from other comm and device inits 
@@ -64,7 +69,7 @@ void m8q_test_init()
 #endif
 
     // Delay to let everything finish setup before starting to send and receieve data 
-    tim9_delay_ms(500); 
+    tim_delay_ms(TIM9, 500); 
 } 
 
 
@@ -129,7 +134,7 @@ void m8q_test_app()
         m8q_set_low_power(flipper); 
         flipper = GPIO_HIGH - flipper; 
         timer = 0x68B8; 
-        tim9_delay_ms(150);  // Give time for the receiver to startup from sleep mode 
+        tim_delay_ms(TIM9, 150);  // Give time for the receiver to startup from sleep mode 
 
         // The following line of code was needed in order for the TX_READY input pin to start 
         // functioning normally again after low power mode. Make this part of a state when 
@@ -137,7 +142,7 @@ void m8q_test_app()
         if (!flipper) while (!(m8q_read())); 
     }
 
-    tim9_delay_ms(1);
+    tim_delay_ms(TIM9, 1);
 
     //===================================================
 

@@ -35,7 +35,12 @@ void int_test_init()
 
     //==================================================
     // Initialize timers 
-    tim9_init(TIMERS_APB2_84MHZ_1US_PRESCALAR);
+    tim_9_to_11_counter_init(
+        TIM9, 
+        TIMERS_APB2_84MHZ_1US_PRESCALAR, 
+        0xFFFF,  // Max ARR value 
+        TIM_UP_INT_DISABLE); 
+    tim_enable(TIM9); 
 
     // Timer interrupt enable 
     

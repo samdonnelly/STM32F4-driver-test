@@ -57,7 +57,12 @@ uint16_t adc_data[2];  // Location for the DMA to store ADC values
 void dma_test_init()
 {
     // Initialize timers 
-    tim9_init(TIMERS_APB2_84MHZ_1US_PRESCALAR);
+    tim_9_to_11_counter_init(
+        TIM9, 
+        TIMERS_APB2_84MHZ_1US_PRESCALAR, 
+        0xFFFF,  // Max ARR value 
+        TIM_UP_INT_DISABLE); 
+    tim_enable(TIM9); 
 
     // Initialize GPIO ports 
     gpio_port_init(); 
@@ -153,7 +158,7 @@ void dma_test_app()
     // {
     //     adc_start(ADC1); 
     //     button_block++; 
-    //     tim9_delay_ms(10);  // Wait for button bounce to settle 
+    //     tim_delay_ms(TIM9, 10);  // Wait for button bounce to settle 
     // }
     // else if (user_button && button_block)
     //     button_block--; 
@@ -169,5 +174,5 @@ void dma_test_app()
     uart_send_new_line(USART2); 
 
     // Delay 
-    tim9_delay_ms(1000); 
+    tim_delay_ms(TIM9, 1000); 
 }
