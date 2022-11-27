@@ -39,12 +39,11 @@ void timers_test_init()
         TIM_OCM_PWM1, 
         TIM_OCPE_ENABLE, 
         TIM_ARPE_ENABLE, 
-        TIM_CCP_AH, 
-        TIM_CCE_ON); 
+        TIM_CCP_AH); 
     
     tim_9_to_11_counter_init(
         TIM9, 
-        TIMERS_APB2_84MHZ_100US_PRESCALAR, 
+        TIM_84MHZ_100US_PSC, 
         0x2710,  // ARR=10000, 10000*100us*84MHz = ~1s 
         TIM_UP_INT_ENABLE); 
 
