@@ -24,4 +24,5 @@
 void user_init()
 {
     // Setup code here
+    wayintop_lcd_test_init(); 
 }

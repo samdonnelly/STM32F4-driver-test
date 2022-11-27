@@ -24,4 +24,5 @@
 void user_app()
 {
     // Looped code here
+    wayintop_lcd_test_app(); 
 }
