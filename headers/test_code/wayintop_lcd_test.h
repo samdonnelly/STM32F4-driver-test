@@ -37,7 +37,6 @@
 
 /**
  * @brief LCD lines 
- * 
  */
 typedef enum {
     LCD_L1,

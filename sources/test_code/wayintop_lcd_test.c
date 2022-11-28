@@ -39,6 +39,9 @@ void wayintop_lcd_test_init()
 {
     // Setup code for the wayintop_lcd_test here 
 
+    // Initialize GPIO ports 
+    gpio_port_init(); 
+
     // Initialize timers 
     tim_9_to_11_counter_init(
         TIM9, 
@@ -46,6 +49,9 @@ void wayintop_lcd_test_init()
         0xFFFF,  // Max ARR value 
         TIM_UP_INT_DISABLE); 
     tim_enable(TIM9); 
+
+    // Initialize UART
+    uart_init(USART2, UART_BAUD_9600, UART_CLOCK_42);
 
     // I2C1 init
     i2c1_init(
