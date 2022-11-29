@@ -84,7 +84,8 @@ void wayintop_lcd_test_app()
 
         case LCD_L1:
             hd44780u_send_instruc(HD44780U_START_L1);
-            hd44780u_send_string((char *)(hd44780u_test_text[LCD_L1]));
+            // hd44780u_send_string((char *)(hd44780u_test_text[LCD_L1]));
+            hd44780u_send_string("Hello!");
             break;
         
         case LCD_L2:
