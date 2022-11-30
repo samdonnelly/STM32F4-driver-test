@@ -64,7 +64,7 @@ void wayintop_lcd_test_init()
         I2C_TRISE_1000_42);
 
     // wayintop LCD screen init. 
-    hd44780u_init();
+    hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH);
 } 
 
 

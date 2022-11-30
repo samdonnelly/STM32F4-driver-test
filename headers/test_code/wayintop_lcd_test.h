@@ -27,7 +27,6 @@
 // Macros 
 
 #define LCD_NUM_LINES 4     // Number of lines on the LCD 
-#define LCD_LINE_LENGTH 20  // Number of characters per line on LCD 
 
 //=======================================================================================
 
