@@ -27,8 +27,8 @@ static char* hd44780u_test_text[LCD_NUM_LINES] =
 { 
     "The",
     "screen", 
-    "is", 
-    "working!" 
+    "is showing", 
+    "promise" 
 };
 
 //=======================================================================================
@@ -84,23 +84,22 @@ void wayintop_lcd_test_app()
 
         case LCD_L1:
             hd44780u_send_instruc(HD44780U_START_L1);
-            // hd44780u_send_string((char *)(hd44780u_test_text[LCD_L1]));
-            hd44780u_send_string("Hello!");
+            hd44780u_send_string((char *)(hd44780u_test_text[LCD_L1]));
             break;
         
         case LCD_L2:
             hd44780u_send_instruc(HD44780U_START_L2);
-            hd44780u_send_string((char *)(hd44780u_test_text[LCD_L2]));
+            hd44780u_send_string((char *)(hd44780u_test_text[LCD_L2])); 
             break;
         
         case LCD_L3:
             hd44780u_send_instruc(HD44780U_START_L3);
-            hd44780u_send_string((char *)(hd44780u_test_text[LCD_L3]));
+            hd44780u_send_string((char *)(hd44780u_test_text[LCD_L3])); 
             break;
         
         case LCD_L4:
             hd44780u_send_instruc(HD44780U_START_L4);
-            hd44780u_send_string((char *)(hd44780u_test_text[LCD_L4]));
+            hd44780u_send_string((char *)(hd44780u_test_text[LCD_L4])); 
             break;
 
         default:
