@@ -30,20 +30,21 @@
 //=======================================================================================
 // Predefined text - can be defined here for use throughout the code 
 
-static char* hd44780u_test_text[LCD_NUM_LINES] = 
-{ 
-    "Does",
-    "this", 
-    "work", 
-    "now?" 
-};
-
 static char* hd44780u_startup_screen[LCD_NUM_LINES] = 
 { 
     "The",
     "display", 
     "is", 
     "ready" 
+};
+
+
+static char* hd44780u_test_text[LCD_NUM_LINES] = 
+{ 
+    "Does",
+    "this", 
+    "work", 
+    "now?" 
 };
 
 //=======================================================================================
@@ -53,6 +54,9 @@ static char* hd44780u_startup_screen[LCD_NUM_LINES] =
 void wayintop_lcd_test_init()
 {
     // Setup code for the wayintop_lcd_test here 
+
+    //=================================================
+    // Peripheral initialization 
 
     // Initialize GPIO ports 
     gpio_port_init(); 
@@ -80,18 +84,49 @@ void wayintop_lcd_test_init()
 
     // wayintop LCD screen init. 
     hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH);
-    tim_delay_ms(TIM9, 500); 
 
-    // Screen startup data 
-    hd44780u_line_set(HD44780U_L1, (char *)(hd44780u_startup_screen[LCD_L1]), 0); 
-    hd44780u_line_set(HD44780U_L2, (char *)(hd44780u_startup_screen[LCD_L2]), 1); 
-    hd44780u_line_set(HD44780U_L3, (char *)(hd44780u_startup_screen[LCD_L3]), 2); 
-    hd44780u_line_set(HD44780U_L4, (char *)(hd44780u_startup_screen[LCD_L4]), 3); 
-    hd44780u_send_lines(); 
+    //=================================================
 
+    //=================================================
+    // Screen/UI initialization - Move to the contoller when it's made 
+
+    // Screen startup message - Use in controller init state 
+    hd44780u_line_set(
+        HD44780U_L1, 
+        (char *)(hd44780u_startup_screen[HD44780U_L1]), 
+        HD44780U_CURSOR_OFFSET_0); 
+    hd44780u_line_set(
+        HD44780U_L2, 
+        (char *)(hd44780u_startup_screen[HD44780U_L2]), 
+        HD44780U_CURSOR_OFFSET_1); 
+    hd44780u_line_set(
+        HD44780U_L3, 
+        (char *)(hd44780u_startup_screen[HD44780U_L3]), 
+        HD44780U_CURSOR_OFFSET_2); 
+    hd44780u_line_set(
+        HD44780U_L4, 
+        (char *)(hd44780u_startup_screen[HD44780U_L4]), 
+        HD44780U_CURSOR_OFFSET_3); 
+
+    // Send all lines of data 
+    hd44780u_cursor_pos(HD44780U_START_L1, HD44780U_CURSOR_OFFSET_0);
+    hd44780u_send_line(HD44780U_L1); 
+
+    hd44780u_cursor_pos(HD44780U_START_L2, HD44780U_CURSOR_OFFSET_0);
+    hd44780u_send_line(HD44780U_L2); 
+    
+    hd44780u_cursor_pos(HD44780U_START_L3, HD44780U_CURSOR_OFFSET_0);
+    hd44780u_send_line(HD44780U_L3); 
+    
+    hd44780u_cursor_pos(HD44780U_START_L4, HD44780U_CURSOR_OFFSET_0);
+    hd44780u_send_line(HD44780U_L4); 
+
+    // Give time for the startup message to display then clear the message 
     tim_delay_ms(TIM9, 2000); 
     hd44780u_clear();
-    tim_delay_ms(TIM9, 500); 
+    tim_delay_ms(TIM9, 500);  // Adding this delay helps the screen transition to test_app 
+
+    //=================================================
 } 
 
 
@@ -109,24 +144,24 @@ void wayintop_lcd_test_app()
         // Text is cast to a char pointer for use in the send_string function because 
         // its declaration in the header defaults to an int type. 
 
-        case LCD_L1:
-            hd44780u_send_instruc(HD44780U_START_L1);
-            hd44780u_send_string((char *)(hd44780u_test_text[LCD_L1]));
+        case HD44780U_L1:
+            hd44780u_cursor_pos(HD44780U_START_L1, HD44780U_CURSOR_OFFSET_0);
+            hd44780u_send_string((char *)(hd44780u_test_text[HD44780U_L1]));
             break;
         
-        case LCD_L2:
-            hd44780u_send_instruc(HD44780U_START_L2);
-            hd44780u_send_string((char *)(hd44780u_test_text[LCD_L2])); 
+        case HD44780U_L2:
+            hd44780u_cursor_pos(HD44780U_START_L2, HD44780U_CURSOR_OFFSET_0);
+            hd44780u_send_string((char *)(hd44780u_test_text[HD44780U_L2])); 
             break;
         
-        case LCD_L3:
-            hd44780u_send_instruc(HD44780U_START_L3);
-            hd44780u_send_string((char *)(hd44780u_test_text[LCD_L3])); 
+        case HD44780U_L3:
+            hd44780u_cursor_pos(HD44780U_START_L3, HD44780U_CURSOR_OFFSET_0);
+            hd44780u_send_string((char *)(hd44780u_test_text[HD44780U_L3])); 
             break;
         
-        case LCD_L4:
-            hd44780u_send_instruc(HD44780U_START_L4);
-            hd44780u_send_string((char *)(hd44780u_test_text[LCD_L4])); 
+        case HD44780U_L4:
+            hd44780u_cursor_pos(HD44780U_START_L4, HD44780U_CURSOR_OFFSET_0);
+            hd44780u_send_string((char *)(hd44780u_test_text[HD44780U_L4])); 
             break;
 
         default:
