@@ -20,15 +20,30 @@
 //=======================================================================================
 
 
+//===============================================================================
+// Notes 
+// - The screen is really sensitive to timing. Adding delays between write operations 
+//   seems to be more reliable. 
+//===============================================================================
+
+
 //=======================================================================================
 // Predefined text - can be defined here for use throughout the code 
 
 static char* hd44780u_test_text[LCD_NUM_LINES] = 
 { 
+    "Does",
+    "this", 
+    "work", 
+    "now?" 
+};
+
+static char* hd44780u_startup_screen[LCD_NUM_LINES] = 
+{ 
     "The",
-    "screen", 
-    "is showing", 
-    "promise" 
+    "display", 
+    "is", 
+    "ready" 
 };
 
 //=======================================================================================
@@ -65,6 +80,18 @@ void wayintop_lcd_test_init()
 
     // wayintop LCD screen init. 
     hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH);
+    tim_delay_ms(TIM9, 500); 
+
+    // Screen startup data 
+    hd44780u_line_set(HD44780U_L1, (char *)(hd44780u_startup_screen[LCD_L1]), 0); 
+    hd44780u_line_set(HD44780U_L2, (char *)(hd44780u_startup_screen[LCD_L2]), 1); 
+    hd44780u_line_set(HD44780U_L3, (char *)(hd44780u_startup_screen[LCD_L3]), 2); 
+    hd44780u_line_set(HD44780U_L4, (char *)(hd44780u_startup_screen[LCD_L4]), 3); 
+    hd44780u_send_lines(); 
+
+    tim_delay_ms(TIM9, 2000); 
+    hd44780u_clear();
+    tim_delay_ms(TIM9, 500); 
 } 
 
 
