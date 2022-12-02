@@ -26,7 +26,8 @@
 			"interrupt_test.h": "c",
 			"timers_test.h": "c",
 			"interrupt_driver.h": "c",
-			"wayintop_lcd_test.h": "c"
+			"wayintop_lcd_test.h": "c",
+			"hd44780u_driver.h": "c"
 		}
 	}
 }

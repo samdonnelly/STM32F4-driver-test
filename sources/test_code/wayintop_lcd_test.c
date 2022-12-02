@@ -32,19 +32,19 @@
 
 static char* hd44780u_startup_screen[LCD_NUM_LINES] = 
 { 
-    "The",
-    "display", 
-    "is", 
-    "ready" 
+    "Get",
+    "ready", 
+    "to", 
+    "rumpus!" 
 };
 
 
 static char* hd44780u_test_text[LCD_NUM_LINES] = 
 { 
-    "Does",
-    "this", 
-    "work", 
-    "now?" 
+    "Rump",
+    "till", 
+    "you", 
+    "drop!" 
 };
 
 //=======================================================================================
@@ -94,19 +94,19 @@ void wayintop_lcd_test_init()
     hd44780u_line_set(
         HD44780U_L1, 
         (char *)(hd44780u_startup_screen[HD44780U_L1]), 
-        HD44780U_CURSOR_OFFSET_0); 
+        HD44780U_CURSOR_OFFSET_3); 
     hd44780u_line_set(
         HD44780U_L2, 
         (char *)(hd44780u_startup_screen[HD44780U_L2]), 
-        HD44780U_CURSOR_OFFSET_1); 
+        HD44780U_CURSOR_OFFSET_0); 
     hd44780u_line_set(
         HD44780U_L3, 
         (char *)(hd44780u_startup_screen[HD44780U_L3]), 
-        HD44780U_CURSOR_OFFSET_2); 
+        HD44780U_CURSOR_OFFSET_6); 
     hd44780u_line_set(
         HD44780U_L4, 
         (char *)(hd44780u_startup_screen[HD44780U_L4]), 
-        HD44780U_CURSOR_OFFSET_3); 
+        HD44780U_CURSOR_OFFSET_7); 
 
     // Send all lines of data 
     hd44780u_cursor_pos(HD44780U_START_L1, HD44780U_CURSOR_OFFSET_0);
@@ -145,22 +145,22 @@ void wayintop_lcd_test_app()
         // its declaration in the header defaults to an int type. 
 
         case HD44780U_L1:
-            hd44780u_cursor_pos(HD44780U_START_L1, HD44780U_CURSOR_OFFSET_0);
+            hd44780u_cursor_pos(HD44780U_START_L1, HD44780U_CURSOR_OFFSET_10);
             hd44780u_send_string((char *)(hd44780u_test_text[HD44780U_L1]));
             break;
         
         case HD44780U_L2:
-            hd44780u_cursor_pos(HD44780U_START_L2, HD44780U_CURSOR_OFFSET_0);
+            hd44780u_cursor_pos(HD44780U_START_L2, HD44780U_CURSOR_OFFSET_8);
             hd44780u_send_string((char *)(hd44780u_test_text[HD44780U_L2])); 
             break;
         
         case HD44780U_L3:
-            hd44780u_cursor_pos(HD44780U_START_L3, HD44780U_CURSOR_OFFSET_0);
+            hd44780u_cursor_pos(HD44780U_START_L3, HD44780U_CURSOR_OFFSET_6);
             hd44780u_send_string((char *)(hd44780u_test_text[HD44780U_L3])); 
             break;
         
         case HD44780U_L4:
-            hd44780u_cursor_pos(HD44780U_START_L4, HD44780U_CURSOR_OFFSET_0);
+            hd44780u_cursor_pos(HD44780U_START_L4, HD44780U_CURSOR_OFFSET_4);
             hd44780u_send_string((char *)(hd44780u_test_text[HD44780U_L4])); 
             break;
 
