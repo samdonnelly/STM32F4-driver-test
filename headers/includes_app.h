@@ -34,7 +34,7 @@
 #include "spi_test.h"
 #include "timers_test.h"
 #include "uart_test.h"
-#include "wayintop_lcd_test.h"
+#include "hd44780u_test.h"
 
 //=======================================================================================
 

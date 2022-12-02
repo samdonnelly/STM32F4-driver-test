@@ -55,13 +55,15 @@ sources/test_code/mpu6050_test.c \
 sources/test_code/spi_test.c \
 sources/test_code/timers_test.c \
 sources/test_code/uart_test.c \
-sources/test_code/wayintop_lcd_test.c \
+sources/test_code/hd44780u_test.c \
 sources/config_files/m8q_config.c \
 ../STM32F4-driver-library/sources/analog_driver.c \
 ../STM32F4-driver-library/sources/data_filters.c \
 ../STM32F4-driver-library/sources/dma_driver.c \
 ../STM32F4-driver-library/sources/gpio_driver.c \
 ../STM32F4-driver-library/sources/hc05_driver.c \
+../STM32F4-driver-library/sources/hd44780u_driver.c \
+../STM32F4-driver-library/sources/hd44780u_controller.c \
 ../STM32F4-driver-library/sources/hw125_driver.c \
 ../STM32F4-driver-library/sources/i2c_comm.c \
 ../STM32F4-driver-library/sources/interrupt_driver.c \
@@ -72,7 +74,6 @@ sources/config_files/m8q_config.c \
 ../STM32F4-driver-library/sources/timers.c \
 ../STM32F4-driver-library/sources/tools.c \
 ../STM32F4-driver-library/sources/uart_comm.c \
-../STM32F4-driver-library/sources/wayintop_lcd_driver.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c \

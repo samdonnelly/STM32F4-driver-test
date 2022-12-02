@@ -23,11 +23,12 @@
 // Device drivers 
 #include "hw125_driver.h"
 #include "mpu6050_driver.h"
-#include "wayintop_lcd_driver.h"
+#include "hd44780u_driver.h"
 #include "hc05_driver.h"
 #include "m8q_driver.h"
 
 // Controllers 
+#include "hd44780u_controller.h"
 #include "m8q_controller.h" 
 
 // Communication drivers 

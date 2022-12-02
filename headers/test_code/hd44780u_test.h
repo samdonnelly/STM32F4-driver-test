@@ -12,8 +12,8 @@
  * 
  */
 
-#ifndef _WAYINTOP_LCD_TEST_H_
-#define _WAYINTOP_LCD_TEST_H_
+#ifndef _HD44780U_TEST_H_
+#define _HD44780U_TEST_H_
 
 //=======================================================================================
 // Includes 
@@ -54,4 +54,4 @@ void wayintop_lcd_test_app(void);
 
 //=======================================================================================
 
-#endif  // _WAYINTOP_LCD_TEST_H_ 
+#endif  // _HD44780U_TEST_H_ 

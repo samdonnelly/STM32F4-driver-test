@@ -27,7 +27,9 @@
 			"timers_test.h": "c",
 			"interrupt_driver.h": "c",
 			"wayintop_lcd_test.h": "c",
-			"hd44780u_driver.h": "c"
+			"hd44780u_driver.h": "c",
+			"mpu6050_driver.h": "c",
+			"hd44780u_controller.h": "c"
 		}
 	}
 }
