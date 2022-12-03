@@ -1,5 +1,5 @@
 /**
- * @file wayintop_lcd_test.c
+ * @file hd44780u_test.c
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
@@ -51,9 +51,9 @@ static char* hd44780u_test_text[LCD_NUM_LINES] =
 
 
 // Setup code
-void wayintop_lcd_test_init()
+void hd44780u_test_init()
 {
-    // Setup code for the wayintop_lcd_test here 
+    // Setup code for the hd44780u_test here 
 
     //=================================================
     // Peripheral initialization 
@@ -131,9 +131,9 @@ void wayintop_lcd_test_init()
 
 
 // Test code 
-void wayintop_lcd_test_app()
+void hd44780u_test_app()
 {
-    // Test code for the wayintop_lcd_test here 
+    // Test code for the hd44780u_test here 
 
     // Local variables 
     static int8_t counter = 0;

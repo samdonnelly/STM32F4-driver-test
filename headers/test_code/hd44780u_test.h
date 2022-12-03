@@ -1,5 +1,5 @@
 /**
- * @file wayintop_lcd_test.h
+ * @file hd44780u_test.h
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
@@ -43,14 +43,14 @@
  * @brief wayintop LCD setup code 
  * 
  */
-void wayintop_lcd_test_init(void); 
+void hd44780u_test_init(void); 
 
 
 /**
  * @brief wayintop LCD test code 
  * 
  */
-void wayintop_lcd_test_app(void); 
+void hd44780u_test_app(void); 
 
 //=======================================================================================
 
