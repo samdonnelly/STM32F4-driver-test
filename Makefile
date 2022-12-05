@@ -53,6 +53,7 @@ sources/test_code/interrupt_test.c \
 sources/test_code/m8q_test.c \
 sources/test_code/mpu6050_test.c \
 sources/test_code/spi_test.c \
+sources/test_code/state_machine_test.c \
 sources/test_code/timers_test.c \
 sources/test_code/uart_test.c \
 sources/test_code/hd44780u_test.c \
