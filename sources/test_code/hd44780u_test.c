@@ -27,6 +27,16 @@
 //===============================================================================
 
 
+//================================================================================
+// Function prototypes 
+
+void hd44780u_cmd_prompt(void); 
+
+void hd44780u_arg_prompt(void); 
+
+//================================================================================
+
+
 //=======================================================================================
 // Predefined text - can be defined here for use throughout the code 
 
@@ -39,15 +49,40 @@ static char* hd44780u_startup_screen[LCD_NUM_LINES] =
 };
 
 
-static char* hd44780u_test_text[LCD_NUM_LINES] = 
-{ 
-    "Rump",
-    "till", 
-    "you", 
-    "drop!" 
-};
+// static char* hd44780u_test_text[LCD_NUM_LINES] = 
+// { 
+//     "Rump",
+//     "till", 
+//     "you", 
+//     "drop!" 
+// };
 
 //=======================================================================================
+
+
+//================================================================================
+// Globals 
+
+// User command table 
+static hd44780u_state_request_t commands[HD44780U_NUM_USER_CMDS] = 
+{
+    {"line1_set",   2, NULL,                         &hd44780u_line1_set}, 
+    {"line2_set",   2, NULL,                         &hd44780u_line2_set}, 
+    {"line3_set",   2, NULL,                         &hd44780u_line3_set}, 
+    {"line4_set",   2, NULL,                         &hd44780u_line4_set}, 
+    {"line1_clear", 0, &hd44780u_line1_clear,        NULL}, 
+    {"line2_clear", 0, &hd44780u_line2_clear,        NULL}, 
+    {"line3_clear", 0, &hd44780u_line3_clear,        NULL}, 
+    {"line4_clear", 0, &hd44780u_line4_clear,        NULL}, 
+    {"write",       0, &hd44780_set_write_flag,      NULL}, 
+    {"read",        0, &hd44780u_set_read_flag,      NULL}, 
+    {"reset",       0, &hd44780u_set_reset_flag,     NULL}, 
+    {"lp_set",      0, &hd44780u_set_low_pwr_flag,   NULL}, 
+    {"lp_clear",    0, &hd44780u_clear_low_pwr_flag, NULL}, 
+    {"execute",     0, NULL,                         NULL} 
+}; 
+
+//================================================================================
 
 
 // Setup code
@@ -70,7 +105,7 @@ void hd44780u_test_init()
     tim_enable(TIM9); 
 
     // Initialize UART
-    uart_init(USART2, UART_BAUD_9600, UART_CLOCK_42);
+    uart_init(USART2, UART_BAUD_9600, UART_CLOCK_42);  // Serial terminal comms 
 
     // I2C1 init
     i2c1_init(
@@ -84,6 +119,12 @@ void hd44780u_test_init()
 
     // wayintop LCD screen init. 
     hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH);
+
+    // Initialize the device controller 
+    hd44780u_controller_init(); 
+
+    // 
+    hd44780u_cmd_prompt(); 
 
     //=================================================
 
@@ -135,44 +176,181 @@ void hd44780u_test_app()
 {
     // Test code for the hd44780u_test here 
 
+    //==================================================
+    // Driver test code 
+
+    // // Local variables 
+    // static int8_t counter = 0;
+
+    // // Print each line one at a time followed by a delay 
+    // switch (counter)
+    // {
+    //     // Text is cast to a char pointer for use in the send_string function because 
+    //     // its declaration in the header defaults to an int type. 
+
+    //     case HD44780U_L1:
+    //         hd44780u_cursor_pos(HD44780U_START_L1, HD44780U_CURSOR_OFFSET_10);
+    //         hd44780u_send_string((char *)(hd44780u_test_text[HD44780U_L1]));
+    //         break;
+        
+    //     case HD44780U_L2:
+    //         hd44780u_cursor_pos(HD44780U_START_L2, HD44780U_CURSOR_OFFSET_8);
+    //         hd44780u_send_string((char *)(hd44780u_test_text[HD44780U_L2])); 
+    //         break;
+        
+    //     case HD44780U_L3:
+    //         hd44780u_cursor_pos(HD44780U_START_L3, HD44780U_CURSOR_OFFSET_6);
+    //         hd44780u_send_string((char *)(hd44780u_test_text[HD44780U_L3])); 
+    //         break;
+        
+    //     case HD44780U_L4:
+    //         hd44780u_cursor_pos(HD44780U_START_L4, HD44780U_CURSOR_OFFSET_4);
+    //         hd44780u_send_string((char *)(hd44780u_test_text[HD44780U_L4])); 
+    //         break;
+
+    //     default:
+    //         hd44780u_clear();
+    //         counter = -1;
+    //         break;
+    // }
+
+    // // Increment to next line
+    // counter++;
+
+    // // Delay for 1 second 
+    // tim_delay_ms(TIM9, 1000);
+
+    //==================================================
+
+
+    //==================================================
+    // Controller test code 
+
     // Local variables 
-    static int8_t counter = 0;
+    static uint8_t arg_flag = CLEAR; 
+    static uint8_t arg_record = SET_BIT; 
+    static uint8_t num_args = CLEAR; 
+    static uint8_t arg_index = CLEAR; 
+    static uint8_t cmd_index = CLEAR; 
+    static uint16_t setter_status = CLEAR; 
+    static char user_input[HD44780U_USER_TEST_INPUT]; 
+    static char user_args[2][HD44780U_USER_TEST_INPUT]; 
 
-    // Print each line one at a time followed by a delay 
-    switch (counter)
+    static char line_input[4][HD44780U_USER_TEST_INPUT]; 
+    static hd44780u_cursor_offset_t line_offset[4]; 
+
+    // Check for a user command - try to put all of this in the state_machine_test 
+    if (uart_data_ready(USART2))
     {
-        // Text is cast to a char pointer for use in the send_string function because 
-        // its declaration in the header defaults to an int type. 
+        // Read the input 
+        uart_getstr(USART2, user_input, UART_STR_TERM_CARRIAGE);
 
-        case HD44780U_L1:
-            hd44780u_cursor_pos(HD44780U_START_L1, HD44780U_CURSOR_OFFSET_10);
-            hd44780u_send_string((char *)(hd44780u_test_text[HD44780U_L1]));
-            break;
-        
-        case HD44780U_L2:
-            hd44780u_cursor_pos(HD44780U_START_L2, HD44780U_CURSOR_OFFSET_8);
-            hd44780u_send_string((char *)(hd44780u_test_text[HD44780U_L2])); 
-            break;
-        
-        case HD44780U_L3:
-            hd44780u_cursor_pos(HD44780U_START_L3, HD44780U_CURSOR_OFFSET_6);
-            hd44780u_send_string((char *)(hd44780u_test_text[HD44780U_L3])); 
-            break;
-        
-        case HD44780U_L4:
-            hd44780u_cursor_pos(HD44780U_START_L4, HD44780U_CURSOR_OFFSET_4);
-            hd44780u_send_string((char *)(hd44780u_test_text[HD44780U_L4])); 
-            break;
+        // Looking for an argument and not a command 
+        if (arg_flag) 
+        {
+            // Assign user input to the argument buffer 
+            strcpy(user_args[arg_index], user_input); 
 
-        default:
-            hd44780u_clear();
-            counter = -1;
-            break;
+            // Determine if there are more arguments 
+            if (++arg_index >= num_args) arg_flag = CLEAR; 
+        }
+
+        // Looking for a command and not an argument 
+        else 
+        {
+            // Look for a matching command 
+            for (cmd_index = 0; cmd_index < HD44780U_NUM_USER_CMDS; cmd_index++)
+            {
+                if (str_compare(commands[cmd_index].cmd, user_input, BYTE_0)) break; 
+            }
+
+            // Check if a match was found 
+            if (cmd_index < HD44780U_NUM_USER_CMDS)
+            {
+                uart_sendstring(USART2, "Match\r\n"); 
+                // Execute command 
+                if (cmd_index == (HD44780U_NUM_USER_CMDS-1))
+                {
+                    uart_sendstring(USART2, "Execute!\r\n"); 
+
+                    for (uint8_t i = 0; i < (HD44780U_NUM_USER_CMDS-1); i++)
+                    {
+                        if ((setter_status >> i) & SET_BIT)
+                        {
+                            uart_sendstring(USART2, "Setter status bit: "); 
+                            uart_send_integer(USART2, (int16_t)i); 
+                            uart_send_new_line(USART2); 
+                            
+                            if (commands[i].setter != NULL) 
+                                (commands[i].setter)(); 
+                            else 
+                                (commands[i].data)(
+                                    line_input[i], 
+                                    line_offset[i]); 
+                        }
+                    }
+
+                    setter_status = CLEAR; 
+                }
+
+                // Another command 
+                else 
+                {
+                    // Set the setter flag to indicate the command chosen 
+                    setter_status |= (SET_BIT << cmd_index); 
+
+                    uart_sendstring(USART2, "Setter status: "); 
+                    uart_send_integer(USART2, (int16_t)setter_status); 
+                    uart_send_new_line(USART2); 
+
+                    // Read the number of arguments 
+                    num_args = commands[cmd_index].arg_num; 
+
+                    if (num_args) 
+                    {
+                        arg_flag = SET_BIT; 
+                        arg_index = CLEAR; 
+                    }
+                }
+            }
+
+            else 
+            {
+                uart_sendstring(USART2, "No match\r\n"); 
+            }
+        }
+
+        if (arg_flag) hd44780u_arg_prompt(); 
+        else hd44780u_cmd_prompt(); 
     }
 
-    // Increment to next line
-    counter++;
+    if (!arg_flag && !arg_record)
+    {
+        strcpy(line_input[cmd_index], user_args[0]); 
+        line_offset[cmd_index] = atoi(user_args[1]); 
+        arg_record = SET_BIT; 
+    }
 
-    // Delay for 1 second 
-    tim_delay_ms(TIM9, 1000);
+    if (arg_flag) arg_record = CLEAR; 
+
+    // Call the device controller 
+    hd44780u_controller(); 
+
+    //==================================================
+}
+
+
+// Command input prompt 
+void hd44780u_cmd_prompt(void)
+{
+    uart_send_new_line(USART2); 
+    uart_sendstring(USART2, "cmd >>> "); 
+}
+
+
+// Argument input prompt 
+void hd44780u_arg_prompt(void)
+{
+    uart_send_new_line(USART2); 
+    uart_sendstring(USART2, "arg >>> "); 
 }
