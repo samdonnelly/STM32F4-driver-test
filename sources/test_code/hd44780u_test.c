@@ -66,7 +66,7 @@ static char* hd44780u_startup_screen[LCD_NUM_LINES] =
 // User command table 
 static hd44780u_state_request_t commands[HD44780U_NUM_USER_CMDS] = 
 {
-    {"line1_set",   2, NULL,                         &hd44780u_line1_set}, 
+    {"line1_set",   2, NULL,                         &hd44780u_line1_set, NULL}, 
     {"line2_set",   2, NULL,                         &hd44780u_line2_set}, 
     {"line3_set",   2, NULL,                         &hd44780u_line3_set}, 
     {"line4_set",   2, NULL,                         &hd44780u_line4_set}, 
@@ -81,6 +81,26 @@ static hd44780u_state_request_t commands[HD44780U_NUM_USER_CMDS] =
     {"lp_clear",    0, &hd44780u_clear_low_pwr_flag, NULL}, 
     {"execute",     0, NULL,                         NULL} 
 }; 
+
+
+// // User command table 
+// static state_request_t state_cmds[HD44780U_NUM_USER_CMDS] = 
+// {
+//     {"line1_set",   2, 2, NULL, &hd44780u_line1_set},   // , NULL, NULL}, 
+//     {"line2_set",   2, 2, NULL, &hd44780u_line2_set},   // , NULL, NULL}, 
+//     {"line3_set",   2, 2, NULL, &hd44780u_line3_set},   // , NULL, NULL}, 
+//     {"line4_set",   2, 2, NULL, &hd44780u_line4_set},   // , NULL, NULL}, 
+//     {"line1_clear", 0, 1, &hd44780u_line1_clear, NULL},   // , NULL, NULL}, 
+//     {"line2_clear", 0, 1, &hd44780u_line2_clear, NULL},   // , NULL, NULL}, 
+//     {"line3_clear", 0, 1, &hd44780u_line3_clear, NULL},   // , NULL, NULL}, 
+//     {"line4_clear", 0, 1, &hd44780u_line4_clear, NULL},   // , NULL, NULL}, 
+//     {"write",       0, 1, &hd44780_set_write_flag, NULL},   // , NULL, NULL}, 
+//     {"read",        0, 1, &hd44780u_set_read_flag, NULL},   // , NULL, NULL}, 
+//     {"reset",       0, 1, &hd44780u_set_reset_flag, NULL},   // , NULL, NULL}, 
+//     {"lp_set",      0, 1, &hd44780u_set_low_pwr_flag, NULL},   // , NULL, NULL}, 
+//     {"lp_clear",    0, 1, &hd44780u_clear_low_pwr_flag, NULL},   // , NULL, NULL}, 
+//     {"execute",     0, 1, NULL, NULL}  // , NULL, NULL} 
+// }; 
 
 //================================================================================
 
@@ -267,20 +287,14 @@ void hd44780u_test_app()
             // Check if a match was found 
             if (cmd_index < HD44780U_NUM_USER_CMDS)
             {
-                uart_sendstring(USART2, "Match\r\n"); 
                 // Execute command 
                 if (cmd_index == (HD44780U_NUM_USER_CMDS-1))
                 {
-                    uart_sendstring(USART2, "Execute!\r\n"); 
-
                     for (uint8_t i = 0; i < (HD44780U_NUM_USER_CMDS-1); i++)
                     {
                         if ((setter_status >> i) & SET_BIT)
                         {
-                            uart_sendstring(USART2, "Setter status bit: "); 
-                            uart_send_integer(USART2, (int16_t)i); 
-                            uart_send_new_line(USART2); 
-                            
+                            // replace this with a return value and evaluate in the driver test 
                             if (commands[i].setter != NULL) 
                                 (commands[i].setter)(); 
                             else 
@@ -299,10 +313,6 @@ void hd44780u_test_app()
                     // Set the setter flag to indicate the command chosen 
                     setter_status |= (SET_BIT << cmd_index); 
 
-                    uart_sendstring(USART2, "Setter status: "); 
-                    uart_send_integer(USART2, (int16_t)setter_status); 
-                    uart_send_new_line(USART2); 
-
                     // Read the number of arguments 
                     num_args = commands[cmd_index].arg_num; 
 
@@ -312,11 +322,6 @@ void hd44780u_test_app()
                         arg_index = CLEAR; 
                     }
                 }
-            }
-
-            else 
-            {
-                uart_sendstring(USART2, "No match\r\n"); 
             }
         }
 

@@ -43,6 +43,18 @@
 
 
 //================================================================================
+// Notes
+// - Make the state_request_t structure general purpose by adding a bunch of generic 
+//   function pointer names (such as function_pointer_1, function_pointer_2, etc.). 
+// - Define the controller setter/getter function pointers in the test code file 
+//   somewhere (like below). These will be specific in terms of arguments but generic 
+//   in that they will match the names of the generic pointer names. 
+// 
+// 
+//================================================================================
+
+
+//================================================================================
 // Function pointers 
 
 /**
@@ -57,6 +69,12 @@ typedef void (*hd44780u_state_flag_tester)(void);
 typedef void (*hd44780u_state_data_tester)(
     char *display_data, 
     hd44780u_cursor_offset_t line_offset); 
+
+
+// /**
+//  * @brief 
+//  */
+// typedef void (*state_flag_tester)(void); 
 
 //================================================================================
 
@@ -75,6 +93,20 @@ typedef struct hd44780u_state_request_s
     hd44780u_state_data_tester data;        // Function pointer to screen data setters 
 }
 hd44780u_state_request_t; 
+
+
+// /**
+//  * @brief 
+//  */
+// typedef struct state_request_s 
+// {
+//     char cmd[HD44780U_TEST_CMD_LEN];        // User command 
+//     uint8_t arg_num;                        // Number of arguments in function 
+//     uint8_t func_ptr_index;                 // Which generic function pointer to use 
+//     state_flag_tester func_ptr_1;           // Generic function pointer 1 
+//     state_flag_tester func_ptr_2;           // Generic function pointer 2 
+// }
+// state_request_t; 
 
 //================================================================================
 
