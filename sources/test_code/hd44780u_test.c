@@ -339,6 +339,25 @@ void hd44780u_test_app()
         else hd44780u_cmd_prompt(); 
     }
 
+    // Check if setter status has been set (non-zero) to know when to call setters 
+    // Clear the setter status to zero when done 
+    // Incorporate the state function array 
+
+    // for (uint8_t i = 0; i < (test_params.num_usr_cmds-1); i++)
+    // {
+    //     if ((test_params.setter_status >> i) & SET_BIT)
+    //     {
+    //         if (state_request[i].setter != NULL) 
+    //             (state_request[i].setter)(); 
+    //         else 
+    //             (state_request[i].data)(
+    //                 line_input[i], 
+    //                 line_offset[i]); 
+    //     }
+    // }
+
+    // Check arg_convert to see if user argument input should be converted and assigned 
+
     if (!arg_flag && !arg_record)
     {
         strcpy(line_input[cmd_index], user_args[0]); 

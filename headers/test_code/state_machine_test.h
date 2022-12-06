@@ -26,7 +26,8 @@
 //================================================================================
 // Macros 
 
-#define STATE_TEST_CMD_LEN 15      // User command test input buffer size 
+#define STATE_TEST_CMD_LEN 15         // User command test input buffer size 
+#define STATE_USER_TEST_INPUT 25      // 
 
 //================================================================================
 
@@ -90,7 +91,9 @@ void state_machine_init(
 void state_machine_test(
     state_request_t state_request[], 
     char *user_input, 
-    uint8_t *arg_convert); 
+    char *user_args, 
+    uint8_t *arg_convert, 
+    uint16_t *setter_status); 
 
 //================================================================================
 
