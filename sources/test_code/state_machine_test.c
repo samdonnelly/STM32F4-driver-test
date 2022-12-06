@@ -28,100 +28,149 @@
 
 
 //================================================================================
+// Function prototypes 
+
+void hd44780u_cmd_prompt(void); 
+
+void hd44780u_arg_prompt(void); 
+
+//================================================================================
+
+
+//===============================================================================
+// Globals 
+
+static state_test_params_t test_params; 
+
+//===============================================================================
+
+
+//================================================================================
 // Functions 
 
-void state_machine_test()
+// 
+void state_machine_init(
+    uint8_t num_usr_cmds)
 {
-//     // Local variables 
-//     static uint8_t arg_flag = CLEAR; 
-//     static uint8_t arg_record = SET_BIT; 
-//     static uint8_t num_args = CLEAR; 
-//     static uint8_t arg_index = CLEAR; 
-//     static uint8_t cmd_index = CLEAR; 
-//     static uint16_t setter_status = CLEAR; 
-//     static char user_input[HD44780U_USER_TEST_INPUT]; 
-//     static char user_args[2][HD44780U_USER_TEST_INPUT]; 
+    test_params.num_usr_cmds = num_usr_cmds; 
+    test_params.arg_flag = CLEAR; 
+    test_params.arg_record = SET_BIT; 
+    test_params.num_args = CLEAR; 
+    test_params.arg_index = CLEAR; 
+    test_params.cmd_index = CLEAR; 
+    test_params.setter_status = CLEAR; 
 
-//     static char line_input[4][HD44780U_USER_TEST_INPUT]; 
-//     static hd44780u_cursor_offset_t line_offset[4]; 
+    hd44780u_cmd_prompt(); 
+}
 
-//     // Check for a user command - try to put all of this in the state_machine_test 
-//     if (uart_data_ready(USART2))
-//     {
-//         // Read the input 
-//         uart_getstr(USART2, user_input, UART_STR_TERM_CARRIAGE);
 
-//         // Looking for an argument and not a command 
-//         if (arg_flag) 
-//         {
-//             // Assign user input to the argument buffer 
-//             strcpy(user_args[arg_index], user_input); 
+void state_machine_test(
+    state_request_t state_request[], 
+    char *user_input, 
+    uint8_t *arg_convert)
+{
+    // Local variables 
+    // static char user_input[HD44780U_USER_TEST_INPUT]; 
+    // static char user_args[2][HD44780U_USER_TEST_INPUT]; 
 
-//             // Determine if there are more arguments 
-//             if (++arg_index >= num_args) arg_flag = CLEAR; 
-//         }
+    // static char line_input[4][HD44780U_USER_TEST_INPUT]; 
+    // static hd44780u_cursor_offset_t line_offset[4]; 
 
-//         // Looking for a command and not an argument 
-//         else 
-//         {
-//             // Look for a matching command 
-//             for (cmd_index = 0; cmd_index < HD44780U_NUM_USER_CMDS; cmd_index++)
-//             {
-//                 if (str_compare(commands[cmd_index].cmd, user_input, BYTE_0)) break; 
-//             }
+    // Check for a user command - try to put all of this in the state_machine_test 
+    if (uart_data_ready(USART2))
+    {
+        // Read the input 
+        uart_getstr(USART2, user_input, UART_STR_TERM_CARRIAGE);
 
-//             // Check if a match was found 
-//             if (cmd_index < HD44780U_NUM_USER_CMDS)
-//             {
-//                 // Execute command 
-//                 if (cmd_index == (HD44780U_NUM_USER_CMDS-1))
-//                 {
-//                     for (uint8_t i = 0; i < (HD44780U_NUM_USER_CMDS-1); i++)
-//                     {
-//                         if ((setter_status >> i) & SET_BIT)
-//                         {
-//                             if (commands[i].setter != NULL) 
-//                                 (commands[i].setter)(); 
-//                             else 
-//                                 (commands[i].data)(
-//                                     line_input[i], 
-//                                     line_offset[i]); 
-//                         }
-//                     }
+        // Looking for an argument and not a command 
+        if (test_params.arg_flag) 
+        {
+            // Assign user input to the argument buffer 
+            // strcpy(user_args[test_params.arg_index], user_input); 
 
-//                     setter_status = CLEAR; 
-//                 }
+            // Determine if there are more arguments 
+            if (++test_params.arg_index >= test_params.num_args) test_params.arg_flag = CLEAR; 
+        }
 
-//                 // Another command 
-//                 else 
-//                 {
-//                     // Set the setter flag to indicate the command chosen 
-//                     setter_status |= (SET_BIT << cmd_index); 
+        // Looking for a command and not an argument 
+        else 
+        {
+            // Look for a matching command 
+            for (test_params.cmd_index = 0; 
+                 test_params.cmd_index < test_params.num_usr_cmds; 
+                 test_params.cmd_index++)
+            {
+                if (str_compare(state_request[test_params.cmd_index].cmd, user_input, BYTE_0)) 
+                    break; 
+            }
 
-//                     // Read the number of arguments 
-//                     num_args = commands[cmd_index].arg_num; 
+            // Check if a match was found 
+            if (test_params.cmd_index < test_params.num_usr_cmds)
+            {
+                // Execute command 
+                if (test_params.cmd_index == (test_params.num_usr_cmds-1))
+                {
+                    for (uint8_t i = 0; i < (test_params.num_usr_cmds-1); i++)
+                    {
+                        if ((test_params.setter_status >> i) & SET_BIT)
+                        {
+                            // if (state_request[i].setter != NULL) 
+                            //     (state_request[i].setter)(); 
+                            // else 
+                            //     (state_request[i].data)(
+                            //         line_input[i], 
+                            //         line_offset[i]); 
+                        }
+                    }
 
-//                     if (num_args) 
-//                     {
-//                         arg_flag = SET_BIT; 
-//                         arg_index = CLEAR; 
-//                     }
-//                 }
-//             }
-//         }
+                    test_params.setter_status = CLEAR; 
+                }
 
-//         if (arg_flag) hd44780u_arg_prompt(); 
-//         else hd44780u_cmd_prompt(); 
-//     }
+                // Another command 
+                else 
+                {
+                    // Set the setter flag to indicate the command chosen 
+                    test_params.setter_status |= (SET_BIT << test_params.cmd_index); 
 
-//     if (!arg_flag && !arg_record)
-//     {
-//         strcpy(line_input[cmd_index], user_args[0]); 
-//         line_offset[cmd_index] = atoi(user_args[1]); 
-//         arg_record = SET_BIT; 
-//     }
+                    // Read the number of arguments 
+                    test_params.num_args = state_request[test_params.cmd_index].arg_num; 
 
-//     if (arg_flag) arg_record = CLEAR; 
+                    if (test_params.num_args) 
+                    {
+                        test_params.arg_flag = SET_BIT; 
+                        test_params.arg_index = CLEAR; 
+                    }
+                }
+            }
+        }
+
+        if (test_params.arg_flag) hd44780u_arg_prompt(); 
+        else hd44780u_cmd_prompt(); 
+    }
+
+    if (!test_params.arg_flag && !test_params.arg_record)
+    {
+        *arg_convert = SET_BIT; 
+        test_params.arg_record = SET_BIT; 
+    }
+
+    if (test_params.arg_flag) test_params.arg_record = CLEAR; 
+}
+
+
+// Command input prompt 
+void hd44780u_cmd_prompt(void)
+{
+    uart_send_new_line(USART2); 
+    uart_sendstring(USART2, "cmd >>> "); 
+}
+
+
+// Argument input prompt 
+void hd44780u_arg_prompt(void)
+{
+    uart_send_new_line(USART2); 
+    uart_sendstring(USART2, "arg >>> "); 
 }
 
 //================================================================================

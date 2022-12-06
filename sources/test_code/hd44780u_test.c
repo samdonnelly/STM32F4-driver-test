@@ -27,16 +27,6 @@
 //===============================================================================
 
 
-//================================================================================
-// Function prototypes 
-
-void hd44780u_cmd_prompt(void); 
-
-void hd44780u_arg_prompt(void); 
-
-//================================================================================
-
-
 //=======================================================================================
 // Predefined text - can be defined here for use throughout the code 
 
@@ -83,24 +73,44 @@ static hd44780u_state_request_t commands[HD44780U_NUM_USER_CMDS] =
 }; 
 
 
-// // User command table 
-// static state_request_t state_cmds[HD44780U_NUM_USER_CMDS] = 
-// {
-//     {"line1_set",   2, 2, NULL, &hd44780u_line1_set},   // , NULL, NULL}, 
-//     {"line2_set",   2, 2, NULL, &hd44780u_line2_set},   // , NULL, NULL}, 
-//     {"line3_set",   2, 2, NULL, &hd44780u_line3_set},   // , NULL, NULL}, 
-//     {"line4_set",   2, 2, NULL, &hd44780u_line4_set},   // , NULL, NULL}, 
-//     {"line1_clear", 0, 1, &hd44780u_line1_clear, NULL},   // , NULL, NULL}, 
-//     {"line2_clear", 0, 1, &hd44780u_line2_clear, NULL},   // , NULL, NULL}, 
-//     {"line3_clear", 0, 1, &hd44780u_line3_clear, NULL},   // , NULL, NULL}, 
-//     {"line4_clear", 0, 1, &hd44780u_line4_clear, NULL},   // , NULL, NULL}, 
-//     {"write",       0, 1, &hd44780_set_write_flag, NULL},   // , NULL, NULL}, 
-//     {"read",        0, 1, &hd44780u_set_read_flag, NULL},   // , NULL, NULL}, 
-//     {"reset",       0, 1, &hd44780u_set_reset_flag, NULL},   // , NULL, NULL}, 
-//     {"lp_set",      0, 1, &hd44780u_set_low_pwr_flag, NULL},   // , NULL, NULL}, 
-//     {"lp_clear",    0, 1, &hd44780u_clear_low_pwr_flag, NULL},   // , NULL, NULL}, 
-//     {"execute",     0, 1, NULL, NULL}  // , NULL, NULL} 
-// }; 
+// User command table 
+static state_request_t state_cmds[HD44780U_NUM_USER_CMDS] = 
+{
+    {"line1_set",   2, 2}, 
+    {"line2_set",   2, 2}, 
+    {"line3_set",   2, 2}, 
+    {"line4_set",   2, 2}, 
+    {"line1_clear", 0, 1}, 
+    {"line2_clear", 0, 1}, 
+    {"line3_clear", 0, 1}, 
+    {"line4_clear", 0, 1}, 
+    {"write",       0, 1}, 
+    {"read",        0, 1}, 
+    {"reset",       0, 1}, 
+    {"lp_set",      0, 1}, 
+    {"lp_clear",    0, 1}, 
+    {"execute",     0, 0} 
+}; 
+
+
+// User command table 
+static hd44780u_func_ptrs_t state_func[HD44780U_NUM_USER_CMDS] = 
+{
+    {NULL, &hd44780u_line1_set}, 
+    {NULL, &hd44780u_line2_set}, 
+    {NULL, &hd44780u_line3_set}, 
+    {NULL, &hd44780u_line4_set}, 
+    {&hd44780u_line1_clear, NULL}, 
+    {&hd44780u_line2_clear, NULL}, 
+    {&hd44780u_line3_clear, NULL}, 
+    {&hd44780u_line4_clear, NULL}, 
+    {&hd44780_set_write_flag, NULL}, 
+    {&hd44780u_set_read_flag, NULL}, 
+    {&hd44780u_set_reset_flag, NULL}, 
+    {&hd44780u_set_low_pwr_flag, NULL}, 
+    {&hd44780u_clear_low_pwr_flag, NULL}, 
+    {NULL, NULL} 
+}; 
 
 //================================================================================
 
@@ -144,7 +154,7 @@ void hd44780u_test_init()
     hd44780u_controller_init(); 
 
     // 
-    hd44780u_cmd_prompt(); 
+    state_machine_init(HD44780U_NUM_USER_CMDS); 
 
     //=================================================
 
@@ -342,20 +352,4 @@ void hd44780u_test_app()
     hd44780u_controller(); 
 
     //==================================================
-}
-
-
-// Command input prompt 
-void hd44780u_cmd_prompt(void)
-{
-    uart_send_new_line(USART2); 
-    uart_sendstring(USART2, "cmd >>> "); 
-}
-
-
-// Argument input prompt 
-void hd44780u_arg_prompt(void)
-{
-    uart_send_new_line(USART2); 
-    uart_sendstring(USART2, "arg >>> "); 
 }
