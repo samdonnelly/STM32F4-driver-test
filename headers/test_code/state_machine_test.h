@@ -49,18 +49,30 @@ typedef struct state_test_params_s
     uint8_t arg_index; 
     uint8_t cmd_index; 
     uint16_t setter_status; 
+    char user_input[STATE_USER_TEST_INPUT]; 
 }
 state_test_params_t; 
 
 
 /**
  * @brief 
+ * 
+ * @details 
+ *          cmd : 
+ *          arg_num : 
+ *          func_ptr_index : 
+ *          arg_buff_index : 
+ *                           All the items that have the same func_ptr_index 
+ *                           will share the same argument buffer so they 
+ *                           should all have unique arg_buff_index starting with 0 
+ * 
  */
 typedef struct state_request_s 
 {
     char cmd[STATE_TEST_CMD_LEN];        // Stores the possible user commands 
     uint8_t arg_num;                     // Number of arguments in function 
     uint8_t func_ptr_index;              // Which generic function pointer to use 
+    uint8_t arg_buff_index;              // Position in user defined argument buffer 
 }
 state_request_t; 
 
@@ -90,8 +102,8 @@ void state_machine_init(
  */
 void state_machine_test(
     state_request_t state_request[], 
-    char *user_input, 
     char *user_args, 
+    uint8_t *cmd_index, 
     uint8_t *arg_convert, 
     uint16_t *setter_status); 
 

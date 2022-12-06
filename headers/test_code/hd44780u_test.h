@@ -31,6 +31,8 @@
 //=======================================================================================
 // Macros 
 
+#define CONTROLLER_TEST 1             // For switching between driver and controller testing 
+
 #define LCD_NUM_LINES 4               // Number of lines on the LCD 
 #define HD44780U_TEST_CMD_LEN 15      // User command test input buffer size 
 #define HD44780U_NUM_USER_CMDS 14     // Number of defined user commands 
@@ -78,17 +80,17 @@ typedef void (*hd44780u_state_data_tester)(
 //================================================================================
 // Structures 
 
-/**
- * @brief 
- */
-typedef struct hd44780u_state_request_s 
-{
-    char cmd[HD44780U_TEST_CMD_LEN];        // User command 
-    uint8_t arg_num;                        // Number of arguments in function 
-    hd44780u_state_flag_tester setter;      // Function pointer to flag setters 
-    hd44780u_state_data_tester data;        // Function pointer to screen data setters 
-}
-hd44780u_state_request_t; 
+// /**
+//  * @brief 
+//  */
+// typedef struct hd44780u_state_request_s 
+// {
+//     char cmd[HD44780U_TEST_CMD_LEN];        // User command 
+//     uint8_t arg_num;                        // Number of arguments in function 
+//     hd44780u_state_flag_tester setter;      // Function pointer to flag setters 
+//     hd44780u_state_data_tester data;        // Function pointer to screen data setters 
+// }
+// hd44780u_state_request_t; 
 
 
 /**

@@ -66,8 +66,8 @@ void state_machine_init(
 
 void state_machine_test(
     state_request_t state_request[], 
-    char *user_input, 
     char *user_args, 
+    uint8_t *cmd_index, 
     uint8_t *arg_convert, 
     uint16_t *setter_status)
 {
@@ -75,14 +75,14 @@ void state_machine_test(
     if (uart_data_ready(USART2))
     {
         // Read the input 
-        uart_getstr(USART2, user_input, UART_STR_TERM_CARRIAGE);
+        uart_getstr(USART2, test_params.user_input, UART_STR_TERM_CARRIAGE);
 
         // Looking for an argument and not a command 
         if (test_params.arg_flag) 
         {
             // Assign user input to the argument buffer 
             user_args += (test_params.arg_index*STATE_USER_TEST_INPUT); 
-            strcpy(user_args, user_input); 
+            strcpy(user_args, test_params.user_input); 
 
             // Determine if there are more arguments 
             if (++test_params.arg_index >= test_params.num_args) 
@@ -97,7 +97,10 @@ void state_machine_test(
                  test_params.cmd_index < test_params.num_usr_cmds; 
                  test_params.cmd_index++)
             {
-                if (str_compare(state_request[test_params.cmd_index].cmd, user_input, BYTE_0)) 
+                if (str_compare(
+                        state_request[test_params.cmd_index].cmd, 
+                        test_params.user_input, 
+                        BYTE_0)) 
                     break; 
             }
 
@@ -140,6 +143,8 @@ void state_machine_test(
     }
 
     if (test_params.arg_flag) test_params.arg_record = CLEAR; 
+
+    *cmd_index = test_params.cmd_index; 
 }
 
 
