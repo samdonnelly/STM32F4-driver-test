@@ -21,17 +21,17 @@
 
 
 //================================================================================
-// Notes: 
-// - How to use: 
-//   - 
-//================================================================================
-
-
-//================================================================================
 // Function prototypes 
 
+/**
+ * @brief User command input prompt 
+ */
 void hd44780u_cmd_prompt(void); 
 
+
+/**
+ * @brief Setter argument input prompt 
+ */
 void hd44780u_arg_prompt(void); 
 
 //================================================================================
@@ -40,6 +40,7 @@ void hd44780u_arg_prompt(void);
 //===============================================================================
 // Globals 
 
+// State machine tester tracker 
 static state_test_params_t test_params; 
 
 //===============================================================================
@@ -48,7 +49,7 @@ static state_test_params_t test_params;
 //================================================================================
 // Functions 
 
-// 
+// State machine tester initialization 
 void state_machine_init(
     uint8_t num_usr_cmds)
 {
@@ -64,6 +65,7 @@ void state_machine_init(
 }
 
 
+// State machine tester 
 void state_machine_test(
     state_request_t state_request[], 
     char *user_args, 
@@ -123,6 +125,7 @@ void state_machine_test(
                     // Read the number of arguments 
                     test_params.num_args = state_request[test_params.cmd_index].arg_num; 
 
+                    // If there are arguments then enter the argument input mode 
                     if (test_params.num_args) 
                     {
                         test_params.arg_flag = SET_BIT; 
@@ -132,10 +135,12 @@ void state_machine_test(
             }
         }
 
+        // Display the user input prompt 
         if (test_params.arg_flag) hd44780u_arg_prompt(); 
         else hd44780u_cmd_prompt(); 
     }
 
+    // Trigger an input convertion once all arguments have been entered 
     if (!test_params.arg_flag && !test_params.arg_record)
     {
         *arg_convert = SET_BIT; 

@@ -24,16 +24,16 @@
 
 
 //================================================================================
+// How to use this test code 
+//================================================================================
+
+
+//================================================================================
 // Macros 
 
-#define STATE_TEST_CMD_LEN 15         // User command test input buffer size 
-#define STATE_USER_TEST_INPUT 25      // 
+#define STATE_TEST_CMD_LEN 15         // Max user command length 
+#define STATE_USER_TEST_INPUT 25      // User input buffer size 
 
-//================================================================================
-
-
-//================================================================================
-// Enums 
 //================================================================================
 
 
@@ -83,22 +83,30 @@ state_request_t;
 // Functions 
 
 /**
- * @brief 
+ * @brief State machine tester initialization 
  * 
  * @details 
  * 
- * @param num_usr_cmds 
+ * @param num_usr_cmds : 
  */
 void state_machine_init(
     uint8_t num_usr_cmds); 
 
 
 /**
- * @brief 
+ * @brief State machine tester 
  * 
- * @details 
+ * @details General purpose test code used to test state machines in device controllers. If 
+ *          set up properly (see how-to above) then the code allows for user input on a serial 
+ *          terminal and takes that input to control a device state machine. 
  * 
- * @param state_request : 
+ * @see state_test_params_t
+ * 
+ * @param state_request : pointer to array of possible user commands - defined in driver test 
+ * @param user_args : pointer to buffer for storing user terminal input 
+ * @param cmd_index : pointer to a variable for returning the command index 
+ * @param arg_convert : pointer to a variable for returning the argument convert flag 
+ * @param setter_status : pointer to a variable for returning the setter status 
  */
 void state_machine_test(
     state_request_t state_request[], 

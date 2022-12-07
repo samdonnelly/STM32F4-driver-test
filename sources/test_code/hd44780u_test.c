@@ -20,17 +20,10 @@
 //=======================================================================================
 
 
-//===============================================================================
-// Notes 
-// - The screen is really sensitive to timing. Adding delays between write operations 
-//   seems to be more reliable. 
-//===============================================================================
-
-
 //=======================================================================================
 // Globals 
 
-static char* hd44780u_startup_screen[LCD_NUM_LINES] = 
+static char* hd44780u_startup_screen[HD44780U_NUM_LINES] = 
 { 
     "Get",
     "ready", 
@@ -39,26 +32,6 @@ static char* hd44780u_startup_screen[LCD_NUM_LINES] =
 };
 
 #if CONTROLLER_TEST
-
-// // User command table 
-// static hd44780u_state_request_t commands[HD44780U_NUM_USER_CMDS] = 
-// {
-//     {"line1_set",   2, NULL,                         &hd44780u_line1_set, NULL}, 
-//     {"line2_set",   2, NULL,                         &hd44780u_line2_set}, 
-//     {"line3_set",   2, NULL,                         &hd44780u_line3_set}, 
-//     {"line4_set",   2, NULL,                         &hd44780u_line4_set}, 
-//     {"line1_clear", 0, &hd44780u_line1_clear,        NULL}, 
-//     {"line2_clear", 0, &hd44780u_line2_clear,        NULL}, 
-//     {"line3_clear", 0, &hd44780u_line3_clear,        NULL}, 
-//     {"line4_clear", 0, &hd44780u_line4_clear,        NULL}, 
-//     {"write",       0, &hd44780_set_write_flag,      NULL}, 
-//     {"read",        0, &hd44780u_set_read_flag,      NULL}, 
-//     {"reset",       0, &hd44780u_set_reset_flag,     NULL}, 
-//     {"lp_set",      0, &hd44780u_set_low_pwr_flag,   NULL}, 
-//     {"lp_clear",    0, &hd44780u_clear_low_pwr_flag, NULL}, 
-//     {"execute",     0, NULL,                         NULL} 
-// }; 
-
 
 // User command table 
 static state_request_t state_cmds[HD44780U_NUM_USER_CMDS] = 
@@ -101,7 +74,7 @@ static hd44780u_func_ptrs_t state_func[HD44780U_NUM_USER_CMDS] =
 
 #else 
 
-static char* hd44780u_test_text[LCD_NUM_LINES] = 
+static char* hd44780u_test_text[HD44780U_NUM_LINES] = 
 { 
     "Rump",
     "till", 
@@ -146,7 +119,7 @@ void hd44780u_test_init()
         I2C_CCR_SM_42_100,
         I2C_TRISE_1000_42);
 
-    // wayintop LCD screen init. 
+    // LCD screen init. 
     hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH);
 
 #if CONTROLLER_TEST
@@ -214,117 +187,22 @@ void hd44780u_test_app()
     //==================================================
     // Controller test code 
 
-    // // Local variables 
-    // static uint8_t arg_flag = CLEAR; 
-    // static uint8_t arg_record = SET_BIT; 
-    // static uint8_t num_args = CLEAR; 
-    // static uint8_t arg_index = CLEAR; 
-    // static uint8_t cmd_index = CLEAR; 
-    // static uint16_t setter_status = CLEAR; 
-    // static char user_input[HD44780U_USER_TEST_INPUT]; 
-    // static char user_args[2][HD44780U_USER_TEST_INPUT]; 
-
-    // static char line_input[4][HD44780U_USER_TEST_INPUT]; 
-    // static hd44780u_cursor_offset_t line_offset[4]; 
-
-    // // Check for a user command - try to put all of this in the state_machine_test 
-    // if (uart_data_ready(USART2))
-    // {
-    //     // Read the input 
-    //     uart_getstr(USART2, user_input, UART_STR_TERM_CARRIAGE);
-
-    //     // Looking for an argument and not a command 
-    //     if (arg_flag) 
-    //     {
-    //         // Assign user input to the argument buffer 
-    //         strcpy(user_args[arg_index], user_input); 
-
-    //         // Determine if there are more arguments 
-    //         if (++arg_index >= num_args) arg_flag = CLEAR; 
-    //     }
-
-    //     // Looking for a command and not an argument 
-    //     else 
-    //     {
-    //         // Look for a matching command 
-    //         for (cmd_index = 0; cmd_index < HD44780U_NUM_USER_CMDS; cmd_index++)
-    //         {
-    //             if (str_compare(commands[cmd_index].cmd, user_input, BYTE_0)) break; 
-    //         }
-
-    //         // Check if a match was found 
-    //         if (cmd_index < HD44780U_NUM_USER_CMDS)
-    //         {
-    //             // Execute command 
-    //             if (cmd_index == (HD44780U_NUM_USER_CMDS-1))
-    //             {
-    //                 for (uint8_t i = 0; i < (HD44780U_NUM_USER_CMDS-1); i++)
-    //                 {
-    //                     if ((setter_status >> i) & SET_BIT)
-    //                     {
-    //                         // replace this with a return value and evaluate in the driver test 
-    //                         if (commands[i].setter != NULL) 
-    //                             (commands[i].setter)(); 
-    //                         else 
-    //                             (commands[i].data)(
-    //                                 line_input[i], 
-    //                                 line_offset[i]); 
-    //                     }
-    //                 }
-
-    //                 setter_status = CLEAR; 
-    //             }
-
-    //             // Another command 
-    //             else 
-    //             {
-    //                 // Set the setter flag to indicate the command chosen 
-    //                 setter_status |= (SET_BIT << cmd_index); 
-
-    //                 // Read the number of arguments 
-    //                 num_args = commands[cmd_index].arg_num; 
-
-    //                 if (num_args) 
-    //                 {
-    //                     arg_flag = SET_BIT; 
-    //                     arg_index = CLEAR; 
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     if (arg_flag) hd44780u_arg_prompt(); 
-    //     else hd44780u_cmd_prompt(); 
-    // }
-
-    // if (!arg_flag && !arg_record)
-    // {
-    //     strcpy(line_input[cmd_index], user_args[0]); 
-    //     line_offset[cmd_index] = atoi(user_args[1]); 
-    //     arg_record = SET_BIT; 
-    // }
-
-    // if (arg_flag) arg_record = CLEAR; 
-
-    // // Call the device controller 
-    // hd44780u_controller(); 
-
-
     // Local variables 
 
-    // General purpose arguments array - can make the # rows equal to the max # of arguments possible 
-    static char user_args[2][HD44780U_USER_TEST_INPUT]; 
+    // General purpose arguments array 
+    static char user_args[HD44780U_MAX_SETTER_ARGS][STATE_USER_TEST_INPUT]; 
 
-    // Arguments for one of the function pointers 
-    static char line_input[4][HD44780U_USER_TEST_INPUT]; 
-    static hd44780u_cursor_offset_t line_offset[4]; 
+    // Arguments for the hd44780u_state_data_tester function pointer 
+    static char line_input[HD44780U_NUM_LINES][STATE_USER_TEST_INPUT]; 
+    static hd44780u_cursor_offset_t line_offset[HD44780U_NUM_LINES]; 
 
+    // Control flags 
     uint8_t arg_convert = 0; 
-    static uint16_t setter_status = 0; 
-    static uint8_t cmd_index = 0; 
+    uint16_t setter_status = 0; 
+    uint8_t cmd_index = 0; 
 
     // Determine what to do from user input 
-    state_machine_test(state_cmds, user_args, &cmd_index, &arg_convert, &setter_status); 
+    state_machine_test(state_cmds, user_args[0], &cmd_index, &arg_convert, &setter_status); 
 
     // Check if there are any setters to set 
     if (setter_status)
@@ -340,8 +218,6 @@ void hd44780u_test_app()
                         break; 
 
                     case 1: 
-                        // Using i here for the arguments is highly dependent on formatting 
-                        // Maybe replace with cmd_index? 
                         (state_func[i].data)(
                             line_input[state_cmds[i].arg_buff_index], 
                             line_offset[state_cmds[i].arg_buff_index]); 
@@ -352,20 +228,16 @@ void hd44780u_test_app()
                 }
             }
         }
-
-        setter_status = CLEAR; 
     }
 
-    // Check arg_convert to see if user argument input should be converted and assigned 
+    // Check if user argument input should be converted and assigned 
     if (arg_convert)
     {
-        // Need to make another switch statement here to know how to convert arguments 
-
         switch (state_cmds[cmd_index].func_ptr_index)
         {
             case 1: 
-                strcpy(line_input[cmd_index], user_args[0]); 
-                line_offset[cmd_index] = atoi(user_args[1]); 
+                strcpy(line_input[state_cmds[cmd_index].arg_buff_index], user_args[0]); 
+                line_offset[state_cmds[cmd_index].arg_buff_index] = atoi(user_args[1]); 
                 break; 
 
             default: 
