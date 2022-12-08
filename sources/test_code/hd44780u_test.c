@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief wayintop LCD test code 
+ * @brief HD44780U LCD screen test code 
  * 
  * @version 0.1
  * @date 2022-08-28
@@ -36,40 +36,42 @@ static char* hd44780u_startup_screen[HD44780U_NUM_LINES] =
 // User command table 
 static state_request_t state_cmds[HD44780U_NUM_USER_CMDS] = 
 {
-    {"line1_set",   2, 1, 0}, 
-    {"line2_set",   2, 1, 1}, 
-    {"line3_set",   2, 1, 2}, 
-    {"line4_set",   2, 1, 3}, 
-    {"line1_clear", 0, 0, 0}, 
-    {"line2_clear", 0, 0, 0}, 
-    {"line3_clear", 0, 0, 0}, 
-    {"line4_clear", 0, 0, 0}, 
-    {"write",       0, 0, 0}, 
-    {"read",        0, 0, 0}, 
-    {"reset",       0, 0, 0}, 
-    {"lp_set",      0, 0, 0}, 
-    {"lp_clear",    0, 0, 0}, 
-    {"execute",     0, 0, 0} 
+    {"line1_set",   2, HD44780U_SETTER_PTR_2, 0}, 
+    {"line2_set",   2, HD44780U_SETTER_PTR_2, 1}, 
+    {"line3_set",   2, HD44780U_SETTER_PTR_2, 2}, 
+    {"line4_set",   2, HD44780U_SETTER_PTR_2, 3}, 
+    {"line1_clear", 0, HD44780U_SETTER_PTR_1, 0}, 
+    {"line2_clear", 0, HD44780U_SETTER_PTR_1, 0}, 
+    {"line3_clear", 0, HD44780U_SETTER_PTR_1, 0}, 
+    {"line4_clear", 0, HD44780U_SETTER_PTR_1, 0}, 
+    {"write",       0, HD44780U_SETTER_PTR_1, 0}, 
+    {"read",        0, HD44780U_SETTER_PTR_1, 0}, 
+    {"reset",       0, HD44780U_SETTER_PTR_1, 0}, 
+    {"lp_set",      0, HD44780U_SETTER_PTR_1, 0}, 
+    {"lp_clear",    0, HD44780U_SETTER_PTR_1, 0}, 
+    {"state",       0, HD44780U_GETTER_PTR_1, 0}, 
+    {"execute", NULL, NULL, NULL} 
 }; 
 
 
 // User command table 
 static hd44780u_func_ptrs_t state_func[HD44780U_NUM_USER_CMDS] = 
 {
-    {NULL, &hd44780u_line1_set}, 
-    {NULL, &hd44780u_line2_set}, 
-    {NULL, &hd44780u_line3_set}, 
-    {NULL, &hd44780u_line4_set}, 
-    {&hd44780u_line1_clear, NULL}, 
-    {&hd44780u_line2_clear, NULL}, 
-    {&hd44780u_line3_clear, NULL}, 
-    {&hd44780u_line4_clear, NULL}, 
-    {&hd44780_set_write_flag, NULL}, 
-    {&hd44780u_set_read_flag, NULL}, 
-    {&hd44780u_set_reset_flag, NULL}, 
-    {&hd44780u_set_low_pwr_flag, NULL}, 
-    {&hd44780u_clear_low_pwr_flag, NULL}, 
-    {NULL, NULL} 
+    {NULL, &hd44780u_line1_set, NULL}, 
+    {NULL, &hd44780u_line2_set, NULL}, 
+    {NULL, &hd44780u_line3_set, NULL}, 
+    {NULL, &hd44780u_line4_set, NULL}, 
+    {&hd44780u_line1_clear, NULL, NULL}, 
+    {&hd44780u_line2_clear, NULL, NULL}, 
+    {&hd44780u_line3_clear, NULL, NULL}, 
+    {&hd44780u_line4_clear, NULL, NULL}, 
+    {&hd44780_set_write_flag, NULL, NULL}, 
+    {&hd44780u_set_read_flag, NULL, NULL}, 
+    {&hd44780u_set_reset_flag, NULL, NULL}, 
+    {&hd44780u_set_low_pwr_flag, NULL, NULL}, 
+    {&hd44780u_clear_low_pwr_flag, NULL, NULL}, 
+    {NULL, NULL, &hd44780u_get_state}, 
+    {NULL, NULL, NULL} 
 }; 
 
 #else 
@@ -198,30 +200,37 @@ void hd44780u_test_app()
 
     // Control flags 
     uint8_t arg_convert = 0; 
-    uint16_t setter_status = 0; 
+    uint16_t set_get_status = 0; 
     uint8_t cmd_index = 0; 
+    uint8_t state = 0; 
 
     // Determine what to do from user input 
-    state_machine_test(state_cmds, user_args[0], &cmd_index, &arg_convert, &setter_status); 
+    state_machine_test(state_cmds, user_args[0], &cmd_index, &arg_convert, &set_get_status); 
 
     // Check if there are any setters to set 
-    if (setter_status)
+    if (set_get_status)
     {
         for (uint8_t i = 0; i < (HD44780U_NUM_USER_CMDS-1); i++)
         {
-            if ((setter_status >> i) & SET_BIT)
+            if ((set_get_status >> i) & SET_BIT)
             {
                 switch (state_cmds[i].func_ptr_index)
                 {
-                    case 0: 
+                    case HD44780U_SETTER_PTR_1: 
                         (state_func[i].setter)(); 
                         break; 
 
-                    case 1: 
+                    case HD44780U_SETTER_PTR_2: 
                         (state_func[i].data)(
                             line_input[state_cmds[i].arg_buff_index], 
                             line_offset[state_cmds[i].arg_buff_index]); 
                         break; 
+
+                    case HD44780U_GETTER_PTR_1: 
+                        state = (state_func[i].getter)(); 
+                        uart_sendstring(USART2, "\nState: "); 
+                        uart_send_integer(USART2, (int16_t)state); 
+                        uart_send_new_line(USART2); 
 
                     default: 
                         break; 

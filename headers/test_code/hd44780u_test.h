@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief wayintop LCD test code header 
+ * @brief HD44780U LCD screen test code header 
  * 
  * @version 0.1
  * @date 2022-08-28
@@ -35,10 +35,27 @@
 
 #define CONTROLLER_TEST 1             // For switching between driver and controller testing 
 
-#define HD44780U_NUM_USER_CMDS 14     // Number of defined user commands 
+#define HD44780U_NUM_USER_CMDS 15     // Number of defined user commands 
 #define HD44780U_MAX_SETTER_ARGS 2    // Maximum arguments of all function pointer below 
 
 //=======================================================================================
+
+
+//===============================================================================
+// Enums 
+
+/**
+ * @brief 
+ * 
+ * @details 
+ */
+typedef enum {
+    HD44780U_SETTER_PTR_1, 
+    HD44780U_SETTER_PTR_2, 
+    HD44780U_GETTER_PTR_1 
+} hd44780u_func_ptr_index_t; 
+
+//===============================================================================
 
 
 //================================================================================
@@ -61,7 +78,7 @@
  *           - hd44780u_set_low_pwr_flag <br> 
  *           - hd44780u_clear_low_pwr_flag 
  */
-typedef void (*hd44780u_state_flag_tester)(void); 
+typedef void (*hd44780u_setter_ptr_1)(void); 
 
 
 /**
@@ -74,9 +91,19 @@ typedef void (*hd44780u_state_flag_tester)(void);
  *           - hd44780u_line3_set <br> 
  *           - hd44780u_line4_set 
  */
-typedef void (*hd44780u_state_data_tester)(
+typedef void (*hd44780u_setter_ptr_2)(
     char *display_data, 
     hd44780u_cursor_offset_t line_offset); 
+
+
+/**
+ * @brief HD44780U getters function pointer 
+ * 
+ * @details This function pointer is used for calling the following getters from the device 
+ *          controller: <br> 
+ *           - hd44780u_get_state 
+ */
+typedef uint8_t (*hd44780u_getter_ptr_1)(void); 
 
 //================================================================================
 
@@ -89,8 +116,9 @@ typedef void (*hd44780u_state_data_tester)(
  */
 typedef struct hd44780u_func_ptrs_s 
 {
-    hd44780u_state_flag_tester setter; 
-    hd44780u_state_data_tester data; 
+    hd44780u_setter_ptr_1 setter; 
+    hd44780u_setter_ptr_2 data; 
+    hd44780u_getter_ptr_1 getter; 
 }
 hd44780u_func_ptrs_t; 
 
@@ -102,14 +130,12 @@ hd44780u_func_ptrs_t;
 
 /**
  * @brief HD44780U LCD sceen setup code 
- * 
  */
 void hd44780u_test_init(void); 
 
 
 /**
  * @brief HD44780U LCD sceen test code 
- * 
  */
 void hd44780u_test_app(void); 
 

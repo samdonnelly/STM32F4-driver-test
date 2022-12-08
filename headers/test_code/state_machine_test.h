@@ -48,7 +48,7 @@ typedef struct state_test_params_s
     uint8_t num_args; 
     uint8_t arg_index; 
     uint8_t cmd_index; 
-    uint16_t setter_status; 
+    uint16_t set_get_status; 
     char user_input[STATE_USER_TEST_INPUT]; 
 }
 state_test_params_t; 
@@ -106,14 +106,14 @@ void state_machine_init(
  * @param user_args : pointer to buffer for storing user terminal input 
  * @param cmd_index : pointer to a variable for returning the command index 
  * @param arg_convert : pointer to a variable for returning the argument convert flag 
- * @param setter_status : pointer to a variable for returning the setter status 
+ * @param set_get_status : pointer to a variable for returning the setter status 
  */
 void state_machine_test(
     state_request_t state_request[], 
     char *user_args, 
     uint8_t *cmd_index, 
     uint8_t *arg_convert, 
-    uint16_t *setter_status); 
+    uint16_t *set_get_status); 
 
 //================================================================================
 

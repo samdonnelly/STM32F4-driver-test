@@ -59,7 +59,7 @@ void state_machine_init(
     test_params.num_args = CLEAR; 
     test_params.arg_index = CLEAR; 
     test_params.cmd_index = CLEAR; 
-    test_params.setter_status = CLEAR; 
+    test_params.set_get_status = CLEAR; 
 
     hd44780u_cmd_prompt(); 
 }
@@ -71,7 +71,7 @@ void state_machine_test(
     char *user_args, 
     uint8_t *cmd_index, 
     uint8_t *arg_convert, 
-    uint16_t *setter_status)
+    uint16_t *set_get_status)
 {
     // Check for a user command 
     if (uart_data_ready(USART2))
@@ -112,15 +112,15 @@ void state_machine_test(
                 // Execute command 
                 if (test_params.cmd_index == (test_params.num_usr_cmds-1))
                 {
-                    *setter_status = test_params.setter_status; 
-                    test_params.setter_status = CLEAR; 
+                    *set_get_status = test_params.set_get_status; 
+                    test_params.set_get_status = CLEAR; 
                 }
 
                 // Another command 
                 else 
                 {
-                    // Set the setter flag to indicate the command chosen 
-                    test_params.setter_status |= (SET_BIT << test_params.cmd_index); 
+                    // Set the setter/getter flag to indicate the command chosen 
+                    test_params.set_get_status |= (SET_BIT << test_params.cmd_index); 
 
                     // Read the number of arguments 
                     test_params.num_args = state_request[test_params.cmd_index].arg_num; 
