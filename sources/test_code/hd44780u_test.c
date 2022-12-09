@@ -207,7 +207,7 @@ void hd44780u_test_app()
     // Determine what to do from user input 
     state_machine_test(state_cmds, user_args[0], &cmd_index, &arg_convert, &set_get_status); 
 
-    // Check if there are any setters to set 
+    // Check if there are any setters or getters requested 
     if (set_get_status)
     {
         for (uint8_t i = 0; i < (HD44780U_NUM_USER_CMDS-1); i++)

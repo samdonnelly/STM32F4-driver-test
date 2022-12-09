@@ -45,9 +45,13 @@
 // Enums 
 
 /**
- * @brief 
+ * @brief Function pointer index 
  * 
- * @details 
+ * @details This is used along with the state machine tester. It is specific to a device 
+ *          test so the names change across test files. This enum is used to define the 
+ *          function pointer index within state_request_t that corresponds to a user command. 
+ *          An array instance of hd44780u_func_ptrs_t is made in the test code and this 
+ *          index has to match the location of the function pointer in the array. 
  */
 typedef enum {
     HD44780U_SETTER_PTR_1, 
@@ -60,8 +64,6 @@ typedef enum {
 
 //================================================================================
 // Function pointers 
-
-// TODO add a function pointer for a getter - result will be printing the getter to the terminal 
 
 /**
  * @brief HD44780U line clear and state flag function pointer 
@@ -112,13 +114,13 @@ typedef uint8_t (*hd44780u_getter_ptr_1)(void);
 // Structures 
 
 /**
- * @brief Structure of all HD44780U setter function pointers (see above) 
+ * @brief Structure of all HD44780U setter and getter function pointers (see above) 
  */
 typedef struct hd44780u_func_ptrs_s 
 {
-    hd44780u_setter_ptr_1 setter; 
-    hd44780u_setter_ptr_2 data; 
-    hd44780u_getter_ptr_1 getter; 
+    hd44780u_setter_ptr_1 setter;          // Function pointer index 1 
+    hd44780u_setter_ptr_2 data;            // Function pointer index 2 
+    hd44780u_getter_ptr_1 getter;          // Function pointer index 3 
 }
 hd44780u_func_ptrs_t; 
 

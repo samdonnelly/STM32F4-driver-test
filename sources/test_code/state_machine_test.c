@@ -53,6 +53,7 @@ static state_test_params_t test_params;
 void state_machine_init(
     uint8_t num_usr_cmds)
 {
+    // Pre-defined trackers 
     test_params.display_flag = CLEAR; 
     test_params.display_mask = CLEAR; 
     test_params.num_usr_cmds = num_usr_cmds; 
@@ -63,6 +64,7 @@ void state_machine_init(
     test_params.cmd_index = CLEAR; 
     test_params.set_get_status = CLEAR; 
 
+    // Display the first user input prompt 
     hd44780u_cmd_prompt(); 
 }
 
@@ -167,6 +169,7 @@ void state_machine_test(
     }
     else if (test_params.display_mask)
     {
+        // If the display mask is set then the user prompt is delayed by one code cycle 
         test_params.display_flag = SET_BIT; 
         test_params.display_mask = CLEAR; 
     }
