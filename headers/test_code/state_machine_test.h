@@ -100,28 +100,6 @@
 // Structures 
 
 /**
- * @brief State machine test control parameters 
- * 
- * @details This structure defines the information needed to control the operation of the 
- *          test code. It is used internally by the state machine tester. 
- */
-typedef struct state_test_params_s 
-{
-    uint8_t display_flag;                      // Indicates when to display a user prompt 
-    uint8_t display_mask;                      // Allows for getters to be printed before prompt 
-    uint8_t num_usr_cmds;                      // Number of user defined commands for testing 
-    uint8_t arg_flag;                          // Inidicates when command arguments are needed 
-    uint8_t arg_record;                        // Triggers user input conversion 
-    uint8_t num_args;                          // Number of arguments needed for a command 
-    uint8_t arg_index;                         // Keeps track of arguments input by user 
-    uint8_t cmd_index;                         // Indicates which command was invoked by the user 
-    uint16_t set_get_status;                   // Keeps track of all requested user commands 
-    char user_input[STATE_USER_TEST_INPUT];    // Buffer to store user input at terminal 
-}
-state_test_params_t; 
-
-
-/**
  * @brief State machine test user defined commands 
  * 
  * @details This structures defined the user commands used for the state machine testing. An 
