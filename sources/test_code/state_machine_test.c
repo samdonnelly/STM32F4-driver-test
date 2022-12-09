@@ -53,6 +53,8 @@ static state_test_params_t test_params;
 void state_machine_init(
     uint8_t num_usr_cmds)
 {
+    test_params.display_flag = CLEAR; 
+    test_params.display_mask = CLEAR; 
     test_params.num_usr_cmds = num_usr_cmds; 
     test_params.arg_flag = CLEAR; 
     test_params.arg_record = SET_BIT; 
@@ -89,6 +91,8 @@ void state_machine_test(
             // Determine if there are more arguments 
             if (++test_params.arg_index >= test_params.num_args) 
                 test_params.arg_flag = CLEAR; 
+
+            test_params.display_flag = SET_BIT; 
         }
 
         // Looking for a command and not an argument 
@@ -114,6 +118,7 @@ void state_machine_test(
                 {
                     *set_get_status = test_params.set_get_status; 
                     test_params.set_get_status = CLEAR; 
+                    test_params.display_mask = SET_BIT; 
                 }
 
                 // Another command 
@@ -131,14 +136,18 @@ void state_machine_test(
                         test_params.arg_flag = SET_BIT; 
                         test_params.arg_index = CLEAR; 
                     }
+
+                    test_params.display_flag = SET_BIT; 
                 }
             }
-        }
 
-        // Display the user input prompt 
-        if (test_params.arg_flag) hd44780u_arg_prompt(); 
-        else hd44780u_cmd_prompt(); 
+            else 
+                test_params.display_flag = SET_BIT; 
+        }
     }
+
+    // Record the user command index 
+    *cmd_index = test_params.cmd_index; 
 
     // Trigger an input convertion once all arguments have been entered 
     if (!test_params.arg_flag && !test_params.arg_record)
@@ -146,10 +155,21 @@ void state_machine_test(
         *arg_convert = SET_BIT; 
         test_params.arg_record = SET_BIT; 
     }
+    else if (test_params.arg_flag) 
+        test_params.arg_record = CLEAR; 
 
-    if (test_params.arg_flag) test_params.arg_record = CLEAR; 
-
-    *cmd_index = test_params.cmd_index; 
+    // Display the user interface as needed 
+    if (test_params.display_flag)
+    {
+        if (test_params.arg_flag) hd44780u_arg_prompt(); 
+        else hd44780u_cmd_prompt(); 
+        test_params.display_flag = CLEAR; 
+    }
+    else if (test_params.display_mask)
+    {
+        test_params.display_flag = SET_BIT; 
+        test_params.display_mask = CLEAR; 
+    }
 }
 
 

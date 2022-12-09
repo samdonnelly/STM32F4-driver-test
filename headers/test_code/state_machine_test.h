@@ -42,6 +42,8 @@
 
 typedef struct state_test_params_s 
 {
+    uint8_t display_flag; 
+    uint8_t display_mask; 
     uint8_t num_usr_cmds; 
     uint8_t arg_flag; 
     uint8_t arg_record; 

@@ -50,7 +50,7 @@ static state_request_t state_cmds[HD44780U_NUM_USER_CMDS] =
     {"lp_set",      0, HD44780U_SETTER_PTR_1, 0}, 
     {"lp_clear",    0, HD44780U_SETTER_PTR_1, 0}, 
     {"state",       0, HD44780U_GETTER_PTR_1, 0}, 
-    {"execute", NULL, NULL, NULL} 
+    {"execute", 0, 0, 0} 
 }; 
 
 
