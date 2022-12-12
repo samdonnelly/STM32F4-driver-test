@@ -56,6 +56,7 @@ void m8q_test_init()
     m8q_user_config_init(I2C1); 
 #else
     // M8Q device setup 
+    // TODO could the configuration array defined in the config file be passed directly? 
     char m8q_config_messages[M8Q_CONFIG_MSG_NUM][M8Q_CONFIG_MSG_MAX_LEN]; 
     m8q_config_copy(m8q_config_messages); 
     uint16_t init_error_code = m8q_init(I2C1, 
@@ -76,9 +77,13 @@ void m8q_test_init()
 // Test code 
 void m8q_test_app()
 {
-#if M8Q_USER_CONFIG 
+#if M8Q_USER_CONFIG   // User configuration mode 
     m8q_user_config(); 
-#else 
+#else   // Normal mode 
+
+#if M8Q_CONTROLLER_TEST   // Controller test code 
+
+#else   // Driver test code 
     //===================================================
     // Data record, power save mode and TX-Ready testing 
 
@@ -145,6 +150,8 @@ void m8q_test_app()
     tim_delay_ms(TIM9, 1);
 
     //===================================================
+
+#endif   // M8Q_CONTROLLER_TEST
 
 #endif   // M8Q_USER_CONFIG
 }
