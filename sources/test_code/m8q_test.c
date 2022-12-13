@@ -143,7 +143,7 @@ void m8q_test_app()
 
         // The following line of code was needed in order for the TX_READY input pin to start 
         // functioning normally again after low power mode. Make this part of a state when 
-        // returning form low power mode.  
+        // returning from low power mode.  
         if (!flipper) while (!(m8q_read())); 
     }
 
