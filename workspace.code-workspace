@@ -32,7 +32,9 @@
 			"hd44780u_controller.h": "c",
 			"cstdlib": "c",
 			"string.h": "c",
-			"state_machine_test.h": "c"
+			"state_machine_test.h": "c",
+			"hd44780u_test.h": "c",
+			"stm32f4xx_hal.h": "c"
 		}
 	}
 }

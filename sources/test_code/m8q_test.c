@@ -20,8 +20,38 @@
 //=======================================================================================
 
 
-//================================================================================
-// Functions 
+//=======================================================================================
+// Globals 
+
+#if M8Q_CONTROLLER_TEST
+
+// User command table 
+static state_request_t m8q_state_cmds[M8Q_NUM_USER_CMDS] = 
+{
+    {"lp_set",   0, M8Q_SETTER_PTR_1, 0}, 
+    {"lp_clear", 0, M8Q_SETTER_PTR_1, 0}, 
+    {"reset",    0, M8Q_SETTER_PTR_1, 0}, 
+    {"state",    0, M8Q_GETTER_PTR_1, 0}, 
+    {"navstat",  0, M8Q_GETTER_PTR_1, 0}, 
+    {"execute", 0, 0, 0} 
+}; 
+
+
+// User command table 
+static m8q_func_ptrs_t m8q_state_func[M8Q_NUM_USER_CMDS] = 
+{
+    {&m8q_set_low_pwr_flag, NULL}, 
+    {&m8q_clear_low_pwr_flag, NULL}, 
+    {&m8q_set_reset_flag, NULL}, 
+    {NULL, &m8q_get_state}, 
+    {NULL, &m8q_get_nav_state}, 
+    {NULL, NULL} 
+}; 
+
+#endif 
+
+//=======================================================================================
+
 
 // Setup code
 void m8q_test_init()
@@ -51,14 +81,19 @@ void m8q_test_init()
         I2C_CCR_SM_42_100,
         I2C_TRISE_1000_42);
 
-    // M8Q configuration mode 
+    //==================================================
+    // M8Q test mode selection 
+
 #if M8Q_USER_CONFIG 
+
     m8q_user_config_init(I2C1); 
+
 #else
+
     // M8Q device setup 
-    // TODO could the configuration array defined in the config file be passed directly? 
     char m8q_config_messages[M8Q_CONFIG_MSG_NUM][M8Q_CONFIG_MSG_MAX_LEN]; 
     m8q_config_copy(m8q_config_messages); 
+
     uint16_t init_error_code = m8q_init(I2C1, 
                                         GPIOC, 
                                         PIN_10, 
@@ -67,7 +102,20 @@ void m8q_test_init()
                                         M8Q_CONFIG_MSG_MAX_LEN, 
                                         (uint8_t *)m8q_config_messages[0]); 
     if (init_error_code) uart_sendstring(USART2, "M8Q init fault.\r\n"); 
+
+#if M8Q_CONTROLLER_TEST
+
+    // Initialize the device controller 
+    m8q_controller_init(TIM9); 
+
+    // Initialize the state machine test code 
+    state_machine_init(M8Q_NUM_USER_CMDS); 
+
 #endif
+
+#endif
+
+    //==================================================
 
     // Delay to let everything finish setup before starting to send and receieve data 
     tim_delay_ms(TIM9, 500); 
@@ -77,13 +125,64 @@ void m8q_test_init()
 // Test code 
 void m8q_test_app()
 {
-#if M8Q_USER_CONFIG   // User configuration mode 
+#if M8Q_USER_CONFIG 
+
     m8q_user_config(); 
-#else   // Normal mode 
 
-#if M8Q_CONTROLLER_TEST   // Controller test code 
+#else 
 
-#else   // Driver test code 
+#if M8Q_CONTROLLER_TEST 
+
+    //==================================================
+    // Controller test code 
+
+    // Local variables 
+
+    // General purpose arguments array 
+    static char user_args[M8Q_MAX_SETTER_ARGS][STATE_USER_TEST_INPUT]; 
+
+    // Control flags 
+    uint8_t arg_convert = 0; 
+    uint16_t set_get_status = 0; 
+    uint8_t cmd_index = 0; 
+    uint8_t state = 0; 
+
+    // Determine what to do from user input 
+    state_machine_test(m8q_state_cmds, user_args[0], &cmd_index, &arg_convert, &set_get_status); 
+
+    // Check if there are any setters or getters requested 
+    if (set_get_status)
+    {
+        for (uint8_t i = 0; i < (M8Q_NUM_USER_CMDS-1); i++)
+        {
+            if ((set_get_status >> i) & SET_BIT)
+            {
+                switch (m8q_state_cmds[i].func_ptr_index)
+                {
+                    case M8Q_SETTER_PTR_1: 
+                        (m8q_state_func[i].setter)(); 
+                        break; 
+
+                    case M8Q_GETTER_PTR_1: 
+                        state = (m8q_state_func[i].getter)(); 
+                        uart_sendstring(USART2, "\nState: "); 
+                        uart_send_integer(USART2, (int16_t)state); 
+                        uart_send_new_line(USART2); 
+
+                    default: 
+                        break; 
+                }
+            }
+        }
+    }
+
+    // Call the device controller 
+    m8q_controller(); 
+
+    //==================================================
+
+#else 
+
     //===================================================
     // Data record, power save mode and TX-Ready testing 
 
@@ -155,5 +254,3 @@ void m8q_test_app()
 
 #endif   // M8Q_USER_CONFIG
 }
-
-//================================================================================

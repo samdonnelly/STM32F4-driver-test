@@ -31,7 +31,7 @@ static char* hd44780u_startup_screen[HD44780U_NUM_LINES] =
     "rumpus!" 
 };
 
-#if CONTROLLER_TEST
+#if HD44780U_CONTROLLER_TEST
 
 // User command table 
 static state_request_t state_cmds[HD44780U_NUM_USER_CMDS] = 
@@ -65,7 +65,7 @@ static hd44780u_func_ptrs_t state_func[HD44780U_NUM_USER_CMDS] =
     {&hd44780u_line2_clear, NULL, NULL}, 
     {&hd44780u_line3_clear, NULL, NULL}, 
     {&hd44780u_line4_clear, NULL, NULL}, 
-    {&hd44780_set_write_flag, NULL, NULL}, 
+    {&hd44780u_set_write_flag, NULL, NULL}, 
     {&hd44780u_set_read_flag, NULL, NULL}, 
     {&hd44780u_set_reset_flag, NULL, NULL}, 
     {&hd44780u_set_low_pwr_flag, NULL, NULL}, 
@@ -124,7 +124,7 @@ void hd44780u_test_init()
     // LCD screen init. 
     hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH);
 
-#if CONTROLLER_TEST
+#if HD44780U_CONTROLLER_TEST
 
     // Initialize the device controller 
     hd44780u_controller_init(); 
@@ -184,7 +184,7 @@ void hd44780u_test_app()
 {
     // Test code for the hd44780u_test here 
 
-#if CONTROLLER_TEST
+#if HD44780U_CONTROLLER_TEST
 
     //==================================================
     // Controller test code 

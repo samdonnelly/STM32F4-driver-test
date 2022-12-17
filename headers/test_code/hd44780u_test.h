@@ -33,10 +33,10 @@
 //=======================================================================================
 // Macros 
 
-#define CONTROLLER_TEST 1             // For switching between driver and controller testing 
+#define HD44780U_CONTROLLER_TEST 1        // For switching between driver and controller testing 
 
-#define HD44780U_NUM_USER_CMDS 15     // Number of defined user commands 
-#define HD44780U_MAX_SETTER_ARGS 2    // Maximum arguments of all function pointer below 
+#define HD44780U_NUM_USER_CMDS 15         // Number of defined user commands 
+#define HD44780U_MAX_SETTER_ARGS 2        // Maximum arguments of all function pointer below 
 
 //=======================================================================================
 
@@ -74,7 +74,7 @@ typedef enum {
  *           - hd44780u_line2_clear <br> 
  *           - hd44780u_line3_clear <br> 
  *           - hd44780u_line4_clear <br> 
- *           - hd44780_set_write_flag <br> 
+ *           - hd44780u_set_write_flag <br> 
  *           - hd44780u_set_read_flag <br> 
  *           - hd44780u_set_reset_flag <br> 
  *           - hd44780u_set_low_pwr_flag <br> 

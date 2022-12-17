@@ -20,13 +20,80 @@
 
 #include "includes_drivers.h"
 
+// Test code 
+#include "state_machine_test.h" 
+
 //=======================================================================================
 
 
 //=======================================================================================
 // Macros 
 
-#define M8Q_CONTROLLER_TEST 0    // Choose between driver and controller test code 
+#define M8Q_CONTROLLER_TEST 1     // Choose between driver and controller test code 
+
+#define M8Q_NUM_USER_CMDS 6       // Number of defined user commands 
+#define M8Q_MAX_SETTER_ARGS 2     // Maximum arguments of all function pointer below 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Enums 
+
+/**
+ * @brief Function pointer index 
+ * 
+ * @details This is used along with the state machine tester. It is specific to a device 
+ *          test so the names change across test files. This enum is used to define the 
+ *          function pointer index within state_request_t that corresponds to a user command. 
+ *          An array instance of m8q_func_ptrs_t is made in the test code and this 
+ *          index has to match the location of the function pointer in the array. 
+ */
+typedef enum {
+    M8Q_SETTER_PTR_1, 
+    M8Q_GETTER_PTR_1 
+} m8q_func_ptr_index_t; 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Function pointers 
+
+/**
+ * @brief M8Q line clear and state flag function pointer 
+ * 
+ * @details This function pointer is used for calling the following setters from the device 
+ *          controller: 
+ *           - 
+ */
+typedef void (*m8q_setter_ptr_1)(void); 
+
+
+/**
+ * @brief M8Q getters function pointer 
+ * 
+ * @details This function pointer is used for calling the following getters from the device 
+ *          controller: 
+ *           - 
+ */
+typedef uint8_t (*m8q_getter_ptr_1)(void); 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Structures 
+
+/**
+ * @brief Structure of all M8Q setter and getter function pointers (see above) 
+ */
+typedef struct m8q_func_ptrs_s 
+{
+    m8q_setter_ptr_1 setter;          // Function pointer index 1 
+    m8q_getter_ptr_1 getter;          // Function pointer index 2 
+}
+m8q_func_ptrs_t; 
 
 //=======================================================================================
 
