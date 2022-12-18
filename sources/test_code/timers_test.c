@@ -54,8 +54,14 @@ void timers_test_init()
     tim_9_to_11_counter_init(
         TIM9, 
         TIM_84MHZ_100US_PSC, 
-        0x2710,  // ARR=10000, 10000*100us*84MHz = ~1s 
+        0x2710,  // ARR=10000, (10000 counts)*(100us/count) = 1s 
         TIM_UP_INT_ENABLE); 
+
+    // tim_9_to_11_counter_init(
+    //     TIM9, 
+    //     TIM_84MHZ_50US_PSC, 
+    //     0x4E20,  // ARR=20000, (20000 counts)*(50us/count) = 1s 
+    //     TIM_UP_INT_ENABLE); 
 
     // Initialize UART
     uart_init(USART2, UART_BAUD_9600, UART_CLOCK_42);
@@ -101,10 +107,16 @@ void timers_test_app()
     static uint16_t pwm = 0; 
     static uint8_t pwm_dir = 1; 
 
+    //==================================================
+    // Periodic interrupt test 
+
     if (handler_flags.tim1_brk_tim9_glbl_flag)
     {
         // Clear interrupt handler 
         handler_flags.tim1_brk_tim9_glbl_flag = CLEAR; 
+
+        //==================================================
+        // PWM output test 
 
         // Set PWM output and calculate a new value 
         tim_ccr(TIM3, pwm, TIM_CHANNEL_1); 
@@ -130,6 +142,8 @@ void timers_test_app()
             }
         }
 
+        //==================================================
+
         // Print the counter to the terminal 
         uart_sendstring(USART2, "Counter: "); 
         uart_send_integer(USART2, (int16_t)counter); 
@@ -137,7 +151,11 @@ void timers_test_app()
         counter++; 
     }
 
+    //==================================================
+    
+    //==================================================
     // Non-blocking delay test 
+
     if (tim_time_compare(TIM9, 
                          TIM_NO_BLOCK_DELAY, 
                          &no_block_delay_count_total, 
@@ -151,4 +169,6 @@ void timers_test_app()
         // Reset the start bit 
         no_block_delay_start_flag = SET_BIT; 
     }
+
+    //==================================================
 }
