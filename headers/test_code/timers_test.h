@@ -30,6 +30,8 @@
 #define PWM_INCREMENT 20
 #define PWM_ARR 100 
 
+#define TIM_NO_BLOCK_DELAY 3000000   // (us) 
+
 //================================================================================
 
 

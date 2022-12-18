@@ -20,6 +20,16 @@
 //=======================================================================================
 
 
+//=======================================================================================
+// Global variables 
+
+static uint32_t no_block_delay_count_total = CLEAR; 
+static uint32_t no_block_delay_count_compare = CLEAR; 
+static uint8_t  no_block_delay_start_flag = SET_BIT; 
+
+//=======================================================================================
+
+
 // Setup code
 void timers_test_init()
 {
@@ -60,6 +70,24 @@ void timers_test_init()
     tim_enable(TIM3); 
     tim_enable(TIM9); 
 
+    //==================================================
+    // Check system clock frequencies 
+
+    uint32_t pclk1_frq = (rcc_get_pclk1_frq() / DIVIDE_1000) / DIVIDE_1000; 
+    uint32_t pclk2_frq = (rcc_get_pclk2_frq() / DIVIDE_1000) / DIVIDE_1000; 
+    uint32_t hclk_frq  = (rcc_get_hclk_frq()  / DIVIDE_1000) / DIVIDE_1000; 
+
+    uart_sendstring(USART2, "PCLK1 Freq: "); 
+    uart_send_integer(USART2, (int16_t)pclk1_frq); 
+    uart_send_new_line(USART2); 
+    uart_sendstring(USART2, "PCLK2 Freq: "); 
+    uart_send_integer(USART2, (int16_t)pclk2_frq); 
+    uart_send_new_line(USART2); 
+    uart_sendstring(USART2, "HCLK Freq:  "); 
+    uart_send_integer(USART2, (int16_t)hclk_frq); 
+    uart_send_new_line(USART2); 
+
+    //==================================================
 } 
 
 
@@ -107,5 +135,20 @@ void timers_test_app()
         uart_send_integer(USART2, (int16_t)counter); 
         uart_send_new_line(USART2); 
         counter++; 
+    }
+
+    // Non-blocking delay test 
+    if (tim_time_compare(TIM9, 
+                         TIM_NO_BLOCK_DELAY, 
+                         &no_block_delay_count_total, 
+                         &no_block_delay_count_compare, 
+                         &no_block_delay_start_flag))
+    {
+        // Print to the terminal to verify that the delay works 
+        uart_sendstring(USART2, "Delay!"); 
+        uart_send_new_line(USART2);
+
+        // Reset the start bit 
+        no_block_delay_start_flag = SET_BIT; 
     }
 }

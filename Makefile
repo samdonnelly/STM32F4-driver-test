@@ -72,6 +72,7 @@ sources/config_files/m8q_config.c \
 ../STM32F4-driver-library/sources/m8q_controller.c \
 ../STM32F4-driver-library/sources/mpu6050_driver.c \
 ../STM32F4-driver-library/sources/spi_comm.c \
+../STM32F4-driver-library/sources/stm32f411xe_custom.c \
 ../STM32F4-driver-library/sources/timers.c \
 ../STM32F4-driver-library/sources/tools.c \
 ../STM32F4-driver-library/sources/uart_comm.c \

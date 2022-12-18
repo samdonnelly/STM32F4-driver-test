@@ -24,5 +24,5 @@
 void user_app()
 {
     // Looped code here
-    m8q_test_app(); 
+    timers_test_app(); 
 }
