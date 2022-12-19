@@ -37,7 +37,7 @@ static state_request_t m8q_state_cmds[M8Q_NUM_USER_CMDS] =
 }; 
 
 
-// User command table 
+// Function pointer table 
 static m8q_func_ptrs_t m8q_state_func[M8Q_NUM_USER_CMDS] = 
 {
     {&m8q_set_low_pwr_flag, NULL}, 
@@ -101,7 +101,11 @@ void m8q_test_init()
                                         M8Q_CONFIG_MSG_NUM, 
                                         M8Q_CONFIG_MSG_MAX_LEN, 
                                         (uint8_t *)m8q_config_messages[0]); 
-    if (init_error_code) uart_sendstring(USART2, "M8Q init fault.\r\n"); 
+    
+    if (init_error_code) 
+    {
+        uart_sendstring(USART2, "M8Q init fault.\r\n"); 
+    }
 
 #if M8Q_CONTROLLER_TEST
 
