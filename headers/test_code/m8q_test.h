@@ -65,7 +65,9 @@ typedef enum {
  * 
  * @details This function pointer is used for calling the following setters from the device 
  *          controller: 
- *           - 
+ *           - m8q_set_low_pwr_flag 
+ *           - m8q_clear_low_pwr_flag 
+ *           - m8q_set_reset_flag 
  */
 typedef void (*m8q_setter_ptr_1)(void); 
 
@@ -75,7 +77,8 @@ typedef void (*m8q_setter_ptr_1)(void);
  * 
  * @details This function pointer is used for calling the following getters from the device 
  *          controller: 
- *           - 
+ *           - m8q_get_state
+ *           - m8q_get_nav_state 
  */
 typedef uint8_t (*m8q_getter_ptr_1)(void); 
 
@@ -103,14 +106,12 @@ m8q_func_ptrs_t;
 
 /**
  * @brief M8Q setup code 
- * 
  */
 void m8q_test_init(void); 
 
 
 /**
  * @brief M8Q test code 
- * 
  */
 void m8q_test_app(void); 
 

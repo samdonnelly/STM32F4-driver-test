@@ -23,6 +23,7 @@
 //=======================================================================================
 // Variables 
 
+// M8Q configuration messages 
 static char* m8q_config_msgs[M8Q_CONFIG_MSG_NUM] = 
 {
     // Disable default NMEA messages 
@@ -45,8 +46,8 @@ static char* m8q_config_msgs[M8Q_CONFIG_MSG_NUM] =
     "B5,62,06,00,1400,01,00,0000,C0080000,80250000,0000,0000,0000,0000*",
     "B5,62,06,00,1400,00,00,9902,84000000,00000000,0700,0300,0200,0000*", 
 
-    // Save the settings 
-    "B5,62,06,09,0C00,00000000,FFFFFFFF,00000000*"    // Save mask 
+    // Save the settings (save mask) 
+    "B5,62,06,09,0C00,00000000,FFFFFFFF,00000000*" 
 };
 
 //=======================================================================================

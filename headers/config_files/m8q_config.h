@@ -37,9 +37,21 @@
 // Function prototypes 
 
 /**
- * @brief 
+ * @brief M8Q configuration message copy 
  * 
- * @details 
+ * @details This function copies the configuration messages defined in the m8q_config 
+ *          file into the array passed to this function. This array can then be passed to 
+ *          the m8q_init function to configure the receiver. 
+ *          
+ *          The messages defined in the config file are meant to configure the settings/
+ *          behavior of the receiver. The M8Q doesn't have flash memory so it must be 
+ *          reconfigured every time it looses power and battery backup power. These 
+ *          messages are carefully constructed according to the message format in the 
+ *          devices protocol datasheet. 
+ *          
+ *          The configuration messages are defined in a separate config file and copied 
+ *          into an array so that there is a central location to define the messages 
+ *          whether they are used in a project or not. 
  * 
  * @param config_msgs 
  */
