@@ -169,7 +169,7 @@ void m8q_test_app()
 
                     case M8Q_GETTER_PTR_1: 
                         state = (m8q_state_func[i].getter)(); 
-                        uart_sendstring(USART2, "\nState: "); 
+                        uart_sendstring(USART2, "\n"); 
                         uart_send_integer(USART2, (int16_t)state); 
                         uart_send_new_line(USART2); 
 
