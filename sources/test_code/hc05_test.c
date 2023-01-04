@@ -201,7 +201,7 @@ void hc05_test_app()
         switch (function)
         {
             case 0:  // Data mode 
-                hc05_data_mode_send(buffer); 
+                hc05_send(buffer); 
                 uart_send_new_line(USART2); 
                 print_data_input(); 
                 break;
@@ -231,7 +231,7 @@ void hc05_test_app()
     // Check if there is user input via Bluetooth 
     if (USART1->SR & (SET_BIT << SHIFT_5))
     {
-        hc05_data_mode_receive(bt_input);  // Must immediately read the data so it's not lost 
+        hc05_read(bt_input);  // Must immediately read the data so it's not lost 
         uart_send_new_line(USART2); 
         uart_send_new_line(USART2); 
         print_bt_input(); 
