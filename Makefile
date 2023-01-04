@@ -63,6 +63,7 @@ sources/config_files/m8q_config.c \
 ../STM32F4-driver-library/sources/dma_driver.c \
 ../STM32F4-driver-library/sources/gpio_driver.c \
 ../STM32F4-driver-library/sources/hc05_driver.c \
+../STM32F4-driver-library/sources/hc05_controller.c \
 ../STM32F4-driver-library/sources/hd44780u_driver.c \
 ../STM32F4-driver-library/sources/hd44780u_controller.c \
 ../STM32F4-driver-library/sources/hw125_driver.c \

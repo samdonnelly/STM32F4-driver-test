@@ -28,6 +28,7 @@
 #include "m8q_driver.h"
 
 // Controllers 
+#include "hc05_controller.h" 
 #include "hd44780u_controller.h"
 #include "m8q_controller.h" 
 

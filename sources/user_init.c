@@ -24,5 +24,5 @@
 void user_init()
 {
     // Setup code here
-    m8q_test_init(); 
+    hc05_test_init(); 
 }
