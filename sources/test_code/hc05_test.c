@@ -20,14 +20,6 @@
 //=======================================================================================
 
 
-//===================================================
-// Notes 
-// - State machine: 
-//   - Have a state that is called at the end of AT command mode state where the baud 
-//     rate is read and used to set the baud rate for data mode 
-//===================================================
-
-
 //=======================================================================================
 // Function prototypes 
 
