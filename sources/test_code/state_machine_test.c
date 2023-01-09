@@ -180,7 +180,9 @@ void state_machine_test(
         test_params.arg_record = SET_BIT; 
     }
     else if (test_params.arg_flag) 
+    {
         test_params.arg_record = CLEAR; 
+    }
 
     // Display the user interface as needed 
     if (test_params.display_flag)

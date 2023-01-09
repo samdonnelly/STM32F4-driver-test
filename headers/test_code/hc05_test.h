@@ -20,6 +20,17 @@
 
 #include "includes_drivers.h"
 
+#include "state_machine_test.h" 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Macros 
+
+#define HC05_CONTROLLER_TEST 0     // For switching between driver and controller testing 
+#define HC05_NUM_USER_CMDS 10      // Number of defined user commands for controller test 
+
 //=======================================================================================
 
 
