@@ -28,8 +28,10 @@
 //=======================================================================================
 // Macros 
 
-#define HC05_CONTROLLER_TEST 0     // For switching between driver and controller testing 
-#define HC05_NUM_USER_CMDS 8       // Number of defined user commands for controller test 
+#define HC05_CONTROLLER_TEST 1     // For switching between driver and controller testing 
+
+#define HC05_NUM_USER_CMDS 10      // Number of defined user commands for controller test 
+#define HC05_MAX_SETTER_ARGS 1     // Maximum arguments of all function pointer below 
 
 //=======================================================================================
 

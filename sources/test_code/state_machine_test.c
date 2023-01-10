@@ -99,6 +99,8 @@ void state_machine_test(
     uint8_t *arg_convert, 
     uint16_t *set_get_status)
 {
+    // TODO Check that pointers are valid 
+
     // Check for a user command 
     if (uart_data_ready(USART2))
     {
