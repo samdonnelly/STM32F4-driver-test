@@ -41,9 +41,6 @@ void print_at_cmd_resp(void);
 // Print Bluetooth input 
 void print_bt_input(void); 
 
-// // Clear the buffer 
-// void clear_buffer(char *buff); 
-
 // Reset at command parameters 
 void clear_params(void); 
 
@@ -61,17 +58,19 @@ char cmd_resp[HC05_AT_CMD_LEN];     // AT command string
 char bt_input[HC05_AT_CMD_LEN];     // Bluetooth input 
 
 
-// static state_request_t state_cmds[HC05_NUM_USER_CMDS] =
-// {
-//     {"send", 0, 0, 0}, 
-//     {"read_set", 0, 0, 0}, 
-//     {"read_clear", 0, 0, 0}, 
-//     {"lp_set", 0, 0, 0}, 
-//     {"lp_clear", 0, 0, 0}, 
-//     {"reset", 0, 0, 0}, 
-//     {"state", 0, 0, 0}, 
-//     {"execute", 0, 0, 0} 
-// }; 
+static state_request_t state_cmds[HC05_NUM_USER_CMDS] =
+{
+    {"send",        2, HC05_FUNC_PTR_2, 0}, 
+    {"read_set",    0, HC05_FUNC_PTR_1, 0}, 
+    {"read_clear",  0, HC05_FUNC_PTR_1, 0}, 
+    {"lp_set",      0, HC05_FUNC_PTR_1, 0}, 
+    {"lp_clear",    0, HC05_FUNC_PTR_1, 0}, 
+    {"reset",       0, HC05_FUNC_PTR_1, 0}, 
+    {"state",       0, HC05_FUNC_PTR_3, 0}, 
+    {"read_status", 0, HC05_FUNC_PTR_3, 0}, 
+    {"read_data",   2, HC05_FUNC_PTR_2, 1}, 
+    {"execute",     0, 0, 0} 
+}; 
 
 //=======================================================================================
 
@@ -96,7 +95,7 @@ void hc05_test_init()
     uart_init(USART2, UART_BAUD_9600, UART_CLOCK_42); 
 
     // UART1 for the HC05 module 
-    uart_init(USART1, UART_BAUD_115200, UART_CLOCK_84);  
+    uart_init(USART1, UART_BAUD_115200, UART_CLOCK_84); 
 
     //===================================================
 
@@ -104,7 +103,7 @@ void hc05_test_init()
     // HC05 initialization 
     
     // hc05 driver 
-    hc05_init(USART1, HC05_PIN34_ENABLE, HC05_EN_ENABLE, HC05_STATE_ENABLE); 
+    hc05_init(USART1, GPIOA, PIN_8, GPIOA, PIN_12, GPIOA, PIN_11); 
 
 #if HC05_CONTROLLER_TEST 
 
@@ -226,7 +225,6 @@ void hc05_test_app()
 #else   // HC05_CONTROLLER_TEST
 
     // Local variables 
-    // static uint8_t state_pin = 0; 
     static uint8_t board_button = 0; 
     static uint8_t push = 0; 
     static uint8_t function = 0; 
@@ -237,13 +235,6 @@ void hc05_test_app()
 
     // Indicate the state pin status through the board LED 
     gpio_write(GPIOA, GPIOX_PIN_5, hc05_status()); 
-    
-    // // Read the STATE pin 
-    // state_pin = gpio_read(GPIOA, GPIOX_PIN_11); 
-
-    // // Indicate the status of the STATE pin using the board green LED 
-    // if (state_pin) gpio_write(GPIOA, GPIOX_PIN_5, GPIO_HIGH);  // Module connected 
-    // else gpio_write(GPIOA, GPIOX_PIN_5, GPIO_LOW);  // Module disconnected 
 
     //===================================================
 
@@ -407,7 +398,6 @@ void parse_input(void)
 
                     for (uint8_t k = 0; k < j; k++) temp *= 10;
 
-                    // command += ((uint8_t)(parse_buffer[parse_index]) - 48);
                     command += temp; 
                     parse_index--; 
                 }
@@ -432,7 +422,6 @@ void parse_input(void)
 
                     for (uint8_t k = 0; k < j; k++) temp *= 10;
                     
-                    // operation += ((uint8_t)(parse_buffer[parse_index]) - 48);
                     operation += temp; 
                     parse_index--; 
                 }
@@ -479,24 +468,9 @@ void print_bt_input(void)
 }
 
 
-// // Clear the string buffer 
-// void clear_buffer(char *buff)
-// {
-//     for (uint8_t i = 0; i < HC05_AT_CMD_LEN; i++)
-//     {
-//         *buff = '\0'; 
-//         buff++; 
-//     }
-// }
-
-
 // Reset at command parameters 
 void clear_params(void) 
 {
-    // clear_buffer(buffer); 
-    // clear_buffer(parameter); 
-    // clear_buffer(cmd_resp); 
-    // clear_buffer(bt_input); 
     command = CLEAR; 
     operation = CLEAR; 
     memset(buffer, NULL_CHAR, HC05_AT_CMD_LEN); 
