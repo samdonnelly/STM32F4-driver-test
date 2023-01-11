@@ -91,7 +91,7 @@
 // Macros 
 
 #define STATE_TEST_CMD_LEN 15         // Max user command length 
-#define STATE_USER_TEST_INPUT 25      // User input buffer size 
+#define STATE_USER_TEST_INPUT 30      // User input buffer size 
 
 //================================================================================
 

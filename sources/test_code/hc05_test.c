@@ -214,7 +214,7 @@ void hc05_test_app()
 
                     case HC05_FUNC_PTR_2: 
                         (state_func[i].func2)(
-                            hc05_wr_buff[state_cmds[i].arg_buff_index], 
+                            (uint8_t *)hc05_wr_buff[state_cmds[i].arg_buff_index], 
                             STATE_USER_TEST_INPUT); 
                         break; 
 
@@ -261,25 +261,25 @@ void hc05_test_app()
     switch (hc05_get_state())
     {
         case HC05_INIT_STATE: 
-            uart_sendstring(USART2, "init state\r\r"); 
+            uart_sendstring(USART2, "\r\ninit state\r\n"); 
             break; 
 
         case HC05_SEND_STATE: 
-            uart_sendstring(USART2, "send state\r\r"); 
+            uart_sendstring(USART2, "\r\nsend state\r\n"); 
             break; 
 
         case HC05_READ_STATE: 
             // Requires updating if the read data command index changes in state_cmds 
             if ((set_get_status >> SHIFT_8) & SET_BIT)
             {
-                uart_sendstring(USART2, "Read data: "); 
+                uart_sendstring(USART2, "\r\nRead data: "); 
                 uart_sendstring(USART2, hc05_wr_buff[1]); 
                 uart_send_new_line(USART2); 
             }
             break; 
 
         case HC05_RESET_STATE: 
-            uart_sendstring(USART2, "reset state\r\r"); 
+            uart_sendstring(USART2, "\r\nreset state\r\n"); 
             break; 
 
         default: 
