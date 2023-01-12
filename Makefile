@@ -67,6 +67,7 @@ sources/config_files/m8q_config.c \
 ../STM32F4-driver-library/sources/hd44780u_driver.c \
 ../STM32F4-driver-library/sources/hd44780u_controller.c \
 ../STM32F4-driver-library/sources/hw125_driver.c \
+../STM32F4-driver-library/sources/hw125_controller.c \
 ../STM32F4-driver-library/sources/i2c_comm.c \
 ../STM32F4-driver-library/sources/interrupt_driver.c \
 ../STM32F4-driver-library/sources/m8q_driver.c \

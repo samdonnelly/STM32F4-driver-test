@@ -36,7 +36,10 @@
 			"hd44780u_test.h": "c",
 			"stm32f4xx_hal.h": "c",
 			"stm32f4xx_hal_rcc.h": "c",
-			"hc05_controller.h": "c"
+			"hc05_controller.h": "c",
+			"m8q_config.h": "c",
+			"hw125_controller.h": "c",
+			"spi_comm.h": "c"
 		}
 	}
 }

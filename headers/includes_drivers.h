@@ -18,8 +18,6 @@
 //=======================================================================================
 // Includes 
 
-// TODO as controllers are made, delete access to device and communication drivers 
-
 // Device drivers 
 #include "hw125_driver.h"
 #include "mpu6050_driver.h"
@@ -30,6 +28,7 @@
 // Controllers 
 #include "hc05_controller.h" 
 #include "hd44780u_controller.h"
+#include "hw125_controller.h" 
 #include "m8q_controller.h" 
 
 // Communication drivers 
@@ -50,6 +49,9 @@
 
 // Tools 
 #include "tools.h"
+
+// STM drivers 
+#include "fatfs.h"
 
 //=======================================================================================
 
