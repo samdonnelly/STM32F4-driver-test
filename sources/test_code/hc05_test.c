@@ -23,6 +23,11 @@
 //=======================================================================================
 // Function prototypes 
 
+#if HC05_CONTROLLER_TEST 
+
+
+#else   // HC05_CONTROLLER_TEST
+
 // Setup text 
 void print_setup(void); 
 
@@ -44,6 +49,8 @@ void print_bt_input(void);
 // Reset at command parameters 
 void clear_params(void); 
 
+#endif   // HC05_CONTROLLER_TEST
+
 //=======================================================================================
 
 
@@ -53,22 +60,20 @@ void clear_params(void);
 #if HC05_CONTROLLER_TEST 
 
 // Write/read data buffers - 2 spots, one for read and one for write 
-// static char hc05_read_buff[HC05_BUFF_SIZE]; 
-// static char hc05_send_buff[STATE_USER_TEST_INPUT]; 
 static char hc05_wr_buff[2][STATE_USER_TEST_INPUT]; 
 
 // User command table 
 static state_request_t state_cmds[HC05_NUM_USER_CMDS] =
 {
-    {"send",        1, HC05_FUNC_PTR_2, 0}, 
-    {"read_set",    0, HC05_FUNC_PTR_1, 0}, 
-    {"read_clear",  0, HC05_FUNC_PTR_1, 0}, 
-    {"lp_set",      0, HC05_FUNC_PTR_1, 0}, 
-    {"lp_clear",    0, HC05_FUNC_PTR_1, 0}, 
-    {"reset",       0, HC05_FUNC_PTR_1, 0}, 
-    {"state",       0, HC05_FUNC_PTR_3, 0}, 
-    {"read_status", 0, HC05_FUNC_PTR_3, 0}, 
-    {"read_data",   0, HC05_FUNC_PTR_2, 1}, 
+    {"send",        1, STATE_FUNC_PTR_2, 0}, 
+    {"read_set",    0, STATE_FUNC_PTR_1, 0}, 
+    {"read_clear",  0, STATE_FUNC_PTR_1, 0}, 
+    {"lp_set",      0, STATE_FUNC_PTR_1, 0}, 
+    {"lp_clear",    0, STATE_FUNC_PTR_1, 0}, 
+    {"reset",       0, STATE_FUNC_PTR_1, 0}, 
+    {"state",       0, STATE_FUNC_PTR_3, 0}, 
+    {"read_status", 0, STATE_FUNC_PTR_3, 0}, 
+    {"read_data",   0, STATE_FUNC_PTR_2, 1}, 
     {"execute",     0, 0, 0} 
 }; 
 
@@ -153,8 +158,6 @@ void hc05_test_init()
 #if HC05_CONTROLLER_TEST
 
     // Initialize buffers 
-    // memset(hc05_read_buff, NULL_CHAR, HC05_BUFF_SIZE); 
-    // memset(hc05_send_buff, NULL_CHAR, STATE_USER_TEST_INPUT); 
     memset(hc05_wr_buff[0], NULL_CHAR, STATE_USER_TEST_INPUT); 
     memset(hc05_wr_buff[1], NULL_CHAR, STATE_USER_TEST_INPUT); 
 
@@ -199,7 +202,7 @@ void hc05_test_app()
     // Determine what to do from user input 
     state_machine_test(state_cmds, user_args[0], &cmd_index, &arg_convert, &set_get_status); 
 
-    // Check if there are any setters or getters requested 
+    // Check if there are any setters or getters requested ("execute" cmd called) 
     if (set_get_status)
     {
         for (uint8_t i = 0; i < (HC05_NUM_USER_CMDS-1); i++)
@@ -208,17 +211,17 @@ void hc05_test_app()
             {
                 switch (state_cmds[i].func_ptr_index)
                 {
-                    case HC05_FUNC_PTR_1: 
+                    case STATE_FUNC_PTR_1: 
                         (state_func[i].func1)(); 
                         break; 
 
-                    case HC05_FUNC_PTR_2: 
+                    case STATE_FUNC_PTR_2: 
                         (state_func[i].func2)(
                             (uint8_t *)hc05_wr_buff[state_cmds[i].arg_buff_index], 
                             STATE_USER_TEST_INPUT); 
                         break; 
 
-                    case HC05_FUNC_PTR_3: 
+                    case STATE_FUNC_PTR_3: 
                         return_val = (state_func[i].func3)(); 
                         uart_sendstring(USART2, "\nReturn value: "); 
                         uart_send_integer(USART2, (int16_t)return_val); 
@@ -231,13 +234,13 @@ void hc05_test_app()
         }
     }
 
-    // Check if user argument input should be converted and assigned 
+    // Check if argument input should be converted and assigned (all function args provided) 
     if (arg_convert)
     {
         switch (state_cmds[cmd_index].func_ptr_index)
         {
-            case HC05_FUNC_PTR_2: 
-                // strcpy(line_input[state_cmds[cmd_index].arg_buff_index], user_args[0]);
+            case STATE_FUNC_PTR_2: 
+                // Only for hc05_set_send 
                 memcpy(
                     hc05_wr_buff[state_cmds[cmd_index].arg_buff_index], 
                     user_args[0], 
@@ -261,7 +264,8 @@ void hc05_test_app()
     switch (hc05_get_state())
     {
         case HC05_INIT_STATE: 
-            uart_sendstring(USART2, "\r\ninit state\r\n"); 
+            uart_sendstring(USART2, "\r\n\ninit state\r\n\n"); 
+            uart_sendstring(USART2, "cmd >>> "); 
             break; 
 
         case HC05_SEND_STATE: 

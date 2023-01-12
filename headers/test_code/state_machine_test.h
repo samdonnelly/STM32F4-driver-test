@@ -96,6 +96,30 @@
 //================================================================================
 
 
+//=======================================================================================
+// Enums 
+
+/**
+ * @brief Function pointer index 
+ * 
+ * @details This enum is used to define func_ptr_index within state_request_t. An array of 
+ *          function pointers is created within the test code (see description above) and 
+ *          this enum index must match the position of that function pointer within the 
+ *          array. 
+ * 
+ * @see state_request_t 
+ */
+typedef enum {
+    STATE_FUNC_PTR_1, 
+    STATE_FUNC_PTR_2, 
+    STATE_FUNC_PTR_3, 
+    STATE_FUNC_PTR_4, 
+    STATE_FUNC_PTR_5 
+} state_func_ptr_index_t; 
+
+//=======================================================================================
+
+
 //===============================================================================
 // Structures 
 

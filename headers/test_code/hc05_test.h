@@ -37,27 +37,6 @@
 
 
 //=======================================================================================
-// Enums 
-
-/**
- * @brief Function pointer index 
- * 
- * @details This is used along with the state machine tester. It is specific to a device 
- *          test so the names change across test files. This enum is used to define the 
- *          function pointer index within state_request_t that corresponds to a user command. 
- *          An array instance of hc05_func_ptrs_t is made in the test code and this 
- *          index has to match the location of the function pointer in the array. 
- */
-typedef enum {
-    HC05_FUNC_PTR_1, 
-    HC05_FUNC_PTR_2, 
-    HC05_FUNC_PTR_3 
-} hc05_func_ptr_index_t; 
-
-//=======================================================================================
-
-
-//=======================================================================================
 // Function pointers 
 
 /**
@@ -122,14 +101,12 @@ hc05_func_ptrs_t;
 
 /**
  * @brief HC05 setup code 
- * 
  */
 void hc05_test_init(void); 
 
 
 /**
  * @brief HC05 test code 
- * 
  */
 void hc05_test_app(void); 
 
