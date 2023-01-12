@@ -24,5 +24,4 @@
 void user_app()
 {
     // Looped code here
-    hc05_test_app(); 
 }

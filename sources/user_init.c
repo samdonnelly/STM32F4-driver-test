@@ -24,5 +24,4 @@
 void user_init()
 {
     // Setup code here
-    hc05_test_init(); 
 }
