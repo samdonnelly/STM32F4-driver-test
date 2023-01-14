@@ -79,7 +79,7 @@ void hw125_test_init()
 
     // Device initialization 
     // TODO probably have to specify the GPIO port here 
-    hw125_user_init(GPIOX_PIN_9);
+    hw125_user_init(GPIOB, SPI2, GPIOX_PIN_9);
     
     // card_type = hw125_init(GPIOB_PIN_9);
 
@@ -133,9 +133,16 @@ void hw125_test_app()
         //=============================================
         // Mount the SD card 
 
-        fresult = f_mount(&file_sys, "", 1); 
-        if (fresult != FR_OK) uart_sendstring(USART2, "Error in mounting SD Card.\r\n");
-        else uart_sendstring(USART2, "SD Card mounted successfully.\r\n"); 
+        fresult = f_mount(&file_sys, "", HW125_MOUNT_NOW); 
+
+        if (fresult != FR_OK) 
+        {
+            uart_sendstring(USART2, "Error in mounting SD Card.\r\n");
+        }
+        else 
+        {
+            uart_sendstring(USART2, "SD Card mounted successfully.\r\n"); 
+        }
 
         //=============================================
 
@@ -165,7 +172,7 @@ void hw125_test_app()
         // f_puts and f_gets (wrapper functions of f_read and f_write) 
 
         // Open a file (and create if it doesn't exist) 
-        fresult = f_open(&file, "test_file.txt", FA_OPEN_ALWAYS | FA_READ | FA_WRITE); 
+        fresult = f_open(&file, "test_file.txt", HW125_MODE_OAWR); 
 
         // Write a string 
         f_puts("This string was written using f_puts.", &file); 
@@ -174,8 +181,14 @@ void hw125_test_app()
         fresult = f_close(&file); 
 
         // Check the status of the operation 
-        if (fresult == FR_OK) uart_sendstring(USART2, "test_file.txt successfully written.\r\n\n"); 
-        else uart_sendstring(USART2, "Problems writing data to test_file.txt.\r\n\n"); 
+        if (fresult == FR_OK) 
+        {
+            uart_sendstring(USART2, "test_file.txt successfully written.\r\n\n"); 
+        }
+        else 
+        {
+            uart_sendstring(USART2, "Problems writing data to test_file.txt.\r\n\n"); 
+        }
 
         // Open the file again to read the data 
         fresult = f_open(&file, "test_file.txt", FA_READ); 
@@ -200,7 +213,7 @@ void hw125_test_app()
         // f_write and f_read
 
         // Create/open a second file 
-        fresult = f_open(&file, "test_file_2.txt", FA_OPEN_ALWAYS | FA_READ | FA_WRITE); 
+        fresult = f_open(&file, "test_file_2.txt", HW125_MODE_OAWR); 
 
         // Create text to write to the file 
         strcpy(buffer, "This file was written to using f_write and read using r_read.\n"); 
@@ -217,7 +230,11 @@ void hw125_test_app()
 
         // Open the file 
         fresult = f_open(&file, "test_file_2.txt", FA_READ); 
-        if (fresult == FR_OK) uart_sendstring(USART2, "test_file_2.txt successfully opened.\r\n"); 
+
+        if (fresult == FR_OK) 
+        {
+            uart_sendstring(USART2, "test_file_2.txt successfully opened.\r\n"); 
+        }
 
         // Read the data from the file 
         uart_sendstring(USART2, "test_file_2.txt contents: \r\n"); 
@@ -238,11 +255,15 @@ void hw125_test_app()
         // Update an existing file 
 
         // Open the file to edit 
-        fresult = f_open(&file, "test_file_2.txt", FA_OPEN_ALWAYS | FA_READ | FA_WRITE); 
+        fresult = f_open(&file, "test_file_2.txt", HW125_MODE_OAWR); 
 
-        // Move to the end of the file to append data 
+        // Move to the end of the file to append data - could also use HW125_MODE_AA 
         fresult = f_lseek(&file, f_size(&file)); 
-        if (fresult == FR_OK) uart_sendstring(USART2, "test_file_2.txt will be appended\r\n"); 
+
+        if (fresult == FR_OK) 
+        {
+            uart_sendstring(USART2, "test_file_2.txt will be appended\r\n"); 
+        }
 
         // Write to the end of the file 
         fresult = f_puts("Appended data.\r\n", &file); 
@@ -256,7 +277,12 @@ void hw125_test_app()
 
         // Read the data on the file 
         fresult = f_read(&file, buffer, f_size(&file), &br); 
-        if (fresult == FR_OK) uart_sendstring(USART2, "test_file_2.txt updated data: \r\n\t"); 
+
+        if (fresult == FR_OK) 
+        {
+            uart_sendstring(USART2, "test_file_2.txt updated data: \r\n\t"); 
+        }
+
         uart_sendstring(USART2, buffer); 
         uart_send_new_line(USART2); 
 
@@ -271,10 +297,17 @@ void hw125_test_app()
         // Remove files from the drive 
 
         fresult = f_unlink("/test_file.txt"); 
-        if (fresult == FR_OK) uart_sendstring(USART2, "test_file.txt removed successfully.\r\n"); 
+
+        if (fresult == FR_OK) 
+        {
+            uart_sendstring(USART2, "test_file.txt removed successfully.\r\n"); 
+        }
 
         fresult = f_unlink("/test_file_2.txt"); 
-        if (fresult == FR_OK) uart_sendstring(USART2, "test_file_2.txt removed successfully.\r\n"); 
+        if (fresult == FR_OK) 
+        {
+            uart_sendstring(USART2, "test_file_2.txt removed successfully.\r\n"); 
+        }
 
         //============================================= 
 
@@ -283,7 +316,12 @@ void hw125_test_app()
         // Unmount the SD card 
 
         fresult = f_mount(NULL, "", 1); 
-        if (fresult == FR_OK) uart_sendstring(USART2, "SD unmounted successfully.\r\n"); 
+        // fresult = f_unmount(""); 
+
+        if (fresult == FR_OK) 
+        {
+            uart_sendstring(USART2, "SD unmounted successfully.\r\n"); 
+        }
         
         //============================================= 
 
