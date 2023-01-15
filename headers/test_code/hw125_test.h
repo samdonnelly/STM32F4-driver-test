@@ -22,6 +22,7 @@
 
 // Libraries 
 #include "stdio.h"
+#include <stdlib.h> 
 
 //=======================================================================================
 
@@ -30,10 +31,15 @@
 // Macros 
 
 // Code options 
-#define FORMAT_EXFAT 0
+#define FORMAT_EXFAT 0 
+#define HW125_CONTROLLER_TEST 0     // For switching between driver and controller testing 
 
 // File system 
 #define BUFF_SIZE 1024 
+
+// Controller testing 
+#define HW125_NUM_USER_CMDS 10      // Number of defined user commands for controller test 
+#define HW125_MAX_SETTER_ARGS 1     // Maximum arguments of all function pointer below 
 
 //=======================================================================================
 

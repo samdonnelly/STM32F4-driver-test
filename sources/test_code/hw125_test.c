@@ -23,11 +23,17 @@
 //=======================================================================================
 // Function prototypes 
 
+#if HW125_CONTROLLER_TEST 
+
+#else   // HW125_CONTROLLER_TEST 
+
 // To find the size of data in the buffer 
 int buff_size(char *buff); 
 
 // Clear the buffer 
 void buff_clear(void); 
+
+#endif   // HW125_CONTROLLER_TEST 
 
 //=======================================================================================
 
@@ -36,6 +42,7 @@ void buff_clear(void);
 // FATFS variables 
 
 FATFS   file_sys;            // File system 
+// FATFS   *file_system;        // File system pointer 
 FIL     file;                // File 
 FRESULT fresult;             // Store the result of each operation 
 char    buffer[BUFF_SIZE];   // To store the data that we can read or write
@@ -52,13 +59,16 @@ uint32_t total, free_space;
 //=======================================================================================
 
 
+//=======================================================================================
+// Test code 
+
 // Setup code
 void hw125_test_init()
 {
     // Setup code for the hw125_test here 
 
-    // Local variables 
-    // uint8_t card_type; 
+    //==================================================
+    // Peripherals 
 
     // Initialize GPIO ports 
     gpio_port_init(); 
@@ -74,14 +84,37 @@ void hw125_test_init()
     // UART2 for serial terminal communication 
     uart_init(USART2, UART_BAUD_9600, UART_CLOCK_42); 
 
-    // SPI 
+    // SPI for SD card 
     spi_init(SPI2, GPIOB, SPI2_1_SLAVE, BR_FPCLK_8, SPI_CLOCK_MODE_0);
 
-    // Device initialization 
-    // TODO probably have to specify the GPIO port here 
+    //==================================================
+
+    //==================================================
+    // SD card init 
+
+    // SD card user initialization 
     hw125_user_init(GPIOB, SPI2, GPIOX_PIN_9);
+
+#if HW125_CONTROLLER_TEST 
+
+    // hw125 controller 
+    hw125_controller_init(); 
+
+    // State machine test 
+    state_machine_init(HW125_NUM_USER_CMDS); 
+
+#endif   // HW125_CONTROLLER_TEST 
     
-    // card_type = hw125_init(GPIOB_PIN_9);
+    //==================================================
+
+    //==================================================
+    // Setup 
+
+#if HW125_CONTROLLER_TEST 
+
+#else   // HW125_CONTROLLER_TEST
+
+    // uint8_t card_type = hw125_init(GPIOB_PIN_9);
 
     // // Check the SD card initialization status 
     // switch (card_type)
@@ -105,13 +138,19 @@ void hw125_test_init()
     //         uart_sendstring(USART2, "Unknown response\r\n");
     //         break;
     // }
+
+#endif   // HW125_CONTROLLER_TEST
+
+    //==================================================
 } 
 
 
 // Test code 
 void hw125_test_app()
 {
-    // Test code for the hw125_test here 
+#if HW125_CONTROLLER_TEST 
+
+#else   // HW125_CONTROLLER_TEST 
 
     // Local variables 
     static uint8_t count = 1; 
@@ -132,6 +171,9 @@ void hw125_test_app()
 
         //=============================================
         // Mount the SD card 
+
+        // file_system = malloc(sizeof(FATFS)); 
+        // fresult = f_mount(file_system, "", HW125_MOUNT_NOW); 
 
         fresult = f_mount(&file_sys, "", HW125_MOUNT_NOW); 
 
@@ -330,12 +372,19 @@ void hw125_test_app()
 
     // Delay 
     tim_delay_ms(TIM9, 1);
+
+#endif   // HW125_CONTROLLER_TEST
 }
+
+//=======================================================================================
 
 
 //=======================================================================================
 // Test functions 
 
+#if HW125_CONTROLLER_TEST 
+
+#else   // HW125_CONTROLLER_TEST 
 
 // To find the size of data in the buffer 
 int buff_size(char *buff)
@@ -354,5 +403,7 @@ void buff_clear(void)
         buffer[i] = '\0';
     }
 }
+
+#endif   // HW125_CONTROLLER_TEST
 
 //=======================================================================================
