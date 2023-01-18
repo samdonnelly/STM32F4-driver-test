@@ -30,8 +30,29 @@
 // To find the size of data in the buffer 
 int buff_size(char *buff); 
 
-// Clear the buffer 
-void buff_clear(void); 
+// Mount the SD card 
+void mount_card(void); 
+
+// Card Capacity 
+void card_capacity(void); 
+ 
+// f_puts and f_gets (wrapper functions of f_read and f_write) 
+void open_puts_gets(void); 
+
+// Check files on card 
+void file_check(void); 
+
+// f_write and f_read
+void open_write_read(void); 
+
+// Update an existing file 
+void update_file(void); 
+
+// Remove files from the drive 
+void remove_files(void); 
+
+// Unmount the SD card 
+void unmount_card(void); 
 
 #endif   // HW125_CONTROLLER_TEST 
 
@@ -55,6 +76,10 @@ BYTE    work[512];           //
 FATFS    *pfs; 
 DWORD    fre_clust; 
 uint32_t total, free_space; 
+
+// For f_findf`irst
+DIR dj;                     // Directory object 
+FILINFO fno;                // File information 
 
 //=======================================================================================
 
@@ -168,204 +193,41 @@ void hw125_test_app()
         if (fresult != FR_OK) uart_sendstring(USART2, "Error in formatting the SD Card.\r\n");
         else uart_sendstring(USART2, "SD Card formatted successfully.\r\n"); 
 #endif
-
-        //=============================================
         // Mount the SD card 
+        mount_card(); 
 
-        // file_system = malloc(sizeof(FATFS)); 
-        // fresult = f_mount(file_system, "", HW125_MOUNT_NOW); 
-
-        fresult = f_mount(&file_sys, "", HW125_MOUNT_NOW); 
-
-        if (fresult != FR_OK) 
-        {
-            uart_sendstring(USART2, "Error in mounting SD Card.\r\n");
-        }
-        else 
-        {
-            uart_sendstring(USART2, "SD Card mounted successfully.\r\n"); 
-        }
-
-        //=============================================
-
-
-        //=============================================
         // Card Capacity 
+        card_capacity(); 
 
-        // These calcs assume 512 bytes/sector 
+        // Check files on card 
+        file_check(); 
 
-        // Check free space 
-        f_getfree("", &fre_clust, &pfs);
-
-        total = (uint32_t)((pfs->n_fatent - 2) * pfs->csize * 0.5);
-        sprintf (buffer, "SD CARD Total Size: \t%lu KB\r\n", total);
-        uart_sendstring(USART2, buffer);
-        buff_clear();
-        
-        free_space = (uint32_t)(fre_clust * pfs->csize * 0.5);
-        sprintf (buffer, "SD CARD Free Space: \t%lu KB\r\n\n", free_space);
-        uart_sendstring(USART2, buffer);
-        buff_clear();
-
-        //=============================================
-
-
-        //=============================================
         // f_puts and f_gets (wrapper functions of f_read and f_write) 
+        open_puts_gets(); 
 
-        // Open a file (and create if it doesn't exist) 
-        fresult = f_open(&file, "test_file.txt", HW125_MODE_OAWR); 
+        // Check files on card 
+        file_check(); 
 
-        // Write a string 
-        f_puts("This string was written using f_puts.", &file); 
-
-        // Close the file 
-        fresult = f_close(&file); 
-
-        // Check the status of the operation 
-        if (fresult == FR_OK) 
-        {
-            uart_sendstring(USART2, "test_file.txt successfully written.\r\n\n"); 
-        }
-        else 
-        {
-            uart_sendstring(USART2, "Problems writing data to test_file.txt.\r\n\n"); 
-        }
-
-        // Open the file again to read the data 
-        fresult = f_open(&file, "test_file.txt", FA_READ); 
-
-        // Read the string from the file 
-        f_gets(buffer, f_size(&file), &file); 
-
-        // Display the data 
-        uart_sendstring(USART2, "test_file.txt has been read and the string inside says: \r\n"); 
-        uart_sendstring(USART2, buffer); 
-        uart_send_new_line(USART2); 
-        uart_send_new_line(USART2); 
-
-        // Close the file 
-        f_close(&file); 
-        buff_clear(); 
-
-        //=============================================
-
-
-        //=============================================
         // f_write and f_read
+        open_write_read(); 
 
-        // Create/open a second file 
-        fresult = f_open(&file, "test_file_2.txt", HW125_MODE_OAWR); 
+        // Check files on card 
+        file_check(); 
 
-        // Create text to write to the file 
-        strcpy(buffer, "This file was written to using f_write and read using r_read.\n"); 
-
-        // Write the text 
-        fresult = f_write(&file, buffer, buff_size(buffer), &bw); 
-
-        // Close the file 
-        uart_sendstring(USART2, "test_file_2.txt written to.\r\n"); 
-        f_close(&file); 
-
-        // Clear the buffer so we can clearly see the contents read from the file 
-        buff_clear(); 
-
-        // Open the file 
-        fresult = f_open(&file, "test_file_2.txt", FA_READ); 
-
-        if (fresult == FR_OK) 
-        {
-            uart_sendstring(USART2, "test_file_2.txt successfully opened.\r\n"); 
-        }
-
-        // Read the data from the file 
-        uart_sendstring(USART2, "test_file_2.txt contents: \r\n"); 
-        uart_sendstring(USART2, "\t"); 
-        f_read(&file, buffer, f_size(&file), &br); 
-        uart_sendstring(USART2, buffer); 
-        uart_send_new_line(USART2); 
-        uart_send_new_line(USART2); 
-
-        // Close the file 
-        f_close(&file); 
-        buff_clear(); 
-
-        //=============================================
-
-
-        //=============================================
         // Update an existing file 
+        update_file(); 
 
-        // Open the file to edit 
-        fresult = f_open(&file, "test_file_2.txt", HW125_MODE_OAWR); 
-
-        // Move to the end of the file to append data - could also use HW125_MODE_AA 
-        fresult = f_lseek(&file, f_size(&file)); 
-
-        if (fresult == FR_OK) 
-        {
-            uart_sendstring(USART2, "test_file_2.txt will be appended\r\n"); 
-        }
-
-        // Write to the end of the file 
-        fresult = f_puts("Appended data.\r\n", &file); 
-
-        // Close the file 
-        f_close(&file); 
-        buff_clear(); 
-
-        // Open the file to read the contents 
-        fresult = f_open(&file, "test_file_2.txt", FA_READ); 
-
-        // Read the data on the file 
-        fresult = f_read(&file, buffer, f_size(&file), &br); 
-
-        if (fresult == FR_OK) 
-        {
-            uart_sendstring(USART2, "test_file_2.txt updated data: \r\n\t"); 
-        }
-
-        uart_sendstring(USART2, buffer); 
-        uart_send_new_line(USART2); 
-
-        // Close the file 
-        f_close(&file); 
-        buff_clear(); 
-
-        //============================================= 
-
-
-        //============================================= 
+        // Check files on card 
+        file_check(); 
+ 
         // Remove files from the drive 
+        remove_files(); 
 
-        fresult = f_unlink("/test_file.txt"); 
-
-        if (fresult == FR_OK) 
-        {
-            uart_sendstring(USART2, "test_file.txt removed successfully.\r\n"); 
-        }
-
-        fresult = f_unlink("/test_file_2.txt"); 
-        if (fresult == FR_OK) 
-        {
-            uart_sendstring(USART2, "test_file_2.txt removed successfully.\r\n"); 
-        }
-
-        //============================================= 
-
-
-        //============================================= 
+        // Check files on card 
+        file_check(); 
+ 
         // Unmount the SD card 
-
-        fresult = f_mount(NULL, "", 1); 
-        // fresult = f_unmount(""); 
-
-        if (fresult == FR_OK) 
-        {
-            uart_sendstring(USART2, "SD unmounted successfully.\r\n"); 
-        }
-        
-        //============================================= 
+        unmount_card(); 
 
         count = 0; 
     }
@@ -395,12 +257,217 @@ int buff_size(char *buff)
 }
 
 
-// Clear the buffer 
-void buff_clear(void)
+// Mount card 
+void mount_card(void) 
 {
-    for(int i = 0; i < BUFF_SIZE; i++)
+    // file_system = malloc(sizeof(FATFS)); 
+    // fresult = f_mount(file_system, "", HW125_MOUNT_NOW); 
+
+    fresult = f_mount(&file_sys, "", HW125_MOUNT_NOW); 
+
+    if (fresult != FR_OK) 
     {
-        buffer[i] = '\0';
+        uart_sendstring(USART2, "Error in mounting SD Card.\r\n");
+    }
+    else 
+    {
+        uart_sendstring(USART2, "SD Card mounted successfully.\r\n"); 
+    }
+}
+
+
+// Unmount card 
+void unmount_card(void) 
+{
+    fresult = f_mount(NULL, "", 1); 
+    // fresult = f_unmount(""); 
+
+    if (fresult == FR_OK) 
+    {
+        uart_sendstring(USART2, "SD unmounted successfully.\r\n"); 
+    }
+}
+
+
+// Check card capacity 
+void card_capacity(void)
+{
+    // These calcs assume 512 bytes/sector 
+
+    // Check free space 
+    f_getfree("", &fre_clust, &pfs);
+
+    total = (uint32_t)((pfs->n_fatent - 2) * pfs->csize * 0.5);
+    sprintf (buffer, "SD CARD Total Size: \t%lu KB\r\n", total);
+    uart_sendstring(USART2, buffer);
+    memset((void *)buffer, CLEAR, BUFF_SIZE); 
+    
+    free_space = (uint32_t)(fre_clust * pfs->csize * 0.5);
+    sprintf (buffer, "SD CARD Free Space: \t%lu KB\r\n\n", free_space);
+    uart_sendstring(USART2, buffer);
+    memset((void *)buffer, CLEAR, BUFF_SIZE); 
+}
+
+
+// Check files on the card 
+void file_check(void)
+{
+    uart_sendstring(USART2, "Current text files on drive: \r\n"); 
+
+    // Start to search for photo files 
+    fresult = f_findfirst(&dj, &fno, "", "*"); 
+
+    while (fresult == FR_OK && fno.fname[0]) 
+    {
+        uart_sendstring(USART2, "\t- "); 
+        uart_sendstring(USART2, fno.fname); 
+        uart_send_new_line(USART2); 
+        fresult = f_findnext(&dj, &fno);         // Search for next item 
+    }
+
+    f_closedir(&dj);
+
+    uart_send_new_line(USART2); 
+}
+
+
+// Open and use puts and gets 
+void open_puts_gets(void)
+{
+    // Open a file (and create if it doesn't exist) 
+    fresult = f_open(&file, "test_file.txt", HW125_MODE_OAWR); 
+
+    // Write a string 
+    f_puts("This string was written using f_puts.", &file); 
+
+    // Close the file 
+    fresult = f_close(&file); 
+
+    // Check the status of the operation 
+    if (fresult == FR_OK) 
+    {
+        uart_sendstring(USART2, "test_file.txt successfully written.\r\n\n"); 
+    }
+    else 
+    {
+        uart_sendstring(USART2, "Problems writing data to test_file.txt.\r\n\n"); 
+    }
+
+    // Open the file again to read the data 
+    fresult = f_open(&file, "test_file.txt", FA_READ); 
+
+    // Read the string from the file 
+    f_gets(buffer, f_size(&file), &file); 
+
+    // Display the data 
+    uart_sendstring(USART2, "test_file.txt has been read and the string inside says: \r\n"); 
+    uart_sendstring(USART2, buffer); 
+    uart_send_new_line(USART2); 
+    uart_send_new_line(USART2); 
+
+    // Close the file 
+    f_close(&file); 
+    memset((void *)buffer, CLEAR, BUFF_SIZE);  
+}
+
+
+// Open with f_write and f_read 
+void open_write_read(void)
+{
+    // Create/open a second file 
+    fresult = f_open(&file, "test_file_2.txt", HW125_MODE_OAWR); 
+
+    // Create text to write to the file 
+    strcpy(buffer, "This file was written to using f_write and read using r_read.\n"); 
+
+    // Write the text 
+    fresult = f_write(&file, buffer, buff_size(buffer), &bw); 
+
+    // Close the file 
+    uart_sendstring(USART2, "test_file_2.txt written to.\r\n"); 
+    f_close(&file); 
+
+    // Clear the buffer so we can clearly see the contents read from the file 
+    memset((void *)buffer, CLEAR, BUFF_SIZE);  
+
+    // Open the file 
+    fresult = f_open(&file, "test_file_2.txt", FA_READ); 
+
+    if (fresult == FR_OK) 
+    {
+        uart_sendstring(USART2, "test_file_2.txt successfully opened.\r\n"); 
+    }
+
+    // Read the data from the file 
+    uart_sendstring(USART2, "test_file_2.txt contents: \r\n"); 
+    uart_sendstring(USART2, "\t"); 
+    f_read(&file, buffer, f_size(&file), &br); 
+    uart_sendstring(USART2, buffer); 
+    uart_send_new_line(USART2); 
+    uart_send_new_line(USART2); 
+
+    // Close the file 
+    f_close(&file); 
+    memset((void *)buffer, CLEAR, BUFF_SIZE);  
+}
+
+
+// Update an existing file 
+void update_file(void)
+{
+    // Open the file to edit 
+    fresult = f_open(&file, "test_file_2.txt", HW125_MODE_OAWR); 
+
+    // Move to the end of the file to append data - could also use HW125_MODE_AA 
+    fresult = f_lseek(&file, f_size(&file)); 
+
+    if (fresult == FR_OK) 
+    {
+        uart_sendstring(USART2, "test_file_2.txt will be appended\r\n"); 
+    }
+
+    // Write to the end of the file 
+    fresult = f_puts("Appended data.\r\n", &file); 
+
+    // Close the file 
+    f_close(&file); 
+    memset((void *)buffer, CLEAR, BUFF_SIZE);  
+
+    // Open the file to read the contents 
+    fresult = f_open(&file, "test_file_2.txt", FA_READ); 
+
+    // Read the data on the file 
+    fresult = f_read(&file, buffer, f_size(&file), &br); 
+
+    if (fresult == FR_OK) 
+    {
+        uart_sendstring(USART2, "test_file_2.txt updated data: \r\n\t"); 
+    }
+
+    uart_sendstring(USART2, buffer); 
+    uart_send_new_line(USART2); 
+
+    // Close the file 
+    f_close(&file); 
+    memset((void *)buffer, CLEAR, BUFF_SIZE);  
+}
+
+
+// Remove files on card 
+void remove_files(void) 
+{
+    fresult = f_unlink("/test_file.txt"); 
+
+    if (fresult == FR_OK) 
+    {
+        uart_sendstring(USART2, "test_file.txt removed successfully.\r\n"); 
+    }
+
+    fresult = f_unlink("/test_file_2.txt"); 
+
+    if (fresult == FR_OK) 
+    {
+        uart_sendstring(USART2, "test_file_2.txt removed successfully.\r\n"); 
     }
 }
 
