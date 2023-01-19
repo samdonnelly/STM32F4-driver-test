@@ -37,6 +37,9 @@
 // File system 
 #define BUFF_SIZE 1024 
 
+// User interface 
+#define CMD_SIZE 50                 // Max user command string length 
+
 // Controller testing 
 #define HW125_NUM_USER_CMDS 10      // Number of defined user commands for controller test 
 #define HW125_MAX_SETTER_ARGS 1     // Maximum arguments of all function pointer below 

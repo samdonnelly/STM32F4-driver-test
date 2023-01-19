@@ -54,6 +54,10 @@ void remove_files(void);
 // Unmount the SD card 
 void unmount_card(void); 
 
+// Format file name 
+void format_file_name(
+    char *buff); 
+
 #endif   // HW125_CONTROLLER_TEST 
 
 //=======================================================================================
@@ -63,10 +67,10 @@ void unmount_card(void);
 // FATFS variables 
 
 FATFS   file_sys;            // File system 
-// FATFS   *file_system;        // File system pointer 
 FIL     file;                // File 
 FRESULT fresult;             // Store the result of each operation 
 char    buffer[BUFF_SIZE];   // To store the data that we can read or write
+char    cmd_buff[CMD_SIZE];  // 
 UINT    br, bw;              // Stores the counter to the read and write in the file 
 
 // Format drive variables 
@@ -209,16 +213,16 @@ void hw125_test_app()
         file_check(); 
 
         // f_write and f_read
-        open_write_read(); 
+        // open_write_read(); 
 
         // Check files on card 
-        file_check(); 
+        // file_check(); 
 
         // Update an existing file 
-        update_file(); 
+        // update_file(); 
 
         // Check files on card 
-        file_check(); 
+        // file_check(); 
  
         // Remove files from the drive 
         remove_files(); 
@@ -260,18 +264,15 @@ int buff_size(char *buff)
 // Mount card 
 void mount_card(void) 
 {
-    // file_system = malloc(sizeof(FATFS)); 
-    // fresult = f_mount(file_system, "", HW125_MOUNT_NOW); 
-
     fresult = f_mount(&file_sys, "", HW125_MOUNT_NOW); 
 
-    if (fresult != FR_OK) 
+    if (fresult == FR_OK) 
     {
-        uart_sendstring(USART2, "Error in mounting SD Card.\r\n");
+        uart_sendstring(USART2, "\nSD Card mounted successfully.\r\n"); 
     }
     else 
     {
-        uart_sendstring(USART2, "SD Card mounted successfully.\r\n"); 
+        uart_sendstring(USART2, "\nError in mounting SD Card.\r\n");
     }
 }
 
@@ -279,12 +280,15 @@ void mount_card(void)
 // Unmount card 
 void unmount_card(void) 
 {
-    fresult = f_mount(NULL, "", 1); 
-    // fresult = f_unmount(""); 
+    fresult = f_unmount(""); 
 
     if (fresult == FR_OK) 
     {
-        uart_sendstring(USART2, "SD unmounted successfully.\r\n"); 
+        uart_sendstring(USART2, "\nSD unmounted successfully.\r\n"); 
+    }
+    else 
+    {
+        uart_sendstring(USART2, "\nError in unmounting SD Card.\r\n");
     }
 }
 
@@ -297,13 +301,15 @@ void card_capacity(void)
     // Check free space 
     f_getfree("", &fre_clust, &pfs);
 
+    // Calculate the total space 
     total = (uint32_t)((pfs->n_fatent - 2) * pfs->csize * 0.5);
-    sprintf (buffer, "SD CARD Total Size: \t%lu KB\r\n", total);
+    sprintf(buffer, "\nSD CARD Total Size: \t%lu KB\r\n", total);
     uart_sendstring(USART2, buffer);
     memset((void *)buffer, CLEAR, BUFF_SIZE); 
     
+    // Calculate the free space 
     free_space = (uint32_t)(fre_clust * pfs->csize * 0.5);
-    sprintf (buffer, "SD CARD Free Space: \t%lu KB\r\n\n", free_space);
+    sprintf(buffer, "SD CARD Free Space: \t%lu KB\r\n", free_space);
     uart_sendstring(USART2, buffer);
     memset((void *)buffer, CLEAR, BUFF_SIZE); 
 }
@@ -312,9 +318,9 @@ void card_capacity(void)
 // Check files on the card 
 void file_check(void)
 {
-    uart_sendstring(USART2, "Current text files on drive: \r\n"); 
+    uart_sendstring(USART2, "\nCurrent files on drive: \r\n"); 
 
-    // Start to search for photo files 
+    // Start to search for files 
     fresult = f_findfirst(&dj, &fno, "", "*"); 
 
     while (fresult == FR_OK && fno.fname[0]) 
@@ -327,47 +333,117 @@ void file_check(void)
 
     f_closedir(&dj);
 
-    uart_send_new_line(USART2); 
+    // uart_send_new_line(USART2); 
+}
+
+
+// Open a file 
+void file_open(void)
+{
+    // Get the file name from the user 
+    uart_sendstring(USART2, "\nFile to open: "); 
+    while(!uart_data_ready(USART2)); 
+
+    // Retrieve and format the file name 
+    uart_getstr(USART2, cmd_buff, UART_STR_TERM_CARRIAGE); 
+    format_file_name(cmd_buff); 
+
+    // Get the file access mode from the user 
+
+    // Retrieve and choose a mode 
+
+    // Open a file (and create if it doesn't exist) 
+    fresult = f_open(&file, cmd_buff, HW125_MODE_OAWR); 
+}
+
+
+// Write to an open file using f_puts 
+void file_put_string(void)
+{
+    // Get the file string from the user 
+    uart_sendstring(USART2, "\nFile string: "); 
+    while(!uart_data_ready(USART2)); 
+
+    // Retrieve and format the file string 
+    uart_getstr(USART2, buffer, UART_STR_TERM_CARRIAGE); 
+    format_file_name(buffer); 
+
+    // Write a string 
+    f_puts(buffer, &file); 
+}
+
+
+// Navigate the file 
+void file_seek(
+    QWORD position) 
+{
+    // Get user input of where to go to in the file 
+
+    // Move to the beginning of the file 
+    fresult = f_lseek(&file, position);  
+}
+
+
+// Read from an open file using f_gets 
+void file_get_string(
+    uint16_t len)
+{
+    // Get user input on how much to read 
+
+    // Read from the file 
+    f_gets(buffer, len, &file); 
 }
 
 
 // Open and use puts and gets 
 void open_puts_gets(void)
 {
-    // Open a file (and create if it doesn't exist) 
-    fresult = f_open(&file, "test_file.txt", HW125_MODE_OAWR); 
+    // Open file 
+    file_open(); 
+    
+    // Write to open file 
+    file_put_string(); 
+    
+    //==================================================
 
-    // Write a string 
-    f_puts("This string was written using f_puts.", &file); 
+    // // Close the file 
+    // fresult = f_close(&file); 
 
-    // Close the file 
-    fresult = f_close(&file); 
+    // // Check the status of the operation 
+    // uart_sendstring(USART2, cmd_buff); 
 
-    // Check the status of the operation 
-    if (fresult == FR_OK) 
-    {
-        uart_sendstring(USART2, "test_file.txt successfully written.\r\n\n"); 
-    }
-    else 
-    {
-        uart_sendstring(USART2, "Problems writing data to test_file.txt.\r\n\n"); 
-    }
+    // if (fresult == FR_OK) 
+    // {
+    //     uart_sendstring(USART2, " was successfully written.\r\n\n"); 
+    // }
+    // else 
+    // {
+    //     uart_sendstring(USART2, " was NOT successfully written.\r\n\n"); 
+    // }
 
     // Open the file again to read the data 
-    fresult = f_open(&file, "test_file.txt", FA_READ); 
+    // fresult = f_open(&file, cmd_buff, FA_READ); 
+
+    //==================================================
+    // Read from the same file 
+
+    // Move to the beginning of the file 
+    file_seek(RESET); 
 
     // Read the string from the file 
-    f_gets(buffer, f_size(&file), &file); 
+    file_get_string(f_size(&file)); 
 
     // Display the data 
-    uart_sendstring(USART2, "test_file.txt has been read and the string inside says: \r\n"); 
+    uart_send_new_line(USART2); 
+    uart_sendstring(USART2, cmd_buff); 
+    uart_sendstring(USART2, " has been read and the string inside says: \r\n"); 
     uart_sendstring(USART2, buffer); 
     uart_send_new_line(USART2); 
-    uart_send_new_line(USART2); 
 
+    //==================================================
+    
     // Close the file 
     f_close(&file); 
-    memset((void *)buffer, CLEAR, BUFF_SIZE);  
 }
 
 
@@ -456,18 +532,39 @@ void update_file(void)
 // Remove files on card 
 void remove_files(void) 
 {
-    fresult = f_unlink("/test_file.txt"); 
+    // fresult = f_unlink("/test_file.txt"); 
+    fresult = f_unlink(cmd_buff); 
 
     if (fresult == FR_OK) 
     {
-        uart_sendstring(USART2, "test_file.txt removed successfully.\r\n"); 
+        uart_send_new_line(USART2); 
+        uart_sendstring(USART2, cmd_buff); 
+        // uart_sendstring(USART2, "test_file.txt removed successfully.\r\n"); 
+        uart_sendstring(USART2, " removed successfully.\r\n"); 
     }
 
-    fresult = f_unlink("/test_file_2.txt"); 
+    // fresult = f_unlink("/test_file_2.txt"); 
 
-    if (fresult == FR_OK) 
+    // if (fresult == FR_OK) 
+    // {
+    //     uart_sendstring(USART2, "test_file_2.txt removed successfully.\r\n"); 
+    // }
+}
+
+
+// Format file input 
+void format_file_name(
+    char *buff)
+{
+    // Replace carriage return from input with a null character 
+    for (uint8_t i = 0; i < CMD_SIZE; i++)
     {
-        uart_sendstring(USART2, "test_file_2.txt removed successfully.\r\n"); 
+        if (*buff == UART_STR_TERM_CARRIAGE)
+        {
+            *buff = UART_STR_TERM_NULL; 
+            break; 
+        }
+        buff++; 
     }
 }
 
