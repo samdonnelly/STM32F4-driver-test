@@ -55,8 +55,9 @@ void remove_files(void);
 void unmount_card(void); 
 
 // Format file name 
-void format_file_name(
-    char *buff); 
+void format_input(
+    char *buff, 
+    format_user_input_t op); 
 
 #endif   // HW125_CONTROLLER_TEST 
 
@@ -66,12 +67,13 @@ void format_file_name(
 //=======================================================================================
 // FATFS variables 
 
-FATFS   file_sys;            // File system 
-FIL     file;                // File 
-FRESULT fresult;             // Store the result of each operation 
-char    buffer[BUFF_SIZE];   // To store the data that we can read or write
-char    cmd_buff[CMD_SIZE];  // 
-UINT    br, bw;              // Stores the counter to the read and write in the file 
+FATFS   file_sys;                  // File system 
+FIL     file;                      // File 
+FRESULT fresult;                   // Store the result of each operation 
+char    buffer[BUFF_SIZE];         // To store the data that we can read or write
+char    file_name_buff[CMD_SIZE];  // 
+char    file_mode_buff[CMD_SIZE];  // 
+UINT    br, bw;                    // Stores f_read and f_write byte counters 
 
 // Format drive variables 
 BYTE    work[512];           // 
@@ -332,8 +334,6 @@ void file_check(void)
     }
 
     f_closedir(&dj);
-
-    // uart_send_new_line(USART2); 
 }
 
 
@@ -345,15 +345,19 @@ void file_open(void)
     while(!uart_data_ready(USART2)); 
 
     // Retrieve and format the file name 
-    uart_getstr(USART2, cmd_buff, UART_STR_TERM_CARRIAGE); 
-    format_file_name(cmd_buff); 
+    uart_getstr(USART2, file_name_buff, UART_STR_TERM_CARRIAGE); 
+    format_input(file_name_buff, FORMAT_FILE_NAME); 
 
     // Get the file access mode from the user 
+    uart_sendstring(USART2, "\nAccess mode: "); 
+    while (!uart_data_ready(USART2)); 
 
     // Retrieve and choose a mode 
+    uart_getstr(USART2, file_mode_buff, UART_STR_TERM_CARRIAGE); 
+    format_input(file_mode_buff, FORMAT_FILE_MODE); 
 
     // Open a file (and create if it doesn't exist) 
-    fresult = f_open(&file, cmd_buff, HW125_MODE_OAWR); 
+    fresult = f_open(&file, file_name_buff, HW125_MODE_OAWR); 
 }
 
 
@@ -366,7 +370,7 @@ void file_put_string(void)
 
     // Retrieve and format the file string 
     uart_getstr(USART2, buffer, UART_STR_TERM_CARRIAGE); 
-    format_file_name(buffer); 
+    format_input(buffer, FORMAT_FILE_NAME); 
 
     // Write a string 
     f_puts(buffer, &file); 
@@ -410,7 +414,7 @@ void open_puts_gets(void)
     // fresult = f_close(&file); 
 
     // // Check the status of the operation 
-    // uart_sendstring(USART2, cmd_buff); 
+    // uart_sendstring(USART2, file_name_buff); 
 
     // if (fresult == FR_OK) 
     // {
@@ -422,7 +426,7 @@ void open_puts_gets(void)
     // }
 
     // Open the file again to read the data 
-    // fresult = f_open(&file, cmd_buff, FA_READ); 
+    // fresult = f_open(&file, file_name_buff, FA_READ); 
 
     //==================================================
     // Read from the same file 
@@ -435,7 +439,7 @@ void open_puts_gets(void)
 
     // Display the data 
     uart_send_new_line(USART2); 
-    uart_sendstring(USART2, cmd_buff); 
+    uart_sendstring(USART2, file_name_buff); 
     uart_sendstring(USART2, " has been read and the string inside says: \r\n"); 
     uart_sendstring(USART2, buffer); 
     uart_send_new_line(USART2); 
@@ -533,12 +537,12 @@ void update_file(void)
 void remove_files(void) 
 {
     // fresult = f_unlink("/test_file.txt"); 
-    fresult = f_unlink(cmd_buff); 
+    fresult = f_unlink(file_name_buff); 
 
     if (fresult == FR_OK) 
     {
         uart_send_new_line(USART2); 
-        uart_sendstring(USART2, cmd_buff); 
+        uart_sendstring(USART2, file_name_buff); 
         // uart_sendstring(USART2, "test_file.txt removed successfully.\r\n"); 
         uart_sendstring(USART2, " removed successfully.\r\n"); 
     }
@@ -553,18 +557,30 @@ void remove_files(void)
 
 
 // Format file input 
-void format_file_name(
-    char *buff)
+void format_input(
+    char *buff, 
+    format_user_input_t op)
 {
-    // Replace carriage return from input with a null character 
-    for (uint8_t i = 0; i < CMD_SIZE; i++)
+    switch (op)
     {
-        if (*buff == UART_STR_TERM_CARRIAGE)
-        {
-            *buff = UART_STR_TERM_NULL; 
+        case FORMAT_FILE_NAME: 
+            // Replace carriage return from input with a null character 
+            for (uint8_t i = 0; i < CMD_SIZE; i++)
+            {
+                if (*buff == UART_STR_TERM_CARRIAGE)
+                {
+                    *buff = UART_STR_TERM_NULL; 
+                    break; 
+                }
+                buff++; 
+            }
             break; 
-        }
-        buff++; 
+        
+        case FORMAT_FILE_MODE: 
+            break; 
+
+        default: 
+            break; 
     }
 }
 
