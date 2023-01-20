@@ -88,7 +88,11 @@ void display_buffer(void);
 
 
 //=======================================================================================
-// FATFS variables 
+// Global variables 
+
+#if HW125_CONTROLLER_TEST 
+
+#else   // HW125_CONTROLLER_TEST 
 
 FATFS   file_sys;                  // File system 
 FIL     file;                      // File 
@@ -101,17 +105,40 @@ BYTE    access_mode;               // File access mode byte
 QWORD   position;                  // 
 QWORD   read_len;                  // 
 
+#if FORMAT_EXFAT 
+
 // Format drive variables 
 BYTE    work[512];           // 
+
+#endif   // FORMAT_EXFAT
 
 // Capacity related variables 
 FATFS    *pfs; 
 DWORD    fre_clust; 
 uint32_t total, free_space; 
 
-// For f_findf`irst
+// For f_findfirst
 DIR dj;                     // Directory object 
 FILINFO fno;                // File information 
+
+// User commands 
+static char *usr_cmd_table[HW125_NUM_DRIVER_CMDS] = 
+{
+    "f_mount", 
+    "f_unmount", 
+    "f_open", 
+    "f_close", 
+    "f_puts", 
+    "f_gets", 
+    "f_lseek", 
+    "f_write", 
+    "f_read", 
+    "f_unlink" 
+}; 
+
+// Function pointers 
+
+#endif   // HW125_CONTROLLER_TEST 
 
 //=======================================================================================
 
