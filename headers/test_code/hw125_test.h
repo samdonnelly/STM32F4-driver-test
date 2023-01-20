@@ -54,8 +54,9 @@
  * @brief 
  */
 typedef enum {
-    FORMAT_FILE_NAME, 
-    FORMAT_FILE_MODE 
+    FORMAT_FILE_STRING, 
+    FORMAT_FILE_MODE, 
+    FORMAT_FILE_NUM 
 } format_user_input_t; 
 
 //=======================================================================================

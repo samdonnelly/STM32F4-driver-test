@@ -35,12 +35,24 @@ void mount_card(void);
 
 // Card Capacity 
 void card_capacity(void); 
- 
-// f_puts and f_gets (wrapper functions of f_read and f_write) 
-void open_puts_gets(void); 
 
 // Check files on card 
 void file_check(void); 
+
+// Open a file 
+void file_open(void); 
+
+// Close the open file 
+void file_close(void); 
+
+// Write to an open file using f_puts 
+void file_put_string(void); 
+
+// Navigate the file 
+void file_seek(void); 
+
+// Read from an open file using f_gets 
+void file_get_string(void); 
 
 // f_write and f_read
 void open_write_read(void); 
@@ -54,10 +66,21 @@ void remove_files(void);
 // Unmount the SD card 
 void unmount_card(void); 
 
-// Format file name 
-void format_input(
+// Get user inputs 
+void get_input(
+    char *str, 
     char *buff, 
+    QWORD *data, 
     format_user_input_t op); 
+
+// Format file name 
+uint8_t format_input(
+    char *buff, 
+    QWORD *data, 
+    format_user_input_t op); 
+
+// Display the contents of 'buffer' 
+void display_buffer(void); 
 
 #endif   // HW125_CONTROLLER_TEST 
 
@@ -74,6 +97,9 @@ char    buffer[BUFF_SIZE];         // To store the data that we can read or writ
 char    file_name_buff[CMD_SIZE];  // 
 char    file_mode_buff[CMD_SIZE];  // 
 UINT    br, bw;                    // Stores f_read and f_write byte counters 
+BYTE    access_mode;               // File access mode byte 
+QWORD   position;                  // 
+QWORD   read_len;                  // 
 
 // Format drive variables 
 BYTE    work[512];           // 
@@ -199,6 +225,9 @@ void hw125_test_app()
         if (fresult != FR_OK) uart_sendstring(USART2, "Error in formatting the SD Card.\r\n");
         else uart_sendstring(USART2, "SD Card formatted successfully.\r\n"); 
 #endif
+        //==================================================
+        // Mount the card and check the contents 
+
         // Mount the SD card 
         mount_card(); 
 
@@ -208,11 +237,39 @@ void hw125_test_app()
         // Check files on card 
         file_check(); 
 
-        // f_puts and f_gets (wrapper functions of f_read and f_write) 
-        open_puts_gets(); 
+        //==================================================
+        
+        
+        //==================================================
+        // Open a file, write to it then check the contents 
+        
+        // Open a file 
+        file_open(); 
+        
+        // Write to open file using f_puts 
+        file_put_string(); 
+
+        // Move to the beginning of the open file 
+        file_seek(); 
+
+        // Read the string from the open file using f_gets 
+        // file_get_string(f_size(&file)); 
+        file_get_string(); 
+
+        // Display the contents of 'buffer' 
+        display_buffer(); 
+
+        // Close the open file 
+        file_close(); 
 
         // Check files on card 
         file_check(); 
+
+        //==================================================
+
+
+        //==================================================
+        // Open a second file, write to it and check the contents 
 
         // f_write and f_read
         // open_write_read(); 
@@ -220,12 +277,24 @@ void hw125_test_app()
         // Check files on card 
         // file_check(); 
 
+        //==================================================
+
+
+        //==================================================
+        // Open the second file, append data and check the contents 
+
         // Update an existing file 
         // update_file(); 
 
         // Check files on card 
         // file_check(); 
  
+        //==================================================
+
+
+        //==================================================
+        // Remove the files and unmount the drive 
+
         // Remove files from the drive 
         remove_files(); 
 
@@ -235,6 +304,8 @@ void hw125_test_app()
         // Unmount the SD card 
         unmount_card(); 
 
+        //==================================================
+        
         count = 0; 
     }
 
@@ -340,37 +411,35 @@ void file_check(void)
 // Open a file 
 void file_open(void)
 {
-    // Get the file name from the user 
-    uart_sendstring(USART2, "\nFile to open: "); 
-    while(!uart_data_ready(USART2)); 
+    // Get and format the file name 
+    get_input(
+        "\nFile to open: ", 
+        file_name_buff, &read_len, FORMAT_FILE_STRING); 
 
-    // Retrieve and format the file name 
-    uart_getstr(USART2, file_name_buff, UART_STR_TERM_CARRIAGE); 
-    format_input(file_name_buff, FORMAT_FILE_NAME); 
-
-    // Get the file access mode from the user 
-    uart_sendstring(USART2, "\nAccess mode: "); 
-    while (!uart_data_ready(USART2)); 
-
-    // Retrieve and choose a mode 
-    uart_getstr(USART2, file_mode_buff, UART_STR_TERM_CARRIAGE); 
-    format_input(file_mode_buff, FORMAT_FILE_MODE); 
+    // Get and format the access mode 
+    get_input(
+        "\nAccess mode: ", 
+        file_mode_buff, (QWORD *)(&access_mode), FORMAT_FILE_MODE); 
 
     // Open a file (and create if it doesn't exist) 
-    fresult = f_open(&file, file_name_buff, HW125_MODE_OAWR); 
+    fresult = f_open(&file, file_name_buff, access_mode); 
+}
+
+
+// Close the open file 
+void file_close(void) 
+{
+    f_close(&file); 
 }
 
 
 // Write to an open file using f_puts 
 void file_put_string(void)
 {
-    // Get the file string from the user 
-    uart_sendstring(USART2, "\nFile string: "); 
-    while(!uart_data_ready(USART2)); 
-
-    // Retrieve and format the file string 
-    uart_getstr(USART2, buffer, UART_STR_TERM_CARRIAGE); 
-    format_input(buffer, FORMAT_FILE_NAME); 
+    // Get and format the file string 
+    get_input(
+        "\nFile string: ", 
+        buffer, &read_len, FORMAT_FILE_STRING); 
 
     // Write a string 
     f_puts(buffer, &file); 
@@ -378,76 +447,28 @@ void file_put_string(void)
 
 
 // Navigate the file 
-void file_seek(
-    QWORD position) 
+void file_seek(void) 
 {
-    // Get user input of where to go to in the file 
+    // Get and format the file position 
+    get_input(
+        "\nFile position: ", 
+        buffer, &position, FORMAT_FILE_NUM); 
 
-    // Move to the beginning of the file 
-    fresult = f_lseek(&file, position);  
+    // Move to the specified position in the file 
+    fresult = f_lseek(&file, position); 
 }
 
 
 // Read from an open file using f_gets 
-void file_get_string(
-    uint16_t len)
+void file_get_string(void)
 {
-    // Get user input on how much to read 
+    // Get and format the read size (bytes) 
+    get_input(
+        "\nRead size (bytes): ", 
+        buffer, &read_len, FORMAT_FILE_NUM); 
 
     // Read from the file 
-    f_gets(buffer, len, &file); 
-}
-
-
-// Open and use puts and gets 
-void open_puts_gets(void)
-{
-    // Open file 
-    file_open(); 
-    
-    // Write to open file 
-    file_put_string(); 
-    
-    //==================================================
-
-    // // Close the file 
-    // fresult = f_close(&file); 
-
-    // // Check the status of the operation 
-    // uart_sendstring(USART2, file_name_buff); 
-
-    // if (fresult == FR_OK) 
-    // {
-    //     uart_sendstring(USART2, " was successfully written.\r\n\n"); 
-    // }
-    // else 
-    // {
-    //     uart_sendstring(USART2, " was NOT successfully written.\r\n\n"); 
-    // }
-
-    // Open the file again to read the data 
-    // fresult = f_open(&file, file_name_buff, FA_READ); 
-
-    //==================================================
-    // Read from the same file 
-
-    // Move to the beginning of the file 
-    file_seek(RESET); 
-
-    // Read the string from the file 
-    file_get_string(f_size(&file)); 
-
-    // Display the data 
-    uart_send_new_line(USART2); 
-    uart_sendstring(USART2, file_name_buff); 
-    uart_sendstring(USART2, " has been read and the string inside says: \r\n"); 
-    uart_sendstring(USART2, buffer); 
-    uart_send_new_line(USART2); 
-
-    //==================================================
-    
-    // Close the file 
-    f_close(&file); 
+    f_gets(buffer, read_len, &file); 
 }
 
 
@@ -556,14 +577,39 @@ void remove_files(void)
 }
 
 
-// Format file input 
-void format_input(
+// Get user inputs 
+void get_input(
+    char *str, 
     char *buff, 
+    QWORD *data, 
     format_user_input_t op)
 {
+    do 
+    {
+        // Get the info from the user 
+        uart_sendstring(USART2, str); 
+        while(!uart_data_ready(USART2)); 
+
+        // Retrieve and format the input 
+        uart_getstr(USART2, buff, UART_STR_TERM_CARRIAGE); 
+    }
+    while (!format_input(buff, data, op)); 
+}
+
+
+// Format file input 
+uint8_t format_input(
+    char *buff, 
+    QWORD *data, 
+    format_user_input_t op)
+{
+    uint8_t result = FALSE; 
+
+    if (buff == NULL) return result; 
+
     switch (op)
     {
-        case FORMAT_FILE_NAME: 
+        case FORMAT_FILE_STRING: 
             // Replace carriage return from input with a null character 
             for (uint8_t i = 0; i < CMD_SIZE; i++)
             {
@@ -574,14 +620,71 @@ void format_input(
                 }
                 buff++; 
             }
+
+            result = TRUE; 
+
             break; 
         
         case FORMAT_FILE_MODE: 
+            if (str_compare("0x", buff, BYTE_0))
+            {
+                uint8_t nibble; 
+                *data = CLEAR; 
+                
+                // Check the character validity 
+                for (uint8_t i = 2; i < 4; i++) 
+                {
+                    nibble = buff[i]; 
+
+                    if ((nibble >= ZERO_CHAR) && (nibble <= NINE_CHAR))
+                    {
+                        nibble -= HEX_TO_NUM_CHAR; 
+                    }
+                    else if ((nibble >= A_CHAR) && (nibble <= F_CHAR)) 
+                    {
+                        nibble -= HEX_TO_LET_CHAR; 
+                    }
+                    else break; 
+
+                    *data |= (nibble << SHIFT_4*(3-i)); 
+
+                    if (i == 3) result = TRUE; 
+                }
+            }
+
+            break; 
+
+        case FORMAT_FILE_NUM: ; 
+            char *buff_copy = buff; 
+
+            while (*buff_copy != UART_STR_TERM_CARRIAGE) 
+            {
+                if (!((*buff_copy >= ZERO_CHAR) && (*buff_copy <= NINE_CHAR))) break; 
+                buff_copy++; 
+            }
+
+            if (*buff_copy == UART_STR_TERM_CARRIAGE) 
+            {
+                *data = atoi(buff); 
+                result = TRUE; 
+            }
+
             break; 
 
         default: 
             break; 
     }
+
+    return result; 
+}
+
+
+// Display the contents of 'buffer' 
+void display_buffer(void)
+{
+    uart_sendstring(USART2, "\r\nbuffer: \r\n\t"); 
+    uart_sendstring(USART2, buffer); 
+    uart_send_new_line(USART2); 
 }
 
 #endif   // HW125_CONTROLLER_TEST
