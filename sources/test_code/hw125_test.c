@@ -27,44 +27,29 @@
 
 #else   // HW125_CONTROLLER_TEST 
 
+//==================================================
+// FatFs functions 
+
+void mount_card(void);                // Mount the SD card 
+void unmount_card(void);              // Unmount the SD card 
+void card_capacity(void);             // Card Capacity 
+void file_check(void);                // Check files on card 
+void file_open(void);                 // Open a file 
+void file_close(void);                // Close the open file 
+void file_put_string(void);           // Write to an open file using f_puts 
+void file_seek(void);                 // Navigate the file 
+void file_get_string(void);           // Read from an open file using f_gets 
+void open_write_read(void);           // f_write and f_read
+void update_file(void);               // Update an existing file 
+void file_remove(void);               // Remove files from the drive 
+
+//==================================================
+
+//==================================================
+// UI functions 
+
 // To find the size of data in the buffer 
 int buff_size(char *buff); 
-
-// Mount the SD card 
-void mount_card(void); 
-
-// Card Capacity 
-void card_capacity(void); 
-
-// Check files on card 
-void file_check(void); 
-
-// Open a file 
-void file_open(void); 
-
-// Close the open file 
-void file_close(void); 
-
-// Write to an open file using f_puts 
-void file_put_string(void); 
-
-// Navigate the file 
-void file_seek(void); 
-
-// Read from an open file using f_gets 
-void file_get_string(void); 
-
-// f_write and f_read
-void open_write_read(void); 
-
-// Update an existing file 
-void update_file(void); 
-
-// Remove files from the drive 
-void remove_files(void); 
-
-// Unmount the SD card 
-void unmount_card(void); 
 
 // Get user inputs 
 void get_input(
@@ -81,6 +66,8 @@ uint8_t format_input(
 
 // Display the contents of 'buffer' 
 void display_buffer(void); 
+
+//==================================================
 
 #endif   // HW125_CONTROLLER_TEST 
 
@@ -104,6 +91,7 @@ UINT    br, bw;                    // Stores f_read and f_write byte counters
 BYTE    access_mode;               // File access mode byte 
 QWORD   position;                  // 
 QWORD   read_len;                  // 
+BYTE    cmd_index;                 // 
 
 #if FORMAT_EXFAT 
 
@@ -121,22 +109,76 @@ uint32_t total, free_space;
 DIR dj;                     // Directory object 
 FILINFO fno;                // File information 
 
+// Data record 
+typedef struct hw125_test_record_s 
+{
+    FATFS   file_sys;                  // File system 
+    FIL     file;                      // File 
+    FRESULT fresult;                   // Store the result of each operation 
+    char    buffer[BUFF_SIZE];         // To store the data that we can read or write
+    char    file_name_buff[CMD_SIZE];  // 
+    char    file_mode_buff[CMD_SIZE];  // 
+    UINT    br, bw;                    // Stores f_read and f_write byte counters 
+    BYTE    access_mode;               // File access mode byte 
+    QWORD   position;                  // 
+    QWORD   read_len;                  // 
+
+    // Capacity related variables 
+    FATFS    *pfs; 
+    DWORD    fre_clust; 
+    uint32_t total, free_space; 
+
+    // For f_findfirst
+    DIR dj;                     // Directory object 
+    FILINFO fno;                // File information 
+
+#if FORMAT_EXFAT 
+
+    // Format drive variables 
+    BYTE    work[512];           // 
+
+#endif   // FORMAT_EXFAT
+} 
+hw125_test_record_t; 
+
+// Data record instance 
+static hw125_test_record_t hw125_test_record; 
+
 // User commands 
 static char *usr_cmd_table[HW125_NUM_DRIVER_CMDS] = 
 {
-    "f_mount", 
-    "f_unmount", 
-    "f_open", 
-    "f_close", 
-    "f_puts", 
-    "f_gets", 
-    "f_lseek", 
-    "f_write", 
-    "f_read", 
-    "f_unlink" 
+    "f_mount",        // mount_card
+    "f_unmount",      // unmount_card
+    "capacity",       // card_capacity
+    "file_check",     // file_check
+    "f_open",         // file_open
+    "f_close",        // file_close
+    "f_puts",         // file_put_string
+    "f_gets",         // file_get_string
+    "f_lseek",        // file_seek
+    // "f_write", 
+    // "f_read", 
+    "f_unlink",       // 
+    "read_buffer"     // display_buffer
 }; 
 
-// Function pointers 
+// FatFs function pointers 
+static fatfs_func_ptrs_t func_table[HW125_NUM_DRIVER_CMDS] = 
+{
+    &mount_card, 
+    &unmount_card, 
+    &card_capacity, 
+    &file_check, 
+    &file_open, 
+    &file_close, 
+    &file_put_string, 
+    &file_get_string, 
+    &file_seek, 
+    // &file_write, 
+    // &file_read, 
+    &file_remove, 
+    &display_buffer 
+}; 
 
 #endif   // HW125_CONTROLLER_TEST 
 
@@ -223,6 +265,9 @@ void hw125_test_init()
     //         break;
     // }
 
+    // Short delay to let the system set up 
+    tim_delay_ms(TIM9, 500); 
+
 #endif   // HW125_CONTROLLER_TEST
 
     //==================================================
@@ -237,104 +282,122 @@ void hw125_test_app()
 #else   // HW125_CONTROLLER_TEST 
 
     // Local variables 
-    static uint8_t count = 1; 
+    // static uint8_t count = 1; 
 
-    // Run once - code is here to put everything in the same file 
-    if (count)
+    //==================================================
+    // Get user command 
+
+    cmd_index = 0xFF; 
+
+    // Look for a user command 
+    get_input(
+        "\r\nFatFs operation >>> ", 
+        buffer, &read_len, FORMAT_FILE_STRING); 
+
+    // Compare the input to the defined user commands 
+    for (uint8_t i = 0; i < HW125_NUM_DRIVER_CMDS; i++) 
     {
-        // Short delay to let the system set up 
-        tim_delay_ms(TIM9, 500); 
-
-#if FORMAT_EXFAT
-        // TODO test to see if this will erase existing data 
-        // Format the drive 
-        fresult = f_mkfs("", FM_EXFAT, 0, work, sizeof work); 
-        if (fresult != FR_OK) uart_sendstring(USART2, "Error in formatting the SD Card.\r\n");
-        else uart_sendstring(USART2, "SD Card formatted successfully.\r\n"); 
-#endif
-        //==================================================
-        // Mount the card and check the contents 
-
-        // Mount the SD card 
-        mount_card(); 
-
-        // Card Capacity 
-        card_capacity(); 
-
-        // Check files on card 
-        file_check(); 
-
-        //==================================================
-        
-        
-        //==================================================
-        // Open a file, write to it then check the contents 
-        
-        // Open a file 
-        file_open(); 
-        
-        // Write to open file using f_puts 
-        file_put_string(); 
-
-        // Move to the beginning of the open file 
-        file_seek(); 
-
-        // Read the string from the open file using f_gets 
-        // file_get_string(f_size(&file)); 
-        file_get_string(); 
-
-        // Display the contents of 'buffer' 
-        display_buffer(); 
-
-        // Close the open file 
-        file_close(); 
-
-        // Check files on card 
-        file_check(); 
-
-        //==================================================
-
-
-        //==================================================
-        // Open a second file, write to it and check the contents 
-
-        // f_write and f_read
-        // open_write_read(); 
-
-        // Check files on card 
-        // file_check(); 
-
-        //==================================================
-
-
-        //==================================================
-        // Open the second file, append data and check the contents 
-
-        // Update an existing file 
-        // update_file(); 
-
-        // Check files on card 
-        // file_check(); 
- 
-        //==================================================
-
-
-        //==================================================
-        // Remove the files and unmount the drive 
-
-        // Remove files from the drive 
-        remove_files(); 
-
-        // Check files on card 
-        file_check(); 
- 
-        // Unmount the SD card 
-        unmount_card(); 
-
-        //==================================================
-        
-        count = 0; 
+        if (str_compare(buffer, usr_cmd_table[i], BYTE_0)) 
+        {
+            cmd_index = i; 
+            break; 
+        }
     }
+
+    // Use the index to call the function as needed 
+    if (cmd_index != 0xFF) 
+    {
+        (func_table[cmd_index])(); 
+    } 
+
+    //==================================================
+
+    // // Run once - code is here to put everything in the same file 
+    // if (count)
+    // {
+    //     //==================================================
+    //     // Mount the card and check the contents 
+
+    //     // Mount the SD card 
+    //     mount_card(); 
+
+    //     // Card Capacity 
+    //     card_capacity(); 
+
+    //     // Check files on card 
+    //     file_check(); 
+
+    //     //==================================================
+        
+        
+    //     //==================================================
+    //     // Open a file, write to it then check the contents 
+        
+    //     // Open a file 
+    //     file_open(); 
+        
+    //     // Write to open file using f_puts 
+    //     file_put_string(); 
+
+    //     // Move to the beginning of the open file 
+    //     file_seek(); 
+
+    //     // Read the string from the open file using f_gets 
+    //     // file_get_string(f_size(&file)); 
+    //     file_get_string(); 
+
+    //     // Display the contents of 'buffer' 
+    //     display_buffer(); 
+
+    //     // Close the open file 
+    //     file_close(); 
+
+    //     // Check files on card 
+    //     file_check(); 
+
+    //     //==================================================
+
+
+    //     //==================================================
+    //     // Open a second file, write to it and check the contents 
+
+    //     // f_write and f_read
+    //     // open_write_read(); 
+
+    //     // Check files on card 
+    //     // file_check(); 
+
+    //     //==================================================
+
+
+    //     //==================================================
+    //     // Open the second file, append data and check the contents 
+
+    //     // Update an existing file 
+    //     // update_file(); 
+
+    //     // Check files on card 
+    //     // file_check(); 
+ 
+    //     //==================================================
+
+
+    //     //==================================================
+    //     // Remove the files and unmount the drive 
+
+    //     // Remove files from the drive 
+    //     file_remove(); 
+
+    //     // Check files on card 
+    //     file_check(); 
+ 
+    //     // Unmount the SD card 
+    //     unmount_card(); 
+
+    //     //==================================================
+        
+    //     count = 0; 
+    // }
 
     // Delay 
     tim_delay_ms(TIM9, 1);
@@ -352,18 +415,17 @@ void hw125_test_app()
 
 #else   // HW125_CONTROLLER_TEST 
 
-// To find the size of data in the buffer 
-int buff_size(char *buff)
-{
-    int i = 0; 
-    while(*buff++ != '\0') i++; 
-    return i; 
-}
-
-
 // Mount card 
 void mount_card(void) 
 {
+#if FORMAT_EXFAT
+    // TODO test to see if this will erase existing data 
+    // Format the drive 
+    fresult = f_mkfs("", FM_EXFAT, 0, work, sizeof work); 
+    if (fresult != FR_OK) uart_sendstring(USART2, "Error in formatting the SD Card.\r\n");
+    else uart_sendstring(USART2, "SD Card formatted successfully.\r\n"); 
+#endif
+
     fresult = f_mount(&file_sys, "", HW125_MOUNT_NOW); 
 
     if (fresult == FR_OK) 
@@ -582,17 +644,24 @@ void update_file(void)
 
 
 // Remove files on card 
-void remove_files(void) 
+void file_remove(void) 
 {
+    // Get and format the file position 
+    get_input(
+        "\nFile to remove: ", 
+        file_name_buff, &read_len, FORMAT_FILE_STRING); 
+
+    // Attempt to remove the specified file 
     // fresult = f_unlink("/test_file.txt"); 
     fresult = f_unlink(file_name_buff); 
 
-    if (fresult == FR_OK) 
+    if (fresult != FR_OK) 
     {
         uart_send_new_line(USART2); 
+        uart_sendstring(USART2, "Failed to remove "); 
         uart_sendstring(USART2, file_name_buff); 
+        uart_send_new_line(USART2); 
         // uart_sendstring(USART2, "test_file.txt removed successfully.\r\n"); 
-        uart_sendstring(USART2, " removed successfully.\r\n"); 
     }
 
     // fresult = f_unlink("/test_file_2.txt"); 
@@ -601,6 +670,15 @@ void remove_files(void)
     // {
     //     uart_sendstring(USART2, "test_file_2.txt removed successfully.\r\n"); 
     // }
+}
+
+
+// To find the size of data in the buffer 
+int buff_size(char *buff)
+{
+    int i = 0; 
+    while(*buff++ != '\0') i++; 
+    return i; 
 }
 
 
