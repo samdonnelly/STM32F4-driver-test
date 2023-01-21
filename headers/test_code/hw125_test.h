@@ -35,10 +35,10 @@
 #define HW125_CONTROLLER_TEST 0     // For switching between driver and controller testing 
 
 // File system 
-#define BUFF_SIZE 1024 
+#define BUFF_SIZE 512 
 
 // User interface 
-#define HW125_NUM_DRIVER_CMDS 11    // Number of driver test commands for the user 
+#define HW125_NUM_DRIVER_CMDS 15    // Number of driver test commands for the user 
 #define CMD_SIZE 50                 // Max user command string length 
 
 // Controller testing 
@@ -65,16 +65,6 @@ typedef enum {
 
 //=======================================================================================
 // Function pointers 
-
-/**
- * @brief FATFS function pointer 
- * 
- * @details This is used only when HW125_CONTROLLER_TEST is zero. This function pointer 
- *          is used with the hw125 driver test user interface to call FatFs functions 
- *          onm command. 
- */
-typedef void (*fatfs_func_ptrs_t)(void); 
-
 //=======================================================================================
 
 
