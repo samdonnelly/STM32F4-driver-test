@@ -318,6 +318,8 @@ void mount_card(void)
 void unmount_card(void) 
 {
     hw125_test_record.fresult = f_unmount(""); 
+    // hw125_test_record.fresult = f_unmount; 
+    // hw125_test_record.fresult = f_mount(0, "", HW125_MOUNT_NOW); 
 
     if (hw125_test_record.fresult == FR_OK) 
     {
