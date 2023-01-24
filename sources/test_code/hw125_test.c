@@ -80,6 +80,8 @@ void display_buffer(void);
 
 #else   // HW125_CONTROLLER_TEST 
 
+extern Disk_drvTypeDef disk;
+
 // Data record 
 typedef struct hw125_test_record_s 
 {
@@ -317,9 +319,12 @@ void mount_card(void)
 // Unmount card 
 void unmount_card(void) 
 {
+    // Unmount the volume 
     hw125_test_record.fresult = f_unmount(""); 
-    // hw125_test_record.fresult = f_unmount; 
-    // hw125_test_record.fresult = f_mount(0, "", HW125_MOUNT_NOW); 
+
+    // Clear the initialization status so it can be re-mounted 
+    // TODO this may be needed for failed mount attempts? 
+    disk.is_initialized[0] = CLEAR; 
 
     if (hw125_test_record.fresult == FR_OK) 
     {
