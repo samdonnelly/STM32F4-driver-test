@@ -266,7 +266,7 @@ void hw125_test_init()
 #if HW125_CONTROLLER_TEST 
 
     // hw125 controller 
-    hw125_controller_init(); 
+    hw125_controller_init("controller_test"); 
 
     // State machine test 
     // state_machine_init(HW125_NUM_USER_CMDS); 
@@ -297,6 +297,52 @@ void hw125_test_app()
     //==================================================
     // Get user command 
 
+#if HW125_CONTROLLER_TEST 
+
+    static uint8_t action = SET; 
+
+    if (action)
+    {
+        uart_sendstring(USART2, "\r\nOperation >>> "); 
+        action = CLEAR; 
+    }
+    else
+    {
+        // Get the info from the user 
+        if (uart_data_ready(USART2))
+        {
+            // Retrieve and format the input 
+            uart_getstr(USART2, hw125_test_record.cmd_buff, UART_STR_TERM_CARRIAGE); 
+            action = SET; 
+
+            // Format the input and check for validity 
+            if (format_input(hw125_test_record.cmd_buff, 
+                             &hw125_test_record.read_len, 
+                             FORMAT_FILE_STRING))
+            {
+                // Compare the input to the defined user commands 
+                for (uint8_t i = 0; i < HW125_NUM_CONT_CMDS; i++) 
+                {
+                    if (str_compare(hw125_test_record.cmd_buff, 
+                                    cmd_table[i].user_cmds, 
+                                    BYTE_0)) 
+                    {
+                        hw125_test_record.cmd_index = i; 
+                        break; 
+                    }
+                }
+
+                // Use the index to call the function as needed 
+                if (hw125_test_record.cmd_index != 0xFF) 
+                {
+                    (cmd_table[hw125_test_record.cmd_index].fatfs_func_ptrs_t)(); 
+                } 
+            }
+        }
+    }
+
+#else   // HW125_CONTROLLER_TEST
+
     hw125_test_record.cmd_index = 0xFF; 
 
     // Look for a user command 
@@ -305,8 +351,7 @@ void hw125_test_app()
         hw125_test_record.cmd_buff, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
 
     // Compare the input to the defined user commands 
-    // for (uint8_t i = 0; i < HW125_NUM_DRIVER_CMDS; i++) 
-    for (uint8_t i = 0; i < HW125_NUM_CONT_CMDS; i++) 
+    for (uint8_t i = 0; i < HW125_NUM_DRIVER_CMDS; i++) 
     {
         if (str_compare(hw125_test_record.cmd_buff, cmd_table[i].user_cmds, BYTE_0)) 
         {
@@ -320,6 +365,8 @@ void hw125_test_app()
     {
         (cmd_table[hw125_test_record.cmd_index].fatfs_func_ptrs_t)(); 
     } 
+
+#endif   // HW125_CONTROLLER_TEST
 
     //==================================================
 
@@ -374,7 +421,8 @@ void hw125_cont_test_make_dir(void)
         hw125_test_record.buffer, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
 
     // Write to the file 
-    hw125_test_record.fresult = hw125_mkdir(hw125_test_record.buffer); 
+    // hw125_test_record.fresult = hw125_mkdir(hw125_test_record.buffer); 
+    hw125_mkdir(hw125_test_record.buffer); 
 }
 
 
@@ -394,15 +442,17 @@ void hw125_cont_test_file_open(void)
         FORMAT_FILE_MODE); 
 
     // Open a file (and create if it doesn't exist) 
-    hw125_test_record.fresult = hw125_open(hw125_test_record.file_name_buff, 
-                                           hw125_test_record.access_mode); 
+    // hw125_test_record.fresult = hw125_open(hw125_test_record.file_name_buff, 
+    //                                        hw125_test_record.access_mode); 
+    hw125_open(hw125_test_record.file_name_buff, hw125_test_record.access_mode); 
 }
 
 
 // Close the open file 
 void hw125_cont_test_file_close(void) 
 {
-    hw125_test_record.fresult = hw125_close(); 
+    // hw125_test_record.fresult = hw125_close(); 
+    hw125_close(); 
 }
 
 
@@ -415,13 +465,14 @@ void hw125_cont_test_file_write(void)
         hw125_test_record.buffer, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
 
     // Write to the file 
-    hw125_test_record.fresult = hw125_f_write(hw125_test_record.buffer, 
-                                              strlen(hw125_test_record.buffer)); 
+    // hw125_test_record.fresult = hw125_f_write(hw125_test_record.buffer, 
+    //                                           strlen(hw125_test_record.buffer)); 
+    hw125_f_write(hw125_test_record.buffer, strlen(hw125_test_record.buffer)); 
 }
 
 
 // Write a string to the open file 
-int8_t hw125_cont_test_put_string(void) 
+void hw125_cont_test_put_string(void) 
 {
     // Get and format the file string 
     get_input(
@@ -434,7 +485,7 @@ int8_t hw125_cont_test_put_string(void)
 
 
 // Write a formatted string to the open file 
-int8_t hw125_cont_test_printf(void) 
+void hw125_cont_test_printf(void) 
 {
     QWORD fmt_value; 
 
@@ -462,7 +513,8 @@ void hw125_cont_test_file_seek(void)
         hw125_test_record.buffer, &hw125_test_record.position, FORMAT_FILE_NUM); 
 
     // Move to the specified position in the file 
-    hw125_test_record.fresult = hw125_lseek(hw125_test_record.position); 
+    // hw125_test_record.fresult = hw125_lseek(hw125_test_record.position); 
+    hw125_lseek(hw125_test_record.position); 
 }
 
 
@@ -521,8 +573,11 @@ void hw125_cont_test_file_read(void)
         hw125_test_record.buffer, &hw125_test_record.read_len, FORMAT_FILE_NUM); 
 
     // Read from the file 
-    hw125_test_record.fresult = hw125_f_read(hw125_test_record.buffer, 
-                                             hw125_test_record.read_len); 
+    // hw125_test_record.fresult = hw125_f_read(hw125_test_record.buffer, 
+    //                                          hw125_test_record.read_len); 
+    hw125_f_read(hw125_test_record.buffer, hw125_test_record.read_len); 
+
+    display_buffer(); 
 }
 
 
@@ -536,6 +591,8 @@ void hw125_cont_test_get_string(void)
 
     // Read from the file 
     hw125_gets(hw125_test_record.buffer, hw125_test_record.read_len); 
+
+    display_buffer(); 
 }
 
 
@@ -848,6 +905,7 @@ void file_remove(void)
     }
 }
 
+#endif   // HW125_CONTROLLER_TEST
 
 // Get user inputs 
 void get_input(
@@ -958,7 +1016,5 @@ void display_buffer(void)
     uart_sendstring(USART2, hw125_test_record.buffer); 
     uart_send_new_line(USART2); 
 }
-
-#endif   // HW125_CONTROLLER_TEST
 
 //=======================================================================================
