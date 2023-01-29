@@ -38,7 +38,8 @@
 #define BUFF_SIZE 512 
 
 // User interface 
-#define HW125_NUM_DRIVER_CMDS 15    // Number of driver test commands for the user 
+#define HW125_NUM_DRIVER_CMDS 17    // Number of driver test commands for the user 
+#define HW125_NUM_CONT_CMDS 18      // Number of controller test commands for the user 
 #define CMD_SIZE 50                 // Max user command string length 
 
 // Controller testing 

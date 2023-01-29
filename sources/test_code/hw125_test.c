@@ -25,6 +25,29 @@
 
 #if HW125_CONTROLLER_TEST 
 
+//==================================================
+// Controller setter and getter wrapper functions 
+
+void hw125_cont_test_eject_set(void);      // Set the eject flag 
+void hw125_cont_test_eject_clear(void);    // Clear the eject flag 
+void hw125_cont_test_reset_set(void);      // Set reset flag 
+void hw125_cont_test_make_dir(void);       // Make a new directory in the project directory 
+void hw125_cont_test_file_open(void);      // Open file 
+void hw125_cont_test_file_close(void);     // Close the open file 
+void hw125_cont_test_file_write(void);     // Write to the open file 
+void hw125_cont_test_put_string(void);     // Write a string to the open file 
+void hw125_cont_test_printf(void);         // Write a formatted string to the open file 
+void hw125_cont_test_file_seek(void);      // Navigate within the open file 
+void hw125_cont_test_state(void);          // Get state 
+void hw125_cont_test_fault_code(void);     // Get fault code 
+void hw125_cont_test_fault_mode(void);     // Get fault mode 
+void hw125_cont_test_file_status(void);    // Get open file flag 
+void hw125_cont_test_file_read(void);      // Read data from open file 
+void hw125_cont_test_get_string(void);     // Reads a string from open file 
+void hw125_cont_test_file_end(void);       // Test for end of file on open file 
+
+//==================================================
+
 #else   // HW125_CONTROLLER_TEST 
 
 //==================================================
@@ -34,10 +57,12 @@ void mount_card(void);                // Mount the SD card
 void unmount_card(void);              // Unmount the SD card 
 void card_capacity(void);             // Card Capacity 
 void file_check(void);                // Check files on card 
+void file_mkdir(void);                // Make a new directory 
 void file_open(void);                 // Open a file 
 void file_close(void);                // Close the open file 
 void file_put_string(void);           // Write to an open file using f_puts 
 void file_get_string(void);           // Read from an open file using f_gets 
+void file_printf(void);               // Write a formatted dtring 
 void file_write(void);                // Write to an open file using f_write 
 void file_read(void);                 // Read from an open file using using f_read 
 void file_seek(void);                 // Navigate the file 
@@ -46,6 +71,8 @@ void file_fast_fwd(void);             // Navigate to the end of the file
 void file_remove(void);               // Remove files from the drive 
 
 //==================================================
+
+#endif   // HW125_CONTROLLER_TEST 
 
 //==================================================
 // UI functions 
@@ -68,23 +95,31 @@ void display_buffer(void);
 
 //==================================================
 
-#endif   // HW125_CONTROLLER_TEST 
-
 //=======================================================================================
 
 
 //=======================================================================================
 // Global variables 
 
-#if HW125_CONTROLLER_TEST 
-
-#else   // HW125_CONTROLLER_TEST 
-
-extern Disk_drvTypeDef disk;
-
 // Data record 
 typedef struct hw125_test_record_s 
 {
+    // User data 
+    BYTE  access_mode;                    // File access mode (byte) 
+    QWORD position;                       // File position (byte num) 
+    QWORD read_len;                       // Read data size (bytes) 
+    BYTE  cmd_index;                      // For indixing function pointers 
+
+    // User and data buffers 
+    char cmd_buff[CMD_SIZE];              // Stores user commands 
+    char buffer[BUFF_SIZE];               // To store the data that we can read or write
+    char file_name_buff[CMD_SIZE];        // Stores file names input by the user 
+    char file_mode_buff[CMD_SIZE];        // Stores file access modes input by the user 
+
+#if HW125_CONTROLLER_TEST 
+
+#else   // HW125_CONTROLLER_TEST
+    
     // File variables 
     FATFS   file_sys;                     // File system 
     FIL     file;                         // File 
@@ -98,29 +133,62 @@ typedef struct hw125_test_record_s
     DWORD fre_clust;                      // Stores number of free clusters 
     DWORD total, free_space;              // Total and free volume space 
 
-    // User data 
-    BYTE  access_mode;                    // File access mode (byte) 
-    QWORD position;                       // File position (byte num) 
-    QWORD read_len;                       // Read data size (bytes) 
-    BYTE  cmd_index;                      // For indixing function pointers 
-
-    // User and data buffers 
-    char cmd_buff[CMD_SIZE];              // Stores user commands 
-    char buffer[BUFF_SIZE];               // To store the data that we can read or write
-    char file_name_buff[CMD_SIZE];        // Stores file names input by the user 
-    char file_mode_buff[CMD_SIZE];        // Stores file access modes input by the user 
-
     #if FORMAT_EXFAT 
 
     BYTE work[512];                       // Used to format the volume 
 
     #endif   // FORMAT_EXFAT
+
+#endif   // HW125_CONTROLLER_TEST
 } 
 hw125_test_record_t; 
 
 
 // Data record instance 
 static hw125_test_record_t hw125_test_record; 
+
+
+#if HW125_CONTROLLER_TEST 
+
+
+// Command pointers 
+typedef struct hw125_user_cmds_s 
+{
+    char user_cmds[CMD_SIZE];              // Stores the defined user input commands 
+    void (*fatfs_func_ptrs_t)(void);       // Pointer to FatFs file operation function 
+}
+hw125_user_cmds_t; 
+
+
+// User commands 
+static hw125_user_cmds_t cmd_table[HW125_NUM_CONT_CMDS] = 
+{
+    {"eject",       &hw125_cont_test_eject_set}, 
+    {"insert",      &hw125_cont_test_eject_clear}, 
+    {"reset",       &hw125_cont_test_reset_set}, 
+    {"make_dir",    &hw125_cont_test_make_dir}, 
+    {"open",        &hw125_cont_test_file_open}, 
+    {"close",       &hw125_cont_test_file_close}, 
+    {"write",       &hw125_cont_test_file_write}, 
+    {"puts",        &hw125_cont_test_put_string}, 
+    {"printf",      &hw125_cont_test_printf}, 
+    {"seek",        &hw125_cont_test_file_seek}, 
+    {"state",       &hw125_cont_test_state}, 
+    {"fault_code",  &hw125_cont_test_fault_code}, 
+    {"fault_mode",  &hw125_cont_test_fault_mode}, 
+    {"status",      &hw125_cont_test_file_status}, 
+    {"read",        &hw125_cont_test_file_read}, 
+    {"gets",        &hw125_cont_test_get_string}, 
+    {"eof",         &hw125_cont_test_file_end}, 
+    {"read_buffer", &display_buffer} 
+}; 
+
+
+#else   // HW125_CONTROLLER_TEST 
+
+
+// FatFs layer disk status - used for clearing the init status for re-mounting 
+extern Disk_drvTypeDef disk;
 
 
 // Command pointers 
@@ -139,10 +207,12 @@ static hw125_user_cmds_t cmd_table[HW125_NUM_DRIVER_CMDS] =
     {"f_unmount",   &unmount_card}, 
     {"f_cap",       &card_capacity}, 
     {"f_check",     &file_check}, 
+    {"f_mkdir",     &file_mkdir}, 
     {"f_open",      &file_open}, 
     {"f_close",     &file_close}, 
     {"f_puts",      &file_put_string}, 
     {"f_gets",      &file_get_string}, 
+    {"f_printf",    &file_printf}, 
     {"f_write",     &file_write}, 
     {"f_read",      &file_read}, 
     {"f_lseek",     &file_seek}, 
@@ -199,7 +269,7 @@ void hw125_test_init()
     hw125_controller_init(); 
 
     // State machine test 
-    state_machine_init(HW125_NUM_USER_CMDS); 
+    // state_machine_init(HW125_NUM_USER_CMDS); 
 
 #endif   // HW125_CONTROLLER_TEST 
     
@@ -224,10 +294,6 @@ void hw125_test_init()
 // Test code 
 void hw125_test_app()
 {
-#if HW125_CONTROLLER_TEST 
-
-#else   // HW125_CONTROLLER_TEST 
-
     //==================================================
     // Get user command 
 
@@ -235,11 +301,12 @@ void hw125_test_app()
 
     // Look for a user command 
     get_input(
-        "\r\nFatFs operation >>> ", 
+        "\r\nOperation >>> ", 
         hw125_test_record.cmd_buff, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
 
     // Compare the input to the defined user commands 
-    for (uint8_t i = 0; i < HW125_NUM_DRIVER_CMDS; i++) 
+    // for (uint8_t i = 0; i < HW125_NUM_DRIVER_CMDS; i++) 
+    for (uint8_t i = 0; i < HW125_NUM_CONT_CMDS; i++) 
     {
         if (str_compare(hw125_test_record.cmd_buff, cmd_table[i].user_cmds, BYTE_0)) 
         {
@@ -256,6 +323,13 @@ void hw125_test_app()
 
     //==================================================
 
+#if HW125_CONTROLLER_TEST 
+
+    // HW125 controller 
+    hw125_controller(); 
+
+#else   // HW125_CONTROLLER_TEST 
+
     // Delay 
     tim_delay_ms(TIM9, 1);
 
@@ -269,6 +343,212 @@ void hw125_test_app()
 // Test functions 
 
 #if HW125_CONTROLLER_TEST 
+
+// Set the eject flag 
+void hw125_cont_test_eject_set(void) 
+{
+    hw125_set_eject_flag(); 
+}
+
+
+// Clear the eject flag 
+void hw125_cont_test_eject_clear(void) 
+{
+    hw125_clear_eject_flag(); 
+}
+
+
+// Set reset flag 
+void hw125_cont_test_reset_set(void) 
+{
+    hw125_set_reset_flag(); 
+}
+
+
+// Make a new directory in the project directory 
+void hw125_cont_test_make_dir(void) 
+{
+    // Get and format the directory path string 
+    get_input(
+        "\nDirectory: ", 
+        hw125_test_record.buffer, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
+
+    // Write to the file 
+    hw125_test_record.fresult = hw125_mkdir(hw125_test_record.buffer); 
+}
+
+
+// Open file 
+void hw125_cont_test_file_open(void) 
+{
+    // Get and format the file name 
+    get_input(
+        "\nFile to open: ", 
+        hw125_test_record.file_name_buff, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
+
+    // Get and format the access mode 
+    get_input(
+        "\nAccess mode: ", 
+        hw125_test_record.file_mode_buff, 
+        (QWORD *)(&hw125_test_record.access_mode), 
+        FORMAT_FILE_MODE); 
+
+    // Open a file (and create if it doesn't exist) 
+    hw125_test_record.fresult = hw125_open(hw125_test_record.file_name_buff, 
+                                           hw125_test_record.access_mode); 
+}
+
+
+// Close the open file 
+void hw125_cont_test_file_close(void) 
+{
+    hw125_test_record.fresult = hw125_close(); 
+}
+
+
+// Write to the open file 
+void hw125_cont_test_file_write(void) 
+{
+    // Get and format the file string 
+    get_input(
+        "\nFile string: ", 
+        hw125_test_record.buffer, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
+
+    // Write to the file 
+    hw125_test_record.fresult = hw125_f_write(hw125_test_record.buffer, 
+                                              strlen(hw125_test_record.buffer)); 
+}
+
+
+// Write a string to the open file 
+int8_t hw125_cont_test_put_string(void) 
+{
+    // Get and format the file string 
+    get_input(
+        "\nFile string: ", 
+        hw125_test_record.buffer, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
+
+    // Write a string 
+    hw125_puts(hw125_test_record.buffer); 
+}
+
+
+// Write a formatted string to the open file 
+int8_t hw125_cont_test_printf(void) 
+{
+    QWORD fmt_value; 
+
+    // Get and format the formatted string integer 
+    get_input(
+        "\nInteger: ", 
+        hw125_test_record.buffer, &fmt_value, FORMAT_FILE_NUM); 
+    
+    // Get and format the formated string 
+    get_input(
+        "\nFormatted string: ", 
+        hw125_test_record.buffer, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
+
+    // Write the formatted string to the file 
+    hw125_printf(hw125_test_record.buffer, (uint16_t)fmt_value); 
+}
+
+
+// Navigate within the open file 
+void hw125_cont_test_file_seek(void) 
+{
+    // Get and format the file position 
+    get_input(
+        "\nFile position: ", 
+        hw125_test_record.buffer, &hw125_test_record.position, FORMAT_FILE_NUM); 
+
+    // Move to the specified position in the file 
+    hw125_test_record.fresult = hw125_lseek(hw125_test_record.position); 
+}
+
+
+// Get state 
+void hw125_cont_test_state(void) 
+{
+    HW125_STATE state = hw125_get_state(); 
+
+    // Show the state 
+    uart_sendstring(USART2, "state: "); 
+    uart_send_integer(USART2, (int16_t)state); 
+    uart_send_new_line(USART2); 
+}
+
+
+// Get fault code 
+void hw125_cont_test_fault_code(void) 
+{
+    HW125_FAULT_CODE code = hw125_get_fault_code(); 
+
+    uart_sendstring(USART2, "fault code: "); 
+    uart_send_integer(USART2, (int16_t)code); 
+    uart_send_new_line(USART2); 
+}
+
+
+// Get fault mode 
+void hw125_cont_test_fault_mode(void)
+{
+    HW125_FAULT_MODE mode = hw125_get_fault_mode(); 
+
+    uart_sendstring(USART2, "fault mode: "); 
+    uart_send_integer(USART2, (int16_t)mode); 
+    uart_send_new_line(USART2); 
+}
+
+
+// Get open file flag 
+void hw125_cont_test_file_status(void)
+{
+    HW125_FILE_STATUS status = hw125_get_file_status(); 
+
+    // Show open file flag setpoint 
+    uart_sendstring(USART2, "open flag: "); 
+    uart_send_integer(USART2, (int16_t)status); 
+    uart_send_new_line(USART2); 
+}
+
+
+// Read data from open file 
+void hw125_cont_test_file_read(void) 
+{
+    // Get and format the read size (bytes) 
+    get_input(
+        "\nRead size (bytes): ", 
+        hw125_test_record.buffer, &hw125_test_record.read_len, FORMAT_FILE_NUM); 
+
+    // Read from the file 
+    hw125_test_record.fresult = hw125_f_read(hw125_test_record.buffer, 
+                                             hw125_test_record.read_len); 
+}
+
+
+// Reads a string from open file 
+void hw125_cont_test_get_string(void)
+{
+    // Get and format the read size (bytes) 
+    get_input(
+        "\nRead size (bytes): ", 
+        hw125_test_record.buffer, &hw125_test_record.read_len, FORMAT_FILE_NUM); 
+
+    // Read from the file 
+    hw125_gets(hw125_test_record.buffer, hw125_test_record.read_len); 
+}
+
+
+// Test for end of file on open file 
+void hw125_cont_test_file_end(void) 
+{
+    int8_t eof_return = hw125_eof(); 
+
+    // Display if end of file has been reached 
+    uart_sendstring(USART2, "eof return: "); 
+    uart_send_integer(USART2, (int16_t)eof_return); 
+    uart_send_new_line(USART2); 
+}
 
 #else   // HW125_CONTROLLER_TEST 
 
@@ -366,12 +646,18 @@ void card_capacity(void)
 // Check files on the card 
 void file_check(void)
 {
-    uart_sendstring(USART2, "\nCurrent files on drive: \r\n"); 
+    // Get and format the directory to check 
+    get_input(
+        "\nPath: ", 
+        hw125_test_record.buffer, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
+    
+    uart_sendstring(USART2, "\nFiles in path: \r\n"); 
 
     // Start to search for files 
     hw125_test_record.fresult = f_findfirst(&hw125_test_record.dj, 
                                             &hw125_test_record.fno, 
-                                            "", "*"); 
+                                            hw125_test_record.buffer, 
+                                            "*"); 
 
     while ((hw125_test_record.fresult == FR_OK) && hw125_test_record.fno.fname[0]) 
     {
@@ -383,6 +669,19 @@ void file_check(void)
     }
 
     f_closedir(&hw125_test_record.dj);
+}
+
+
+// Make a new directory 
+void file_mkdir(void)
+{
+    // Get and format the directory path string 
+    get_input(
+        "\nDirectory: ", 
+        hw125_test_record.buffer, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
+
+    // Write to the file 
+    hw125_test_record.fresult = f_mkdir(hw125_test_record.buffer); 
 }
 
 
@@ -438,6 +737,31 @@ void file_get_string(void)
 
     // Read from the file 
     f_gets(hw125_test_record.buffer, hw125_test_record.read_len, &hw125_test_record.file); 
+}
+
+
+// Write a formatted dtring 
+void file_printf(void)
+{
+    QWORD fmt_value; 
+
+    // Get and format the formatted string integer 
+    get_input(
+        "\nInteger: ", 
+        hw125_test_record.buffer, &fmt_value, FORMAT_FILE_NUM); 
+    
+    // Get and format the formated string 
+    get_input(
+        "\nFormatted string: ", 
+        hw125_test_record.buffer, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
+
+    // Write the formatted string to the file 
+    if (f_printf(&hw125_test_record.file, 
+                 hw125_test_record.buffer, 
+                 (uint16_t)fmt_value) < 0) 
+    {
+        uart_sendstring(USART2, "\nfailure\r\n"); 
+    }
 }
 
 
