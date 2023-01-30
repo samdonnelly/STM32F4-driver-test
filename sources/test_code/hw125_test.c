@@ -282,7 +282,8 @@ void hw125_test_init()
 
 #if HW125_CONTROLLER_TEST 
 
-    action = SET; 
+    // action = SET; 
+    uart_sendstring(USART2, "\r\nOperation >>> "); 
 
 #else   // HW125_CONTROLLER_TEST
 
@@ -307,65 +308,45 @@ void hw125_test_app()
 
     // static uint8_t action = SET; 
 
-    // if (action)
-    // {
-    //     uart_sendstring(USART2, "\r\nOperation >>> "); 
-    //     action = CLEAR; 
-    // }
-    // else
-    // {
-    //     // Get the info from the user 
-    //     if (uart_data_ready(USART2))
-    //     {
-    //         // Retrieve and format the input 
-    //         uart_getstr(USART2, hw125_test_record.cmd_buff, UART_STR_TERM_CARRIAGE); 
-    //         action = SET; 
-
-    //         // Format the input and check for validity 
-    //         if (format_input(hw125_test_record.cmd_buff, 
-    //                          &hw125_test_record.read_len, 
-    //                          FORMAT_FILE_STRING))
-    //         {
-    //             // Compare the input to the defined user commands 
-    //             for (uint8_t i = 0; i < HW125_NUM_CONT_CMDS; i++) 
-    //             {
-    //                 if (str_compare(hw125_test_record.cmd_buff, 
-    //                                 cmd_table[i].user_cmds, 
-    //                                 BYTE_0)) 
-    //                 {
-    //                     hw125_test_record.cmd_index = i; 
-    //                     break; 
-    //                 }
-    //             }
-
-    //             // Use the index to call the function as needed 
-    //             if (hw125_test_record.cmd_index != 0xFF) 
-    //             {
-    //                 (cmd_table[hw125_test_record.cmd_index].fatfs_func_ptrs_t)(); 
-    //             } 
-    //         }
-    //     }
-    // }
-
-    // Look for a user command 
-    get_input(
-        "\r\nOperation >>> ", 
-        hw125_test_record.cmd_buff, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
-
-    // Compare the input to the defined user commands 
-    for (uint8_t i = 0; i < HW125_NUM_DRIVER_CMDS; i++) 
+    if (action)
     {
-        if (str_compare(hw125_test_record.cmd_buff, cmd_table[i].user_cmds, BYTE_0)) 
-        {
-            hw125_test_record.cmd_index = i; 
-            break; 
-        }
+        action = CLEAR; 
+        uart_sendstring(USART2, "\r\nOperation >>> "); 
     }
-
-    // Use the index to call the function as needed 
-    if (hw125_test_record.cmd_index != 0xFF) 
+    else
     {
-        (cmd_table[hw125_test_record.cmd_index].fatfs_func_ptrs_t)(); 
+        // Get the info from the user 
+        if (uart_data_ready(USART2))
+        {
+            action = SET; 
+
+            // Retrieve and format the input 
+            uart_getstr(USART2, hw125_test_record.cmd_buff, UART_STR_TERM_CARRIAGE); 
+
+            // Format the input and check for validity 
+            if (format_input(hw125_test_record.cmd_buff, 
+                             &hw125_test_record.read_len, 
+                             FORMAT_FILE_STRING))
+            {
+                // Compare the input to the defined user commands 
+                for (uint8_t i = 0; i < HW125_NUM_CONT_CMDS; i++) 
+                {
+                    if (str_compare(hw125_test_record.cmd_buff, 
+                                    cmd_table[i].user_cmds, 
+                                    BYTE_0)) 
+                    {
+                        hw125_test_record.cmd_index = i; 
+                        break; 
+                    }
+                }
+
+                // Use the index to call the function as needed 
+                if (hw125_test_record.cmd_index != 0xFF) 
+                {
+                    (cmd_table[hw125_test_record.cmd_index].fatfs_func_ptrs_t)(); 
+                } 
+            }
+        }
     }
 
 #else   // HW125_CONTROLLER_TEST
