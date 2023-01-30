@@ -150,6 +150,8 @@ static hw125_test_record_t hw125_test_record;
 
 #if HW125_CONTROLLER_TEST 
 
+// For user input prompt 
+uint8_t action; 
 
 // Command pointers 
 typedef struct hw125_user_cmds_s 
@@ -280,6 +282,8 @@ void hw125_test_init()
 
 #if HW125_CONTROLLER_TEST 
 
+    action = SET; 
+
 #else   // HW125_CONTROLLER_TEST
 
     // Short delay to let the system set up 
@@ -297,53 +301,75 @@ void hw125_test_app()
     //==================================================
     // Get user command 
 
+    hw125_test_record.cmd_index = 0xFF; 
+
 #if HW125_CONTROLLER_TEST 
 
-    static uint8_t action = SET; 
+    // static uint8_t action = SET; 
 
-    if (action)
+    // if (action)
+    // {
+    //     uart_sendstring(USART2, "\r\nOperation >>> "); 
+    //     action = CLEAR; 
+    // }
+    // else
+    // {
+    //     // Get the info from the user 
+    //     if (uart_data_ready(USART2))
+    //     {
+    //         // Retrieve and format the input 
+    //         uart_getstr(USART2, hw125_test_record.cmd_buff, UART_STR_TERM_CARRIAGE); 
+    //         action = SET; 
+
+    //         // Format the input and check for validity 
+    //         if (format_input(hw125_test_record.cmd_buff, 
+    //                          &hw125_test_record.read_len, 
+    //                          FORMAT_FILE_STRING))
+    //         {
+    //             // Compare the input to the defined user commands 
+    //             for (uint8_t i = 0; i < HW125_NUM_CONT_CMDS; i++) 
+    //             {
+    //                 if (str_compare(hw125_test_record.cmd_buff, 
+    //                                 cmd_table[i].user_cmds, 
+    //                                 BYTE_0)) 
+    //                 {
+    //                     hw125_test_record.cmd_index = i; 
+    //                     break; 
+    //                 }
+    //             }
+
+    //             // Use the index to call the function as needed 
+    //             if (hw125_test_record.cmd_index != 0xFF) 
+    //             {
+    //                 (cmd_table[hw125_test_record.cmd_index].fatfs_func_ptrs_t)(); 
+    //             } 
+    //         }
+    //     }
+    // }
+
+    // Look for a user command 
+    get_input(
+        "\r\nOperation >>> ", 
+        hw125_test_record.cmd_buff, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
+
+    // Compare the input to the defined user commands 
+    for (uint8_t i = 0; i < HW125_NUM_DRIVER_CMDS; i++) 
     {
-        uart_sendstring(USART2, "\r\nOperation >>> "); 
-        action = CLEAR; 
-    }
-    else
-    {
-        // Get the info from the user 
-        if (uart_data_ready(USART2))
+        if (str_compare(hw125_test_record.cmd_buff, cmd_table[i].user_cmds, BYTE_0)) 
         {
-            // Retrieve and format the input 
-            uart_getstr(USART2, hw125_test_record.cmd_buff, UART_STR_TERM_CARRIAGE); 
-            action = SET; 
-
-            // Format the input and check for validity 
-            if (format_input(hw125_test_record.cmd_buff, 
-                             &hw125_test_record.read_len, 
-                             FORMAT_FILE_STRING))
-            {
-                // Compare the input to the defined user commands 
-                for (uint8_t i = 0; i < HW125_NUM_CONT_CMDS; i++) 
-                {
-                    if (str_compare(hw125_test_record.cmd_buff, 
-                                    cmd_table[i].user_cmds, 
-                                    BYTE_0)) 
-                    {
-                        hw125_test_record.cmd_index = i; 
-                        break; 
-                    }
-                }
-
-                // Use the index to call the function as needed 
-                if (hw125_test_record.cmd_index != 0xFF) 
-                {
-                    (cmd_table[hw125_test_record.cmd_index].fatfs_func_ptrs_t)(); 
-                } 
-            }
+            hw125_test_record.cmd_index = i; 
+            break; 
         }
+    }
+
+    // Use the index to call the function as needed 
+    if (hw125_test_record.cmd_index != 0xFF) 
+    {
+        (cmd_table[hw125_test_record.cmd_index].fatfs_func_ptrs_t)(); 
     }
 
 #else   // HW125_CONTROLLER_TEST
 
-    hw125_test_record.cmd_index = 0xFF; 
 
     // Look for a user command 
     get_input(
