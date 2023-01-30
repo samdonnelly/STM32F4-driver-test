@@ -26,6 +26,8 @@
 //=======================================================================================
 // Macros 
 
+#define MPU6050_CONTROLLER_TEST 0   // Switch between driver and controller testing 
+
 #define LOOP_DELAY 1000
 
 #define UINT16_DEC_DIGITS 6

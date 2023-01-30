@@ -20,14 +20,28 @@
 //=======================================================================================
 
 
+//=======================================================================================
+// Function prototypes 
+//=======================================================================================
+
+
+//=======================================================================================
+// Global variables 
+//=======================================================================================
+
+
+//=======================================================================================
+// Test code 
+
 // Setup code
 void mpu6050_test_init()
 {
-    // Store the result of the accelerometer initialization 
-    uint8_t mpu6050_init_status;
+    // Local variables 
+    uint8_t mpu6050_init_status;    // Store the driver init status 
+    uint8_t mpu_self_test_result;   // Store the self-test status 
 
-    // Store the results of the accelerometer self-test 
-    uint8_t mpu_self_test_result;
+    //===================================================
+    // Peripherals 
 
     // Initialize timers 
     tim_9_to_11_counter_init(
@@ -39,7 +53,6 @@ void mpu6050_test_init()
 
     // Initialize UART2
     uart_init(USART2, UART_BAUD_9600, UART_CLOCK_42);
-    uart_sendstring(USART2, "test\r\n"); 
 
     // Initialize I2C1
     i2c1_init(
@@ -51,6 +64,11 @@ void mpu6050_test_init()
         I2C_CCR_SM_42_100,
         I2C_TRISE_1000_42);
 
+    //===================================================
+
+    //===================================================
+    // Accelerometer initialization 
+    
     // Initialize the accelerometer 
     // The return value can be used to enter an error state
     mpu6050_init_status = mpu6050_init(
@@ -64,12 +82,10 @@ void mpu6050_test_init()
     switch(mpu6050_init_status)
     {
         case TRUE:
-            // 
             uart_sendstring(USART2, "Device seen\r\n");
             break;
         
         case FALSE:
-            // 
             uart_sendstring(USART2, "Device not seen\r\n");
             break;
 
@@ -82,12 +98,29 @@ void mpu6050_test_init()
     uart_sendstring(USART2, "MPU6050 Self-Test Result = ");
     uart_send_integer(USART2, (int16_t)(mpu_self_test_result));
     uart_send_new_line(USART2);
+
+    //===================================================
+
+    //===================================================
+    // Setup 
+
+#if MPU6050_CONTROLLER_TEST 
+
+#else   // MPU6050_CONTROLLER_TEST 
+
+#endif   // MPU6050_CONTROLLER_TEST 
+
+    //===================================================
 } 
 
 
 // Test code 
 void mpu6050_test_app()
 {
+#if MPU6050_CONTROLLER_TEST 
+
+#else   // MPU6050_CONTROLLER_TEST
+
     //==============================================================
     // Control Code 
     //  1. Read raw temperature feedback, format it into degC, print it to serial 
@@ -208,4 +241,13 @@ void mpu6050_test_app()
 
     // Delay 
     tim_delay_ms(TIM9, LOOP_DELAY);
+
+#endif   // MPU6050_CONTROLLER_TEST 
 }
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Test functions 
+//=======================================================================================
