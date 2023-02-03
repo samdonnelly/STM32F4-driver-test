@@ -30,6 +30,7 @@
 #include "hd44780u_controller.h"
 #include "hw125_controller.h" 
 #include "m8q_controller.h" 
+#include "mpu6050_controller.h"
 
 // Communication drivers 
 #include "i2c_comm.h"
