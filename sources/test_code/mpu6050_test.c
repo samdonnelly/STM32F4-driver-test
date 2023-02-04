@@ -97,7 +97,7 @@ void mpu6050_test_init()
     }
 
     // MPU6050 self-test 
-    mpu_self_test_result = mpu6050_self_test(MPU6050_1_ADDRESS);
+    mpu_self_test_result = mpu6050_self_test();
     uart_sendstring(USART2, "MPU6050 Self-Test Result = ");
     uart_send_integer(USART2, (int16_t)(mpu_self_test_result));
     uart_send_new_line(USART2);
@@ -146,18 +146,30 @@ void mpu6050_test_app()
     if (one_time == 0)
     {
         mpu6050_calibrate(
-            MPU6050_1_ADDRESS, 
             mpu6050_accel_offset,
             mpu6050_gyro_offset);
         
         one_time++;
     }
 
+    //==================================================
+    // Read data 
+    //==================================================
+
+    //==================================================
+    // Get data 
+    //==================================================
+
+    //==================================================
+    // Display data 
+    //==================================================
+
     //==============================================================
     // Temperature 
 
-    mpu6050_temp_sensor = mpu6050_temp_read(MPU6050_1_ADDRESS);
-    mpu6050_temp_sensor = (int16_t)(mpu6050_temp_calc(mpu6050_temp_sensor) * 
+    // mpu6050_temp_sensor = mpu6050_temp_read();
+    mpu6050_temp_read();
+    mpu6050_temp_sensor = (int16_t)(mpu6050_get_temp(mpu6050_temp_sensor) * 
                                     NO_DECIMAL_SCALAR);
     
     uart_sendstring(USART2, "temp = ");
@@ -170,12 +182,11 @@ void mpu6050_test_app()
     //==============================================================
     // Accelerometer 
 
-    mpu6050_accel_read(MPU6050_1_ADDRESS, mpu6050_accel);
+    mpu6050_accel_read(mpu6050_accel);
 
     // X-axis
     mpu6050_accel[ACCEL_X_AXIS] = (int16_t)(
-            mpu6050_accel_x_calc(MPU6050_1_ADDRESS, mpu6050_accel[ACCEL_X_AXIS]) * 
-            NO_DECIMAL_SCALAR);
+            mpu6050_get_accel_x(mpu6050_accel[ACCEL_X_AXIS]) * NO_DECIMAL_SCALAR);
     
     uart_sendstring(USART2, "ax = ");
     uart_send_integer(USART2, mpu6050_accel[ACCEL_X_AXIS]); 
@@ -183,8 +194,7 @@ void mpu6050_test_app()
 
     // Y-axis 
     mpu6050_accel[ACCEL_Y_AXIS] = (int16_t)(
-            mpu6050_accel_y_calc(MPU6050_1_ADDRESS, mpu6050_accel[ACCEL_Y_AXIS]) * 
-            NO_DECIMAL_SCALAR);
+            mpu6050_get_accel_y(mpu6050_accel[ACCEL_Y_AXIS]) * NO_DECIMAL_SCALAR);
     
     uart_sendstring(USART2, "ay = ");
     uart_send_integer(USART2, mpu6050_accel[ACCEL_Y_AXIS]);
@@ -192,8 +202,7 @@ void mpu6050_test_app()
 
     // Z-axis 
     mpu6050_accel[ACCEL_Z_AXIS] = (int16_t)(
-            mpu6050_accel_z_calc(MPU6050_1_ADDRESS, mpu6050_accel[ACCEL_Z_AXIS]) * 
-            NO_DECIMAL_SCALAR);
+            mpu6050_get_accel_z(mpu6050_accel[ACCEL_Z_AXIS]) * NO_DECIMAL_SCALAR);
     
     uart_sendstring(USART2, "az = ");
     uart_send_integer(USART2, mpu6050_accel[ACCEL_Z_AXIS]);
@@ -205,11 +214,10 @@ void mpu6050_test_app()
     //==============================================================
     // Gyroscope 
 
-    mpu6050_gyro_read(MPU6050_1_ADDRESS, mpu6050_gyro);
+    mpu6050_gyro_read(mpu6050_gyro);
 
     // X-axis
-    mpu6050_gyro[GYRO_X_AXIS] = (int16_t)(mpu6050_gyro_x_calc(
-                                              MPU6050_1_ADDRESS, 
+    mpu6050_gyro[GYRO_X_AXIS] = (int16_t)(mpu6050_get_gyro_x(
                                               mpu6050_gyro[GYRO_X_AXIS],
                                               mpu6050_gyro_offset[GYRO_X_AXIS]) * 
                                               NO_DECIMAL_SCALAR);
@@ -219,8 +227,7 @@ void mpu6050_test_app()
     uart_send_spaces(USART2, UART2_2_SPACES);
 
     // Y-axis 
-    mpu6050_gyro[GYRO_Y_AXIS] = (int16_t)(mpu6050_gyro_y_calc(
-                                              MPU6050_1_ADDRESS, 
+    mpu6050_gyro[GYRO_Y_AXIS] = (int16_t)(mpu6050_get_gyro_y(
                                               mpu6050_gyro[GYRO_Y_AXIS],
                                               mpu6050_gyro_offset[GYRO_Y_AXIS]) * 
                                               NO_DECIMAL_SCALAR);
@@ -230,8 +237,7 @@ void mpu6050_test_app()
     uart_send_spaces(USART2, UART2_2_SPACES);
 
     // Z-axis 
-    mpu6050_gyro[GYRO_Z_AXIS] = (int16_t)(mpu6050_gyro_z_calc(
-                                              MPU6050_1_ADDRESS, 
+    mpu6050_gyro[GYRO_Z_AXIS] = (int16_t)(mpu6050_get_gyro_z(
                                               mpu6050_gyro[GYRO_Z_AXIS],
                                               mpu6050_gyro_offset[GYRO_Z_AXIS]) * 
                                               NO_DECIMAL_SCALAR);
@@ -242,11 +248,12 @@ void mpu6050_test_app()
 
     //==============================================================
 
-    // Go to a new line in the serial terminal 
-    uart_send_new_line(USART2);
-
     // Delay 
     tim_delay_ms(TIM9, LOOP_DELAY);
+
+    // Go to a new line in the serial terminal 
+    // uart_send_new_line(USART2);
+    uart_sendstring(USART2, "\r"); 
 
 #endif   // MPU6050_CONTROLLER_TEST 
 }
