@@ -82,25 +82,8 @@ void mpu6050_test_init()
                                        FS_SEL_500);
 
     // Return the status of the accelerometer WHO_AM_I register 
-    switch(mpu6050_init_status)
-    {
-        case TRUE:
-            uart_sendstring(USART2, "Device seen\r\n");
-            break;
-        
-        case FALSE:
-            uart_sendstring(USART2, "Device not seen\r\n");
-            break;
-
-        default:
-            break;
-    }
-
-    // MPU6050 self-test 
-    mpu_self_test_result = mpu6050_self_test();
-    uart_sendstring(USART2, "MPU6050 Self-Test Result = ");
-    uart_send_integer(USART2, (int16_t)(mpu_self_test_result));
-    uart_send_new_line(USART2);
+    if (mpu6050_init_status) uart_sendstring(USART2, "Device seen\r\n");
+    else uart_sendstring(USART2, "Device not seen\r\n");
 
     //===================================================
 
@@ -110,6 +93,15 @@ void mpu6050_test_init()
 #if MPU6050_CONTROLLER_TEST 
 
 #else   // MPU6050_CONTROLLER_TEST 
+
+    // MPU6050 self-test 
+    mpu_self_test_result = mpu6050_self_test();
+    uart_sendstring(USART2, "MPU6050 Self-Test Result = ");
+    uart_send_integer(USART2, (int16_t)(mpu_self_test_result));
+    uart_send_new_line(USART2); 
+
+    // Calibrate the device 
+    mpu6050_calibrate();
 
 #endif   // MPU6050_CONTROLLER_TEST 
 
@@ -137,111 +129,54 @@ void mpu6050_test_app()
     // Local variables 
     static int16_t mpu6050_temp_sensor;
     static int16_t mpu6050_accel[MPU6050_NUM_ACCEL_AXIS];
-    static int16_t mpu6050_accel_offset[MPU6050_NUM_ACCEL_AXIS];
     static int16_t mpu6050_gyro[MPU6050_NUM_GYRO_AXIS];
-    static int16_t mpu6050_gyro_offset[MPU6050_NUM_GYRO_AXIS];
-    static uint8_t one_time = 0;
-
-    // Run once 
-    if (one_time == 0)
-    {
-        mpu6050_calibrate(
-            mpu6050_accel_offset,
-            mpu6050_gyro_offset);
-        
-        one_time++;
-    }
-
-    //==================================================
-    // Read data 
-    //==================================================
-
-    //==================================================
-    // Get data 
-    //==================================================
-
-    //==================================================
-    // Display data 
-    //==================================================
 
     //==============================================================
-    // Temperature 
+    // Device data 
 
-    // mpu6050_temp_sensor = mpu6050_temp_read();
+    // Update the accelerometer and gyroscope readings 
     mpu6050_temp_read();
-    mpu6050_temp_sensor = (int16_t)(mpu6050_get_temp(mpu6050_temp_sensor) * 
-                                    NO_DECIMAL_SCALAR);
+    mpu6050_accel_read(); 
+    mpu6050_gyro_read(); 
+
+    // Get the accelerometer and gyroscope data 
+    mpu6050_temp_sensor = (int16_t)(mpu6050_get_temp() * NO_DECIMAL_SCALAR);
+    mpu6050_accel[ACCEL_X_AXIS] = (int16_t)(mpu6050_get_accel_x() * NO_DECIMAL_SCALAR);
+    mpu6050_accel[ACCEL_Y_AXIS] = (int16_t)(mpu6050_get_accel_y() * NO_DECIMAL_SCALAR);
+    mpu6050_accel[ACCEL_Z_AXIS] = (int16_t)(mpu6050_get_accel_z() * NO_DECIMAL_SCALAR);
+    mpu6050_gyro[GYRO_X_AXIS]  = (int16_t)(mpu6050_get_gyro_x() * NO_DECIMAL_SCALAR);
+    mpu6050_gyro[GYRO_Y_AXIS]  = (int16_t)(mpu6050_get_gyro_y() * NO_DECIMAL_SCALAR);
+    mpu6050_gyro[GYRO_Z_AXIS]  = (int16_t)(mpu6050_get_gyro_z() * NO_DECIMAL_SCALAR); 
+
+    //==============================================================
     
+    //==============================================================
+    // Display the results 
+
     uart_sendstring(USART2, "temp = ");
     uart_send_integer(USART2, mpu6050_temp_sensor);
     uart_send_spaces(USART2, UART2_2_SPACES);
 
-    //==============================================================
-
-
-    //==============================================================
-    // Accelerometer 
-
-    mpu6050_accel_read(mpu6050_accel);
-
-    // X-axis
-    mpu6050_accel[ACCEL_X_AXIS] = (int16_t)(
-            mpu6050_get_accel_x(mpu6050_accel[ACCEL_X_AXIS]) * NO_DECIMAL_SCALAR);
-    
     uart_sendstring(USART2, "ax = ");
     uart_send_integer(USART2, mpu6050_accel[ACCEL_X_AXIS]); 
     uart_send_spaces(USART2, UART2_2_SPACES);
 
-    // Y-axis 
-    mpu6050_accel[ACCEL_Y_AXIS] = (int16_t)(
-            mpu6050_get_accel_y(mpu6050_accel[ACCEL_Y_AXIS]) * NO_DECIMAL_SCALAR);
-    
     uart_sendstring(USART2, "ay = ");
     uart_send_integer(USART2, mpu6050_accel[ACCEL_Y_AXIS]);
     uart_send_spaces(USART2, UART2_2_SPACES);
 
-    // Z-axis 
-    mpu6050_accel[ACCEL_Z_AXIS] = (int16_t)(
-            mpu6050_get_accel_z(mpu6050_accel[ACCEL_Z_AXIS]) * NO_DECIMAL_SCALAR);
-    
     uart_sendstring(USART2, "az = ");
     uart_send_integer(USART2, mpu6050_accel[ACCEL_Z_AXIS]);
     uart_send_spaces(USART2, UART2_2_SPACES);
 
-    //==============================================================
-
-
-    //==============================================================
-    // Gyroscope 
-
-    mpu6050_gyro_read(mpu6050_gyro);
-
-    // X-axis
-    mpu6050_gyro[GYRO_X_AXIS] = (int16_t)(mpu6050_get_gyro_x(
-                                              mpu6050_gyro[GYRO_X_AXIS],
-                                              mpu6050_gyro_offset[GYRO_X_AXIS]) * 
-                                              NO_DECIMAL_SCALAR);
-    
     uart_sendstring(USART2, "gx = ");
     uart_send_integer(USART2, mpu6050_gyro[GYRO_X_AXIS]); 
     uart_send_spaces(USART2, UART2_2_SPACES);
 
-    // Y-axis 
-    mpu6050_gyro[GYRO_Y_AXIS] = (int16_t)(mpu6050_get_gyro_y(
-                                              mpu6050_gyro[GYRO_Y_AXIS],
-                                              mpu6050_gyro_offset[GYRO_Y_AXIS]) * 
-                                              NO_DECIMAL_SCALAR);
-    
     uart_sendstring(USART2, "gy = ");
     uart_send_integer(USART2, mpu6050_gyro[GYRO_Y_AXIS]);
     uart_send_spaces(USART2, UART2_2_SPACES);
 
-    // Z-axis 
-    mpu6050_gyro[GYRO_Z_AXIS] = (int16_t)(mpu6050_get_gyro_z(
-                                              mpu6050_gyro[GYRO_Z_AXIS],
-                                              mpu6050_gyro_offset[GYRO_Z_AXIS]) * 
-                                              NO_DECIMAL_SCALAR);
-    
     uart_sendstring(USART2, "gz = ");
     uart_send_integer(USART2, mpu6050_gyro[GYRO_Z_AXIS]);
     uart_send_spaces(USART2, UART2_2_SPACES);
