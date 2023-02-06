@@ -83,7 +83,7 @@ void mpu6050_test_init()
                                        FS_SEL_500);
 
     // Return the status of the accelerometer WHO_AM_I register 
-    if (mpu6050_init_status) uart_sendstring(USART2, "Device seen\r\n");
+    if (!mpu6050_init_status) uart_sendstring(USART2, "Device seen\r\n");
     else uart_sendstring(USART2, "Device not seen\r\n");
 
     //===================================================
@@ -92,6 +92,9 @@ void mpu6050_test_init()
     // Setup 
 
 #if MPU6050_CONTROLLER_TEST 
+
+    // Controller init 
+    mpu6050_controller_init(); 
 
 #else   // MPU6050_CONTROLLER_TEST 
 
