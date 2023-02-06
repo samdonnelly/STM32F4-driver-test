@@ -75,7 +75,8 @@ void mpu6050_test_init()
     // Initialize the accelerometer 
     // The return value can be used to enter an error state
     mpu6050_init_status = mpu6050_init(I2C1, 
-                                       MPU6050_1_ADDRESS,
+                                       MPU6050_ADDR_1,
+                                       0x00, 
                                        DLPF_CFG_1,
                                        SMPLRT_DIV_0,
                                        AFS_SEL_4,
@@ -127,9 +128,9 @@ void mpu6050_test_app()
     //==============================================================
 
     // Local variables 
-    static int16_t mpu6050_temp_sensor;
-    static int16_t mpu6050_accel[MPU6050_NUM_ACCEL_AXIS];
-    static int16_t mpu6050_gyro[MPU6050_NUM_GYRO_AXIS];
+    static int16_t mpu6050_temp_sensor; 
+    static int16_t mpu6050_accel[MPU6050_NUM_AXIS]; 
+    static int16_t mpu6050_gyro[MPU6050_NUM_AXIS]; 
 
     //==============================================================
     // Device data 
