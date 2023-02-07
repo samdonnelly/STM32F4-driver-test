@@ -93,6 +93,9 @@ void mpu6050_test_init()
 
 #if MPU6050_CONTROLLER_TEST 
 
+    // Set up the INT pin 
+    mpu6050_int_pin_init(GPIOC, PIN_11); 
+
     // Controller init 
     mpu6050_controller_init(); 
 
