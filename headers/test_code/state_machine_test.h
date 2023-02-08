@@ -197,7 +197,7 @@ void state_machine_test(
     char *user_args, 
     uint8_t *cmd_index, 
     uint8_t *arg_convert, 
-    uint16_t *set_get_status); 
+    uint32_t *set_get_status); 
 
 //================================================================================
 

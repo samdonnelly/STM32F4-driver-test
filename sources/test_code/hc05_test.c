@@ -190,7 +190,7 @@ void hc05_test_app()
 
     // Control flags 
     uint8_t arg_convert = 0; 
-    uint16_t set_get_status = 0; 
+    uint32_t set_get_status = 0; 
     uint8_t cmd_index = 0; 
     uint8_t return_val = 0; 
 

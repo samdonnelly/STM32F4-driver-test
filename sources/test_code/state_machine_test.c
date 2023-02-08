@@ -56,7 +56,7 @@ typedef struct state_test_params_s
     uint8_t num_args;                          // Number of arguments needed for a command 
     uint8_t arg_index;                         // Keeps track of arguments input by user 
     uint8_t cmd_index;                         // Indicates which command was invoked by the user 
-    uint16_t set_get_status;                   // Keeps track of all requested user commands 
+    uint32_t set_get_status;                   // Keeps track of all requested user commands 
     char user_input[STATE_USER_TEST_INPUT];    // Buffer to store user input at terminal 
 }
 state_test_params_t; 
@@ -86,6 +86,8 @@ void state_machine_init(
     test_params.cmd_index = CLEAR; 
     test_params.set_get_status = CLEAR; 
 
+    memset((void *)test_params.user_input, CLEAR, STATE_USER_TEST_INPUT); 
+
     // Display the first user input prompt 
     hd44780u_cmd_prompt(); 
 }
@@ -97,7 +99,7 @@ void state_machine_test(
     char *user_args, 
     uint8_t *cmd_index, 
     uint8_t *arg_convert, 
-    uint16_t *set_get_status)
+    uint32_t *set_get_status)
 {
     // TODO Check that pointers are valid 
 
@@ -170,6 +172,8 @@ void state_machine_test(
             else 
                 test_params.display_flag = SET_BIT; 
         }
+
+        memset((void *)test_params.user_input, CLEAR, STATE_USER_TEST_INPUT); 
     }
 
     // Record the user command index 
