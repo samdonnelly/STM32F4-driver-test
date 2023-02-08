@@ -299,14 +299,10 @@ void hw125_test_init()
 // Test code 
 void hw125_test_app()
 {
-    //==================================================
-    // Get user command 
-
+    // Local variables 
     hw125_test_record.cmd_index = 0xFF; 
 
 #if HW125_CONTROLLER_TEST 
-
-    // static uint8_t action = SET; 
 
     if (action)
     {
@@ -349,8 +345,10 @@ void hw125_test_app()
         }
     }
 
-#else   // HW125_CONTROLLER_TEST
+    // HW125 controller 
+    hw125_controller(); 
 
+#else   // HW125_CONTROLLER_TEST
 
     // Look for a user command 
     get_input(
@@ -372,17 +370,6 @@ void hw125_test_app()
     {
         (cmd_table[hw125_test_record.cmd_index].fatfs_func_ptrs_t)(); 
     } 
-
-#endif   // HW125_CONTROLLER_TEST
-
-    //==================================================
-
-#if HW125_CONTROLLER_TEST 
-
-    // HW125 controller 
-    hw125_controller(); 
-
-#else   // HW125_CONTROLLER_TEST 
 
     // Delay 
     tim_delay_ms(TIM9, 1);

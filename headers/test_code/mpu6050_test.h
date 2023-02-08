@@ -26,12 +26,16 @@
 //=======================================================================================
 // Macros 
 
-#define MPU6050_CONTROLLER_TEST 0   // Switch between driver and controller testing 
+#define MPU6050_CONTROLLER_TEST 1   // Switch between driver and controller testing 
 
 #define LOOP_DELAY 1000
 
 #define UINT16_DEC_DIGITS 6
 #define NO_DECIMAL_SCALAR 100
+
+// User interface 
+#define MPU6050_NUM_TEST_CMDS 19      // Number of controller test commands for the user 
+#define MPU6050_CMD_SIZE 20           // Max user command string length 
 
 //=======================================================================================
 
