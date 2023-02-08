@@ -21,6 +21,39 @@
 
 
 //=======================================================================================
+// TODO 
+// - Troubleshooting lack of UART data received from PuTTy 
+//   - Try removing the INT pin read from the controller and have the data read at an 
+//     interval (start at a slow rate to see if it fixes anything). If this works then 
+//     maybe have the controller init take a parameter that specified the time between 
+//     reads and use a non-blocking timer like the M8Q controller. 
+//   - Check the UART ORE bit to see if an overrun error is occuring. 
+//   - Try changing the UART baud rate to see if it helps. 
+//   - Set UART receive up with DMA so data gets receieved and stored in the background 
+//     without needing to wait for the code to loop back and read it. 
+// 
+// - Add the ability to specify the data read rate in a device controller. For example 
+//   at a certain time interval or every 3rd read attempt etc. 
+//=======================================================================================
+
+
+//=======================================================================================
+// Notes 
+// - UART data received from PuTTy is often being lost during controller testing. This has 
+//   happened with the two most recent controller tests (MPU6050 and HW125) and it is 
+//   suspected to be due to too much communication happening in the drivers. This 
+//   communication is suspected to be taking too much time so data being sent from 
+//   PuTTy is being overwritten in the shift register before it can be read from the data 
+//   register. 
+//   - Changing the MPU6050 "run" state to read all data at once as opposed to reading 
+//     temp, accel and gyro sequentially but in separate read operations helped in having 
+//     the PuTTy input captured more often but it was still losing data. 
+//   - Removing reads entirely from the "run" state make the UART interface work without 
+//     an data loss. 
+//=======================================================================================
+
+
+//=======================================================================================
 // Function prototypes 
 
 #if MPU6050_CONTROLLER_TEST 
@@ -221,7 +254,8 @@ void mpu6050_test_init()
     // Accelerometer initialization 
     
     // Initialize the accelerometer 
-    uint8_t mpu6050_init_status = mpu6050_init(I2C1, 
+    uint8_t mpu6050_init_status = mpu6050_init(DEVICE_ONE, 
+                                               I2C1, 
                                                MPU6050_ADDR_1,
                                                0x00, 
                                                DLPF_CFG_1,
@@ -319,8 +353,6 @@ void mpu6050_test_app()
 
     //==================================================
     // Controller test code 
-
-    // Local variables 
 
     // General purpose arguments array 
     static char user_args[1][1]; 

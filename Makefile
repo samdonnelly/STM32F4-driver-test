@@ -70,6 +70,7 @@ sources/config_files/m8q_config.c \
 ../STM32F4-driver-library/sources/hw125_controller.c \
 ../STM32F4-driver-library/sources/i2c_comm.c \
 ../STM32F4-driver-library/sources/interrupt_driver.c \
+../STM32F4-driver-library/sources/linked_list_driver.c \
 ../STM32F4-driver-library/sources/m8q_driver.c \
 ../STM32F4-driver-library/sources/m8q_controller.c \
 ../STM32F4-driver-library/sources/mpu6050_driver.c \
