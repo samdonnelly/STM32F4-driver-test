@@ -50,6 +50,8 @@
 //     the PuTTy input captured more often but it was still losing data. 
 //   - Removing reads entirely from the "run" state make the UART interface work without 
 //     an data loss. 
+//   - UPDATE: sampling the data every 0.25s made the UART UI function normally. Different 
+//             sampling periods have not been tested yet. 
 //=======================================================================================
 
 
@@ -274,11 +276,13 @@ void mpu6050_test_init()
 
 #if MPU6050_CONTROLLER_TEST 
 
-    // Set up the INT pin 
-    mpu6050_int_pin_init(GPIOC, PIN_11); 
+    // // Set up the INT pin 
+    // mpu6050_int_pin_init(GPIOC, PIN_11); 
 
     // Controller init 
-    mpu6050_controller_init(); 
+    mpu6050_controller_init(
+        TIM9, 
+        250000); // 0.25s 
 
     // Initialize the state machine test code 
     state_machine_init(MPU6050_NUM_TEST_CMDS); 
