@@ -295,6 +295,9 @@ void mpu6050_test_init()
     uart_send_integer(USART2, (int16_t)(mpu_self_test_result));
     uart_send_new_line(USART2); 
 
+    // Provide time for the device to update data so self-test data is not used elsewhere 
+    tim_delay_ms(TIM9, 1); 
+
     // Calibrate the device 
     mpu6050_calibrate();
 
