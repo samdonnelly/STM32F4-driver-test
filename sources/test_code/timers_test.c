@@ -26,6 +26,7 @@
 static uint32_t no_block_delay_count_total = CLEAR; 
 static uint32_t no_block_delay_count_compare = CLEAR; 
 static uint8_t  no_block_delay_start_flag = SET_BIT; 
+static uint32_t no_block_delay_clk_freq; 
 
 //=======================================================================================
 
@@ -93,6 +94,8 @@ void timers_test_init()
     uart_send_integer(USART2, (int16_t)hclk_frq); 
     uart_send_new_line(USART2); 
 
+    no_block_delay_clk_freq = tim_get_pclk_freq(TIM9); 
+
     //==================================================
 } 
 
@@ -156,11 +159,12 @@ void timers_test_app()
     //==================================================
     // Non-blocking delay test 
 
-    if (tim_time_compare(TIM9, 
-                         TIM_NO_BLOCK_DELAY, 
-                         &no_block_delay_count_total, 
-                         &no_block_delay_count_compare, 
-                         &no_block_delay_start_flag))
+    if (tim_compare(TIM9, 
+                    no_block_delay_clk_freq, 
+                    TIM_NO_BLOCK_DELAY, 
+                    &no_block_delay_count_total, 
+                    &no_block_delay_count_compare, 
+                    &no_block_delay_start_flag))
     {
         // Print to the terminal to verify that the delay works 
         uart_sendstring(USART2, "Delay!"); 
