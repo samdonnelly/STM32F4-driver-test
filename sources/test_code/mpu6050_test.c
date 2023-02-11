@@ -281,6 +281,7 @@ void mpu6050_test_init()
 
     // Controller init 
     mpu6050_controller_init(
+        DEVICE_ONE, 
         TIM9, 
         250000); // 0.25s 
 
@@ -290,16 +291,16 @@ void mpu6050_test_init()
 #else   // MPU6050_CONTROLLER_TEST 
 
     // MPU6050 self-test 
-    uint8_t mpu_self_test_result = mpu6050_self_test();
+    uint8_t mpu_self_test_result = mpu6050_self_test(DEVICE_ONE);
     uart_sendstring(USART2, "MPU6050 Self-Test Result = ");
     uart_send_integer(USART2, (int16_t)(mpu_self_test_result));
     uart_send_new_line(USART2); 
 
     // Provide time for the device to update data so self-test data is not used elsewhere 
-    tim_delay_ms(TIM9, 1); 
+    tim_delay_ms(TIM9, 10); 
 
     // Calibrate the device 
-    mpu6050_calibrate();
+    mpu6050_calibrate(DEVICE_ONE);
 
 #endif   // MPU6050_CONTROLLER_TEST 
 
@@ -410,7 +411,7 @@ void mpu6050_test_app()
                         uart_send_new_line(USART2); 
                         uart_send_integer(
                             USART2, 
-                            (m8q_state_func[i].getter_3)()); 
+                            (m8q_state_func[i].getter_3)(DEVICE_ONE)); 
                         uart_send_new_line(USART2); 
                         break; 
 
@@ -418,7 +419,7 @@ void mpu6050_test_app()
                         uart_send_new_line(USART2); 
                         uart_send_integer(
                             USART2, 
-                            (int16_t)((m8q_state_func[i].getter_4)() * NO_DECIMAL_SCALAR)); 
+                            (int16_t)((m8q_state_func[i].getter_4)(DEVICE_ONE) * NO_DECIMAL_SCALAR)); 
                         uart_send_new_line(USART2); 
                         break; 
 
@@ -430,7 +431,7 @@ void mpu6050_test_app()
     }
 
     // Call the device controller 
-    mpu6050_controller(); 
+    mpu6050_controller(DEVICE_ONE); 
 
     //==================================================
 
@@ -455,18 +456,18 @@ void mpu6050_test_app()
     // Device data 
 
     // Update the accelerometer and gyroscope readings 
-    mpu6050_temp_read();
-    mpu6050_accel_read(); 
-    mpu6050_gyro_read(); 
+    mpu6050_temp_read(DEVICE_ONE);
+    mpu6050_accel_read(DEVICE_ONE); 
+    mpu6050_gyro_read(DEVICE_ONE); 
 
     // Get the accelerometer and gyroscope data 
-    mpu6050_temp_sensor = (int16_t)(mpu6050_get_temp() * NO_DECIMAL_SCALAR);
-    mpu6050_accel[ACCEL_X_AXIS] = (int16_t)(mpu6050_get_accel_x() * NO_DECIMAL_SCALAR);
-    mpu6050_accel[ACCEL_Y_AXIS] = (int16_t)(mpu6050_get_accel_y() * NO_DECIMAL_SCALAR);
-    mpu6050_accel[ACCEL_Z_AXIS] = (int16_t)(mpu6050_get_accel_z() * NO_DECIMAL_SCALAR);
-    mpu6050_gyro[GYRO_X_AXIS]  = (int16_t)(mpu6050_get_gyro_x() * NO_DECIMAL_SCALAR);
-    mpu6050_gyro[GYRO_Y_AXIS]  = (int16_t)(mpu6050_get_gyro_y() * NO_DECIMAL_SCALAR);
-    mpu6050_gyro[GYRO_Z_AXIS]  = (int16_t)(mpu6050_get_gyro_z() * NO_DECIMAL_SCALAR); 
+    mpu6050_temp_sensor = (int16_t)(mpu6050_get_temp(DEVICE_ONE) * NO_DECIMAL_SCALAR);
+    mpu6050_accel[ACCEL_X_AXIS] = (int16_t)(mpu6050_get_accel_x(DEVICE_ONE) * NO_DECIMAL_SCALAR);
+    mpu6050_accel[ACCEL_Y_AXIS] = (int16_t)(mpu6050_get_accel_y(DEVICE_ONE) * NO_DECIMAL_SCALAR);
+    mpu6050_accel[ACCEL_Z_AXIS] = (int16_t)(mpu6050_get_accel_z(DEVICE_ONE) * NO_DECIMAL_SCALAR);
+    mpu6050_gyro[GYRO_X_AXIS]  = (int16_t)(mpu6050_get_gyro_x(DEVICE_ONE) * NO_DECIMAL_SCALAR);
+    mpu6050_gyro[GYRO_Y_AXIS]  = (int16_t)(mpu6050_get_gyro_y(DEVICE_ONE) * NO_DECIMAL_SCALAR);
+    mpu6050_gyro[GYRO_Z_AXIS]  = (int16_t)(mpu6050_get_gyro_z(DEVICE_ONE) * NO_DECIMAL_SCALAR); 
 
     //==============================================================
     

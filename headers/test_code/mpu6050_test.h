@@ -28,7 +28,7 @@
 //=======================================================================================
 // Macros 
 
-#define MPU6050_CONTROLLER_TEST 1   // Switch between driver and controller testing 
+#define MPU6050_CONTROLLER_TEST 0   // Switch between driver and controller testing 
 
 #define LOOP_DELAY 1000
 
@@ -131,7 +131,8 @@ typedef MPU6050_FAULT_CODE (*mpu6050_getter_ptr_2)(void);
  *           - mpu6050_get_gyro_z_raw 
  *           - mpu6050_get_temp_raw 
  */
-typedef int16_t (*mpu6050_getter_ptr_3)(void); 
+typedef int16_t (*mpu6050_getter_ptr_3)(
+    device_number_t device_num); 
 
 
 /**
@@ -146,7 +147,8 @@ typedef int16_t (*mpu6050_getter_ptr_3)(void);
  *           - mpu6050_get_gyro_z 
  *           - mpu6050_get_temp 
  */
-typedef float (*mpu6050_getter_ptr_4)(void); 
+typedef float (*mpu6050_getter_ptr_4)(
+    device_number_t device_num); 
 
 //=======================================================================================
 
