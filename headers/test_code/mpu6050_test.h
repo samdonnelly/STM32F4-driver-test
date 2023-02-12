@@ -28,7 +28,8 @@
 //=======================================================================================
 // Macros 
 
-#define MPU6050_CONTROLLER_TEST 0   // Switch between driver and controller testing 
+#define MPU6050_CONTROLLER_TEST 1   // Switch between driver and controller testing 
+#define MPU6050_SECOND_DEVICE 1     // Include the test code for a second device 
 
 #define LOOP_DELAY 1000
 
@@ -98,7 +99,8 @@ typedef enum {
  *           - mpu6050_set_low_power 
  *           - mpu6050_clear_low_power 
  */
-typedef void (*mpu6050_setter_ptr_1)(void); 
+typedef void (*mpu6050_setter_ptr_1)(
+    device_number_t device_num); 
 
 
 /**
@@ -107,7 +109,8 @@ typedef void (*mpu6050_setter_ptr_1)(void);
  * @details The following getters are called with this function pointer: 
  *           - mpu6050_get_state 
  */
-typedef MPU6050_STATE (*mpu6050_getter_ptr_1)(void); 
+typedef MPU6050_STATE (*mpu6050_getter_ptr_1)(
+    device_number_t device_num); 
 
 
 /**
@@ -116,7 +119,8 @@ typedef MPU6050_STATE (*mpu6050_getter_ptr_1)(void);
  * @details The following getters are called with this function pointer: 
  *           - mpu6050_get_fault_code 
  */
-typedef MPU6050_FAULT_CODE (*mpu6050_getter_ptr_2)(void); 
+typedef MPU6050_FAULT_CODE (*mpu6050_getter_ptr_2)(
+    device_number_t device_num); 
 
 
 /**
