@@ -28,8 +28,8 @@
 //=======================================================================================
 // Macros 
 
-#define MPU6050_CONTROLLER_TEST 1   // Switch between driver and controller testing 
-#define MPU6050_SECOND_DEVICE 1     // Include the test code for a second device 
+#define MPU6050_CONTROLLER_TEST 0   // Switch between driver and controller testing 
+#define MPU6050_SECOND_DEVICE 0     // Include the test code for a second device 
 
 #define LOOP_DELAY 1000
 
@@ -37,8 +37,7 @@
 #define NO_DECIMAL_SCALAR 100
 
 // User interface 
-#define MPU6050_NUM_TEST_CMDS 20      // Number of controller test commands for the user 
-// #define MPU6050_CMD_SIZE 20           // Max user command string length 
+#define MPU6050_NUM_TEST_CMDS 22      // Number of controller test commands for the user 
 
 //=======================================================================================
 
@@ -57,6 +56,7 @@
  */
 typedef enum {
     MPU6050_SETTER_PTR_1, 
+    MPU6050_SETTER_PTR_2, 
     MPU6050_GETTER_PTR_1, 
     MPU6050_GETTER_PTR_2, 
     MPU6050_GETTER_PTR_3, 
@@ -101,6 +101,17 @@ typedef enum {
  */
 typedef void (*mpu6050_setter_ptr_1)(
     device_number_t device_num); 
+
+
+/**
+ * @brief 
+ * 
+ * @details This function pointer is used for calling the following setters from the device 
+ *          controller: 
+ *           - mpu6050_cntrl_test_device_one 
+ *           - mpu6050_cntrl_test_device_two 
+ */
+typedef void (*mpu6050_setter_ptr_2)(void); 
 
 
 /**
@@ -166,6 +177,7 @@ typedef float (*mpu6050_getter_ptr_4)(
 typedef struct mpu6050_func_ptrs_s 
 {
     mpu6050_setter_ptr_1 setter_1; 
+    mpu6050_setter_ptr_2 setter_2; 
     mpu6050_getter_ptr_1 getter_1; 
     mpu6050_getter_ptr_2 getter_2; 
     mpu6050_getter_ptr_3 getter_3; 

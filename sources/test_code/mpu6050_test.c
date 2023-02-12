@@ -21,44 +21,12 @@
 
 
 //=======================================================================================
-// TODO 
-// - Troubleshooting lack of UART data received from PuTTy 
-//   - Try removing the INT pin read from the controller and have the data read at an 
-//     interval (start at a slow rate to see if it fixes anything). If this works then 
-//     maybe have the controller init take a parameter that specified the time between 
-//     reads and use a non-blocking timer like the M8Q controller. 
-//   - Check the UART ORE bit to see if an overrun error is occuring. 
-//   - Try changing the UART baud rate to see if it helps. 
-//   - Set UART receive up with DMA so data gets receieved and stored in the background 
-//     without needing to wait for the code to loop back and read it. 
-// 
-// - Add the ability to specify the data read rate in a device controller. For example 
-//   at a certain time interval or every 3rd read attempt etc. 
-//=======================================================================================
-
-
-//=======================================================================================
-// Notes 
-// - UART data received from PuTTy is often being lost during controller testing. This has 
-//   happened with the two most recent controller tests (MPU6050 and HW125) and it is 
-//   suspected to be due to too much communication happening in the drivers. This 
-//   communication is suspected to be taking too much time so data being sent from 
-//   PuTTy is being overwritten in the shift register before it can be read from the data 
-//   register. 
-//   - Changing the MPU6050 "run" state to read all data at once as opposed to reading 
-//     temp, accel and gyro sequentially but in separate read operations helped in having 
-//     the PuTTy input captured more often but it was still losing data. 
-//   - Removing reads entirely from the "run" state make the UART interface work without 
-//     an data loss. 
-//   - UPDATE: sampling the data every 0.25s made the UART UI function normally. Different 
-//             sampling periods have not been tested yet. 
-//=======================================================================================
-
-
-//=======================================================================================
 // Function prototypes 
 
 #if MPU6050_CONTROLLER_TEST 
+
+void mpu6050_cntrl_test_device_one(void);   // Choose device one 
+void mpu6050_cntrl_test_device_two(void);   // Choose device two 
 
 #endif   // MPU6050_CONTROLLER_TEST
 
@@ -73,53 +41,61 @@
 // User command table 
 static state_request_t mpu6050_state_cmds[MPU6050_NUM_TEST_CMDS] = 
 {
-    {"reset",       0, MPU6050_SETTER_PTR_1, 0}, 
-    {"lp_set",      0, MPU6050_SETTER_PTR_1, 0}, 
-    {"lp_clear",    0, MPU6050_SETTER_PTR_1, 0}, 
-    {"state",       0, MPU6050_GETTER_PTR_1, 0}, 
-    {"fault",       0, MPU6050_GETTER_PTR_2, 0}, 
-    {"raw_accel_x", 0, MPU6050_GETTER_PTR_3, 0}, 
-    {"raw_accel_y", 0, MPU6050_GETTER_PTR_3, 0}, 
-    {"raw_accel_z", 0, MPU6050_GETTER_PTR_3, 0}, 
-    {"raw_gyro_x",  0, MPU6050_GETTER_PTR_3, 0}, 
-    {"raw_gyro_y",  0, MPU6050_GETTER_PTR_3, 0}, 
-    {"raw_gyro_z",  0, MPU6050_GETTER_PTR_3, 0}, 
-    {"raw_temp",    0, MPU6050_GETTER_PTR_3, 0}, 
-    {"accel_x",     0, MPU6050_GETTER_PTR_4, 0}, 
-    {"accel_y",     0, MPU6050_GETTER_PTR_4, 0}, 
-    {"accel_z",     0, MPU6050_GETTER_PTR_4, 0}, 
-    {"gyro_x",      0, MPU6050_GETTER_PTR_4, 0}, 
-    {"gyro_y",      0, MPU6050_GETTER_PTR_4, 0}, 
-    {"gyro_z",      0, MPU6050_GETTER_PTR_4, 0}, 
-    {"temp",        0, MPU6050_GETTER_PTR_4, 0}, 
-    {"execute", 0, 0, 0} 
+    {"dev_one",     0, MPU6050_SETTER_PTR_2, 0},   // 0
+    {"dev_two",     0, MPU6050_SETTER_PTR_2, 0},   // 1
+    {"reset",       0, MPU6050_SETTER_PTR_1, 0},   // 2
+    {"lp_set",      0, MPU6050_SETTER_PTR_1, 0},   // 3
+    {"lp_clear",    0, MPU6050_SETTER_PTR_1, 0},   // 4
+    {"state",       0, MPU6050_GETTER_PTR_1, 0},   // 5
+    {"fault",       0, MPU6050_GETTER_PTR_2, 0},   // 6
+    {"raw_accel_x", 0, MPU6050_GETTER_PTR_3, 0},   // 7
+    {"raw_accel_y", 0, MPU6050_GETTER_PTR_3, 0},   // 8
+    {"raw_accel_z", 0, MPU6050_GETTER_PTR_3, 0},   // 9
+    {"raw_gyro_x",  0, MPU6050_GETTER_PTR_3, 0},   // 10
+    {"raw_gyro_y",  0, MPU6050_GETTER_PTR_3, 0},   // 11
+    {"raw_gyro_z",  0, MPU6050_GETTER_PTR_3, 0},   // 12
+    {"raw_temp",    0, MPU6050_GETTER_PTR_3, 0},   // 13
+    {"accel_x",     0, MPU6050_GETTER_PTR_4, 0},   // 14
+    {"accel_y",     0, MPU6050_GETTER_PTR_4, 0},   // 15
+    {"accel_z",     0, MPU6050_GETTER_PTR_4, 0},   // 16
+    {"gyro_x",      0, MPU6050_GETTER_PTR_4, 0},   // 17
+    {"gyro_y",      0, MPU6050_GETTER_PTR_4, 0},   // 18
+    {"gyro_z",      0, MPU6050_GETTER_PTR_4, 0},   // 19
+    {"temp",        0, MPU6050_GETTER_PTR_4, 0},   // 20
+    {"execute", 0, 0, 0}                           // 21
 }; 
 
 
 // Function pointer table 
 static mpu6050_func_ptrs_t m8q_state_func[MPU6050_NUM_TEST_CMDS] = 
 {
-    {&mpu6050_set_reset_flag, NULL, NULL, NULL, NULL}, 
-    {&mpu6050_set_low_power, NULL, NULL, NULL, NULL}, 
-    {&mpu6050_clear_low_power, NULL, NULL, NULL, NULL}, 
-    {NULL, &mpu6050_get_state, NULL, NULL, NULL}, 
-    {NULL, NULL, &mpu6050_get_fault_code, NULL, NULL}, 
-    {NULL, NULL, NULL, &mpu6050_get_accel_x_raw, NULL}, 
-    {NULL, NULL, NULL, &mpu6050_get_accel_y_raw, NULL}, 
-    {NULL, NULL, NULL, &mpu6050_get_accel_z_raw, NULL}, 
-    {NULL, NULL, NULL, &mpu6050_get_gyro_x_raw, NULL}, 
-    {NULL, NULL, NULL, &mpu6050_get_gyro_y_raw, NULL}, 
-    {NULL, NULL, NULL, &mpu6050_get_gyro_z_raw, NULL}, 
-    {NULL, NULL, NULL, &mpu6050_get_temp_raw, NULL}, 
-    {NULL, NULL, NULL, NULL, &mpu6050_get_accel_x}, 
-    {NULL, NULL, NULL, NULL, &mpu6050_get_accel_y}, 
-    {NULL, NULL, NULL, NULL, &mpu6050_get_accel_z}, 
-    {NULL, NULL, NULL, NULL, &mpu6050_get_gyro_x}, 
-    {NULL, NULL, NULL, NULL, &mpu6050_get_gyro_y}, 
-    {NULL, NULL, NULL, NULL, &mpu6050_get_gyro_z}, 
-    {NULL, NULL, NULL, NULL, &mpu6050_get_temp}, 
-    {NULL, NULL, NULL, NULL, NULL} 
+    {NULL, &mpu6050_cntrl_test_device_one, NULL, NULL, NULL, NULL}, 
+    {NULL, &mpu6050_cntrl_test_device_two, NULL, NULL, NULL, NULL}, 
+    {&mpu6050_set_reset_flag, NULL, NULL, NULL, NULL, NULL}, 
+    {&mpu6050_set_low_power, NULL, NULL, NULL, NULL, NULL}, 
+    {&mpu6050_clear_low_power, NULL, NULL, NULL, NULL, NULL}, 
+    {NULL, NULL, &mpu6050_get_state, NULL, NULL, NULL}, 
+    {NULL, NULL, NULL, &mpu6050_get_fault_code, NULL, NULL}, 
+    {NULL, NULL, NULL, NULL, &mpu6050_get_accel_x_raw, NULL}, 
+    {NULL, NULL, NULL, NULL, &mpu6050_get_accel_y_raw, NULL}, 
+    {NULL, NULL, NULL, NULL, &mpu6050_get_accel_z_raw, NULL}, 
+    {NULL, NULL, NULL, NULL, &mpu6050_get_gyro_x_raw, NULL}, 
+    {NULL, NULL, NULL, NULL, &mpu6050_get_gyro_y_raw, NULL}, 
+    {NULL, NULL, NULL, NULL, &mpu6050_get_gyro_z_raw, NULL}, 
+    {NULL, NULL, NULL, NULL, &mpu6050_get_temp_raw, NULL}, 
+    {NULL, NULL, NULL, NULL, NULL, &mpu6050_get_accel_x}, 
+    {NULL, NULL, NULL, NULL, NULL, &mpu6050_get_accel_y}, 
+    {NULL, NULL, NULL, NULL, NULL, &mpu6050_get_accel_z}, 
+    {NULL, NULL, NULL, NULL, NULL, &mpu6050_get_gyro_x}, 
+    {NULL, NULL, NULL, NULL, NULL, &mpu6050_get_gyro_y}, 
+    {NULL, NULL, NULL, NULL, NULL, &mpu6050_get_gyro_z}, 
+    {NULL, NULL, NULL, NULL, NULL, &mpu6050_get_temp}, 
+    {NULL, NULL, NULL, NULL, NULL, NULL} 
 }; 
+
+
+// Device selector 
+static device_number_t mpu6050_cntrl_test_device; 
 
 #endif   // MPU6050_CONTROLLER_TEST
 
@@ -202,6 +178,9 @@ void mpu6050_test_init()
     // Setup 
 
 #if MPU6050_CONTROLLER_TEST 
+
+    // Set the device number 
+    mpu6050_cntrl_test_device = DEVICE_ONE; 
 
     // // Set up the INT pin 
     // mpu6050_int_pin_init(GPIOC, PIN_11); 
@@ -295,14 +274,18 @@ void mpu6050_test_app()
                 switch (mpu6050_state_cmds[i].func_ptr_index)
                 {
                     case MPU6050_SETTER_PTR_1: 
-                        (m8q_state_func[i].setter_1)(DEVICE_ONE); 
+                        (m8q_state_func[i].setter_1)(mpu6050_cntrl_test_device); 
+                        break; 
+
+                    case MPU6050_SETTER_PTR_2: 
+                        (m8q_state_func[i].setter_2)(); 
                         break; 
 
                     case MPU6050_GETTER_PTR_1: 
                         uart_send_new_line(USART2); 
                         uart_send_integer(
                             USART2, 
-                            (int16_t)(m8q_state_func[i].getter_1)(DEVICE_ONE)); 
+                            (int16_t)(m8q_state_func[i].getter_1)(mpu6050_cntrl_test_device)); 
                         uart_send_new_line(USART2); 
                         break; 
 
@@ -310,7 +293,7 @@ void mpu6050_test_app()
                         uart_send_new_line(USART2); 
                         uart_send_integer(
                             USART2, 
-                            (int16_t)(m8q_state_func[i].getter_2)(DEVICE_ONE)); 
+                            (int16_t)(m8q_state_func[i].getter_2)(mpu6050_cntrl_test_device)); 
                         uart_send_new_line(USART2); 
                         break; 
 
@@ -318,7 +301,7 @@ void mpu6050_test_app()
                         uart_send_new_line(USART2); 
                         uart_send_integer(
                             USART2, 
-                            (m8q_state_func[i].getter_3)(DEVICE_ONE)); 
+                            (m8q_state_func[i].getter_3)(mpu6050_cntrl_test_device)); 
                         uart_send_new_line(USART2); 
                         break; 
 
@@ -326,7 +309,8 @@ void mpu6050_test_app()
                         uart_send_new_line(USART2); 
                         uart_send_integer(
                             USART2, 
-                            (int16_t)((m8q_state_func[i].getter_4)(DEVICE_ONE) * NO_DECIMAL_SCALAR)); 
+                            (int16_t)((m8q_state_func[i].getter_4)(
+                                mpu6050_cntrl_test_device) * NO_DECIMAL_SCALAR)); 
                         uart_send_new_line(USART2); 
                         break; 
 
@@ -338,7 +322,7 @@ void mpu6050_test_app()
     }
 
     // Call the device controller 
-    mpu6050_controller(DEVICE_ONE); 
+    mpu6050_controller(mpu6050_cntrl_test_device); 
 
     //==================================================
 
@@ -481,6 +465,19 @@ void mpu6050_test_app()
 // Test functions 
 
 #if MPU6050_CONTROLLER_TEST 
+
+// Choose device one 
+void mpu6050_cntrl_test_device_one(void)
+{
+    mpu6050_cntrl_test_device = DEVICE_ONE; 
+}
+
+
+// Choose device two 
+void mpu6050_cntrl_test_device_two(void)
+{
+    mpu6050_cntrl_test_device = DEVICE_TWO; 
+}
 
 #endif   // MPU6050_CONTROLLER_TEST
 
