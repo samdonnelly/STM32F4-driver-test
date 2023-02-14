@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief MPU-6050 test code header 
+ * @brief MPU6050 test code header 
  * 
  * @version 0.1
  * @date 2022-08-28
@@ -19,7 +19,6 @@
 // Includes 
 
 #include "includes_drivers.h"
-
 #include "state_machine_test.h"
 
 //=======================================================================================
@@ -28,16 +27,23 @@
 //=======================================================================================
 // Macros 
 
-#define MPU6050_CONTROLLER_TEST 0   // Switch between driver and controller testing 
-#define MPU6050_SECOND_DEVICE 0     // Include the test code for a second device 
+// Test control 
+#define MPU6050_CONTROLLER_TEST 0     // Switch between driver and controller testing 
+#define MPU6050_SECOND_DEVICE 0       // Include the test code for a second device 
+#define MPU6050_INT_PIN 0             // Interrupt pin enable 
 
-#define LOOP_DELAY 1000
+// Data 
+#define NO_DECIMAL_SCALAR 100         // Scales device data to eliminate decimals 
+#define MPU6050_DEV1_STBY_MASK 0x00   // Device 1 axis standby status 
+#define MPU6050_DEV2_STBY_MASK 0x00   // Device 2 axis standby status 
 
-#define UINT16_DEC_DIGITS 6
-#define NO_DECIMAL_SCALAR 100
+// Driver test 
+#define MPU6050_DRIVER_DELAY 1000     // Delay (blocking) between code loops (ms) 
 
-// User interface 
+// Controller test 
 #define MPU6050_NUM_TEST_CMDS 22      // Number of controller test commands for the user 
+#define MPU6050_DEV1_RATE 250000      // Device 1 time between reading new data (us) 
+#define MPU6050_DEV2_RATE 250000      // Device 2 time between reading new data (us) 
 
 //=======================================================================================
 
@@ -65,24 +71,13 @@ typedef enum {
 
 
 /**
- * @brief 
- * 
+ * @brief Accelerometer and gyroscope array index 
  */
 typedef enum {
-    ACCEL_X_AXIS,
-    ACCEL_Y_AXIS,
-    ACCEL_Z_AXIS
-} accelerometer_axis_t;
-
-/**
- * @brief 
- * 
- */
-typedef enum {
-    GYRO_X_AXIS,
-    GYRO_Y_AXIS,
-    GYRO_Z_AXIS
-} gyroscope_axis_t;
+    MPU6050_X_AXIS,
+    MPU6050_Y_AXIS,
+    MPU6050_Z_AXIS
+} mpu6050_axis_t;
 
 //=======================================================================================
 
@@ -93,8 +88,7 @@ typedef enum {
 /**
  * @brief MPU6050 setters function pointer 1 
  * 
- * @details This function pointer is used for calling the following setters from the device 
- *          controller: 
+ * @details The following setters are called with this function pointer: 
  *           - mpu6050_set_reset_flag 
  *           - mpu6050_set_low_power 
  *           - mpu6050_clear_low_power 
@@ -104,10 +98,9 @@ typedef void (*mpu6050_setter_ptr_1)(
 
 
 /**
- * @brief 
+ * @brief MPU6050 setters function pointer 2 
  * 
- * @details This function pointer is used for calling the following setters from the device 
- *          controller: 
+ * @details The following setters are called with this function pointer: 
  *           - mpu6050_cntrl_test_device_one 
  *           - mpu6050_cntrl_test_device_two 
  */
