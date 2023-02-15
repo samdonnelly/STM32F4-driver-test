@@ -28,47 +28,28 @@
 // Macros 
 
 // Test control 
-#define MPU6050_CONTROLLER_TEST 0     // Switch between driver and controller testing 
-#define MPU6050_SECOND_DEVICE 0       // Include the test code for a second device 
-#define MPU6050_INT_PIN 0             // Interrupt pin enable 
+#define MPU6050_CONTROLLER_TEST 0        // Switch between driver and controller testing 
+#define MPU6050_SECOND_DEVICE 0          // Include the test code for a second device 
+#define MPU6050_INT_PIN 0                // Interrupt pin enable 
 
 // Data 
-#define NO_DECIMAL_SCALAR 100         // Scales device data to eliminate decimals 
-#define MPU6050_DEV1_STBY_MASK 0x00   // Device 1 axis standby status 
-#define MPU6050_DEV2_STBY_MASK 0x00   // Device 2 axis standby status 
+#define MPU6050_DEV1_STBY_MASK 0x00      // Device 1 axis standby status mask 
+#define MPU6050_DEV2_STBY_MASK 0x00      // Device 2 axis standby status mask 
 
 // Driver test 
-#define MPU6050_DRIVER_DELAY 1000     // Delay (blocking) between code loops (ms) 
+#define MPU6050_DRIVER_LOOP_DELAY 1000   // Delay (blocking) between code loops (ms) 
+#define MPU6050_DRIVER_ST_DELAY 10       // Delay (blocking) after self test (ms) 
 
 // Controller test 
-#define MPU6050_NUM_TEST_CMDS 22      // Number of controller test commands for the user 
-#define MPU6050_DEV1_RATE 250000      // Device 1 time between reading new data (us) 
-#define MPU6050_DEV2_RATE 250000      // Device 2 time between reading new data (us) 
+#define MPU6050_NUM_TEST_CMDS 22         // Number of controller test commands for the user 
+#define MPU6050_DEV1_RATE 250000         // Device 1 time between reading new data (us) 
+#define MPU6050_DEV2_RATE 250000         // Device 2 time between reading new data (us) 
 
 //=======================================================================================
 
 
 //=======================================================================================
 // Enums 
-
-/**
- * @brief Function pointer index 
- * 
- * @details This is used along with the state machine tester. It is specific to a device 
- *          test so the names change across test files. This enum is used to define the 
- *          function pointer index within state_request_t that corresponds to a user command. 
- *          An array instance of m8q_func_ptrs_t is made in the test code and this 
- *          index has to match the location of the function pointer in the array. 
- */
-typedef enum {
-    MPU6050_SETTER_PTR_1, 
-    MPU6050_SETTER_PTR_2, 
-    MPU6050_GETTER_PTR_1, 
-    MPU6050_GETTER_PTR_2, 
-    MPU6050_GETTER_PTR_3, 
-    MPU6050_GETTER_PTR_4 
-} mpu6050_func_ptr_index_t; 
-
 
 /**
  * @brief Accelerometer and gyroscope array index 
@@ -165,16 +146,16 @@ typedef float (*mpu6050_getter_ptr_4)(
 // Structures 
 
 /**
- * @brief Structure of all M8Q setter and getter function pointers (see above) 
+ * @brief Structure of all MPU6050 setter and getter function pointers (see above) 
  */
 typedef struct mpu6050_func_ptrs_s 
 {
-    mpu6050_setter_ptr_1 setter_1; 
-    mpu6050_setter_ptr_2 setter_2; 
-    mpu6050_getter_ptr_1 getter_1; 
-    mpu6050_getter_ptr_2 getter_2; 
-    mpu6050_getter_ptr_3 getter_3; 
-    mpu6050_getter_ptr_4 getter_4; 
+    mpu6050_setter_ptr_1 setter_1;   // Function pointer 1 
+    mpu6050_setter_ptr_2 setter_2;   // Function pointer 2 
+    mpu6050_getter_ptr_1 getter_1;   // Function pointer 3 
+    mpu6050_getter_ptr_2 getter_2;   // Function pointer 4 
+    mpu6050_getter_ptr_3 getter_3;   // Function pointer 5 
+    mpu6050_getter_ptr_4 getter_4;   // Function pointer 6 
 }
 mpu6050_func_ptrs_t; 
 
@@ -185,15 +166,13 @@ mpu6050_func_ptrs_t;
 // Function prototypes 
 
 /**
- * @brief MPU-6050 setup code 
- * 
+ * @brief MPU6050 test initialization and setup code 
  */
 void mpu6050_test_init(void); 
 
 
 /**
- * @brief MPU-6050 test code 
- * 
+ * @brief MPU6050 test application code 
  */
 void mpu6050_test_app(void); 
 

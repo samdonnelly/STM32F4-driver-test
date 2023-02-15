@@ -100,6 +100,20 @@
 // Enums 
 
 /**
+ * @brief Used to specify the number of function pointer arguments 
+ * 
+ * @see state_request_t 
+ */
+typedef enum {
+    SMT_ARGS_0, 
+    SMT_ARGS_1, 
+    SMT_ARGS_2, 
+    SMT_ARGS_3, 
+    SMT_ARGS_4 
+} smt_arg_num_t; 
+
+
+/**
  * @brief Function pointer index 
  * 
  * @details This enum is used to define func_ptr_index within state_request_t. An array of 
@@ -110,12 +124,26 @@
  * @see state_request_t 
  */
 typedef enum {
-    STATE_FUNC_PTR_1, 
-    STATE_FUNC_PTR_2, 
-    STATE_FUNC_PTR_3, 
-    STATE_FUNC_PTR_4, 
-    STATE_FUNC_PTR_5 
-} state_func_ptr_index_t; 
+    SMT_STATE_FUNC_PTR_1, 
+    SMT_STATE_FUNC_PTR_2, 
+    SMT_STATE_FUNC_PTR_3, 
+    SMT_STATE_FUNC_PTR_4, 
+    SMT_STATE_FUNC_PTR_5, 
+    SMT_STATE_FUNC_PTR_6 
+} smt_state_func_ptr_index_t; 
+
+
+/**
+ * @brief Used to specify the position in the user defined argument buffer 
+ * 
+ * @see state_request_t 
+ */
+typedef enum {
+    SMT_ARG_BUFF_POS_0, 
+    SMT_ARG_BUFF_POS_1, 
+    SMT_ARG_BUFF_POS_2, 
+    SMT_ARG_BUFF_POS_3 
+} smt_arg_index_t; 
 
 //=======================================================================================
 

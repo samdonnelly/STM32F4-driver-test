@@ -65,15 +65,15 @@ static char hc05_wr_buff[2][STATE_USER_TEST_INPUT];
 // User command table 
 static state_request_t state_cmds[HC05_NUM_USER_CMDS] =
 {
-    {"send",        1, STATE_FUNC_PTR_2, 0}, 
-    {"read_set",    0, STATE_FUNC_PTR_1, 0}, 
-    {"read_clear",  0, STATE_FUNC_PTR_1, 0}, 
-    {"lp_set",      0, STATE_FUNC_PTR_1, 0}, 
-    {"lp_clear",    0, STATE_FUNC_PTR_1, 0}, 
-    {"reset",       0, STATE_FUNC_PTR_1, 0}, 
-    {"state",       0, STATE_FUNC_PTR_3, 0}, 
-    {"read_status", 0, STATE_FUNC_PTR_3, 0}, 
-    {"read_data",   0, STATE_FUNC_PTR_2, 1}, 
+    {"send",        SMT_ARGS_1, SMT_STATE_FUNC_PTR_2, 0}, 
+    {"read_set",    SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, 0}, 
+    {"read_clear",  SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, 0}, 
+    {"lp_set",      SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, 0}, 
+    {"lp_clear",    SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, 0}, 
+    {"reset",       SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, 0}, 
+    {"state",       SMT_ARGS_0, SMT_STATE_FUNC_PTR_3, 0}, 
+    {"read_status", SMT_ARGS_0, SMT_STATE_FUNC_PTR_3, 0}, 
+    {"read_data",   SMT_ARGS_0, SMT_STATE_FUNC_PTR_2, 1}, 
     {"execute",     0, 0, 0} 
 }; 
 
@@ -211,17 +211,17 @@ void hc05_test_app()
             {
                 switch (state_cmds[i].func_ptr_index)
                 {
-                    case STATE_FUNC_PTR_1: 
+                    case SMT_STATE_FUNC_PTR_1: 
                         (state_func[i].func1)(); 
                         break; 
 
-                    case STATE_FUNC_PTR_2: 
+                    case SMT_STATE_FUNC_PTR_2: 
                         (state_func[i].func2)(
                             (uint8_t *)hc05_wr_buff[state_cmds[i].arg_buff_index], 
                             STATE_USER_TEST_INPUT); 
                         break; 
 
-                    case STATE_FUNC_PTR_3: 
+                    case SMT_STATE_FUNC_PTR_3: 
                         return_val = (state_func[i].func3)(); 
                         uart_sendstring(USART2, "\nReturn value: "); 
                         uart_send_integer(USART2, (int16_t)return_val); 
@@ -239,7 +239,7 @@ void hc05_test_app()
     {
         switch (state_cmds[cmd_index].func_ptr_index)
         {
-            case STATE_FUNC_PTR_2: 
+            case SMT_STATE_FUNC_PTR_2: 
                 // Only for hc05_set_send 
                 memcpy(
                     hc05_wr_buff[state_cmds[cmd_index].arg_buff_index], 
