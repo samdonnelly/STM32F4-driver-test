@@ -146,7 +146,7 @@ void mpu6050_test_init()
                                                MPU6050_ADDR_1,
                                                MPU6050_DEV1_STBY_MASK, 
                                                DLPF_CFG_1,
-                                               SMPLRT_DIV_0,
+                                               MPU6050_SMPLRT_DIV,
                                                AFS_SEL_4,
                                                FS_SEL_500);
 
@@ -163,7 +163,7 @@ void mpu6050_test_init()
                                        MPU6050_ADDR_2,
                                        MPU6050_DEV2_STBY_MASK, 
                                        DLPF_CFG_1,
-                                       SMPLRT_DIV_0,
+                                       MPU6050_SMPLRT_DIV,
                                        AFS_SEL_4,
                                        FS_SEL_500);
 

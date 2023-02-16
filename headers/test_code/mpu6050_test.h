@@ -35,6 +35,7 @@
 // Data 
 #define MPU6050_DEV1_STBY_MASK 0x00      // Device 1 axis standby status mask 
 #define MPU6050_DEV2_STBY_MASK 0x00      // Device 2 axis standby status mask 
+#define MPU6050_SMPLRT_DIV 0             // Sample Rate Divider 
 
 // Driver test 
 #define MPU6050_DRIVER_LOOP_DELAY 1000   // Delay (blocking) between code loops (ms) 
