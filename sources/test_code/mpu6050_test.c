@@ -145,10 +145,10 @@ void mpu6050_test_init()
                                                I2C1, 
                                                MPU6050_ADDR_1,
                                                MPU6050_DEV1_STBY_MASK, 
-                                               DLPF_CFG_1,
+                                               MPU6050_DLPF_CFG_1,
                                                MPU6050_SMPLRT_DIV,
-                                               AFS_SEL_4,
-                                               FS_SEL_500);
+                                               MPU6050_AFS_SEL_4,
+                                               MPU6050_FS_SEL_500);
 
     // Return the status of the accelerometer WHO_AM_I register 
     if (!mpu6050_init_status) uart_sendstring(USART2, "Device seen\r\n");
@@ -162,10 +162,10 @@ void mpu6050_test_init()
                                        I2C1, 
                                        MPU6050_ADDR_2,
                                        MPU6050_DEV2_STBY_MASK, 
-                                       DLPF_CFG_1,
+                                       MPU6050_DLPF_CFG_1,
                                        MPU6050_SMPLRT_DIV,
-                                       AFS_SEL_4,
-                                       FS_SEL_500);
+                                       MPU6050_AFS_SEL_4,
+                                       MPU6050_FS_SEL_500);
 
     // Return the status of the accelerometer WHO_AM_I register 
     if (!mpu6050_init_status) uart_sendstring(USART2, "Second device seen\r\n");
