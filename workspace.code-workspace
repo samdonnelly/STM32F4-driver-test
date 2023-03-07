@@ -39,7 +39,8 @@
 			"hc05_controller.h": "c",
 			"m8q_config.h": "c",
 			"hw125_controller.h": "c",
-			"spi_comm.h": "c"
+			"spi_comm.h": "c",
+			"i2c_comm.h": "c"
 		}
 	}
 }

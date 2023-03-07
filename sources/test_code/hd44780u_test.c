@@ -112,7 +112,7 @@ void hd44780u_test_init()
     uart_init(USART2, UART_BAUD_9600, UART_CLOCK_42);  // Serial terminal comms 
 
     // I2C1 init
-    i2c1_init(
+    i2c_init(
         I2C1, 
         I2C1_SDA_PB9,
         I2C1_SCL_PB8,
