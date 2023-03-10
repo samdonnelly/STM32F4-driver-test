@@ -80,6 +80,7 @@ sources/config_files/m8q_config.c \
 ../STM32F4-driver-library/sources/timers.c \
 ../STM32F4-driver-library/sources/tools.c \
 ../STM32F4-driver-library/sources/uart_comm.c \
+../STM32F4-driver-library/sources/ws2812_driver.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c \
