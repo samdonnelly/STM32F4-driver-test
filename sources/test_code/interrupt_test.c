@@ -23,7 +23,8 @@
 //================================================================================
 // Globals 
 
-uint16_t adc_conversion[2];  // Location for the DMA to store ADC values 
+// Location for the DMA to store ADC values 
+static uint16_t adc_conversion[INT_ADC_NUM_CONV]; 
 
 //================================================================================
 
