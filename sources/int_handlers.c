@@ -12,76 +12,78 @@
  * 
  */
 
-//================================================================================
+//=======================================================================================
 // Includes 
 
 #include "int_handlers.h"
 
-//================================================================================
+//=======================================================================================
 
 // TODO
 // - No way to distinguish what flag triggered the DMA interrupts 
 
-//================================================================================
+//=======================================================================================
 // Globals 
 
 // Instance of interrupt flag data record 
 int_handle_flags_t handler_flags; 
 
-//================================================================================
+//=======================================================================================
 
 
-//================================================================================
+//=======================================================================================
 // Initialization 
 
 // Interrupt handler flag initialization 
 void int_handler_init(void)
 {
     // EXTI interrupt flags 
-    handler_flags.exti0_flag = 0; 
-    handler_flags.exti1_flag = 0; 
-    handler_flags.exti2_flag = 0; 
-    handler_flags.exti3_flag = 0; 
-    handler_flags.exti4_flag = 0; 
+    handler_flags.exti0_flag = CLEAR; 
+    handler_flags.exti1_flag = CLEAR; 
+    handler_flags.exti2_flag = CLEAR; 
+    handler_flags.exti3_flag = CLEAR; 
+    handler_flags.exti4_flag = CLEAR; 
+    handler_flags.exti5_9_flag = CLEAR; 
+    handler_flags.exti10_15_flag = CLEAR; 
 
     // DMA1 interrupt flags 
-    handler_flags.dma1_0_flag = 0; 
-    handler_flags.dma1_1_flag = 0; 
-    handler_flags.dma1_2_flag = 0; 
-    handler_flags.dma1_3_flag = 0; 
-    handler_flags.dma1_4_flag = 0; 
-    handler_flags.dma1_5_flag = 0; 
-    handler_flags.dma1_6_flag = 0; 
-    handler_flags.dma1_7_flag = 0; 
+    handler_flags.dma1_0_flag = CLEAR; 
+    handler_flags.dma1_1_flag = CLEAR; 
+    handler_flags.dma1_2_flag = CLEAR; 
+    handler_flags.dma1_3_flag = CLEAR; 
+    handler_flags.dma1_4_flag = CLEAR; 
+    handler_flags.dma1_5_flag = CLEAR; 
+    handler_flags.dma1_6_flag = CLEAR; 
+    handler_flags.dma1_7_flag = CLEAR; 
 
     // DMA2 interrupt flags 
-    handler_flags.dma2_0_flag = 0; 
-    handler_flags.dma2_1_flag = 0; 
-    handler_flags.dma2_2_flag = 0; 
-    handler_flags.dma2_3_flag = 0; 
-    handler_flags.dma2_4_flag = 0; 
-    handler_flags.dma2_5_flag = 0; 
-    handler_flags.dma2_6_flag = 0; 
-    handler_flags.dma2_7_flag = 0; 
+    handler_flags.dma2_0_flag = CLEAR; 
+    handler_flags.dma2_1_flag = CLEAR; 
+    handler_flags.dma2_2_flag = CLEAR; 
+    handler_flags.dma2_3_flag = CLEAR; 
+    handler_flags.dma2_4_flag = CLEAR; 
+    handler_flags.dma2_5_flag = CLEAR; 
+    handler_flags.dma2_6_flag = CLEAR; 
+    handler_flags.dma2_7_flag = CLEAR; 
 
     // Timer interrupt flags 
-    handler_flags.tim1_brk_tim9_glbl_flag = 0; 
-    handler_flags.tim1_up_tim10_glbl_flag = 0; 
-    handler_flags.tim1_trg_tim11_glbl_flag = 0; 
-    handler_flags.tim1_cc_flag = 0; 
-    handler_flags.tim2_glbl_flag = 0; 
-    handler_flags.tim3_glbl_flag = 0; 
-    handler_flags.tim4_glbl_flag = 0; 
-    handler_flags.tim5_glbl_flag = 0; 
+    handler_flags.tim1_brk_tim9_glbl_flag = CLEAR; 
+    handler_flags.tim1_up_tim10_glbl_flag = CLEAR; 
+    handler_flags.tim1_trg_tim11_glbl_flag = CLEAR; 
+    handler_flags.tim1_cc_flag = CLEAR; 
+    handler_flags.tim2_glbl_flag = CLEAR; 
+    handler_flags.tim3_glbl_flag = CLEAR; 
+    handler_flags.tim4_glbl_flag = CLEAR; 
+    handler_flags.tim5_glbl_flag = CLEAR; 
 
     // ADC interrupt flags 
-    handler_flags.adc_flag = 0; 
+    handler_flags.adc_flag = CLEAR; 
 }
 
-//================================================================================
+//=======================================================================================
 
 
-//================================================================================
+//=======================================================================================
 // Handlers 
 
 // External interrupt handler names are defined in startup_stm32f411xe.s 
@@ -123,6 +125,22 @@ void EXTI4_IRQHandler(void)
 {
     handler_flags.exti4_flag = SET_BIT; 
     exti_pr_clear(EXTI_L4); 
+}
+
+
+// EXTI lines 5-9 
+void EXTI9_5_IRQHandler(void)
+{
+    handler_flags.exti5_9_flag = SET_BIT; 
+    exti_pr_clear(EXTI_L5 | EXTI_L6 | EXTI_L7 | EXTI_L8 | EXTI_L9); 
+}
+
+
+// EXTI lines 10-15 
+void EXTI15_10_IRQHandler(void)
+{
+    handler_flags.exti10_15_flag = SET_BIT; 
+    exti_pr_clear(EXTI_L10 | EXTI_L11 | EXTI_L12 | EXTI_L13 | EXTI_L14 | EXTI_L15); 
 }
 
 
@@ -317,4 +335,4 @@ void ADC_IRQHandler(void)
     handler_flags.adc_flag = SET_BIT;  
 }
 
-//================================================================================
+//=======================================================================================
