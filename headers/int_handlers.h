@@ -103,7 +103,9 @@ void int_handler_init(void);
 /**
  * @brief EXTI Line 0 
  * 
- * @details 
+ * @details External interrupt handler for pin 0 of whichever port has been configured. This 
+ *          function sets exti0_flag and clears it's corresponding bit in the pending 
+ *          register. 
  */
 void EXTI0_IRQHandler(void); 
 
@@ -111,7 +113,9 @@ void EXTI0_IRQHandler(void);
 /**
  * @brief EXTI Line 1 
  * 
- * @details 
+ * @details External interrupt handler for pin 1 of whichever port has been configured. This 
+ *          function sets exti1_flag and clears it's corresponding bit in the pending 
+ *          register. 
  */
 void EXTI1_IRQHandler(void); 
 
@@ -119,7 +123,9 @@ void EXTI1_IRQHandler(void);
 /**
  * @brief EXTI Line 2 
  * 
- * @details 
+ * @details External interrupt handler for pin 2 of whichever port has been configured. This 
+ *          function sets exti2_flag and clears it's corresponding bit in the pending 
+ *          register. 
  */
 void EXTI2_IRQHandler(void); 
 
@@ -127,7 +133,9 @@ void EXTI2_IRQHandler(void);
 /**
  * @brief EXTI Line 3 
  * 
- * @details 
+ * @details External interrupt handler for pin 3 of whichever port has been configured. This 
+ *          function sets exti3_flag and clears it's corresponding bit in the pending 
+ *          register. 
  */
 void EXTI3_IRQHandler(void); 
 
@@ -135,7 +143,9 @@ void EXTI3_IRQHandler(void);
 /**
  * @brief EXTI Line 4 
  * 
- * @details 
+ * @details External interrupt handler for pin 4 of whichever port has been configured. This 
+ *          function sets exti4_flag and clears it's corresponding bit in the pending 
+ *          register. 
  */
 void EXTI4_IRQHandler(void); 
 
@@ -143,7 +153,10 @@ void EXTI4_IRQHandler(void);
 /**
  * @brief EXTI lines 5-9 
  * 
- * @details 
+ * @details External interrupt handler for pins 5-9 of whichever port has been configured. This 
+ *          means pins 5-9 will share this interrupt handler and it therefore won't distinguish 
+ *          which pin has triggered the interrupt. This function sets exti5_9_flag and clears all 
+ *          the bits corresponding to pins 5-9 in the pending register. 
  */
 void EXTI9_5_IRQHandler(void); 
 
@@ -151,7 +164,10 @@ void EXTI9_5_IRQHandler(void);
 /**
  * @brief EXTI lines 10-15 
  * 
- * @details 
+ * @details External interrupt handler for pins 10-15 of whichever port has been configured. This 
+ *          means pins 10-15 will share this interrupt handler and it therefore won't distinguish 
+ *          which pin has triggered the interrupt. This function sets exti10_15_flag and clears all 
+ *          the bits corresponding to pins 10-15 in the pending register. 
  */
 void EXTI15_10_IRQHandler(void); 
 
