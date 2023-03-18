@@ -106,6 +106,8 @@ void int_handler_init(void);
  * @details External interrupt handler for pin 0 of whichever port has been configured. This 
  *          function sets exti0_flag and clears it's corresponding bit in the pending 
  *          register. 
+ * 
+ * @see exti_pr_clear
  */
 void EXTI0_IRQHandler(void); 
 
@@ -116,6 +118,8 @@ void EXTI0_IRQHandler(void);
  * @details External interrupt handler for pin 1 of whichever port has been configured. This 
  *          function sets exti1_flag and clears it's corresponding bit in the pending 
  *          register. 
+ * 
+ * @see exti_pr_clear
  */
 void EXTI1_IRQHandler(void); 
 
@@ -126,6 +130,8 @@ void EXTI1_IRQHandler(void);
  * @details External interrupt handler for pin 2 of whichever port has been configured. This 
  *          function sets exti2_flag and clears it's corresponding bit in the pending 
  *          register. 
+ * 
+ * @see exti_pr_clear
  */
 void EXTI2_IRQHandler(void); 
 
@@ -136,6 +142,8 @@ void EXTI2_IRQHandler(void);
  * @details External interrupt handler for pin 3 of whichever port has been configured. This 
  *          function sets exti3_flag and clears it's corresponding bit in the pending 
  *          register. 
+ * 
+ * @see exti_pr_clear
  */
 void EXTI3_IRQHandler(void); 
 
@@ -146,6 +154,8 @@ void EXTI3_IRQHandler(void);
  * @details External interrupt handler for pin 4 of whichever port has been configured. This 
  *          function sets exti4_flag and clears it's corresponding bit in the pending 
  *          register. 
+ * 
+ * @see exti_pr_clear
  */
 void EXTI4_IRQHandler(void); 
 
@@ -157,6 +167,8 @@ void EXTI4_IRQHandler(void);
  *          means pins 5-9 will share this interrupt handler and it therefore won't distinguish 
  *          which pin has triggered the interrupt. This function sets exti5_9_flag and clears all 
  *          the bits corresponding to pins 5-9 in the pending register. 
+ * 
+ * @see exti_pr_clear
  */
 void EXTI9_5_IRQHandler(void); 
 
@@ -168,6 +180,8 @@ void EXTI9_5_IRQHandler(void);
  *          means pins 10-15 will share this interrupt handler and it therefore won't distinguish 
  *          which pin has triggered the interrupt. This function sets exti10_15_flag and clears all 
  *          the bits corresponding to pins 10-15 in the pending register. 
+ * 
+ * @see exti_pr_clear
  */
 void EXTI15_10_IRQHandler(void); 
 
@@ -175,7 +189,10 @@ void EXTI15_10_IRQHandler(void);
 /**
  * @brief DMA1 Stream 0 
  * 
- * @details 
+ * @details External interrupt handler for DMA 1, stream 0. This function sets dma1_0_flag and 
+ *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ * 
+ * @see dma_clear_int_flags
  */
 void DMA1_Stream0_IRQHandler(void); 
 
@@ -183,7 +200,10 @@ void DMA1_Stream0_IRQHandler(void);
 /**
  * @brief DMA1 Stream 1 
  * 
- * @details 
+ * @details External interrupt handler for DMA 1, stream 1. This function sets dma1_1_flag and 
+ *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ * 
+ * @see dma_clear_int_flags
  */
 void DMA1_Stream1_IRQHandler(void); 
 
@@ -191,7 +211,10 @@ void DMA1_Stream1_IRQHandler(void);
 /**
  * @brief DMA1 Stream 2 
  * 
- * @details 
+ * @details External interrupt handler for DMA 1, stream 2. This function sets dma1_2_flag and 
+ *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ * 
+ * @see dma_clear_int_flags
  */
 void DMA1_Stream2_IRQHandler(void); 
 
@@ -199,7 +222,10 @@ void DMA1_Stream2_IRQHandler(void);
 /**
  * @brief DMA1 Stream 3 
  * 
- * @details 
+ * @details External interrupt handler for DMA 1, stream 3. This function sets dma1_3_flag and 
+ *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ * 
+ * @see dma_clear_int_flags
  */
 void DMA1_Stream3_IRQHandler(void); 
 
@@ -207,7 +233,10 @@ void DMA1_Stream3_IRQHandler(void);
 /**
  * @brief DMA1 Stream 4 
  * 
- * @details 
+ * @details External interrupt handler for DMA 1, stream 4. This function sets dma1_4_flag and 
+ *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ * 
+ * @see dma_clear_int_flags
  */
 void DMA1_Stream4_IRQHandler(void); 
 
@@ -215,7 +244,10 @@ void DMA1_Stream4_IRQHandler(void);
 /**
  * @brief DMA1 Stream 5 
  * 
- * @details 
+ * @details External interrupt handler for DMA 1, stream 5. This function sets dma1_5_flag and 
+ *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ * 
+ * @see dma_clear_int_flags
  */
 void DMA1_Stream5_IRQHandler(void); 
 
@@ -223,7 +255,10 @@ void DMA1_Stream5_IRQHandler(void);
 /**
  * @brief DMA1 Stream 6 
  * 
- * @details 
+ * @details External interrupt handler for DMA 1, stream 6. This function sets dma1_6_flag and 
+ *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ * 
+ * @see dma_clear_int_flags
  */
 void DMA1_Stream6_IRQHandler(void); 
 
@@ -231,7 +266,10 @@ void DMA1_Stream6_IRQHandler(void);
 /**
  * @brief DMA1 Stream 7 
  * 
- * @details 
+ * @details External interrupt handler for DMA 1, stream 7. This function sets dma1_7_flag and 
+ *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ * 
+ * @see dma_clear_int_flags
  */
 void DMA1_Stream7_IRQHandler(void); 
 
