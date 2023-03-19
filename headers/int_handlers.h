@@ -277,7 +277,10 @@ void DMA1_Stream7_IRQHandler(void);
 /**
  * @brief DMA2 Stream 0 
  * 
- * @details 
+ * @details External interrupt handler for DMA 2, stream 0. This function sets dma2_0_flag and 
+ *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ * 
+ * @see dma_clear_int_flags
  */
 void DMA2_Stream0_IRQHandler(void); 
 
@@ -285,7 +288,10 @@ void DMA2_Stream0_IRQHandler(void);
 /**
  * @brief DMA2 Stream 1 
  * 
- * @details 
+ * @details External interrupt handler for DMA 2, stream 1. This function sets dma2_1_flag and 
+ *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ * 
+ * @see dma_clear_int_flags
  */
 void DMA2_Stream1_IRQHandler(void); 
 
@@ -293,7 +299,10 @@ void DMA2_Stream1_IRQHandler(void);
 /**
  * @brief DMA2 Stream 2 
  * 
- * @details 
+ * @details External interrupt handler for DMA 2, stream 2. This function sets dma2_2_flag and 
+ *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ * 
+ * @see dma_clear_int_flags
  */
 void DMA2_Stream2_IRQHandler(void); 
 
@@ -301,7 +310,10 @@ void DMA2_Stream2_IRQHandler(void);
 /**
  * @brief DMA2 Stream 3 
  * 
- * @details 
+ * @details External interrupt handler for DMA 2, stream 3. This function sets dma2_3_flag and 
+ *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ * 
+ * @see dma_clear_int_flags
  */
 void DMA2_Stream3_IRQHandler(void); 
 
@@ -309,7 +321,10 @@ void DMA2_Stream3_IRQHandler(void);
 /**
  * @brief DMA2 Stream 4 
  * 
- * @details 
+ * @details External interrupt handler for DMA 2, stream 4. This function sets dma2_4_flag and 
+ *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ * 
+ * @see dma_clear_int_flags
  */
 void DMA2_Stream4_IRQHandler(void); 
 
@@ -317,7 +332,10 @@ void DMA2_Stream4_IRQHandler(void);
 /**
  * @brief DMA2 Stream 5 
  * 
- * @details 
+ * @details External interrupt handler for DMA 2, stream 5. This function sets dma2_5_flag and 
+ *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ * 
+ * @see dma_clear_int_flags
  */
 void DMA2_Stream5_IRQHandler(void); 
 
@@ -325,7 +343,10 @@ void DMA2_Stream5_IRQHandler(void);
 /**
  * @brief DMA2 Stream 6 
  * 
- * @details 
+ * @details External interrupt handler for DMA 2, stream 6. This function sets dma2_6_flag and 
+ *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ * 
+ * @see dma_clear_int_flags
  */
 void DMA2_Stream6_IRQHandler(void); 
 
@@ -333,7 +354,10 @@ void DMA2_Stream6_IRQHandler(void);
 /**
  * @brief DMA2 Stream 7 
  * 
- * @details 
+ * @details External interrupt handler for DMA 2, stream 7. This function sets dma2_7_flag and 
+ *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ * 
+ * @see dma_clear_int_flags
  */
 void DMA2_Stream7_IRQHandler(void); 
 
