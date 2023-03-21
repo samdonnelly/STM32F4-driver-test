@@ -365,7 +365,19 @@ void DMA2_Stream7_IRQHandler(void);
 /**
  * @brief Timer 1 break + timer 9 global 
  * 
- * @details 
+ * @details Interrupt handler for both TIM1 break input and TIM9. 
+ *          
+ *          The break input is only for TIM1, an advanced-control timer, and it is used to 
+ *          alert the software when a failure is detected in the HSE clock. In this case 
+ *          the HSE oscillator is disabled and the interrupt is generated once the clock 
+ *          failure event is sent to the break input. This can be used to perform safety 
+ *          operations and put the timers output signals into xreset state or a known state. 
+ *          
+ *          TIM9 is a general purpose timer and can be set to trigger interrupts for a counter 
+ *          update, capture/compare, or a trigger. This handler clears the update interrupt 
+ *          flag for the timer so the handler can be exited. 
+ * 
+ * @see tim_uif_clear
  */
 void TIM1_BRK_TIM9_IRQHandler(void); 
 
@@ -434,6 +446,5 @@ void TIM5_IRQHandler(void);
 void ADC_IRQHandler(void); 
 
 //=======================================================================================
-
 
 #endif   // _INT_HANDLERS_H_ 
