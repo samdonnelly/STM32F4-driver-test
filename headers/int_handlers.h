@@ -105,7 +105,9 @@ void int_handler_init(void);
  * 
  * @details External interrupt handler for pin 0 of whichever port has been configured. This 
  *          function sets exti0_flag and clears it's corresponding bit in the pending 
- *          register. 
+ *          register. External interrupts are triggered on rising and/or falling edges of 
+ *          GPIO input pins. This interrupt handler can also be configured to trigger for 
+ *          software events. 
  * 
  * @see exti_pr_clear
  */
@@ -117,7 +119,9 @@ void EXTI0_IRQHandler(void);
  * 
  * @details External interrupt handler for pin 1 of whichever port has been configured. This 
  *          function sets exti1_flag and clears it's corresponding bit in the pending 
- *          register. 
+ *          register. External interrupts are triggered on rising and/or falling edges of 
+ *          GPIO input pins. This interrupt handler can also be configured to trigger for 
+ *          software events. 
  * 
  * @see exti_pr_clear
  */
@@ -129,7 +133,9 @@ void EXTI1_IRQHandler(void);
  * 
  * @details External interrupt handler for pin 2 of whichever port has been configured. This 
  *          function sets exti2_flag and clears it's corresponding bit in the pending 
- *          register. 
+ *          register. External interrupts are triggered on rising and/or falling edges of 
+ *          GPIO input pins. This interrupt handler can also be configured to trigger for 
+ *          software events. 
  * 
  * @see exti_pr_clear
  */
@@ -141,7 +147,9 @@ void EXTI2_IRQHandler(void);
  * 
  * @details External interrupt handler for pin 3 of whichever port has been configured. This 
  *          function sets exti3_flag and clears it's corresponding bit in the pending 
- *          register. 
+ *          register. External interrupts are triggered on rising and/or falling edges of 
+ *          GPIO input pins. This interrupt handler can also be configured to trigger for 
+ *          software events. 
  * 
  * @see exti_pr_clear
  */
@@ -153,7 +161,9 @@ void EXTI3_IRQHandler(void);
  * 
  * @details External interrupt handler for pin 4 of whichever port has been configured. This 
  *          function sets exti4_flag and clears it's corresponding bit in the pending 
- *          register. 
+ *          register. External interrupts are triggered on rising and/or falling edges of 
+ *          GPIO input pins. This interrupt handler can also be configured to trigger for 
+ *          software events. 
  * 
  * @see exti_pr_clear
  */
@@ -166,7 +176,9 @@ void EXTI4_IRQHandler(void);
  * @details External interrupt handler for pins 5-9 of whichever port has been configured. This 
  *          means pins 5-9 will share this interrupt handler and it therefore won't distinguish 
  *          which pin has triggered the interrupt. This function sets exti5_9_flag and clears all 
- *          the bits corresponding to pins 5-9 in the pending register. 
+ *          the bits corresponding to pins 5-9 in the pending register. External interrupts are 
+ *          triggered on rising and/or falling edges of GPIO input pins. This interrupt handler 
+ *          can also be configured to trigger for software events. 
  * 
  * @see exti_pr_clear
  */
@@ -179,7 +191,9 @@ void EXTI9_5_IRQHandler(void);
  * @details External interrupt handler for pins 10-15 of whichever port has been configured. This 
  *          means pins 10-15 will share this interrupt handler and it therefore won't distinguish 
  *          which pin has triggered the interrupt. This function sets exti10_15_flag and clears all 
- *          the bits corresponding to pins 10-15 in the pending register. 
+ *          the bits corresponding to pins 10-15 in the pending register. External interrupts are 
+ *          triggered on rising and/or falling edges of GPIO input pins. This interrupt handler 
+ *          can also be configured to trigger for software events. 
  * 
  * @see exti_pr_clear
  */
@@ -191,6 +205,9 @@ void EXTI15_10_IRQHandler(void);
  * 
  * @details Interrupt handler for DMA 1, stream 0. This function sets dma1_0_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ *          Interrupts can be produced when half-transfer is reached, transfer is complete, 
+ *          there is a transfer error, there is a FIFO error (overrun, underrun, FIFO level 
+ *          error), or there is a direct mode error. 
  * 
  * @see dma_clear_int_flags
  */
@@ -202,6 +219,9 @@ void DMA1_Stream0_IRQHandler(void);
  * 
  * @details Interrupt handler for DMA 1, stream 1. This function sets dma1_1_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ *          Interrupts can be produced when half-transfer is reached, transfer is complete, 
+ *          there is a transfer error, there is a FIFO error (overrun, underrun, FIFO level 
+ *          error), or there is a direct mode error. 
  * 
  * @see dma_clear_int_flags
  */
@@ -213,6 +233,9 @@ void DMA1_Stream1_IRQHandler(void);
  * 
  * @details Interrupt handler for DMA 1, stream 2. This function sets dma1_2_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ *          Interrupts can be produced when half-transfer is reached, transfer is complete, 
+ *          there is a transfer error, there is a FIFO error (overrun, underrun, FIFO level 
+ *          error), or there is a direct mode error. 
  * 
  * @see dma_clear_int_flags
  */
@@ -224,6 +247,9 @@ void DMA1_Stream2_IRQHandler(void);
  * 
  * @details Interrupt handler for DMA 1, stream 3. This function sets dma1_3_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ *          Interrupts can be produced when half-transfer is reached, transfer is complete, 
+ *          there is a transfer error, there is a FIFO error (overrun, underrun, FIFO level 
+ *          error), or there is a direct mode error. 
  * 
  * @see dma_clear_int_flags
  */
@@ -235,6 +261,9 @@ void DMA1_Stream3_IRQHandler(void);
  * 
  * @details Interrupt handler for DMA 1, stream 4. This function sets dma1_4_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ *          Interrupts can be produced when half-transfer is reached, transfer is complete, 
+ *          there is a transfer error, there is a FIFO error (overrun, underrun, FIFO level 
+ *          error), or there is a direct mode error. 
  * 
  * @see dma_clear_int_flags
  */
@@ -246,6 +275,9 @@ void DMA1_Stream4_IRQHandler(void);
  * 
  * @details Interrupt handler for DMA 1, stream 5. This function sets dma1_5_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ *          Interrupts can be produced when half-transfer is reached, transfer is complete, 
+ *          there is a transfer error, there is a FIFO error (overrun, underrun, FIFO level 
+ *          error), or there is a direct mode error. 
  * 
  * @see dma_clear_int_flags
  */
@@ -257,6 +289,9 @@ void DMA1_Stream5_IRQHandler(void);
  * 
  * @details Interrupt handler for DMA 1, stream 6. This function sets dma1_6_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ *          Interrupts can be produced when half-transfer is reached, transfer is complete, 
+ *          there is a transfer error, there is a FIFO error (overrun, underrun, FIFO level 
+ *          error), or there is a direct mode error. 
  * 
  * @see dma_clear_int_flags
  */
@@ -268,6 +303,9 @@ void DMA1_Stream6_IRQHandler(void);
  * 
  * @details Interrupt handler for DMA 1, stream 7. This function sets dma1_7_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ *          Interrupts can be produced when half-transfer is reached, transfer is complete, 
+ *          there is a transfer error, there is a FIFO error (overrun, underrun, FIFO level 
+ *          error), or there is a direct mode error. 
  * 
  * @see dma_clear_int_flags
  */
@@ -279,6 +317,9 @@ void DMA1_Stream7_IRQHandler(void);
  * 
  * @details Interrupt handler for DMA 2, stream 0. This function sets dma2_0_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ *          Interrupts can be produced when half-transfer is reached, transfer is complete, 
+ *          there is a transfer error, there is a FIFO error (overrun, underrun, FIFO level 
+ *          error), or there is a direct mode error. 
  * 
  * @see dma_clear_int_flags
  */
@@ -290,6 +331,9 @@ void DMA2_Stream0_IRQHandler(void);
  * 
  * @details Interrupt handler for DMA 2, stream 1. This function sets dma2_1_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ *          Interrupts can be produced when half-transfer is reached, transfer is complete, 
+ *          there is a transfer error, there is a FIFO error (overrun, underrun, FIFO level 
+ *          error), or there is a direct mode error. 
  * 
  * @see dma_clear_int_flags
  */
@@ -301,6 +345,9 @@ void DMA2_Stream1_IRQHandler(void);
  * 
  * @details Interrupt handler for DMA 2, stream 2. This function sets dma2_2_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ *          Interrupts can be produced when half-transfer is reached, transfer is complete, 
+ *          there is a transfer error, there is a FIFO error (overrun, underrun, FIFO level 
+ *          error), or there is a direct mode error. 
  * 
  * @see dma_clear_int_flags
  */
@@ -312,6 +359,9 @@ void DMA2_Stream2_IRQHandler(void);
  * 
  * @details Interrupt handler for DMA 2, stream 3. This function sets dma2_3_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ *          Interrupts can be produced when half-transfer is reached, transfer is complete, 
+ *          there is a transfer error, there is a FIFO error (overrun, underrun, FIFO level 
+ *          error), or there is a direct mode error. 
  * 
  * @see dma_clear_int_flags
  */
@@ -323,6 +373,9 @@ void DMA2_Stream3_IRQHandler(void);
  * 
  * @details Interrupt handler for DMA 2, stream 4. This function sets dma2_4_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ *          Interrupts can be produced when half-transfer is reached, transfer is complete, 
+ *          there is a transfer error, there is a FIFO error (overrun, underrun, FIFO level 
+ *          error), or there is a direct mode error. 
  * 
  * @see dma_clear_int_flags
  */
@@ -334,6 +387,9 @@ void DMA2_Stream4_IRQHandler(void);
  * 
  * @details Interrupt handler for DMA 2, stream 5. This function sets dma2_5_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ *          Interrupts can be produced when half-transfer is reached, transfer is complete, 
+ *          there is a transfer error, there is a FIFO error (overrun, underrun, FIFO level 
+ *          error), or there is a direct mode error. 
  * 
  * @see dma_clear_int_flags
  */
@@ -345,6 +401,9 @@ void DMA2_Stream5_IRQHandler(void);
  * 
  * @details Interrupt handler for DMA 2, stream 6. This function sets dma2_6_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ *          Interrupts can be produced when half-transfer is reached, transfer is complete, 
+ *          there is a transfer error, there is a FIFO error (overrun, underrun, FIFO level 
+ *          error), or there is a direct mode error. 
  * 
  * @see dma_clear_int_flags
  */
@@ -356,6 +415,9 @@ void DMA2_Stream6_IRQHandler(void);
  * 
  * @details Interrupt handler for DMA 2, stream 7. This function sets dma2_7_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
+ *          Interrupts can be produced when half-transfer is reached, transfer is complete, 
+ *          there is a transfer error, there is a FIFO error (overrun, underrun, FIFO level 
+ *          error), or there is a direct mode error. 
  * 
  * @see dma_clear_int_flags
  */
