@@ -447,7 +447,13 @@ void TIM1_BRK_TIM9_IRQHandler(void);
 /**
  * @brief Timer 1 update + timer 10 global 
  * 
- * @details 
+ * @details Interrupt handler for both TIM1 update and TIM10 global. 
+ *          
+ *          TIM1 is an advanced timer and this handler is specifically for TIM1 updates. Updates 
+ *          include counter overflow/underflow or counter initialization. 
+ *          
+ *          TIM10 is a general purpose timer and can be set to trigger interrupts for counter 
+ *          updates (overflow, initialization), input capture or output compare. 
  */
 void TIM1_UP_TIM10_IRQHandler(void); 
 
