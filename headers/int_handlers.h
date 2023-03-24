@@ -459,9 +459,15 @@ void TIM1_UP_TIM10_IRQHandler(void);
 
 
 /**
- * @brief Timer 1 trigger and communication + global 
+ * @brief Timer 1 trigger and communication + timer 11 global 
  * 
- * @details 
+ * @details Interrupt handler for both TIM1 tigger and TIM11 global. 
+ *          
+ *          This handler can be called from TIM1 trigger events such as counter start, stop, 
+ *          or initialization, or count by internal/external trigger. 
+ *          
+ *          TIM11 is a general purpose timer and can be set to trigger interrupts for counter 
+ *          updates (overflow, initialization), input capture or output compare. 
  */
 void TIM1_TRG_COM_TIM11_IRQHandler(void); 
 
