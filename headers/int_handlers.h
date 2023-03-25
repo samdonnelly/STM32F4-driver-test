@@ -101,7 +101,7 @@ void int_handler_init(void);
 // Handlers 
 
 /**
- * @brief EXTI Line 0 
+ * @brief EXTI Line 0 interrupt handler 
  * 
  * @details External interrupt handler for pin 0 of whichever port has been configured. This 
  *          function sets exti0_flag and clears it's corresponding bit in the pending 
@@ -115,7 +115,7 @@ void EXTI0_IRQHandler(void);
 
 
 /**
- * @brief EXTI Line 1 
+ * @brief EXTI Line 1 interrupt handler 
  * 
  * @details External interrupt handler for pin 1 of whichever port has been configured. This 
  *          function sets exti1_flag and clears it's corresponding bit in the pending 
@@ -129,7 +129,7 @@ void EXTI1_IRQHandler(void);
 
 
 /**
- * @brief EXTI Line 2 
+ * @brief EXTI Line 2 interrupt handler 
  * 
  * @details External interrupt handler for pin 2 of whichever port has been configured. This 
  *          function sets exti2_flag and clears it's corresponding bit in the pending 
@@ -143,7 +143,7 @@ void EXTI2_IRQHandler(void);
 
 
 /**
- * @brief EXTI Line 3 
+ * @brief EXTI Line 3 interrupt handler 
  * 
  * @details External interrupt handler for pin 3 of whichever port has been configured. This 
  *          function sets exti3_flag and clears it's corresponding bit in the pending 
@@ -157,7 +157,7 @@ void EXTI3_IRQHandler(void);
 
 
 /**
- * @brief EXTI Line 4 
+ * @brief EXTI Line 4 interrupt handler 
  * 
  * @details External interrupt handler for pin 4 of whichever port has been configured. This 
  *          function sets exti4_flag and clears it's corresponding bit in the pending 
@@ -171,7 +171,7 @@ void EXTI4_IRQHandler(void);
 
 
 /**
- * @brief EXTI lines 5-9 
+ * @brief EXTI lines 5-9 interrupt handler 
  * 
  * @details External interrupt handler for pins 5-9 of whichever port has been configured. This 
  *          means pins 5-9 will share this interrupt handler and it therefore won't distinguish 
@@ -186,7 +186,7 @@ void EXTI9_5_IRQHandler(void);
 
 
 /**
- * @brief EXTI lines 10-15 
+ * @brief EXTI lines 10-15 interrupt handler 
  * 
  * @details External interrupt handler for pins 10-15 of whichever port has been configured. This 
  *          means pins 10-15 will share this interrupt handler and it therefore won't distinguish 
@@ -201,7 +201,7 @@ void EXTI15_10_IRQHandler(void);
 
 
 /**
- * @brief DMA1 Stream 0 
+ * @brief DMA1 Stream 0 interrupt handler 
  * 
  * @details Interrupt handler for DMA 1, stream 0. This function sets dma1_0_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
@@ -215,7 +215,7 @@ void DMA1_Stream0_IRQHandler(void);
 
 
 /**
- * @brief DMA1 Stream 1 
+ * @brief DMA1 Stream 1 interrupt handler 
  * 
  * @details Interrupt handler for DMA 1, stream 1. This function sets dma1_1_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
@@ -229,7 +229,7 @@ void DMA1_Stream1_IRQHandler(void);
 
 
 /**
- * @brief DMA1 Stream 2 
+ * @brief DMA1 Stream 2 interrupt handler 
  * 
  * @details Interrupt handler for DMA 1, stream 2. This function sets dma1_2_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
@@ -243,7 +243,7 @@ void DMA1_Stream2_IRQHandler(void);
 
 
 /**
- * @brief DMA1 Stream 3 
+ * @brief DMA1 Stream 3 interrupt handler 
  * 
  * @details Interrupt handler for DMA 1, stream 3. This function sets dma1_3_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
@@ -257,7 +257,7 @@ void DMA1_Stream3_IRQHandler(void);
 
 
 /**
- * @brief DMA1 Stream 4 
+ * @brief DMA1 Stream 4 interrupt handler 
  * 
  * @details Interrupt handler for DMA 1, stream 4. This function sets dma1_4_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
@@ -271,7 +271,7 @@ void DMA1_Stream4_IRQHandler(void);
 
 
 /**
- * @brief DMA1 Stream 5 
+ * @brief DMA1 Stream 5 interrupt handler 
  * 
  * @details Interrupt handler for DMA 1, stream 5. This function sets dma1_5_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
@@ -285,7 +285,7 @@ void DMA1_Stream5_IRQHandler(void);
 
 
 /**
- * @brief DMA1 Stream 6 
+ * @brief DMA1 Stream 6 interrupt handler 
  * 
  * @details Interrupt handler for DMA 1, stream 6. This function sets dma1_6_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
@@ -299,7 +299,7 @@ void DMA1_Stream6_IRQHandler(void);
 
 
 /**
- * @brief DMA1 Stream 7 
+ * @brief DMA1 Stream 7 interrupt handler 
  * 
  * @details Interrupt handler for DMA 1, stream 7. This function sets dma1_7_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
@@ -313,7 +313,7 @@ void DMA1_Stream7_IRQHandler(void);
 
 
 /**
- * @brief DMA2 Stream 0 
+ * @brief DMA2 Stream 0 interrupt handler 
  * 
  * @details Interrupt handler for DMA 2, stream 0. This function sets dma2_0_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
@@ -327,7 +327,7 @@ void DMA2_Stream0_IRQHandler(void);
 
 
 /**
- * @brief DMA2 Stream 1 
+ * @brief DMA2 Stream 1 interrupt handler 
  * 
  * @details Interrupt handler for DMA 2, stream 1. This function sets dma2_1_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
@@ -341,7 +341,7 @@ void DMA2_Stream1_IRQHandler(void);
 
 
 /**
- * @brief DMA2 Stream 2 
+ * @brief DMA2 Stream 2 interrupt handler 
  * 
  * @details Interrupt handler for DMA 2, stream 2. This function sets dma2_2_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
@@ -355,7 +355,7 @@ void DMA2_Stream2_IRQHandler(void);
 
 
 /**
- * @brief DMA2 Stream 3 
+ * @brief DMA2 Stream 3 interrupt handler 
  * 
  * @details Interrupt handler for DMA 2, stream 3. This function sets dma2_3_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
@@ -369,7 +369,7 @@ void DMA2_Stream3_IRQHandler(void);
 
 
 /**
- * @brief DMA2 Stream 4 
+ * @brief DMA2 Stream 4 interrupt handler 
  * 
  * @details Interrupt handler for DMA 2, stream 4. This function sets dma2_4_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
@@ -383,7 +383,7 @@ void DMA2_Stream4_IRQHandler(void);
 
 
 /**
- * @brief DMA2 Stream 5 
+ * @brief DMA2 Stream 5 interrupt handler 
  * 
  * @details Interrupt handler for DMA 2, stream 5. This function sets dma2_5_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
@@ -397,7 +397,7 @@ void DMA2_Stream5_IRQHandler(void);
 
 
 /**
- * @brief DMA2 Stream 6 
+ * @brief DMA2 Stream 6 interrupt handler 
  * 
  * @details Interrupt handler for DMA 2, stream 6. This function sets dma2_6_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
@@ -411,7 +411,7 @@ void DMA2_Stream6_IRQHandler(void);
 
 
 /**
- * @brief DMA2 Stream 7 
+ * @brief DMA2 Stream 7 interrupt handler 
  * 
  * @details Interrupt handler for DMA 2, stream 7. This function sets dma2_7_flag and 
  *          then clears all the DMA interrupt flags so that the handler can be exited. 
@@ -425,7 +425,7 @@ void DMA2_Stream7_IRQHandler(void);
 
 
 /**
- * @brief Timer 1 break + timer 9 global 
+ * @brief Timer 1 break + timer 9 global interrupt handler 
  * 
  * @details Interrupt handler for both TIM1 break input and TIM9. 
  *          
@@ -445,7 +445,7 @@ void TIM1_BRK_TIM9_IRQHandler(void);
 
 
 /**
- * @brief Timer 1 update + timer 10 global 
+ * @brief Timer 1 update + timer 10 global interrupt handler 
  * 
  * @details Interrupt handler for both TIM1 update and TIM10 global. 
  *          
@@ -459,7 +459,7 @@ void TIM1_UP_TIM10_IRQHandler(void);
 
 
 /**
- * @brief Timer 1 trigger and communication + timer 11 global 
+ * @brief Timer 1 trigger and communication + timer 11 global interrupt handler 
  * 
  * @details Interrupt handler for both TIM1 tigger and TIM11 global. 
  *          
@@ -473,7 +473,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void);
 
 
 /**
- * @brief Timer 1 capture compare 
+ * @brief Timer 1 capture compare interrupt handler 
  * 
  * @details Interrupt handler for TIM1 input capture and output compare. 
  *          
@@ -488,9 +488,12 @@ void TIM1_CC_IRQHandler(void);
 
 
 /**
- * @brief Timer 2 
+ * @brief Timer 2 interrupt handler 
  * 
- * @details 
+ * @details Interrupt handler for TIM2. This handler can be called for update events 
+ *          (counter overflow/underflow or counter initialization), trigger events (counter 
+ *          start, stop, initialization or count by internal/external trigger), input 
+ *          capture or output compare. 
  */
 void TIM2_IRQHandler(void); 
 
