@@ -475,7 +475,14 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void);
 /**
  * @brief Timer 1 capture compare 
  * 
- * @details 
+ * @details Interrupt handler for TIM1 input capture and output compare. 
+ *          
+ *          Input capture is used to latch the counter value when a transition is detected in 
+ *          the corresponding ICx signal. This transition will trigger the interrupt. 
+ *          
+ *          Output compare is used to control an output waveform (such as PWM) or indicating 
+ *          when a period of time has elapsed. This interrupt is triggered when a match is 
+ *          found between the capture/compare register and the counter. 
  */
 void TIM1_CC_IRQHandler(void); 
 
