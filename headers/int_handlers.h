@@ -438,6 +438,9 @@ void DMA2_Stream7_IRQHandler(void);
  *          TIM9 is a general purpose timer and can be set to trigger interrupts for a counter 
  *          update, capture/compare, or a trigger. This handler clears the update interrupt 
  *          flag for the timer so the handler can be exited. 
+ *          
+ *          This handler sets tim1_brk_tim9_glbl_flag and clears the update interrupt flag 
+ *          for the timers so the handler can be exited. 
  * 
  * @see tim_uif_clear
  */
@@ -454,6 +457,11 @@ void TIM1_BRK_TIM9_IRQHandler(void);
  *          
  *          TIM10 is a general purpose timer and can be set to trigger interrupts for counter 
  *          updates (overflow, initialization), input capture or output compare. 
+ *          
+ *          This handler sets tim1_up_tim10_glbl_flag and clears the update interrupt flag 
+ *          for the timers so the handler can be exited. 
+ * 
+ * @see tim_uif_clear
  */
 void TIM1_UP_TIM10_IRQHandler(void); 
 
@@ -468,6 +476,11 @@ void TIM1_UP_TIM10_IRQHandler(void);
  *          
  *          TIM11 is a general purpose timer and can be set to trigger interrupts for counter 
  *          updates (overflow, initialization), input capture or output compare. 
+ *          
+ *          This handler sets tim1_trg_tim11_glbl_flag and clears the update interrupt flag 
+ *          for the timers so the handler can be exited. 
+ * 
+ * @see tim_uif_clear
  */
 void TIM1_TRG_COM_TIM11_IRQHandler(void); 
 
@@ -483,6 +496,11 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void);
  *          Output compare is used to control an output waveform (such as PWM) or indicating 
  *          when a period of time has elapsed. This interrupt is triggered when a match is 
  *          found between the capture/compare register and the counter. 
+ *          
+ *          This handler sets tim1_cc_flag and clears the update interrupt flag for the timer 
+ *          so the handler can be exited. 
+ * 
+ * @see tim_uif_clear
  */
 void TIM1_CC_IRQHandler(void); 
 
@@ -494,36 +512,65 @@ void TIM1_CC_IRQHandler(void);
  *          (counter overflow/underflow or counter initialization), trigger events (counter 
  *          start, stop, initialization or count by internal/external trigger), input 
  *          capture or output compare. 
+ *          
+ *          This handler sets tim2_glbl_flag and clears the update interrupt flag for the timer 
+ *          so the handler can be exited. 
+ * 
+ * @see tim_uif_clear
  */
 void TIM2_IRQHandler(void); 
 
 
 /**
- * @brief Timer 3
+ * @brief Timer 3 interrupt handler 
  * 
- * @details 
+ * @details Interrupt handler for TIM3. This handler can be called for update events 
+ *          (counter overflow/underflow or counter initialization), trigger events (counter 
+ *          start, stop, initialization or count by internal/external trigger), input 
+ *          capture or output compare. 
+ *          
+ *          This handler sets tim3_glbl_flag and clears the update interrupt flag for the timer 
+ *          so the handler can be exited. 
+ * 
+ * @see tim_uif_clear
  */
 void TIM3_IRQHandler(void); 
 
 
 /**
- * @brief Timer 4
+ * @brief Timer 4 interrupt handler 
  * 
- * @details 
+ * @details Interrupt handler for TIM4. This handler can be called for update events 
+ *          (counter overflow/underflow or counter initialization), trigger events (counter 
+ *          start, stop, initialization or count by internal/external trigger), input 
+ *          capture or output compare. 
+ *          
+ *          This handler sets tim4_glbl_flag and clears the update interrupt flag for the timer 
+ *          so the handler can be exited. 
+ * 
+ * @see tim_uif_clear
  */
 void TIM4_IRQHandler(void); 
 
 
 /**
- * @brief Timer 5
+ * @brief Timer 5 interrupt handler 
  * 
- * @details 
+ * @details Interrupt handler for TIM5. This handler can be called for update events 
+ *          (counter overflow/underflow or counter initialization), trigger events (counter 
+ *          start, stop, initialization or count by internal/external trigger), input 
+ *          capture or output compare. 
+ *          
+ *          This handler sets tim5_glbl_flag and clears the update interrupt flag for the timer 
+ *          so the handler can be exited. 
+ * 
+ * @see tim_uif_clear
  */
 void TIM5_IRQHandler(void); 
 
 
 /**
- * @brief ADC1 
+ * @brief ADC1 interrupt handler 
  * 
  * @details 
  */

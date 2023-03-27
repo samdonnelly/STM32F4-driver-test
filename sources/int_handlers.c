@@ -276,6 +276,7 @@ void DMA2_Stream7_IRQHandler(void)
 void TIM1_BRK_TIM9_IRQHandler(void)
 {
     handler_flags.tim1_brk_tim9_glbl_flag = SET_BIT; 
+    tim_uif_clear(TIM1); 
     tim_uif_clear(TIM9); 
 }
 
@@ -284,6 +285,8 @@ void TIM1_BRK_TIM9_IRQHandler(void)
 void TIM1_UP_TIM10_IRQHandler(void)
 {
     handler_flags.tim1_up_tim10_glbl_flag = SET_BIT; 
+    tim_uif_clear(TIM1); 
+    tim_uif_clear(TIM10); 
 }
 
 
@@ -291,6 +294,8 @@ void TIM1_UP_TIM10_IRQHandler(void)
 void TIM1_TRG_COM_TIM11_IRQHandler(void)
 {
     handler_flags.tim1_trg_tim11_glbl_flag = SET_BIT; 
+    tim_uif_clear(TIM1); 
+    tim_uif_clear(TIM11); 
 }
 
 
@@ -298,6 +303,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 void TIM1_CC_IRQHandler(void)
 {
     handler_flags.tim1_cc_flag = SET_BIT; 
+    tim_uif_clear(TIM1); 
 }
 
 
@@ -305,6 +311,7 @@ void TIM1_CC_IRQHandler(void)
 void TIM2_IRQHandler(void)
 {
     handler_flags.tim2_glbl_flag = SET_BIT; 
+    tim_uif_clear(TIM2); 
 }
 
 
@@ -312,6 +319,7 @@ void TIM2_IRQHandler(void)
 void TIM3_IRQHandler(void)
 {
     handler_flags.tim3_glbl_flag = SET_BIT; 
+    tim_uif_clear(TIM3); 
 }
 
 
@@ -319,6 +327,7 @@ void TIM3_IRQHandler(void)
 void TIM4_IRQHandler(void)
 {
     handler_flags.tim4_glbl_flag = SET_BIT; 
+    tim_uif_clear(TIM4); 
 }
 
 
@@ -326,6 +335,7 @@ void TIM4_IRQHandler(void)
 void TIM5_IRQHandler(void)
 {
     handler_flags.tim5_glbl_flag = SET_BIT; 
+    tim_uif_clear(TIM5); 
 }
 
 
