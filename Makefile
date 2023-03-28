@@ -47,6 +47,7 @@ sources/test_code/data_filters_test.c \
 sources/test_code/dma_test.c \
 sources/test_code/gpio_test.c \
 sources/test_code/hc05_test.c \
+sources/test_code/hd44780u_test.c \
 sources/test_code/hw125_test.c \
 sources/test_code/i2c_test.c \
 sources/test_code/interrupt_test.c \
@@ -56,7 +57,7 @@ sources/test_code/spi_test.c \
 sources/test_code/state_machine_test.c \
 sources/test_code/timers_test.c \
 sources/test_code/uart_test.c \
-sources/test_code/hd44780u_test.c \
+sources/test_code/ws2812_test.c \
 sources/config_files/m8q_config.c \
 ../STM32F4-driver-library/sources/analog_driver.c \
 ../STM32F4-driver-library/sources/data_filters.c \
