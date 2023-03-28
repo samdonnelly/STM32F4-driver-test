@@ -572,7 +572,9 @@ void TIM5_IRQHandler(void);
 /**
  * @brief ADC1 interrupt handler 
  * 
- * @details 
+ * @details Interrupt handler for ADC1. This handler sets adc_flag. Interrupt generation for 
+ *          ADC1 can be configured to trigger at the end of conversion, end of injected 
+ *          conversion, and for analog watchdog or overrun events. 
  */
 void ADC_IRQHandler(void); 
 
