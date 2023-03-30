@@ -41,7 +41,8 @@
 			"hw125_controller.h": "c",
 			"spi_comm.h": "c",
 			"i2c_comm.h": "c",
-			"int_handlers.h": "c"
+			"int_handlers.h": "c",
+			"ws2812_test.h": "c"
 		}
 	}
 }
