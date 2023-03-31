@@ -35,6 +35,7 @@
 #include "timers_test.h"
 #include "uart_test.h"
 #include "hd44780u_test.h"
+#include "ws2812_test.h" 
 
 //=======================================================================================
 

@@ -24,6 +24,7 @@
 #include "hd44780u_driver.h"
 #include "hc05_driver.h"
 #include "m8q_driver.h"
+#include "ws2812_driver.h" 
 
 // Controllers 
 #include "hc05_controller.h" 
