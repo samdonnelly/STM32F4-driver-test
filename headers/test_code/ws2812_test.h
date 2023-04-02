@@ -46,6 +46,14 @@ typedef enum {
     WS2812_LED_7 
 } ws2812_led_index_t; 
 
+
+// LED base colours 
+typedef enum {
+    WS2812_GREEN, 
+    WS2812_RED, 
+    WS2812_BLUE
+} ws2812_colours_t; 
+
 //=======================================================================================
 
 

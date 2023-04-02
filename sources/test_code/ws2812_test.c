@@ -26,28 +26,32 @@
 // String 1 LED colour data - Green, Red, Blue 
 static uint8_t s1_colour_data[WS2812_LED_NUM][WS2812_COLOUR_PER_LED] = 
 {
-    {30, 0, 0},          // LED1 starting colour 
-    {30, 30, 0},         // LED2 starting colour 
-    {0, 30, 0},          // LED3 starting colour 
-    {0, 30, 30},         // LED4 starting colour 
-    {0, 0, 30},          // LED5 starting colour 
-    {0, 0, 0},           // LED6 starting colour 
-    {0, 0, 0},           // LED7 starting colour 
-    {0, 30, 0}           // LED8 starting colour 
+    {0, 0, 0},          // LED1 starting colour 
+    {0, 0, 0},          // LED2 starting colour 
+    {0, 0, 0},          // LED3 starting colour 
+    {0, 0, 0},          // LED4 starting colour 
+    {0, 0, 0},          // LED5 starting colour 
+    {0, 0, 0},          // LED6 starting colour 
+    {0, 0, 0},          // LED7 starting colour 
+    {0, 0, 0}           // LED8 starting colour 
 };
 
-// String 1 LED colour data - Green, Red, Blue 
+#if WS2812_SECOND_DEVICE 
+
+// String 2 LED colour data - Green, Red, Blue 
 static uint8_t s2_colour_data[WS2812_LED_NUM][WS2812_COLOUR_PER_LED] = 
 {
-    {0, 0, 30},          // LED1 starting colour 
-    {0, 30, 30},         // LED2 starting colour 
-    {0, 30, 0},          // LED3 starting colour 
-    {30, 30, 0},         // LED4 starting colour 
-    {30, 0, 0},          // LED5 starting colour 
-    {0, 0, 0},           // LED6 starting colour 
-    {0, 0, 0},           // LED7 starting colour 
-    {0, 30, 0}           // LED8 starting colour 
+    {0, 0, 0},          // LED1 starting colour 
+    {0, 0, 0},          // LED2 starting colour 
+    {0, 0, 0},          // LED3 starting colour 
+    {0, 0, 0},          // LED4 starting colour 
+    {0, 0, 0},          // LED5 starting colour 
+    {0, 0, 0},          // LED6 starting colour 
+    {0, 0, 0},          // LED7 starting colour 
+    {0, 0, 0}           // LED8 starting colour 
 };
+
+#endif   // WS2812_SECOND_DEVICE 
 
 //=======================================================================================
 
@@ -78,7 +82,7 @@ void ws2812_test_init()
         TIM10, 
         TIM_84MHZ_310NS_PSC, 
         0xFFFF,  // Max ARR value 
-        TIM_UP_INT_DISABLE); 
+        TIM_UP_INT_DISABLE);
 
     // Enable the timers 
     tim_enable(TIM9); 
@@ -160,8 +164,58 @@ void ws2812_test_app()
 {
     // Test code for the ws2812_test here 
 
+    // Local variables 
+    static uint8_t LED_previous = 7; 
+    static uint8_t LED_current = 0; 
+
+    // Update the previous LED colour data 
+    s1_colour_data[LED_previous][WS2812_GREEN] = 0; 
+    s1_colour_data[LED_previous][WS2812_RED]   = 0; 
+    s1_colour_data[LED_previous][WS2812_BLUE]  = 0; 
+
+    // Update the current LED colour data 
+    s1_colour_data[LED_current][WS2812_GREEN] = 0; 
+    s1_colour_data[LED_current][WS2812_RED]   = 0; 
+    s1_colour_data[LED_current][WS2812_BLUE]  = 30; 
+
+    // Write the LED data 
+    ws2812_colour_set(DEVICE_ONE, s1_colour_data[LED_previous], LED_previous); 
+    ws2812_colour_set(DEVICE_ONE, s1_colour_data[LED_current], LED_current); 
+    ws2812_update(DEVICE_ONE); 
+    ws2812_send(DEVICE_ONE); 
+
     // Delay at least 50us 
     tim_delay_us(TIM9, 50); 
+
+#if WS2812_SECOND_DEVICE 
+
+    // Update the previous LED colour data 
+    s2_colour_data[LED_previous][WS2812_GREEN] = 0; 
+    s2_colour_data[LED_previous][WS2812_RED]   = 0; 
+    s2_colour_data[LED_previous][WS2812_BLUE]  = 0; 
+
+    // Update the current LED colour data 
+    s2_colour_data[LED_current][WS2812_GREEN] = 30; 
+    s2_colour_data[LED_current][WS2812_RED]   = 0; 
+    s2_colour_data[LED_current][WS2812_BLUE]  = 0; 
+
+    // Write the LED data 
+    ws2812_colour_set(DEVICE_TWO, s2_colour_data[LED_previous], LED_previous); 
+    ws2812_colour_set(DEVICE_TWO, s2_colour_data[LED_current], LED_current); 
+    ws2812_update(DEVICE_TWO); 
+    ws2812_send(DEVICE_TWO); 
+
+    // Delay at least 50us 
+    tim_delay_us(TIM9, 50); 
+
+#endif   // WS2812_SECOND_DEVICE 
+
+    // Update the LED index 
+    LED_previous = (LED_previous >= 7) ? (0) : (LED_previous + 1); 
+    LED_current  = (LED_current >= 7)  ? (0) : (LED_current + 1); 
+
+    // Delay for visual effect 
+    tim_delay_ms(TIM9, 1000); 
 }
 
 //=======================================================================================
