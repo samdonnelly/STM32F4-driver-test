@@ -24,32 +24,12 @@
 // Global variables 
 
 // String 1 LED colour data - Green, Red, Blue 
-static uint8_t s1_colour_data[WS2812_LED_NUM][WS2812_COLOUR_PER_LED] = 
-{
-    {0, 0, 0},          // LED1 starting colour 
-    {0, 0, 0},          // LED2 starting colour 
-    {0, 0, 0},          // LED3 starting colour 
-    {0, 0, 0},          // LED4 starting colour 
-    {0, 0, 0},          // LED5 starting colour 
-    {0, 0, 0},          // LED6 starting colour 
-    {0, 0, 0},          // LED7 starting colour 
-    {0, 0, 0}           // LED8 starting colour 
-};
+static uint8_t s1_colour_data[WS2812_LED_NUM][WS2812_COLOUR_PER_LED]; 
 
 #if WS2812_SECOND_DEVICE 
 
 // String 2 LED colour data - Green, Red, Blue 
-static uint8_t s2_colour_data[WS2812_LED_NUM][WS2812_COLOUR_PER_LED] = 
-{
-    {0, 0, 0},          // LED1 starting colour 
-    {0, 0, 0},          // LED2 starting colour 
-    {0, 0, 0},          // LED3 starting colour 
-    {0, 0, 0},          // LED4 starting colour 
-    {0, 0, 0},          // LED5 starting colour 
-    {0, 0, 0},          // LED6 starting colour 
-    {0, 0, 0},          // LED7 starting colour 
-    {0, 0, 0}           // LED8 starting colour 
-};
+static uint8_t s2_colour_data[WS2812_LED_NUM][WS2812_COLOUR_PER_LED]; 
 
 #endif   // WS2812_SECOND_DEVICE 
 
@@ -119,6 +99,9 @@ void ws2812_test_init()
     //==================================================
     // Initialize LED colours 
 
+    // Clear colour data 
+    memset((void *)s1_colour_data[WS2812_LED_0], CLEAR, sizeof(s1_colour_data)); 
+
     // Set each LED colour 
     ws2812_colour_set(DEVICE_ONE, s1_colour_data[WS2812_LED_0], WS2812_LED_0); 
     ws2812_colour_set(DEVICE_ONE, s1_colour_data[WS2812_LED_1], WS2812_LED_1); 
@@ -136,6 +119,9 @@ void ws2812_test_init()
     ws2812_send(DEVICE_ONE); 
 
 #if WS2812_SECOND_DEVICE 
+
+    // Clear colour data 
+    memset((void *)s2_colour_data[WS2812_LED_0], CLEAR, sizeof(s2_colour_data)); 
 
     // Set each LED colour 
     ws2812_colour_set(DEVICE_TWO, s2_colour_data[WS2812_LED_0], WS2812_LED_0); 
@@ -165,8 +151,8 @@ void ws2812_test_app()
     // Test code for the ws2812_test here 
 
     // Local variables 
-    static uint8_t LED_previous = 7; 
-    static uint8_t LED_current = 0; 
+    static uint8_t LED_previous = WS2812_LED_7; 
+    static uint8_t LED_current = WS2812_LED_0; 
 
     // Update the previous LED colour data 
     s1_colour_data[LED_previous][WS2812_GREEN] = 0; 
@@ -175,8 +161,8 @@ void ws2812_test_app()
 
     // Update the current LED colour data 
     s1_colour_data[LED_current][WS2812_GREEN] = 0; 
-    s1_colour_data[LED_current][WS2812_RED]   = 0; 
-    s1_colour_data[LED_current][WS2812_BLUE]  = 30; 
+    s1_colour_data[LED_current][WS2812_RED]   = 30; 
+    s1_colour_data[LED_current][WS2812_BLUE]  = 0; 
 
     // Write the LED data 
     ws2812_colour_set(DEVICE_ONE, s1_colour_data[LED_previous], LED_previous); 
@@ -211,11 +197,11 @@ void ws2812_test_app()
 #endif   // WS2812_SECOND_DEVICE 
 
     // Update the LED index 
-    LED_previous = (LED_previous >= 7) ? (0) : (LED_previous + 1); 
-    LED_current  = (LED_current >= 7)  ? (0) : (LED_current + 1); 
+    LED_previous = (LED_previous >= WS2812_LED_7) ? (WS2812_LED_0) : (LED_previous + 1); 
+    LED_current  = (LED_current >= WS2812_LED_7)  ? (WS2812_LED_0) : (LED_current + 1); 
 
     // Delay for visual effect 
-    tim_delay_ms(TIM9, 1000); 
+    tim_delay_ms(TIM9, 2000); 
 }
 
 //=======================================================================================
