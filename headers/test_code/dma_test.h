@@ -24,6 +24,17 @@
 
 
 //=======================================================================================
+// Macros 
+
+#define ADC_DMA_SECOND_CHANNEL 0      // Enables test code for second ADC channel 
+#define DMA_TEST_MODE_1 0             // Mode 1 test code control (see source file) 
+#define DMA_TEST_MODE_2 0             // Mode 2 test code control (see source file) 
+#define DMA_TEST_MODE_3 0             // Mode 3 test code control (see source file) 
+
+//=======================================================================================
+
+
+//=======================================================================================
 // Function prototypes 
 
 /**

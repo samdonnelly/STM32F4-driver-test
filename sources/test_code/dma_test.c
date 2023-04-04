@@ -20,12 +20,12 @@
 //=======================================================================================
 
 
-//================================================================================
+//=======================================================================================
 // Globals 
 
 uint16_t adc_data[2];  // Location for the DMA to store ADC values 
 
-//================================================================================
+//=======================================================================================
 
 
 //==================================================
@@ -74,32 +74,41 @@ void dma_test_init()
     // ADC Init 
 
     // Initialize the ADC port (called once) 
-    adc_port_init(ADC1, 
-                  ADC1_COMMON, 
-                  ADC_PCLK2_4, 
-                  ADC_RES_8, 
-                  ADC_EOC_EACH, 
-                  // Enable for ADC scan mode 
-                  ADC_SCAN_DISABLE, 
-                  // ADC_SCAN_ENABLE, 
-                  // Enable for ADC continuous mode 
-                  // ADC_CONT_DISABLE, 
-                  ADC_CONT_ENABLE, 
-                  ADC_DMA_ENABLE, 
-                  ADC_DDS_ENABLE, 
-                  ADC_EOC_INT_DISABLE, 
-                  ADC_OVR_INT_DISABLE); 
+    adc_port_init(
+        ADC1, 
+        ADC1_COMMON, 
+        ADC_PCLK2_4, 
+        ADC_RES_8, 
+        ADC_EOC_EACH, 
+        // Enable for ADC scan mode 
+        ADC_SCAN_DISABLE, 
+        // ADC_SCAN_ENABLE, 
+        // Enable for ADC continuous mode 
+        // ADC_CONT_DISABLE, 
+        ADC_CONT_ENABLE, 
+        ADC_DMA_ENABLE, 
+        ADC_DDS_ENABLE, 
+        ADC_EOC_INT_DISABLE, 
+        ADC_OVR_INT_DISABLE); 
 
-    // Initialize ADC pins and channels (called for each pin/channel) 
+    // Initialize the first ADC pin and channel (called for each pin/channel) 
     adc_pin_init(ADC1, GPIOC, PIN_0, ADC_CHANNEL_10, ADC_SMP_15); 
-    // adc_pin_init(ADC1, GPIOC, PIN_1, ADC_CHANNEL_11, ADC_SMP_15); 
 
     // Set the ADC conversion sequence (called for each sequence entry) 
     adc_seq(ADC1, ADC_CHANNEL_10, ADC_SEQ_1); 
-    // adc_seq(ADC1, ADC_CHANNEL_11, ADC_SEQ_2); 
 
-    // // Set the sequence length (called once) 
-    // adc_seq_len_set(ADC1, ADC_SEQ_2); 
+#if ADC_DMA_SECOND_CHANNEL 
+
+    // Initialize the second ADC pin and channel 
+    adc_pin_init(ADC1, GPIOC, PIN_1, ADC_CHANNEL_11, ADC_SMP_15); 
+
+    // Set the ADC conversion sequence (called for each sequence entry) 
+    adc_seq(ADC1, ADC_CHANNEL_11, ADC_SEQ_2); 
+
+    // Set the sequence length (called once and only for more than one channel) 
+    adc_seq_len_set(ADC1, ADC_SEQ_2); 
+
+#endif   // ADC_DMA_SECOND_CHANNEL 
 
     // Turn the ADC on 
     adc_on(ADC1); 
@@ -135,7 +144,9 @@ void dma_test_init()
 
     //==================================================
     // Start and ADC conversion - ADC continuous modes 
+
     adc_start(ADC1); 
+    
     //==================================================
 } 
 
@@ -146,22 +157,26 @@ void dma_test_app()
     //==================================================
     // Trigger the ADC conversion - ADC non-continuous & scan mode only 
 
-    // // Local variables 
-    // static uint8_t user_button = 0; 
-    // static uint8_t button_block = 0; 
+#if DMA_TEST_MODE_1 
 
-    // // Read the user button state 
-    // user_button = gpio_read(GPIOC, GPIOX_PIN_13); 
+    // Local variables 
+    static uint8_t user_button = 0; 
+    static uint8_t button_block = 0; 
 
-    // // Start the ADC scan conversion through DMA if the button is pressed 
-    // if (!user_button && !button_block)
-    // {
-    //     adc_start(ADC1); 
-    //     button_block++; 
-    //     tim_delay_ms(TIM9, 10);  // Wait for button bounce to settle 
-    // }
-    // else if (user_button && button_block)
-    //     button_block--; 
+    // Read the user button state 
+    user_button = gpio_read(GPIOC, GPIOX_PIN_13); 
+
+    // Start the ADC scan conversion through DMA if the button is pressed 
+    if (!user_button && !button_block)
+    {
+        adc_start(ADC1); 
+        button_block++; 
+        tim_delay_ms(TIM9, 10);  // Wait for button bounce to settle 
+    }
+    else if (user_button && button_block)
+        button_block--; 
+
+#endif   // DMA_TEST_MODE_1 
 
     //==================================================
 
