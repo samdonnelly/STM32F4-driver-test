@@ -75,8 +75,8 @@ void ws2812_test_init()
         GPIOC, 
         PIN_6, 
         DMA1, 
-        DMA_STREAM_4, 
-        DMA_CHANNEL_5); 
+        DMA1_Stream4, 
+        DMA_CHNL_5); 
 
 #if WS2812_SECOND_DEVICE 
 
@@ -101,21 +101,21 @@ void ws2812_test_init()
     // Clear colour data 
     memset((void *)s1_colour_data[WS2812_LED_0], CLEAR, sizeof(s1_colour_data)); 
 
-    // Set each LED colour 
-    ws2812_colour_set(DEVICE_ONE, s1_colour_data[WS2812_LED_0], WS2812_LED_0); 
-    ws2812_colour_set(DEVICE_ONE, s1_colour_data[WS2812_LED_1], WS2812_LED_1); 
-    ws2812_colour_set(DEVICE_ONE, s1_colour_data[WS2812_LED_2], WS2812_LED_2); 
-    ws2812_colour_set(DEVICE_ONE, s1_colour_data[WS2812_LED_3], WS2812_LED_3); 
-    ws2812_colour_set(DEVICE_ONE, s1_colour_data[WS2812_LED_4], WS2812_LED_4); 
-    ws2812_colour_set(DEVICE_ONE, s1_colour_data[WS2812_LED_5], WS2812_LED_5); 
-    ws2812_colour_set(DEVICE_ONE, s1_colour_data[WS2812_LED_6], WS2812_LED_6); 
-    ws2812_colour_set(DEVICE_ONE, s1_colour_data[WS2812_LED_7], WS2812_LED_7); 
+    // // Set each LED colour 
+    // ws2812_colour_set(DEVICE_ONE, s1_colour_data[WS2812_LED_0], WS2812_LED_0); 
+    // ws2812_colour_set(DEVICE_ONE, s1_colour_data[WS2812_LED_1], WS2812_LED_1); 
+    // ws2812_colour_set(DEVICE_ONE, s1_colour_data[WS2812_LED_2], WS2812_LED_2); 
+    // ws2812_colour_set(DEVICE_ONE, s1_colour_data[WS2812_LED_3], WS2812_LED_3); 
+    // ws2812_colour_set(DEVICE_ONE, s1_colour_data[WS2812_LED_4], WS2812_LED_4); 
+    // ws2812_colour_set(DEVICE_ONE, s1_colour_data[WS2812_LED_5], WS2812_LED_5); 
+    // ws2812_colour_set(DEVICE_ONE, s1_colour_data[WS2812_LED_6], WS2812_LED_6); 
+    // ws2812_colour_set(DEVICE_ONE, s1_colour_data[WS2812_LED_7], WS2812_LED_7); 
 
-    // Update the write data with the new LED colour infromation 
-    ws2812_update(DEVICE_ONE); 
+    // // Update the write data with the new LED colour infromation 
+    // ws2812_update(DEVICE_ONE); 
 
-    // Send the write data to the device 
-    ws2812_send(DEVICE_ONE); 
+    // // Send the write data to the device 
+    // ws2812_send(DEVICE_ONE); 
 
 #if WS2812_SECOND_DEVICE 
 
