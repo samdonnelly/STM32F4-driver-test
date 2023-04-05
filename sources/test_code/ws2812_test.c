@@ -56,17 +56,8 @@ void ws2812_test_init()
         TIM_84MHZ_1US_PSC, 
         0xFFFF,  // Max ARR value 
         TIM_UP_INT_DISABLE); 
-
-    // TIM10 - timer for WS2812 data sending 
-    tim_9_to_11_counter_init(
-        TIM10, 
-        TIM_84MHZ_310NS_PSC, 
-        0xFFFF,  // Max ARR value 
-        TIM_UP_INT_DISABLE);
-
-    // Enable the timers 
+    
     tim_enable(TIM9); 
-    tim_enable(TIM10); 
 
     // Initialize UART2
     uart_init(USART2, UART_BAUD_9600, UART_CLOCK_42);
@@ -79,18 +70,26 @@ void ws2812_test_init()
     // WS2812 - device one 
     ws2812_init(
         DEVICE_ONE, 
-        TIM10, 
+        TIM3, 
+        TIM_CHANNEL_1, 
         GPIOC, 
-        PIN_6); 
+        PIN_6, 
+        DMA1, 
+        DMA_STREAM_4, 
+        DMA_CHANNEL_5); 
 
 #if WS2812_SECOND_DEVICE 
 
     // WS2812 - device two 
     ws2812_init(
         DEVICE_TWO, 
-        TIM10, 
+        TIM3, 
+        TIM_CHANNEL_2, 
         GPIOC, 
-        PIN_7); 
+        PIN_7, 
+        DMA1, 
+        DMA_STREAM_5, 
+        DMA_CHANNEL_5); 
 
 #endif   // WS2812_SECOND_DEVICE 
     

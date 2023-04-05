@@ -139,6 +139,9 @@ void dma_test_init()
         (uint32_t)(&ADC1->DR), 
         (uint32_t)adc_data, 
         (uint16_t)SET_2); 
+
+    // Enable the DMA stream 
+    dma_stream_enable(DMA2_Stream0); 
     
     //==================================================
 

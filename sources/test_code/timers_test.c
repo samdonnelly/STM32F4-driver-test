@@ -50,7 +50,8 @@ void timers_test_init()
         TIM_OCM_PWM1, 
         TIM_OCPE_ENABLE, 
         TIM_ARPE_ENABLE, 
-        TIM_CCP_AH); 
+        TIM_CCP_AH, 
+        TIM_UP_DMA_DISABLE); 
     
     tim_9_to_11_counter_init(
         TIM9, 

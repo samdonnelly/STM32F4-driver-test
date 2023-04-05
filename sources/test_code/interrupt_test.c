@@ -127,12 +127,16 @@ void int_test_init()
         (uint32_t)adc_conversion, 
         (uint16_t)SET_2); 
 
+    // Enable the DMA stream 
+    dma_stream_enable(DMA2_Stream0); 
+
     // Configure the DMA interrupts 
-    dma_int_config(DMA2_Stream0, 
-                   DMA_TCIE_ENABLE, 
-                   DMA_HTIE_DISABLE, 
-                   DMA_TEIE_DISABLE, 
-                   DMA_DMEIE_DISABLE); 
+    dma_int_config(
+        DMA2_Stream0, 
+        DMA_TCIE_ENABLE, 
+        DMA_HTIE_DISABLE, 
+        DMA_TEIE_DISABLE, 
+        DMA_DMEIE_DISABLE); 
     
     //==================================================
 
