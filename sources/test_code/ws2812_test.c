@@ -33,6 +33,8 @@ static uint8_t s2_colour_data[WS2812_LED_NUM][WS2812_COLOUR_PER_LED];
 
 #endif   // WS2812_SECOND_DEVICE 
 
+uint16_t pwm_array[192]; 
+
 //=======================================================================================
 
 
