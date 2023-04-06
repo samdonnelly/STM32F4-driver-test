@@ -33,8 +33,6 @@ static uint8_t s2_colour_data[WS2812_LED_NUM][WS2812_COLOUR_PER_LED];
 
 #endif   // WS2812_SECOND_DEVICE 
 
-uint16_t pwm_array[192]; 
-
 //=======================================================================================
 
 
@@ -70,6 +68,7 @@ void ws2812_test_init()
     // Initialize devices 
 
     // WS2812 - device one 
+    // TODO try using TIM3 channel 2 
     ws2812_init(
         DEVICE_ONE, 
         TIM3, 
