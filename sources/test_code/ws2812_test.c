@@ -68,7 +68,6 @@ void ws2812_test_init()
     // Initialize devices 
 
     // WS2812 - device one 
-    // TODO try using TIM3 channel 2 
     ws2812_init(
         DEVICE_ONE, 
         TIM3, 
@@ -130,7 +129,7 @@ void ws2812_test_app()
     s1_colour_data[LED_previous][WS2812_BLUE]  = 0; 
 
     // Update the current LED colour data 
-    s1_colour_data[LED_current][WS2812_GREEN] = 0; 
+    s1_colour_data[LED_current][WS2812_GREEN] = 30; 
     s1_colour_data[LED_current][WS2812_RED]   = 30; 
     s1_colour_data[LED_current][WS2812_BLUE]  = 0; 
 
@@ -163,7 +162,7 @@ void ws2812_test_app()
     LED_current  = (LED_current >= WS2812_LED_7)  ? (WS2812_LED_0) : (LED_current + 1); 
 
     // Delay for visual effect 
-    tim_delay_ms(TIM9, 2000); 
+    tim_delay_ms(TIM9, 50); 
 }
 
 //=======================================================================================
