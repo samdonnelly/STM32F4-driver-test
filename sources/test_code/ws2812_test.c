@@ -73,10 +73,7 @@ void ws2812_test_init()
         TIM3, 
         TIM_CHANNEL_1, 
         GPIOC, 
-        PIN_6, 
-        DMA1, 
-        DMA1_Stream4, 
-        DMA_CHNL_5); 
+        PIN_6); 
 
 #if WS2812_SECOND_DEVICE 
 
@@ -86,10 +83,7 @@ void ws2812_test_init()
         TIM3, 
         TIM_CHANNEL_2, 
         GPIOC, 
-        PIN_7, 
-        DMA1, 
-        DMA1_Stream5, 
-        DMA_CHNL_5); 
+        PIN_7); 
 
 #endif   // WS2812_SECOND_DEVICE 
     
@@ -129,9 +123,9 @@ void ws2812_test_app()
     s1_colour_data[LED_previous][WS2812_BLUE]  = 0; 
 
     // Update the current LED colour data 
-    s1_colour_data[LED_current][WS2812_GREEN] = 30; 
+    s1_colour_data[LED_current][WS2812_GREEN] = 0; 
     s1_colour_data[LED_current][WS2812_RED]   = 30; 
-    s1_colour_data[LED_current][WS2812_BLUE]  = 0; 
+    s1_colour_data[LED_current][WS2812_BLUE]  = 30; 
 
     // Write the LED data 
     ws2812_colour_set(DEVICE_ONE, s1_colour_data[LED_previous], LED_previous); 
@@ -146,8 +140,8 @@ void ws2812_test_app()
     s2_colour_data[LED_previous][WS2812_BLUE]  = 0; 
 
     // Update the current LED colour data 
-    s2_colour_data[LED_current][WS2812_GREEN] = 30; 
-    s2_colour_data[LED_current][WS2812_RED]   = 0; 
+    s2_colour_data[LED_current][WS2812_GREEN] = 45; 
+    s2_colour_data[LED_current][WS2812_RED]   = 170; 
     s2_colour_data[LED_current][WS2812_BLUE]  = 0; 
 
     // Write the LED data 
@@ -162,7 +156,7 @@ void ws2812_test_app()
     LED_current  = (LED_current >= WS2812_LED_7)  ? (WS2812_LED_0) : (LED_current + 1); 
 
     // Delay for visual effect 
-    tim_delay_ms(TIM9, 50); 
+    tim_delay_ms(TIM9, 500); 
 }
 
 //=======================================================================================
