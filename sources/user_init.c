@@ -24,5 +24,5 @@
 void user_init()
 {
     // Setup code here
-    ws2812_test_init(); 
+    dma_test_init(); 
 }

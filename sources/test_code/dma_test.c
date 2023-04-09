@@ -23,7 +23,7 @@
 //=======================================================================================
 // Globals 
 
-uint16_t adc_data[2];  // Location for the DMA to store ADC values 
+static uint16_t adc_data[ADC_BUFF_SIZE];  // Location for the DMA to store ADC values 
 
 //=======================================================================================
 
@@ -80,33 +80,47 @@ void dma_test_init()
         ADC_PCLK2_4, 
         ADC_RES_8, 
         ADC_EOC_EACH, 
-        // Enable for ADC scan mode 
+#if DMA_TEST_MODE_3   // For ADC scan mode 
         ADC_SCAN_DISABLE, 
-        // ADC_SCAN_ENABLE, 
-        // Enable for ADC continuous mode 
-        // ADC_CONT_DISABLE, 
+#else 
+        ADC_SCAN_ENABLE, 
+#endif 
+#if DMA_TEST_MODE_1  // For ADC continuous mode 
+        ADC_CONT_DISABLE, 
+#else 
         ADC_CONT_ENABLE, 
+#endif 
         ADC_DMA_ENABLE, 
         ADC_DDS_ENABLE, 
         ADC_EOC_INT_DISABLE, 
         ADC_OVR_INT_DISABLE); 
 
     // Initialize the first ADC pin and channel (called for each pin/channel) 
-    adc_pin_init(ADC1, GPIOC, PIN_0, ADC_CHANNEL_10, ADC_SMP_15); 
+    adc_pin_init(ADC1, GPIOA, PIN_6, ADC_CHANNEL_6, ADC_SMP_15); 
 
     // Set the ADC conversion sequence (called for each sequence entry) 
-    adc_seq(ADC1, ADC_CHANNEL_10, ADC_SEQ_1); 
+    adc_seq(ADC1, ADC_CHANNEL_6, ADC_SEQ_1); 
 
 #if ADC_DMA_SECOND_CHANNEL 
 
     // Initialize the second ADC pin and channel 
-    adc_pin_init(ADC1, GPIOC, PIN_1, ADC_CHANNEL_11, ADC_SMP_15); 
+    adc_pin_init(ADC1, GPIOA, PIN_7, ADC_CHANNEL_7, ADC_SMP_15); 
 
     // Set the ADC conversion sequence (called for each sequence entry) 
-    adc_seq(ADC1, ADC_CHANNEL_11, ADC_SEQ_2); 
+    adc_seq(ADC1, ADC_CHANNEL_7, ADC_SEQ_2); 
+
+#if ADC_DMA_THIRD_CHANNEL 
+
+    // Initialize the third ADC pin and channel 
+    adc_pin_init(ADC1, GPIOA, PIN_4, ADC_CHANNEL_4, ADC_SMP_15); 
+
+    // Set the ADC conversion sequence (called for each sequence entry) 
+    adc_seq(ADC1, ADC_CHANNEL_4, ADC_SEQ_3); 
+
+#endif   // ADC_DMA_THIRD_CHANNEL 
 
     // Set the sequence length (called once and only for more than one channel) 
-    adc_seq_len_set(ADC1, ADC_SEQ_2); 
+    adc_seq_len_set(ADC1, (adc_seq_num_t)ADC_BUFF_SIZE); 
 
 #endif   // ADC_DMA_SECOND_CHANNEL 
 
@@ -126,9 +140,11 @@ void dma_test_init()
         DMA_DIR_PM, 
         DMA_CM_ENABLE,
         DMA_PRIOR_VHI, 
-        // Memory increment 
-        // DMA_ADDR_INCREMENT, 
+#if DMA_TEST_MODE_3   // Memeory increment 
         DMA_ADDR_FIXED, 
+#else 
+        DMA_ADDR_INCREMENT, 
+#endif 
         DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
         DMA_DATA_SIZE_HALF, 
         DMA_DATA_SIZE_HALF); 
@@ -138,7 +154,7 @@ void dma_test_init()
         DMA2_Stream0, 
         (uint32_t)(&ADC1->DR), 
         (uint32_t)adc_data, 
-        (uint16_t)SET_2); 
+        (uint16_t)ADC_BUFF_SIZE); 
 
     // Enable the DMA stream 
     dma_stream_enable(DMA2_Stream0); 
@@ -148,7 +164,11 @@ void dma_test_init()
     //==================================================
     // Start and ADC conversion - ADC continuous modes 
 
+#if (DMA_TEST_MODE_2 || DMA_TEST_MODE_3) 
+
     adc_start(ADC1); 
+
+#endif 
     
     //==================================================
 } 
@@ -184,12 +204,26 @@ void dma_test_app()
     //==================================================
 
     // Display the result to the serial terminal 
-    uart_sendstring(USART2, "ADC1_10: "); 
-    uart_send_integer(USART2, (int16_t)adc_data[0]); 
-    uart_send_spaces(USART2, 5); 
-    uart_sendstring(USART2, "ADC1_11: "); 
-    uart_send_integer(USART2, (int16_t)adc_data[1]); 
+    uart_sendstring(USART2, "First ADC: "); 
+    uart_send_integer(USART2, (int16_t)adc_data[FIRST_ADC]); 
+
+#if ADC_DMA_SECOND_CHANNEL 
+
+    uart_send_spaces(USART2, ADC_PRINT_SPACES); 
+    uart_sendstring(USART2, "Second ADC: "); 
+    uart_send_integer(USART2, (int16_t)adc_data[SECOND_ADC]); 
+
+#if ADC_DMA_THIRD_CHANNEL 
+
+    uart_send_spaces(USART2, ADC_PRINT_SPACES); 
+    uart_sendstring(USART2, "Third ADC: "); 
+    uart_send_integer(USART2, (int16_t)adc_data[THIRD_ADC]); 
+
+#endif   // ADC_DMA_THIRD_CHANNEL 
+
     uart_send_new_line(USART2); 
+
+#endif   // ADC_DMA_SECOND_CHANNEL 
 
     // Delay 
     tim_delay_ms(TIM9, 1000); 

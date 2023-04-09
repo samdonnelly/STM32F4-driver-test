@@ -24,5 +24,5 @@
 void user_app()
 {
     // Looped code here
-    ws2812_test_app(); 
+    dma_test_app(); 
 }
