@@ -24,15 +24,28 @@
 //=======================================================================================
 
 
-//================================================================================
+//=======================================================================================
 // Macros 
 
+// Conditional compilation 
+#define TIM_PERIODIC 1               // Periodic interrupt code 
+#define TIM_PERIODIC_COUNT 0         // Periodic interrupt counter printout code 
+#define TIM_PWM_OUTPUT 0             // PWM output code (requires periodic interrupt code) 
+#define TIM_SWITCH_1 1               // User switch 1 (requires periodic interrupt code) 
+#define TIM_SWITCH_2 0               // User switch 2 (requires periodic interrupt code) 
+#define TIM_SWITCH_3 0               // User switch 3 (requires periodic interrupt code) 
+#define TIM_SWITCH_4 0               // User switch 4 (requires periodic interrupt code) 
+#define TIM_CLK_FREQ 0               // Code for checking system clock frequencies 
+#define TIM_NON_BLOCKING 0           // Non-blocking delay code 
+
+// PWM 
 #define PWM_INCREMENT 20
 #define PWM_ARR 100 
 
+// Timing 
 #define TIM_NO_BLOCK_DELAY 3000000   // (us) 
 
-//================================================================================
+//=======================================================================================
 
 
 //=======================================================================================

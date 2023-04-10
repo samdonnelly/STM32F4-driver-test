@@ -53,12 +53,12 @@ void int_test_init()
     int_handler_init(); 
 
     //==================================================
-    // EXTI initialization 
+    // External interrupt initialization 
 
     // Enable external interrupts (called once) 
     exti_init(); 
 
-#if INT_EXTI0 
+#if INT_EXTI 
 
     // Configure the external interrupt (called for each EXTI) 
     // exti_config(
@@ -82,83 +82,10 @@ void int_test_init()
         EXTI_RISE_TRIG_DISABLE, 
         EXTI_FALL_TRIG_ENABLE); 
 
-
-#if INT_EXTI1 
-
-    exti_config(
-        GPIOC, 
-        EXTI_PC, 
-        PIN_1, 
-        PUPDR_PU, 
-        EXTI_L1, 
-        EXTI_INT_NOT_MASKED, 
-        EXTI_EVENT_MASKED, 
-        EXTI_RISE_TRIG_DISABLE, 
-        EXTI_FALL_TRIG_ENABLE); 
-
-#if INT_EXTI2 
-
-    exti_config(
-        GPIOC, 
-        EXTI_PC, 
-        PIN_2, 
-        PUPDR_PU, 
-        EXTI_L2, 
-        EXTI_INT_NOT_MASKED, 
-        EXTI_EVENT_MASKED, 
-        EXTI_RISE_TRIG_DISABLE, 
-        EXTI_FALL_TRIG_ENABLE); 
-
-#if INT_EXTI3 
-
-    exti_config(
-        GPIOC, 
-        EXTI_PC, 
-        PIN_3, 
-        PUPDR_PU, 
-        EXTI_L3, 
-        EXTI_INT_NOT_MASKED, 
-        EXTI_EVENT_MASKED, 
-        EXTI_RISE_TRIG_DISABLE, 
-        EXTI_FALL_TRIG_ENABLE); 
-
-#if INT_EXTI4 
-
-    exti_config(
-        GPIOC, 
-        EXTI_PC, 
-        PIN_4, 
-        PUPDR_PU, 
-        EXTI_L4, 
-        EXTI_INT_NOT_MASKED, 
-        EXTI_EVENT_MASKED, 
-        EXTI_RISE_TRIG_DISABLE, 
-        EXTI_FALL_TRIG_ENABLE); 
-
-    // Enable the interrupt handlers (called for each interrupt) 
-    nvic_config(EXTI4_IRQn, EXTI_PRIORITY_0); 
-
-#endif   // INT_EXTI4 
-
-    // Enable the interrupt handlers (called for each interrupt) 
-    nvic_config(EXTI3_IRQn, EXTI_PRIORITY_0); 
-
-#endif   // INT_EXTI3 
-
-    // Enable the interrupt handlers (called for each interrupt) 
-    nvic_config(EXTI2_IRQn, EXTI_PRIORITY_0); 
-
-#endif   // INT_EXTI2
-
-    // Enable the interrupt handlers (called for each interrupt) 
-    nvic_config(EXTI1_IRQn, EXTI_PRIORITY_0); 
-
-#endif   // INT_EXTI1 
-
     // Enable the interrupt handlers (called for each interrupt) 
     nvic_config(EXTI0_IRQn, EXTI_PRIORITY_0); 
 
-#endif   // INT_EXTI0 
+#endif   // INT_EXTI 
 
     //==================================================
 
@@ -242,6 +169,7 @@ void int_test_init()
 #endif   // INT_DMA_ENABLE 
 
 #endif   // INT_ADC_ENABLE 
+
 }
 
 
@@ -250,18 +178,18 @@ void int_test_app()
 {
     // Test code for interrupt_test here 
 
-    // TODO external button/switch debouncing code 
-
-#if INT_EXTI0 
-
     //==================================================
-    // EXTI0 
+    // External Interrupt  
+
+#if INT_EXTI 
 
     // Check for the external interrupt from the user 
     if (handler_flags.exti2_flag)
     {
         // Reset the EXTI handler flag 
         handler_flags.exti2_flag = CLEAR; 
+
+        // Do something 
 
 #if INT_ADC_ENABLE 
 
@@ -293,41 +221,10 @@ void int_test_app()
         uart_send_new_line(USART2); 
 
 #endif   // INT_ADC_ENABLE 
+
     }
 
-    //==================================================
-
-#if INT_EXTI1 
+#endif   // INT_EXTI 
 
     //==================================================
-    // EXTI1 
-    //==================================================
-
-#if INT_EXTI2 
-
-    //==================================================
-    // EXTI2 
-    //==================================================
-
-#if INT_EXTI3 
-
-    //==================================================
-    // EXTI3 
-    //==================================================
-
-#if INT_EXTI4 
-
-    //==================================================
-    // EXTI4 
-    //==================================================
-
-#endif   // INT_EXTI4 
-
-#endif   // INT_EXTI3 
-
-#endif   // INT_EXTI2 
-
-#endif   // INT_EXTI1 
-
-#endif   // INT_EXTI0 
 }
