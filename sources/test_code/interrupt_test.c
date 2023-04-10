@@ -34,59 +34,152 @@ void int_test_init()
 {
     // Interrupt initialization code goes here 
 
-    //==================================================
+    // Initialize GPIO ports 
+    gpio_port_init(); 
+
+    // Initialize UART
+    uart_init(USART2, UART_BAUD_9600, UART_CLOCK_42);
+    
     // Initialize timers 
     tim_9_to_11_counter_init(
         TIM9, 
         TIM_84MHZ_1US_PSC, 
         0xFFFF,  // Max ARR value 
         TIM_UP_INT_DISABLE); 
+    
     tim_enable(TIM9); 
 
-    // Timer interrupt enable 
-    
-    //==================================================
-
-    // Initialize GPIO ports 
-    gpio_port_init(); 
-
-    // Initialize UART
-    uart_init(USART2, UART_BAUD_9600, UART_CLOCK_42);
+    // Initialize interrupt handler flags (called once) 
+    int_handler_init(); 
 
     //==================================================
-    // EXTI init 
+    // EXTI initialization 
 
     // Enable external interrupts (called once) 
     exti_init(); 
 
+#if INT_EXTI0 
+
     // Configure the external interrupt (called for each EXTI) 
-    exti_config(GPIOD, 
-                EXTI_PD, 
-                PIN_2, 
-                PUPDR_PU, 
-                EXTI_L2, 
-                EXTI_INT_NOT_MASKED, 
-                EXTI_EVENT_MASKED, 
-                EXTI_RISE_TRIG_ENABLE, 
-                EXTI_FALL_TRIG_DISABLE); 
+    // exti_config(
+    //     GPIOD, 
+    //     EXTI_PD, 
+    //     PIN_2, 
+    //     PUPDR_PU, 
+    //     EXTI_L2, 
+    //     EXTI_INT_NOT_MASKED, 
+    //     EXTI_EVENT_MASKED, 
+    //     EXTI_RISE_TRIG_ENABLE, 
+    //     EXTI_FALL_TRIG_DISABLE); 
+    exti_config(
+        GPIOC, 
+        EXTI_PC, 
+        PIN_0, 
+        PUPDR_PU, 
+        EXTI_L0, 
+        EXTI_INT_NOT_MASKED, 
+        EXTI_EVENT_MASKED, 
+        EXTI_RISE_TRIG_DISABLE, 
+        EXTI_FALL_TRIG_ENABLE); 
+
+
+#if INT_EXTI1 
+
+    exti_config(
+        GPIOC, 
+        EXTI_PC, 
+        PIN_1, 
+        PUPDR_PU, 
+        EXTI_L1, 
+        EXTI_INT_NOT_MASKED, 
+        EXTI_EVENT_MASKED, 
+        EXTI_RISE_TRIG_DISABLE, 
+        EXTI_FALL_TRIG_ENABLE); 
+
+#if INT_EXTI2 
+
+    exti_config(
+        GPIOC, 
+        EXTI_PC, 
+        PIN_2, 
+        PUPDR_PU, 
+        EXTI_L2, 
+        EXTI_INT_NOT_MASKED, 
+        EXTI_EVENT_MASKED, 
+        EXTI_RISE_TRIG_DISABLE, 
+        EXTI_FALL_TRIG_ENABLE); 
+
+#if INT_EXTI3 
+
+    exti_config(
+        GPIOC, 
+        EXTI_PC, 
+        PIN_3, 
+        PUPDR_PU, 
+        EXTI_L3, 
+        EXTI_INT_NOT_MASKED, 
+        EXTI_EVENT_MASKED, 
+        EXTI_RISE_TRIG_DISABLE, 
+        EXTI_FALL_TRIG_ENABLE); 
+
+#if INT_EXTI4 
+
+    exti_config(
+        GPIOC, 
+        EXTI_PC, 
+        PIN_4, 
+        PUPDR_PU, 
+        EXTI_L4, 
+        EXTI_INT_NOT_MASKED, 
+        EXTI_EVENT_MASKED, 
+        EXTI_RISE_TRIG_DISABLE, 
+        EXTI_FALL_TRIG_ENABLE); 
+
+    // Enable the interrupt handlers (called for each interrupt) 
+    nvic_config(EXTI4_IRQn, EXTI_PRIORITY_0); 
+
+#endif   // INT_EXTI4 
+
+    // Enable the interrupt handlers (called for each interrupt) 
+    nvic_config(EXTI3_IRQn, EXTI_PRIORITY_0); 
+
+#endif   // INT_EXTI3 
+
+    // Enable the interrupt handlers (called for each interrupt) 
+    nvic_config(EXTI2_IRQn, EXTI_PRIORITY_0); 
+
+#endif   // INT_EXTI2
+
+    // Enable the interrupt handlers (called for each interrupt) 
+    nvic_config(EXTI1_IRQn, EXTI_PRIORITY_0); 
+
+#endif   // INT_EXTI1 
+
+    // Enable the interrupt handlers (called for each interrupt) 
+    nvic_config(EXTI0_IRQn, EXTI_PRIORITY_0); 
+
+#endif   // INT_EXTI0 
 
     //==================================================
 
+#if INT_ADC_ENABLE 
+
     //==================================================
-    // ADC init 
+    // ADC 
 
     // Initialize the ADC port (called once) 
-    adc_port_init(ADC1, 
-                  ADC1_COMMON, 
-                  ADC_PCLK2_4, 
-                  ADC_RES_8, 
-                  ADC_EOC_SEQ, 
-                  ADC_SCAN_ENABLE, 
-                  ADC_CONT_DISABLE, 
-                  ADC_DMA_ENABLE, 
-                  ADC_DDS_ENABLE, 
-                  ADC_EOC_INT_ENABLE, 
-                  ADC_OVR_INT_DISABLE); 
+    adc_port_init(
+        ADC1, 
+        ADC1_COMMON, 
+        ADC_PCLK2_4, 
+        ADC_RES_8, 
+        ADC_EOC_SEQ, 
+        ADC_SCAN_ENABLE, 
+        ADC_CONT_DISABLE, 
+        ADC_DMA_ENABLE, 
+        ADC_DDS_ENABLE, 
+        ADC_EOC_INT_ENABLE, 
+        ADC_OVR_INT_DISABLE); 
 
     // Initialize ADC pins and channels (called for each pin/channel) 
     adc_pin_init(ADC1, GPIOC, PIN_0, ADC_CHANNEL_10, ADC_SMP_15); 
@@ -104,8 +197,10 @@ void int_test_init()
 
     //================================================== 
 
+#if INT_DMA_ENABLE 
+
     //==================================================
-    // DMA init 
+    // DMA 
 
     // Initialize the DMA stream 
     dma_stream_init(
@@ -140,36 +235,35 @@ void int_test_init()
     
     //==================================================
 
-    //==================================================
-    // Interrupts init 
-
-    // Initialize handler flags (called once) 
-    int_handler_init(); 
-
     // Enable the interrupt handlers (called for each interrupt) 
-    nvic_config(EXTI2_IRQn, EXTI_PRIORITY_2);         // EXTI2 
     nvic_config(ADC_IRQn, EXTI_PRIORITY_1);           // ADC 
     nvic_config(DMA2_Stream0_IRQn, EXTI_PRIORITY_0);  // DMA2 Stream 0 
 
-    //==================================================
+#endif   // INT_DMA_ENABLE 
+
+#endif   // INT_ADC_ENABLE 
 }
 
 
 // Test code 
 void int_test_app()
 {
-    //==================================================
-    // Timer interrupt 
-    //==================================================
+    // Test code for interrupt_test here 
+
+    // TODO external button/switch debouncing code 
+
+#if INT_EXTI0 
 
     //==================================================
-    // External, ADC and DMA interrupts 
+    // EXTI0 
 
     // Check for the external interrupt from the user 
     if (handler_flags.exti2_flag)
     {
         // Reset the EXTI handler flag 
         handler_flags.exti2_flag = CLEAR; 
+
+#if INT_ADC_ENABLE 
 
         // Start the ADC conversions 
         adc_start(ADC1); 
@@ -180,11 +274,15 @@ void int_test_app()
         // Reset the ADC handler flag 
         handler_flags.adc_flag = CLEAR; 
 
+#if INT_DMA_ENABLE 
+
         // Wait for the DMA transfer to complete 
         while(!(handler_flags.dma2_0_flag)); 
 
         // Reset the DMA handler flag 
         handler_flags.dma2_0_flag = CLEAR; 
+
+#endif   // INT_DMA_ENABLE 
 
         // Display the ADC results to the serial terminal 
         uart_sendstring(USART2, "ADC1_10: "); 
@@ -193,7 +291,43 @@ void int_test_app()
         uart_sendstring(USART2, "ADC1_11: "); 
         uart_send_integer(USART2, (int16_t)adc_conversion[1]); 
         uart_send_new_line(USART2); 
+
+#endif   // INT_ADC_ENABLE 
     }
 
     //==================================================
+
+#if INT_EXTI1 
+
+    //==================================================
+    // EXTI1 
+    //==================================================
+
+#if INT_EXTI2 
+
+    //==================================================
+    // EXTI2 
+    //==================================================
+
+#if INT_EXTI3 
+
+    //==================================================
+    // EXTI3 
+    //==================================================
+
+#if INT_EXTI4 
+
+    //==================================================
+    // EXTI4 
+    //==================================================
+
+#endif   // INT_EXTI4 
+
+#endif   // INT_EXTI3 
+
+#endif   // INT_EXTI2 
+
+#endif   // INT_EXTI1 
+
+#endif   // INT_EXTI0 
 }
