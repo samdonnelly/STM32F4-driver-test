@@ -78,6 +78,7 @@ sources/config_files/m8q_config.c \
 ../STM32F4-driver-library/sources/mpu6050_controller.c \
 ../STM32F4-driver-library/sources/spi_comm.c \
 ../STM32F4-driver-library/sources/stm32f411xe_custom.c \
+../STM32F4-driver-library/sources/switch_debounce.c \
 ../STM32F4-driver-library/sources/timers.c \
 ../STM32F4-driver-library/sources/tools.c \
 ../STM32F4-driver-library/sources/uart_comm.c \

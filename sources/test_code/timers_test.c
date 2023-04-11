@@ -28,7 +28,12 @@ static uint32_t no_block_delay_count_compare = CLEAR;
 static uint8_t  no_block_delay_start_flag = SET_BIT; 
 static uint32_t no_block_delay_clk_freq; 
 
-// Data structure containing button data 
+#if TIM_WS2812 
+
+// LED colour data - Green, Red, Blue 
+static uint8_t led_colour_data[WS2812_LED_NUM][WS2812_COLOUR_PER_LED]; 
+
+#endif   // TIM_WS2812 
 
 //=======================================================================================
 
@@ -53,7 +58,7 @@ void timers_test_init()
     tim_9_to_11_counter_init(
         TIM9, 
         TIM_84MHZ_100US_PSC, 
-        0x2710,  // ARR=10000, (10000 counts)*(100us/count) = 1s 
+        0x0032,  // ARR=50, (50 counts)*(100us/count) = 5ms 
         TIM_UP_INT_ENABLE); 
 
     tim_enable(TIM9); 
@@ -131,6 +136,26 @@ void timers_test_init()
     //===================================================
 
     //===================================================
+    // Initialize WS2812 
+
+#if TIM_WS2812 
+
+    ws2812_init(
+        DEVICE_ONE, 
+        TIM3, 
+        TIM_CHANNEL_1, 
+        GPIOC, 
+        PIN_6); 
+
+    // Clear colour data and turn off the LEDs 
+    memset((void *)led_colour_data[WS2812_LED_0], CLEAR, sizeof(led_colour_data)); 
+    ws2812_send(DEVICE_ONE); 
+
+#endif   // TIM_WS2812 
+    
+    //===================================================
+
+    //===================================================
     // Check system clock frequencies 
 
 #if TIM_CLK_FREQ 
@@ -178,6 +203,8 @@ void timers_test_app()
         // Clear interrupt handler 
         handler_flags.tim1_brk_tim9_glbl_flag = CLEAR; 
 
+        // Update the user button status 
+
 #if TIM_PWM_OUTPUT   // PWM output test 
 
         // Set PWM output and calculate a new value 
@@ -211,26 +238,6 @@ void timers_test_app()
 
 #endif   // TIM_PWM_OUTPUT 
 
-#if TIM_SWITCH_1 
-
-        // Pole the GPIO input to get the button state 
-        // Update the data record with the results 
-        // Check the ellapsed time 
-
-#endif   // TIM_SWITCH_1 
-
-#if TIM_SWITCH_2 
-
-#endif   // TIM_SWITCH_2 
-
-#if TIM_SWITCH_3 
-
-#endif   // TIM_SWITCH_3 
-
-#if TIM_SWITCH_4 
-
-#endif   // TIM_SWITCH_4 
-
 #if TIM_PERIODIC_COUNT 
 
         // Print the counter to the terminal 
@@ -242,6 +249,26 @@ void timers_test_app()
 #endif   // TIM_PERIODIC_COUNT 
 
     }
+
+#if TIM_SWITCH_1 
+
+        // Pole the GPIO input to get the button state 
+        // Update the data record with the results 
+        // Check the ellapsed time 
+
+#if TIM_SWITCH_2 
+
+#if TIM_SWITCH_3 
+
+#if TIM_SWITCH_4 
+
+#endif   // TIM_SWITCH_4 
+
+#endif   // TIM_SWITCH_3 
+
+#endif   // TIM_SWITCH_2 
+
+#endif   // TIM_SWITCH_1 
 
 #endif   // TIM_PERIODIC 
 
