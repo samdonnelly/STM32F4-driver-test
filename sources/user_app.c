@@ -24,5 +24,5 @@
 void user_app()
 {
     // Looped code here
-    dma_test_app(); 
+    timers_test_app(); 
 }
