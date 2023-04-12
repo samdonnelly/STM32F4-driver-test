@@ -23,10 +23,14 @@
 //=======================================================================================
 // Global variables 
 
+#if TIM_NON_BLOCKING 
+
 static uint32_t no_block_delay_count_total = CLEAR; 
 static uint32_t no_block_delay_count_compare = CLEAR; 
 static uint8_t  no_block_delay_start_flag = SET_BIT; 
 static uint32_t no_block_delay_clk_freq; 
+
+#endif   // TIM_NON_BLOCKING 
 
 #if TIM_WS2812 
 
@@ -111,27 +115,36 @@ void timers_test_init()
 
 #if TIM_SWITCH_1 
 
-    gpio_pin_init(GPIOC, PIN_0, MODER_INPUT, OTYPER_PP, OSPEEDR_HIGH, PUPDR_PU); 
+    uint8_t pull_mask = CLEAR; 
 
-#endif   // TIM_SWITCH_1 
+    gpio_pin_init(GPIOC, PIN_0, MODER_INPUT, OTYPER_PP, OSPEEDR_HIGH, PUPDR_PU); 
+    pull_mask |= GPIOX_PIN_0; 
 
 #if TIM_SWITCH_2 
 
     gpio_pin_init(GPIOC, PIN_1, MODER_INPUT, OTYPER_PP, OSPEEDR_HIGH, PUPDR_PU); 
-
-#endif   // TIM_SWITCH_2 
+    pull_mask |= GPIOX_PIN_1; 
 
 #if TIM_SWITCH_3 
 
     gpio_pin_init(GPIOC, PIN_2, MODER_INPUT, OTYPER_PP, OSPEEDR_HIGH, PUPDR_PU); 
-
-#endif   // TIM_SWITCH_3 
+    pull_mask |= GPIOX_PIN_2; 
 
 #if TIM_SWITCH_4 
 
     gpio_pin_init(GPIOC, PIN_3, MODER_INPUT, OTYPER_PP, OSPEEDR_HIGH, PUPDR_PU); 
+    pull_mask |= GPIOX_PIN_3; 
 
 #endif   // TIM_SWITCH_4 
+
+#endif   // TIM_SWITCH_3 
+
+#endif   // TIM_SWITCH_2 
+
+    // Initialize the button debouncer 
+    debounce_init(pull_mask); 
+
+#endif   // TIM_SWITCH_1 
 
     //===================================================
 
@@ -187,11 +200,35 @@ void timers_test_app()
 {
     // Test code for the timers_test here 
 
+    //===================================================
     // Local variables 
+
+#if TIM_PERIODIC 
+
+    static uint8_t button_block = CLEAR; 
+
+#endif   // TIM_PERIODIC 
+
+#if TIM_PERIODIC_COUNT 
+
     static uint16_t counter = 0; 
+
+#endif   // TIM_PERIODIC_COUNT 
+
+#if TIM_PWM_OUTPUT 
+
     static uint16_t pwm = 0; 
     static uint8_t pwm_dir = 1; 
+
+#endif   // TIM_PWM_OUTPUT 
+
+#if TIM_NON_BLOCKING 
+
     static uint8_t delay_status = CLEAR; 
+
+#endif   // TIM_NON_BLOCKING 
+
+    //===================================================
 
     //===================================================
     // Periodic interrupt test 
@@ -204,6 +241,7 @@ void timers_test_app()
         handler_flags.tim1_brk_tim9_glbl_flag = CLEAR; 
 
         // Update the user button status 
+        debounce((uint8_t)gpio_port_read(GPIOC)); 
 
 #if TIM_PWM_OUTPUT   // PWM output test 
 
@@ -252,15 +290,45 @@ void timers_test_app()
 
 #if TIM_SWITCH_1 
 
-        // Pole the GPIO input to get the button state 
-        // Update the data record with the results 
-        // Check the ellapsed time 
+    // Check if the button is pressed 
+    if (debounce_pressed((uint8_t)GPIOX_PIN_0) & !button_block) 
+    {
+        // Turn on the LED 
+        led_colour_data[WS2812_LED_0][WS2812_GREEN] = 0; 
+        led_colour_data[WS2812_LED_0][WS2812_RED]   = 30; 
+        led_colour_data[WS2812_LED_0][WS2812_BLUE]  = 30; 
+        ws2812_colour_set(DEVICE_ONE, led_colour_data[WS2812_LED_0], WS2812_LED_0); 
+        ws2812_send(DEVICE_ONE); 
+
+        button_block++; 
+    }
+    // Check if the button is released  
+    else if (debounce_released((uint8_t)GPIOX_PIN_0) & button_block) 
+    {
+        // Tun off the LED 
+        led_colour_data[WS2812_LED_0][WS2812_GREEN] = 0; 
+        led_colour_data[WS2812_LED_0][WS2812_RED]   = 0; 
+        led_colour_data[WS2812_LED_0][WS2812_BLUE]  = 0; 
+        ws2812_colour_set(DEVICE_ONE, led_colour_data[WS2812_LED_0], WS2812_LED_0); 
+        ws2812_send(DEVICE_ONE); 
+
+        button_block = CLEAR; 
+    }
 
 #if TIM_SWITCH_2 
 
+    // Check if the button is pressed 
+    debounce_pressed(GPIOX_PIN_1); 
+
 #if TIM_SWITCH_3 
 
+    // Check if the button is pressed 
+    debounce_pressed(GPIOX_PIN_2); 
+
 #if TIM_SWITCH_4 
+
+    // Check if the button is pressed 
+    debounce_pressed(GPIOX_PIN_3); 
 
 #endif   // TIM_SWITCH_4 
 
@@ -278,6 +346,9 @@ void timers_test_app()
     // Non-blocking delay test 
 
 #if TIM_NON_BLOCKING 
+
+    // Local variables 
+    static uint8_t delay_status = CLEAR; 
 
     delay_status = tim_compare(TIM10, 
                                no_block_delay_clk_freq, 

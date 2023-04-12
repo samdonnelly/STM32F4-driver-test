@@ -31,7 +31,7 @@
 #define TIM_PERIODIC 1               // Periodic interrupt code 
 #define TIM_PERIODIC_COUNT 0         // Periodic interrupt counter printout code 
 #define TIM_PWM_OUTPUT 0             // PWM output code (requires periodic interrupt code) 
-#define TIM_WS2812 0                 // WS2812 device code 
+#define TIM_WS2812 1                 // WS2812 device code 
 #define TIM_SWITCH_1 1               // User switch 1 (requires periodic interrupt code) 
 #define TIM_SWITCH_2 0               // User switch 2 (requires user switch 1 code) 
 #define TIM_SWITCH_3 0               // User switch 3 (requires user switch 2 code) 
