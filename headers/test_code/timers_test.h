@@ -33,9 +33,9 @@
 #define TIM_PWM_OUTPUT 0             // PWM output code (requires periodic interrupt code) 
 #define TIM_WS2812 1                 // WS2812 device code 
 #define TIM_SWITCH_1 1               // User switch 1 (requires periodic interrupt code) 
-#define TIM_SWITCH_2 0               // User switch 2 (requires user switch 1 code) 
-#define TIM_SWITCH_3 0               // User switch 3 (requires user switch 2 code) 
-#define TIM_SWITCH_4 0               // User switch 4 (requires user switch 3 code) 
+#define TIM_SWITCH_2 1               // User switch 2 (requires user switch 0 code) 
+#define TIM_SWITCH_3 1               // User switch 3 (requires user switch 2 code) 
+#define TIM_SWITCH_4 1               // User switch 4 (requires user switch 3 code) 
 #define TIM_CLK_FREQ 0               // Code for checking system clock frequencies 
 #define TIM_NON_BLOCKING 0           // Non-blocking delay code 
 

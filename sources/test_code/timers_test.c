@@ -35,7 +35,7 @@ static uint32_t no_block_delay_clk_freq;
 #if TIM_WS2812 
 
 // LED colour data - Green, Red, Blue 
-static uint8_t led_colour_data[WS2812_LED_NUM][WS2812_COLOUR_PER_LED]; 
+static uint8_t led_colour[WS2812_LED_NUM][WS2812_COLOUR_PER_LED]; 
 
 #endif   // TIM_WS2812 
 
@@ -161,7 +161,7 @@ void timers_test_init()
         PIN_6); 
 
     // Clear colour data and turn off the LEDs 
-    memset((void *)led_colour_data[WS2812_LED_0], CLEAR, sizeof(led_colour_data)); 
+    memset((void *)led_colour[WS2812_LED_0], CLEAR, sizeof(led_colour)); 
     ws2812_send(DEVICE_ONE); 
 
 #endif   // TIM_WS2812 
@@ -205,7 +205,29 @@ void timers_test_app()
 
 #if TIM_PERIODIC 
 
-    static uint8_t button_block = CLEAR; 
+#if TIM_SWITCH_1 
+
+    static uint8_t button_block_1 = CLEAR; 
+
+#endif   // TIM_SWITCH_1 
+
+#if TIM_SWITCH_2 
+
+    static uint8_t button_block_2 = CLEAR; 
+
+#endif   // TIM_SWITCH_2 
+
+#if TIM_SWITCH_3 
+
+    static uint8_t button_block_3 = CLEAR; 
+
+#endif   // TIM_SWITCH_3 
+
+#if TIM_SWITCH_4 
+
+    static uint8_t button_block_4 = CLEAR; 
+
+#endif   // TIM_SWITCH_4 
 
 #endif   // TIM_PERIODIC 
 
@@ -291,44 +313,82 @@ void timers_test_app()
 #if TIM_SWITCH_1 
 
     // Check if the button is pressed 
-    if (debounce_pressed((uint8_t)GPIOX_PIN_0) & !button_block) 
+    if (debounce_pressed((uint8_t)GPIOX_PIN_0) && !button_block_1) 
     {
         // Turn on the LED 
-        led_colour_data[WS2812_LED_0][WS2812_GREEN] = 0; 
-        led_colour_data[WS2812_LED_0][WS2812_RED]   = 30; 
-        led_colour_data[WS2812_LED_0][WS2812_BLUE]  = 30; 
-        ws2812_colour_set(DEVICE_ONE, led_colour_data[WS2812_LED_0], WS2812_LED_0); 
+        led_colour[WS2812_LED_0][WS2812_GREEN] = 0  - led_colour[WS2812_LED_0][WS2812_GREEN]; 
+        led_colour[WS2812_LED_0][WS2812_RED]   = 30 - led_colour[WS2812_LED_0][WS2812_RED]; 
+        led_colour[WS2812_LED_0][WS2812_BLUE]  = 30 - led_colour[WS2812_LED_0][WS2812_BLUE]; 
+        ws2812_colour_set(DEVICE_ONE, led_colour[WS2812_LED_0], WS2812_LED_0); 
         ws2812_send(DEVICE_ONE); 
 
-        button_block++; 
+        button_block_1 = SET; 
     }
     // Check if the button is released  
-    else if (debounce_released((uint8_t)GPIOX_PIN_0) & button_block) 
+    else if (debounce_released((uint8_t)GPIOX_PIN_0) && button_block_1) 
     {
-        // Tun off the LED 
-        led_colour_data[WS2812_LED_0][WS2812_GREEN] = 0; 
-        led_colour_data[WS2812_LED_0][WS2812_RED]   = 0; 
-        led_colour_data[WS2812_LED_0][WS2812_BLUE]  = 0; 
-        ws2812_colour_set(DEVICE_ONE, led_colour_data[WS2812_LED_0], WS2812_LED_0); 
-        ws2812_send(DEVICE_ONE); 
-
-        button_block = CLEAR; 
+        button_block_1 = CLEAR; 
     }
 
 #if TIM_SWITCH_2 
 
     // Check if the button is pressed 
-    debounce_pressed(GPIOX_PIN_1); 
+    if (debounce_pressed((uint8_t)GPIOX_PIN_1) && !button_block_2) 
+    {
+        // Turn on the LED 
+        led_colour[WS2812_LED_1][WS2812_GREEN] = 30 - led_colour[WS2812_LED_1][WS2812_GREEN]; 
+        led_colour[WS2812_LED_1][WS2812_RED]   = 30 - led_colour[WS2812_LED_1][WS2812_RED]; 
+        led_colour[WS2812_LED_1][WS2812_BLUE]  = 0  - led_colour[WS2812_LED_1][WS2812_BLUE]; 
+        ws2812_colour_set(DEVICE_ONE, led_colour[WS2812_LED_1], WS2812_LED_1); 
+        ws2812_send(DEVICE_ONE); 
+
+        button_block_2 = SET; 
+    }
+    // Check if the button is released  
+    else if (debounce_released((uint8_t)GPIOX_PIN_1) && button_block_2) 
+    {
+        button_block_2 = CLEAR; 
+    }
 
 #if TIM_SWITCH_3 
 
     // Check if the button is pressed 
-    debounce_pressed(GPIOX_PIN_2); 
+    if (debounce_pressed((uint8_t)GPIOX_PIN_2) && !button_block_3) 
+    {
+        // Turn on the LED 
+        led_colour[WS2812_LED_2][WS2812_GREEN] = 30 - led_colour[WS2812_LED_2][WS2812_GREEN]; 
+        led_colour[WS2812_LED_2][WS2812_RED]   = 0  - led_colour[WS2812_LED_2][WS2812_RED]; 
+        led_colour[WS2812_LED_2][WS2812_BLUE]  = 30 - led_colour[WS2812_LED_2][WS2812_BLUE]; 
+        ws2812_colour_set(DEVICE_ONE, led_colour[WS2812_LED_2], WS2812_LED_2); 
+        ws2812_send(DEVICE_ONE); 
+
+        button_block_3 = SET; 
+    }
+    // Check if the button is released  
+    else if (debounce_released((uint8_t)GPIOX_PIN_2) && button_block_3) 
+    {
+        button_block_3 = CLEAR; 
+    }
 
 #if TIM_SWITCH_4 
 
     // Check if the button is pressed 
-    debounce_pressed(GPIOX_PIN_3); 
+    if (debounce_pressed((uint8_t)GPIOX_PIN_3) && !button_block_4) 
+    {
+        // Turn on the LED 
+        led_colour[WS2812_LED_3][WS2812_GREEN] = 30 - led_colour[WS2812_LED_3][WS2812_GREEN]; 
+        led_colour[WS2812_LED_3][WS2812_RED]   = 30 - led_colour[WS2812_LED_3][WS2812_RED]; 
+        led_colour[WS2812_LED_3][WS2812_BLUE]  = 30 - led_colour[WS2812_LED_3][WS2812_BLUE]; 
+        ws2812_colour_set(DEVICE_ONE, led_colour[WS2812_LED_3], WS2812_LED_3); 
+        ws2812_send(DEVICE_ONE); 
+
+        button_block_4 = SET; 
+    }
+    // Check if the button is released  
+    else if (debounce_released((uint8_t)GPIOX_PIN_3) && button_block_4) 
+    {
+        button_block_4 = CLEAR; 
+    }
 
 #endif   // TIM_SWITCH_4 
 
