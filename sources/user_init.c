@@ -24,5 +24,5 @@
 void user_init()
 {
     // Setup code here
-    timers_test_init(); 
+    int_test_init(); 
 }

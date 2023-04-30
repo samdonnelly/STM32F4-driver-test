@@ -72,18 +72,18 @@ void int_test_init()
 #if INT_EXTI 
 
     exti_config(
-        GPIOC, 
-        EXTI_PC, 
-        PIN_4, 
+        GPIOB, 
+        EXTI_PB, 
+        PIN_0, 
         PUPDR_PU, 
-        EXTI_L4, 
+        EXTI_L0, 
         EXTI_INT_NOT_MASKED, 
         EXTI_EVENT_MASKED, 
         EXTI_RISE_TRIG_DISABLE, 
         EXTI_FALL_TRIG_ENABLE); 
 
     // Enable the interrupt handlers (called for each interrupt) 
-    nvic_config(EXTI4_IRQn, EXTI_PRIORITY_0); 
+    nvic_config(EXTI0_IRQn, EXTI_PRIORITY_0); 
 
 #endif   // INT_EXTI 
 
@@ -184,10 +184,10 @@ void int_test_app()
 #if INT_EXTI 
 
     // Check for the external interrupt from the user 
-    if (handler_flags.exti4_flag)
+    if (handler_flags.exti0_flag)
     {
         // Reset the EXTI handler flag 
-        handler_flags.exti4_flag = CLEAR; 
+        handler_flags.exti0_flag = CLEAR; 
 
         // Do something to show the interrupt works 
         uart_sendstring(USART2, "got it!"); 

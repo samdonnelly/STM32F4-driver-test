@@ -42,7 +42,9 @@
 			"spi_comm.h": "c",
 			"i2c_comm.h": "c",
 			"int_handlers.h": "c",
-			"ws2812_test.h": "c"
+			"ws2812_test.h": "c",
+			"hc05_test.h": "c",
+			"hw125_test.h": "c"
 		}
 	}
 }
