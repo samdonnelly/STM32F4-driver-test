@@ -38,7 +38,7 @@
 #define MPU6050_SMPLRT_DIV 0             // Sample Rate Divider 
 
 // Driver test 
-#define MPU6050_DRIVER_LOOP_DELAY 1000   // Delay (blocking) between code loops (ms) 
+#define MPU6050_DRIVER_LOOP_DELAY 100    // Delay (blocking) between code loops (ms) 
 #define MPU6050_DRIVER_ST_DELAY 10       // Delay (blocking) after self test (ms) 
 
 // Controller test 

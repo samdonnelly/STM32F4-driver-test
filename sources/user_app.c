@@ -24,5 +24,5 @@
 void user_app()
 {
     // Looped code here
-    int_test_app(); 
+    mpu6050_test_app(); 
 }

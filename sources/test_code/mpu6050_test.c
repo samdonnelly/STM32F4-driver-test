@@ -364,29 +364,29 @@ void mpu6050_test_app()
     uart_send_integer(USART2, mpu6050_temp_sensor);
     uart_send_spaces(USART2, UART_SPACE_2);
 
-    uart_sendstring(USART2, "ax1 = ");
-    uart_send_integer(USART2, mpu6050_accel[MPU6050_X_AXIS]); 
-    uart_send_spaces(USART2, UART_SPACE_2);
+    // uart_sendstring(USART2, "ax1 = ");
+    // uart_send_integer(USART2, mpu6050_accel[MPU6050_X_AXIS]); 
+    // uart_send_spaces(USART2, UART_SPACE_2);
 
-    uart_sendstring(USART2, "ay1 = ");
-    uart_send_integer(USART2, mpu6050_accel[MPU6050_Y_AXIS]);
-    uart_send_spaces(USART2, UART_SPACE_2);
+    // uart_sendstring(USART2, "ay1 = ");
+    // uart_send_integer(USART2, mpu6050_accel[MPU6050_Y_AXIS]);
+    // uart_send_spaces(USART2, UART_SPACE_2);
 
-    uart_sendstring(USART2, "az1 = ");
-    uart_send_integer(USART2, mpu6050_accel[MPU6050_Z_AXIS]);
-    uart_send_spaces(USART2, UART_SPACE_2);
+    // uart_sendstring(USART2, "az1 = ");
+    // uart_send_integer(USART2, mpu6050_accel[MPU6050_Z_AXIS]);
+    // uart_send_spaces(USART2, UART_SPACE_2);
 
-    uart_sendstring(USART2, "gx1 = ");
-    uart_send_integer(USART2, mpu6050_gyro[MPU6050_X_AXIS]); 
-    uart_send_spaces(USART2, UART_SPACE_2);
+    // uart_sendstring(USART2, "gx1 = ");
+    // uart_send_integer(USART2, mpu6050_gyro[MPU6050_X_AXIS]); 
+    // uart_send_spaces(USART2, UART_SPACE_2);
 
-    uart_sendstring(USART2, "gy1 = ");
-    uart_send_integer(USART2, mpu6050_gyro[MPU6050_Y_AXIS]);
-    uart_send_spaces(USART2, UART_SPACE_2);
+    // uart_sendstring(USART2, "gy1 = ");
+    // uart_send_integer(USART2, mpu6050_gyro[MPU6050_Y_AXIS]);
+    // uart_send_spaces(USART2, UART_SPACE_2);
 
-    uart_sendstring(USART2, "gz1 = ");
-    uart_send_integer(USART2, mpu6050_gyro[MPU6050_Z_AXIS]);
-    uart_send_spaces(USART2, UART_SPACE_2);
+    // uart_sendstring(USART2, "gz1 = ");
+    // uart_send_integer(USART2, mpu6050_gyro[MPU6050_Z_AXIS]);
+    // uart_send_spaces(USART2, UART_SPACE_2);
 
 
 #if MPU6050_SECOND_DEVICE 

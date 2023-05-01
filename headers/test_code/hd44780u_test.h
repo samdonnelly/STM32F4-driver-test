@@ -33,7 +33,7 @@
 //=======================================================================================
 // Macros 
 
-#define HD44780U_CONTROLLER_TEST 1        // For switching between driver and controller testing 
+#define HD44780U_CONTROLLER_TEST 0        // For switching between driver and controller testing 
 
 #define HD44780U_NUM_USER_CMDS 15         // Number of defined user commands 
 #define HD44780U_MAX_SETTER_ARGS 2        // Maximum arguments of all function pointer below 
