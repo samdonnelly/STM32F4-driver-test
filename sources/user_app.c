@@ -24,5 +24,5 @@
 void user_app()
 {
     // Looped code here
-    mpu6050_test_app(); 
+    hd44780u_test_app(); 
 }

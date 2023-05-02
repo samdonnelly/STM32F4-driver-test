@@ -24,5 +24,5 @@
 void user_init()
 {
     // Setup code here
-    mpu6050_test_init(); 
+    hd44780u_test_init(); 
 }
