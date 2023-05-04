@@ -121,7 +121,7 @@ void hd44780u_test_init()
         I2C_CCR_SM_42_100,
         I2C_TRISE_1000_42);
 
-    // LCD screen init. 
+    // LCD screen init 
     hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH);
 
 #if HD44780U_CONTROLLER_TEST
@@ -265,7 +265,8 @@ void hd44780u_test_app()
     // Driver test code 
 
     // Local variables 
-    static int8_t counter = 0;
+    static int8_t counter = 0; 
+    static uint8_t backlight = 1; 
 
     // Print each line one at a time followed by a delay 
     switch (counter)
@@ -296,6 +297,9 @@ void hd44780u_test_app()
         default:
             hd44780u_clear();
             counter = -1;
+            if (backlight) hd44780u_backlight_off(); 
+            else hd44780u_backlight_on(); 
+            backlight = 1 - backlight; 
             break;
     }
 
