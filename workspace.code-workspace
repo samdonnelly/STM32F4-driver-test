@@ -45,7 +45,8 @@
 			"ws2812_test.h": "c",
 			"hc05_test.h": "c",
 			"hw125_test.h": "c",
-			"mpu6050_test.h": "c"
+			"mpu6050_test.h": "c",
+			"stdlib.h": "c"
 		}
 	}
 }

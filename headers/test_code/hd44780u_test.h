@@ -33,16 +33,16 @@
 //=======================================================================================
 // Macros 
 
-#define HD44780U_CONTROLLER_TEST 0        // For switching between driver and controller testing 
-
-#define HD44780U_NUM_USER_CMDS 15         // Number of defined user commands 
-#define HD44780U_MAX_SETTER_ARGS 2        // Maximum arguments of all function pointer below 
-
 // Conditional compilation 
+#define HD44780U_CONTROLLER_TEST 1        // For switching between driver and controller testing 
 #define HD44780U_BACKLIGHT_TEST 1         // Backlight control test 
 #define HD44780U_DISPLAY_TEST 0           // Display on/off test 
 #define HD44780U_CURSOR_TEST 0            // Cursor visibility test 
 #define HD44780U_BLINK_TEST 0             // Cursor blink test 
+
+// Controller 
+#define HD44780U_NUM_USER_CMDS 19         // Number of defined user commands 
+#define HD44780U_MAX_FUNC_PTR_ARGS 3      // Maximum arguments of all function pointer below 
 
 //=======================================================================================
 
@@ -60,9 +60,12 @@
  *          index has to match the location of the function pointer in the array. 
  */
 typedef enum {
-    HD44780U_SETTER_PTR_1, 
-    HD44780U_SETTER_PTR_2, 
-    HD44780U_GETTER_PTR_1 
+    HD44780U_SET_PTR_1, 
+    HD44780U_SET_PTR_2, 
+    HD44780U_SET_PTR_3, 
+    HD44780U_SET_PTR_4, 
+    HD44780U_SET_PTR_5, 
+    HD44780U_GET_PTR_1 
 } hd44780u_func_ptr_index_t; 
 
 //=======================================================================================
@@ -72,46 +75,78 @@ typedef enum {
 // Function pointers 
 
 /**
- * @brief HD44780U line clear and state flag function pointer 
+ * @brief 
  * 
- * @details This function pointer is used for calling the following setters from the device 
- *          controller: <br> 
- *           - hd44780u_line1_clear <br> 
- *           - hd44780u_line2_clear <br> 
- *           - hd44780u_line3_clear <br> 
- *           - hd44780u_line4_clear <br> 
- *           - hd44780u_set_write_flag <br> 
- *           - hd44780u_set_read_flag <br> 
- *           - hd44780u_set_reset_flag <br> 
- *           - hd44780u_set_low_pwr_flag <br> 
- *           - hd44780u_clear_low_pwr_flag 
+ * @details 
+ *          - hd44780u_line_set 
  */
-typedef void (*hd44780u_setter_ptr_1)(void); 
+typedef void (*hd44780u_set_ptr_1)(
+    hd44780u_lines_t line, 
+    char *line_data, 
+    uint8_t offset); 
 
 
 /**
- * @brief HD44780U line content setter function pointer 
+ * @brief 
+ * 
+ * @details 
+ *          - hd44780u_line_clear 
+ */
+typedef void (*hd44780u_set_ptr_2)(
+    hd44780u_lines_t line); 
+
+
+/**
+ * @brief 
+ * 
+ * @details 
+ *          - hd44780u_send_string 
+ */
+typedef void (*hd44780u_set_ptr_3)(
+    char *print_string); 
+
+
+/**
+ * @brief 
+ * 
+ * @details 
+ *          - hd44780u_cursor_pos 
+ */
+typedef void (*hd44780u_set_ptr_4)(
+    hd44780u_line_start_position_t line_start, 
+    uint8_t offset); 
+
+
+/**
+ * @brief HD44780U line clear and state flag function pointer 
  * 
  * @details This function pointer is used for calling the following setters from the device 
- *          controller: <br> 
- *           - hd44780u_line1_set <br> 
- *           - hd44780u_line2_set <br> 
- *           - hd44780u_line3_set <br> 
- *           - hd44780u_line4_set 
+ *          controller: 
+ *           - hd44780u_clear 
+ *           - hd44780u_display_on 
+ *           - hd44780u_display_off 
+ *           - hd44780u_cursor_on 
+ *           - hd44780u_cursor_off 
+ *           - hd44780u_blink_on 
+ *           - hd44780u_blink_off 
+ *           - hd44780u_backlight_on 
+ *           - hd44780u_backlight_off 
+ *           - hd44780u_set_write_flag 
+ *           - hd44780u_set_low_pwr_flag 
+ *           - hd44780u_clear_low_pwr_flag 
+ *           - hd44780u_set_reset_flag 
  */
-typedef void (*hd44780u_setter_ptr_2)(
-    char *display_data, 
-    hd44780u_cursor_offset_t line_offset); 
+typedef void (*hd44780u_set_ptr_5)(void); 
 
 
 /**
  * @brief HD44780U getters function pointer 
  * 
  * @details This function pointer is used for calling the following getters from the device 
- *          controller: <br> 
+ *          controller: 
  *           - hd44780u_get_state 
  */
-typedef uint8_t (*hd44780u_getter_ptr_1)(void); 
+typedef uint8_t (*hd44780u_get_ptr_1)(void); 
 
 //=======================================================================================
 
@@ -124,9 +159,12 @@ typedef uint8_t (*hd44780u_getter_ptr_1)(void);
  */
 typedef struct hd44780u_func_ptrs_s 
 {
-    hd44780u_setter_ptr_1 setter;          // Function pointer index 1 
-    hd44780u_setter_ptr_2 data;            // Function pointer index 2 
-    hd44780u_getter_ptr_1 getter;          // Function pointer index 3 
+    hd44780u_set_ptr_1 set1; 
+    hd44780u_set_ptr_2 set2; 
+    hd44780u_set_ptr_3 set3; 
+    hd44780u_set_ptr_4 set4; 
+    hd44780u_set_ptr_5 set5; 
+    hd44780u_get_ptr_1 get1; 
 }
 hd44780u_func_ptrs_t; 
 
