@@ -38,6 +38,12 @@
 #define HD44780U_NUM_USER_CMDS 15         // Number of defined user commands 
 #define HD44780U_MAX_SETTER_ARGS 2        // Maximum arguments of all function pointer below 
 
+// Conditional compilation 
+#define HD44780U_BACKLIGHT_TEST 1         // Backlight control test 
+#define HD44780U_DISPLAY_TEST 0           // Display on/off test 
+#define HD44780U_CURSOR_TEST 0            // Cursor visibility test 
+#define HD44780U_BLINK_TEST 0             // Cursor blink test 
+
 //=======================================================================================
 
 

@@ -266,7 +266,22 @@ void hd44780u_test_app()
 
     // Local variables 
     static int8_t counter = 0; 
+
+#if HD44780U_BACKLIGHT_TEST 
     static uint8_t backlight = 1; 
+#endif   // HD44780U_BACKLIGHT_TEST 
+
+#if HD44780U_DISPLAY_TEST 
+    static uint8_t display = 1; 
+#endif   // HD44780U_DISPLAY_TEST 
+
+#if HD44780U_CURSOR_TEST 
+    static uint8_t cursor = 1; 
+#endif   // HD44780U_CURSOR_TEST 
+
+#if HD44780U_BLINK_TEST 
+    static uint8_t blink = 1; 
+#endif   // HD44780U_BLINK_TEST 
 
     // Print each line one at a time followed by a delay 
     switch (counter)
@@ -296,14 +311,40 @@ void hd44780u_test_app()
 
         default:
             hd44780u_clear();
-            counter = -1;
+            counter = -1; 
+
+#if HD44780U_BACKLIGHT_TEST 
+            // Backlight test 
             if (backlight) hd44780u_backlight_off(); 
             else hd44780u_backlight_on(); 
             backlight = 1 - backlight; 
+#endif   // HD44780U_BACKLIGHT_TEST 
+
+#if HD44780U_DISPLAY_TEST 
+            // Display test 
+            if (display) hd44780u_display_off(); 
+            else hd44780u_display_on(); 
+            display = 1 - display; 
+#endif   // HD44780U_DISPLAY_TEST 
+
+#if HD44780U_CURSOR_TEST 
+            // Cursor test 
+            if (cursor) hd44780u_cursor_on(); 
+            else hd44780u_cursor_off(); 
+            cursor = 1 - cursor; 
+#endif   // HD44780U_CURSOR_TEST 
+
+#if HD44780U_BLINK_TEST 
+            // Cursor blink test 
+            if (blink) hd44780u_blink_on(); 
+            else hd44780u_blink_off(); 
+            blink = 1 - blink; 
+#endif   // HD44780U_BLINK_TEST 
+
             break;
     }
 
-    // Increment to next line
+    // Increment to next screen line
     counter++;
 
     // Delay for 1 second 
