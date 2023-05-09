@@ -75,9 +75,9 @@ typedef enum {
 // Function pointers 
 
 /**
- * @brief 
+ * @brief HD44780U setter function pointer 1 
  * 
- * @details 
+ * @details This function pointer is used for calling the following setters: 
  *          - hd44780u_line_set 
  */
 typedef void (*hd44780u_set_ptr_1)(
@@ -87,9 +87,9 @@ typedef void (*hd44780u_set_ptr_1)(
 
 
 /**
- * @brief 
+ * @brief HD44780U setter function pointer 2 
  * 
- * @details 
+ * @details This function pointer is used for calling the following setters: 
  *          - hd44780u_line_clear 
  */
 typedef void (*hd44780u_set_ptr_2)(
@@ -97,9 +97,9 @@ typedef void (*hd44780u_set_ptr_2)(
 
 
 /**
- * @brief 
+ * @brief HD44780U setter function pointer 3 
  * 
- * @details 
+ * @details This function pointer is used for calling the following setters: 
  *          - hd44780u_send_string 
  */
 typedef void (*hd44780u_set_ptr_3)(
@@ -107,9 +107,9 @@ typedef void (*hd44780u_set_ptr_3)(
 
 
 /**
- * @brief 
+ * @brief HD44780U setter function pointer 4 
  * 
- * @details 
+ * @details This function pointer is used for calling the following setters: 
  *          - hd44780u_cursor_pos 
  */
 typedef void (*hd44780u_set_ptr_4)(
@@ -118,10 +118,9 @@ typedef void (*hd44780u_set_ptr_4)(
 
 
 /**
- * @brief HD44780U line clear and state flag function pointer 
+ * @brief HD44780U setter function pointer 5 
  * 
- * @details This function pointer is used for calling the following setters from the device 
- *          controller: 
+ * @details This function pointer is used for calling the following setters: 
  *           - hd44780u_clear 
  *           - hd44780u_display_on 
  *           - hd44780u_display_off 
@@ -140,10 +139,9 @@ typedef void (*hd44780u_set_ptr_5)(void);
 
 
 /**
- * @brief HD44780U getters function pointer 
+ * @brief HD44780U getter function pointer 1 
  * 
- * @details This function pointer is used for calling the following getters from the device 
- *          controller: 
+ * @details This function pointer is used for calling the following getters: 
  *           - hd44780u_get_state 
  */
 typedef uint8_t (*hd44780u_get_ptr_1)(void); 

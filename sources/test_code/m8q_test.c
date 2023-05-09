@@ -74,8 +74,10 @@ void m8q_test_init()
     // Initialize I2C
     i2c_init(
         I2C1, 
-        I2C1_SDA_PB9,
-        I2C1_SCL_PB8,
+        PIN_9, 
+        GPIOB, 
+        PIN_8, 
+        GPIOB, 
         I2C_MODE_SM,
         I2C_APB1_42MHZ,
         I2C_CCR_SM_42_100,
