@@ -39,14 +39,14 @@
 #include "spi_comm.h"
 
 // Other drivers 
-#include "timers.h"
-#include "gpio_driver.h"
 #include "analog_driver.h"
+#include "data_filters.h"
 #include "dma_driver.h" 
+#include "gpio_driver.h"
 #include "interrupt_driver.h"
 #include "linked_list_driver.h"
-#include "data_filters.h"
 #include "switch_debounce.h"
+#include "timers.h"
 
 // Configuration files 
 #include "m8q_config.h"
