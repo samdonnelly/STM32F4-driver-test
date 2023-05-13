@@ -24,5 +24,5 @@
 void user_init()
 {
     // Setup code here
-    hd44780u_test_init(); 
+    timers_test_init(); 
 }

@@ -24,5 +24,5 @@
 void user_app()
 {
     // Looped code here
-    hd44780u_test_app(); 
+    timers_test_app(); 
 }
