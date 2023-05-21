@@ -137,7 +137,7 @@ void hd44780u_test_init()
 #if HD44780U_CONTROLLER_TEST
 
     // Initialize the device controller 
-    hd44780u_controller_init(); 
+    hd44780u_controller_init(TIM9); 
 
     // Initialize the state machine test code 
     state_machine_init(HD44780U_NUM_USER_CMDS); 
@@ -157,7 +157,7 @@ void hd44780u_test_init()
     hd44780u_line_set(
         HD44780U_L2, 
         (char *)(hd44780u_startup_screen[HD44780U_L2]), 
-        HD44780U_CURSOR_HOME); 
+        HD44780U_CURSOR_NO_OFFSET); 
     hd44780u_line_set(
         HD44780U_L3, 
         (char *)(hd44780u_startup_screen[HD44780U_L3]), 
@@ -168,16 +168,16 @@ void hd44780u_test_init()
         7); // Random offset 
 
     // Send all lines of data 
-    hd44780u_cursor_pos(HD44780U_START_L1, HD44780U_CURSOR_HOME);
+    hd44780u_cursor_pos(HD44780U_START_L1, HD44780U_CURSOR_NO_OFFSET);
     hd44780u_send_line(HD44780U_L1); 
 
-    hd44780u_cursor_pos(HD44780U_START_L2, HD44780U_CURSOR_HOME);
+    hd44780u_cursor_pos(HD44780U_START_L2, HD44780U_CURSOR_NO_OFFSET);
     hd44780u_send_line(HD44780U_L2); 
     
-    hd44780u_cursor_pos(HD44780U_START_L3, HD44780U_CURSOR_HOME);
+    hd44780u_cursor_pos(HD44780U_START_L3, HD44780U_CURSOR_NO_OFFSET);
     hd44780u_send_line(HD44780U_L3); 
     
-    hd44780u_cursor_pos(HD44780U_START_L4, HD44780U_CURSOR_HOME);
+    hd44780u_cursor_pos(HD44780U_START_L4, HD44780U_CURSOR_NO_OFFSET);
     hd44780u_send_line(HD44780U_L4); 
 
     // Give time for the startup message to display then clear the message 
