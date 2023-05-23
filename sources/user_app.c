@@ -24,5 +24,5 @@
 void user_app()
 {
     // Looped code here
-    timers_test_app(); 
+    hw125_test_app(); 
 }

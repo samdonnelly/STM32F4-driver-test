@@ -255,7 +255,8 @@ void hw125_test_init()
     uart_init(USART2, UART_BAUD_9600, UART_CLOCK_42); 
 
     // SPI for SD card 
-    spi_init(SPI2, GPIOB, SPI_1_SLAVE, SPI_BR_FPCLK_8, SPI_CLOCK_MODE_0);
+    // spi_init(SPI2, GPIOB, SPI_1_SLAVE, SPI_BR_FPCLK_8, SPI_CLOCK_MODE_0); 
+    spi_init(SPI2, GPIOB, SPI_2_SLAVE, SPI_BR_FPCLK_8, SPI_CLOCK_MODE_0); 
 
     //==================================================
 
@@ -263,7 +264,8 @@ void hw125_test_init()
     // SD card init 
 
     // SD card user initialization 
-    hw125_user_init(GPIOB, SPI2, GPIOX_PIN_9);
+    // hw125_user_init(GPIOB, SPI2, GPIOX_PIN_9); 
+    hw125_user_init(GPIOB, SPI2, GPIOX_PIN_12); 
 
 #if HW125_CONTROLLER_TEST 
 
