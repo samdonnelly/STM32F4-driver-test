@@ -252,7 +252,13 @@ void hw125_test_init()
     tim_enable(TIM9); 
 
     // UART2 for serial terminal communication 
-    uart_init(USART2, UART_BAUD_9600, UART_CLOCK_42); 
+    uart_init(
+        USART2, 
+        GPIOA, 
+        PIN_3, 
+        PIN_2, 
+        UART_BAUD_9600, 
+        UART_CLOCK_42); 
 
     // SPI2 and slave select pin for SD card 
     spi_init(
