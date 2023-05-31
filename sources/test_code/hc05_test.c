@@ -127,10 +127,22 @@ void hc05_test_init()
     tim_enable(TIM9); 
     
     // UART2 for serial terminal communication 
-    uart_init(USART2, UART_BAUD_9600, UART_CLOCK_42); 
+    uart_init(
+        USART2, 
+        GPIOA, 
+        PIN_3, 
+        PIN_2, 
+        UART_BAUD_9600, 
+        UART_CLOCK_42); 
 
     // UART1 for the HC05 module 
-    uart_init(USART1, UART_BAUD_115200, UART_CLOCK_84); 
+    uart_init(
+        USART1, 
+        GPIOA, 
+        PIN_10, 
+        PIN_9, 
+        UART_BAUD_115200, 
+        UART_CLOCK_84); 
 
     //===================================================
 
@@ -138,7 +150,15 @@ void hc05_test_init()
     // HC05 initialization 
     
     // hc05 driver 
-    hc05_init(USART1, GPIOA, PIN_8, GPIOA, PIN_12, GPIOA, PIN_11); 
+    hc05_init(
+        USART1, 
+        TIM9, 
+        GPIOA, 
+        PIN_8, 
+        GPIOA, 
+        PIN_12, 
+        GPIOA, 
+        PIN_11); 
 
 #if HC05_CONTROLLER_TEST 
 
