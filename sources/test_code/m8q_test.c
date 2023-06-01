@@ -69,7 +69,13 @@ void m8q_test_init()
     gpio_port_init(); 
 
     // Initialize UART
-    uart_init(USART2, UART_BAUD_9600, UART_CLOCK_42);
+    uart_init(
+        USART2, 
+        GPIOA, 
+        PIN_3, 
+        PIN_2, 
+        UART_BAUD_9600, 
+        UART_CLOCK_42); 
 
     // Initialize I2C
     i2c_init(

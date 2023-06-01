@@ -60,7 +60,13 @@ void ws2812_test_init()
     tim_enable(TIM9); 
 
     // Initialize UART2
-    uart_init(USART2, UART_BAUD_9600, UART_CLOCK_42);
+    uart_init(
+        USART2, 
+        GPIOA, 
+        PIN_3, 
+        PIN_2, 
+        UART_BAUD_9600, 
+        UART_CLOCK_42); 
     
     //==================================================
 

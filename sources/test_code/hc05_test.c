@@ -31,11 +31,8 @@
 // Setup text 
 void print_setup(void); 
 
-// Print the user input prompt for Data mode 
-void print_data_input(void); 
-
-// Print the user input prompt for AT Command mode 
-void print_at_input(void); 
+// Print user prompt 
+void print_usr_prompt(void); 
 
 // Parse the serial terminal input 
 void parse_input(void); 
@@ -112,19 +109,43 @@ char bt_input[HC05_AT_CMD_LEN];     // Bluetooth input
 
 void hc05_test_init()
 {
-    //===================================================
-    // Peripherals 
+    //==================================================
+    // General setup 
 
     // Initialize GPIO ports 
     gpio_port_init(); 
     
+    // Initialize interrupt handler flags 
+    int_handler_init(); 
+
+    //==================================================
+    
+    //===================================================
     // Initialize timers 
+
+    // General timer - 1us counter 
     tim_9_to_11_counter_init(
         TIM9, 
         TIM_84MHZ_1US_PSC, 
         0xFFFF,  // Max ARR value 
         TIM_UP_INT_DISABLE); 
     tim_enable(TIM9); 
+
+    // Periodic (counter update) interrupt timer for user button status checks 
+    tim_9_to_11_counter_init(
+        TIM10, 
+        TIM_84MHZ_100US_PSC, 
+        0x0032,  // ARR=50, (50 counts)*(100us/count) = 5ms 
+        TIM_UP_INT_ENABLE); 
+    tim_enable(TIM10); 
+
+    // Enable the interrupt handlers 
+    nvic_config(TIM1_UP_TIM10_IRQn, EXTI_PRIORITY_1); 
+
+    //==================================================
+
+    //==================================================
+    // Initialize UART 
     
     // UART2 for serial terminal communication 
     uart_init(
@@ -153,12 +174,12 @@ void hc05_test_init()
     hc05_init(
         USART1, 
         TIM9, 
-        GPIOA, 
-        PIN_8, 
-        GPIOA, 
-        PIN_12, 
-        GPIOA, 
-        PIN_11); 
+        GPIOA,          // AT pin GPIO 
+        PIN_8,          // AT pin 
+        GPIOA,          // EN pin GPIO 
+        PIN_12,         // EN pin 
+        GPIOA,          // STATE pin GPIO 
+        PIN_11);        // STATE pin 
 
 #if HC05_CONTROLLER_TEST 
 
@@ -172,6 +193,17 @@ void hc05_test_init()
 
     //===================================================
 
+    //==================================================
+    // GPIO setup 
+
+    // User button GPIO input 
+    gpio_pin_init(GPIOC, PIN_0, MODER_INPUT, OTYPER_PP, OSPEEDR_HIGH, PUPDR_PU); 
+
+    // Initialize the button debouncer 
+    debounce_init(GPIOX_PIN_0); 
+
+    //==================================================
+
     //===================================================
     // Setup 
 
@@ -184,7 +216,7 @@ void hc05_test_init()
 #else   // HC05_CONTROLLER_TEST
 
     clear_params(); 
-    print_data_input();
+    print_usr_prompt(); 
 
 #endif   // HC05_CONTROLLER_TEST
 
@@ -318,66 +350,57 @@ void hc05_test_app()
     // Driver test 
 
     // Local variables 
-    static uint8_t board_button = 0; 
-    static uint8_t push = 0; 
     static uint8_t function = 0; 
-    static uint8_t transition = 0; 
+    static uint8_t btn_block = CLEAR; 
 
-    //===================================================
-    // Connection status - STATE pin 
+    //==================================================
+    // User button input - mode selection 
 
-    // Indicate the state pin status through the board LED 
-    gpio_write(GPIOA, GPIOX_PIN_5, hc05_status()); 
-
-    //===================================================
-
-    //===================================================
-    // Mode selection - push button 
-    
-    // Read the board push button 
-    board_button = gpio_read(GPIOC, GPIOX_PIN_13); 
-
-    // Button pushed 
-    if (!board_button && !push)
+    // Update user input button status 
+    if (handler_flags.tim1_up_tim10_glbl_flag)
     {
+        handler_flags.tim1_up_tim10_glbl_flag = CLEAR; 
+        debounce((uint8_t)gpio_port_read(GPIOC)); 
+    }
+
+    // If button pressed after previously being released then change the mode 
+    if (debounce_pressed((uint8_t)GPIOX_PIN_0) && !btn_block)
+    {
+        btn_block = SET_BIT; 
+
         function = 1 - function; 
-        push++; 
-        transition++; 
-    }
 
-    // Button released 
-    else if (board_button && push)
-    {
-        push = 0; 
-    }
-
-    if (transition) 
-    {
         switch (function)
         {
-            case 0:  // Data mode 
+            case HC05_DATA_MODE: 
                 // TODO read the baud rate while in AT mode and use it here 
                 hc05_change_mode(HC05_DATA_MODE, UART_BAUD_115200, UART_CLOCK_84); 
                 uart_send_new_line(USART2); 
-                print_data_input();  
-                hc05_clear(); 
+                uart_send_new_line(USART2); 
+                uart_sendstring(USART2, "Data mode\r\n\n"); 
                 break; 
             
-            case 1:  // AT Command mode 
+            case HC05_AT_CMD_MODE: 
                 hc05_change_mode(HC05_AT_CMD_MODE, UART_BAUD_38400, UART_CLOCK_84); 
                 uart_send_new_line(USART2); 
-                print_at_input(); 
-                hc05_clear(); 
+                uart_send_new_line(USART2); 
+                uart_sendstring(USART2, "AT mode\r\n\n"); 
                 break; 
             
             default: 
                 break; 
         }
 
-        transition = 0; 
+        print_usr_prompt(); 
+        hc05_clear(); 
+    }
+    // Free the button pressed status when the button is released after being pressed 
+    if (debounce_released((uint8_t)GPIOX_PIN_0) && btn_block)
+    {
+        btn_block = CLEAR; 
     }
 
-    //===================================================
+    //==================================================
 
     //===================================================
     // Serial terminal data input 
@@ -389,26 +412,27 @@ void hc05_test_app()
 
         switch (function)
         {
-            case 0:  // Data mode 
+            case HC05_DATA_MODE: 
                 hc05_send(buffer); 
                 uart_send_new_line(USART2); 
-                print_data_input(); 
+                // print_data_input(); 
                 break;
 
-            case 1:  // AT Command mode 
-#if HC05_AT_EN 
+            case HC05_AT_CMD_MODE: 
+#if HC05_AT_ENABLE 
                 parse_input(); 
                 hc05_at_command(command, operation, parameter, cmd_resp); 
                 uart_send_new_line(USART2); 
                 print_at_cmd_resp(); 
-                print_at_input(); 
-#endif   // HC05_AT_EN 
+                // print_at_input(); 
+#endif   // HC05_AT_ENABLE 
                 break; 
             
             default:
                 break;
         }
 
+        print_usr_prompt(); 
         clear_params(); 
     }
 
@@ -421,12 +445,8 @@ void hc05_test_app()
     if (hc05_data_status())
     {
         hc05_read(bt_input);  // Must immediately read the data so it's not lost 
-        uart_send_new_line(USART2); 
-        uart_send_new_line(USART2); 
         print_bt_input(); 
-        uart_send_new_line(USART2); 
-        uart_send_new_line(USART2); 
-        print_data_input(); 
+        print_usr_prompt(); 
         clear_params(); 
     }
 
@@ -460,17 +480,10 @@ void print_setup(void)
 }
 
 
-// Print the user input prompt for Data mode 
-void print_data_input(void)
+// Print user prompt 
+void print_usr_prompt(void)
 {
-    uart_sendstring(USART2, "Data to send: "); 
-}
-
-
-// Print the user input prompt for AT Command mode 
-void print_at_input(void)
-{
-    uart_sendstring(USART2, "AT Command Args: "); 
+    uart_sendstring(USART2, ">>> "); 
 }
 
 
@@ -556,8 +569,9 @@ void parse_input(void)
 // Print the AT command response 
 void print_at_cmd_resp(void)
 {
-    uart_sendstring(USART2, "AT Command Response: "); 
+    uart_sendstring(USART2, ">>> AT cmd response: "); 
     uart_sendstring(USART2, cmd_resp); 
+    uart_send_new_line(USART2); 
     uart_send_new_line(USART2); 
 }
 
@@ -568,6 +582,7 @@ void print_bt_input(void)
     uart_sendstring(USART2, "Bluetooth input: "); 
     uart_sendstring(USART2, bt_input); 
     uart_send_new_line(USART2); 
+    uart_send_new_line(USART2); 
 }
 
 
@@ -576,10 +591,10 @@ void clear_params(void)
 {
     command = CLEAR; 
     operation = CLEAR; 
-    memset(buffer, NULL_CHAR, HC05_AT_CMD_LEN); 
-    memset(parameter, NULL_CHAR, HC05_AT_CMD_LEN); 
-    memset(cmd_resp, NULL_CHAR, HC05_AT_CMD_LEN); 
-    memset(bt_input, NULL_CHAR, HC05_AT_CMD_LEN); 
+    memset((void *)buffer, CLEAR, HC05_AT_CMD_LEN); 
+    memset((void *)parameter, CLEAR, HC05_AT_CMD_LEN); 
+    memset((void *)cmd_resp, CLEAR, HC05_AT_CMD_LEN); 
+    memset((void *)bt_input, CLEAR, HC05_AT_CMD_LEN); 
 }
 
 #endif   // HC05_CONTROLLER_TEST

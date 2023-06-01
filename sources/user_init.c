@@ -24,5 +24,5 @@
 void user_init()
 {
     // Setup code here
-    hw125_test_init(); 
+    hc05_test_init(); 
 }
