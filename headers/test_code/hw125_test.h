@@ -35,7 +35,7 @@
 #define HW125_CONTROLLER_TEST 0     // For switching between driver and controller testing 
 
 // File system 
-#define BUFF_SIZE 512 
+#define BUFF_SIZE 255 
 
 // User interface 
 #define HW125_NUM_DRIVER_CMDS 17    // Number of driver test commands for the user 

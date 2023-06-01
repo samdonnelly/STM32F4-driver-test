@@ -81,6 +81,7 @@ void file_remove(void);               // Remove files from the drive
 void get_input(
     char *str, 
     char *buff, 
+    uint8_t buff_len, 
     QWORD *data, 
     format_user_input_t op); 
 
@@ -367,7 +368,7 @@ void hw125_test_app()
     // Look for a user command 
     get_input(
         "\r\nOperation >>> ", 
-        hw125_test_record.cmd_buff, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
+        hw125_test_record.cmd_buff, CMD_SIZE, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
 
     // Compare the input to the defined user commands 
     for (uint8_t i = 0; i < HW125_NUM_DRIVER_CMDS; i++) 
@@ -668,7 +669,6 @@ void unmount_card(void)
     hw125_test_record.fresult = f_unmount(""); 
 
     // Clear the initialization status so it can be re-mounted 
-    // TODO this may be needed for failed mount attempts? 
     disk.is_initialized[0] = CLEAR; 
 
     if (hw125_test_record.fresult == FR_OK) 
@@ -714,7 +714,10 @@ void file_check(void)
     // Get and format the directory to check 
     get_input(
         "\nPath: ", 
-        hw125_test_record.buffer, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
+        hw125_test_record.buffer, 
+        BUFF_SIZE, 
+        &hw125_test_record.read_len, 
+        FORMAT_FILE_STRING); 
     
     uart_sendstring(USART2, "\nFiles in path: \r\n"); 
 
@@ -743,7 +746,10 @@ void file_mkdir(void)
     // Get and format the directory path string 
     get_input(
         "\nDirectory: ", 
-        hw125_test_record.buffer, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
+        hw125_test_record.buffer, 
+        BUFF_SIZE, 
+        &hw125_test_record.read_len, 
+        FORMAT_FILE_STRING); 
 
     // Write to the file 
     hw125_test_record.fresult = f_mkdir(hw125_test_record.buffer); 
@@ -756,12 +762,16 @@ void file_open(void)
     // Get and format the file name 
     get_input(
         "\nFile to open: ", 
-        hw125_test_record.file_name_buff, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
+        hw125_test_record.file_name_buff, 
+        CMD_SIZE, 
+        &hw125_test_record.read_len, 
+        FORMAT_FILE_STRING); 
 
     // Get and format the access mode 
     get_input(
         "\nAccess mode: ", 
         hw125_test_record.file_mode_buff, 
+        CMD_SIZE, 
         (QWORD *)(&hw125_test_record.access_mode), 
         FORMAT_FILE_MODE); 
 
@@ -785,7 +795,10 @@ void file_put_string(void)
     // Get and format the file string 
     get_input(
         "\nFile string: ", 
-        hw125_test_record.buffer, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
+        hw125_test_record.buffer, 
+        BUFF_SIZE, 
+        &hw125_test_record.read_len, 
+        FORMAT_FILE_STRING); 
 
     // Write a string 
     f_puts(hw125_test_record.buffer, &hw125_test_record.file); 
@@ -798,7 +811,10 @@ void file_get_string(void)
     // Get and format the read size (bytes) 
     get_input(
         "\nRead size (bytes): ", 
-        hw125_test_record.buffer, &hw125_test_record.read_len, FORMAT_FILE_NUM); 
+        hw125_test_record.buffer, 
+        BUFF_SIZE, 
+        &hw125_test_record.read_len, 
+        FORMAT_FILE_NUM); 
 
     // Read from the file 
     f_gets(hw125_test_record.buffer, hw125_test_record.read_len, &hw125_test_record.file); 
@@ -813,12 +829,18 @@ void file_printf(void)
     // Get and format the formatted string integer 
     get_input(
         "\nInteger: ", 
-        hw125_test_record.buffer, &fmt_value, FORMAT_FILE_NUM); 
+        hw125_test_record.buffer, 
+        BUFF_SIZE, 
+        &fmt_value, 
+        FORMAT_FILE_NUM); 
     
     // Get and format the formated string 
     get_input(
         "\nFormatted string: ", 
-        hw125_test_record.buffer, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
+        hw125_test_record.buffer, 
+        BUFF_SIZE, 
+        &hw125_test_record.read_len, 
+        FORMAT_FILE_STRING); 
 
     // Write the formatted string to the file 
     if (f_printf(&hw125_test_record.file, 
@@ -836,7 +858,10 @@ void file_write(void)
     // Get and format the file string 
     get_input(
         "\nFile string: ", 
-        hw125_test_record.buffer, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
+        hw125_test_record.buffer, 
+        BUFF_SIZE, 
+        &hw125_test_record.read_len, 
+        FORMAT_FILE_STRING); 
 
     // Write to the file 
     hw125_test_record.fresult = f_write(&hw125_test_record.file, 
@@ -854,7 +879,10 @@ void file_read(void)
     // Get and format the read size (bytes) 
     get_input(
         "\nRead size (bytes): ", 
-        hw125_test_record.buffer, &hw125_test_record.read_len, FORMAT_FILE_NUM); 
+        hw125_test_record.buffer, 
+        BUFF_SIZE, 
+        &hw125_test_record.read_len, 
+        FORMAT_FILE_NUM); 
 
     // Read from the file 
     hw125_test_record.fresult = f_read(&hw125_test_record.file, 
@@ -872,7 +900,10 @@ void file_seek(void)
     // Get and format the file position 
     get_input(
         "\nFile position: ", 
-        hw125_test_record.buffer, &hw125_test_record.position, FORMAT_FILE_NUM); 
+        hw125_test_record.buffer, 
+        BUFF_SIZE, 
+        &hw125_test_record.position, 
+        FORMAT_FILE_NUM); 
 
     // Move to the specified position in the file 
     hw125_test_record.fresult = f_lseek(&hw125_test_record.file, hw125_test_record.position); 
@@ -900,7 +931,10 @@ void file_remove(void)
     // Get and format the file position 
     get_input(
         "\nFile to remove: ", 
-        hw125_test_record.file_name_buff, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
+        hw125_test_record.file_name_buff, 
+        CMD_SIZE, 
+        &hw125_test_record.read_len, 
+        FORMAT_FILE_STRING); 
 
     // Attempt to remove the specified file 
     hw125_test_record.fresult = f_unlink(hw125_test_record.file_name_buff); 
@@ -919,6 +953,7 @@ void file_remove(void)
 void get_input(
     char *str, 
     char *buff, 
+    uint8_t buff_len, 
     QWORD *data, 
     format_user_input_t op)
 {
@@ -929,7 +964,7 @@ void get_input(
         while(!uart_data_ready(USART2)); 
 
         // Retrieve and format the input 
-        uart_getstr(USART2, buff, UART_STR_TERM_CARRIAGE); 
+        uart_getstr(USART2, buff, buff_len, UART_STR_TERM_CARRIAGE); 
     }
     while (!format_input(buff, data, op)); 
 }
