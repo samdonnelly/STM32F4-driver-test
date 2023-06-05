@@ -24,5 +24,5 @@
 void user_init()
 {
     // Setup code here
-    hc05_test_init(); 
+    mpu6050_test_init(); 
 }

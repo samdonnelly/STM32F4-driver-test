@@ -149,34 +149,36 @@ void mpu6050_test_init()
     // Accelerometer initialization 
     
     // Initialize the accelerometer 
-    uint8_t mpu6050_init_status = mpu6050_init(DEVICE_ONE, 
-                                               I2C1, 
-                                               MPU6050_ADDR_1,
-                                               MPU6050_DEV1_STBY_MASK, 
-                                               MPU6050_DLPF_CFG_1,
-                                               MPU6050_SMPLRT_DIV,
-                                               MPU6050_AFS_SEL_4,
-                                               MPU6050_FS_SEL_500);
+    mpu6050_init(
+        DEVICE_ONE, 
+        I2C1, 
+        MPU6050_ADDR_1,
+        MPU6050_DEV1_STBY_MASK, 
+        MPU6050_DLPF_CFG_1,
+        MPU6050_SMPLRT_DIV,
+        MPU6050_AFS_SEL_4,
+        MPU6050_FS_SEL_500);
 
     // Return the status of the accelerometer WHO_AM_I register 
-    if (!mpu6050_init_status) uart_sendstring(USART2, "Device seen\r\n");
+    if (!mpu6050_get_status(DEVICE_ONE)) uart_sendstring(USART2, "Device seen\r\n");
     else uart_sendstring(USART2, "Device not seen\r\n");
 
     
     #if MPU6050_SECOND_DEVICE 
 
     // Initialize the second accelerometer 
-    mpu6050_init_status = mpu6050_init(DEVICE_TWO, 
-                                       I2C1, 
-                                       MPU6050_ADDR_2,
-                                       MPU6050_DEV2_STBY_MASK, 
-                                       MPU6050_DLPF_CFG_1,
-                                       MPU6050_SMPLRT_DIV,
-                                       MPU6050_AFS_SEL_4,
-                                       MPU6050_FS_SEL_500);
+    mpu6050_init(
+        DEVICE_TWO, 
+        I2C1, 
+        MPU6050_ADDR_2,
+        MPU6050_DEV2_STBY_MASK, 
+        MPU6050_DLPF_CFG_1,
+        MPU6050_SMPLRT_DIV,
+        MPU6050_AFS_SEL_4,
+        MPU6050_FS_SEL_500);
 
     // Return the status of the accelerometer WHO_AM_I register 
-    if (!mpu6050_init_status) uart_sendstring(USART2, "Second device seen\r\n");
+    if (!mpu6050_get_status(DEVICE_TWO)) uart_sendstring(USART2, "Second device seen\r\n");
     else uart_sendstring(USART2, "Second device not seen\r\n");
 
     #endif   // MPU6050_SECOND_DEVICE 
