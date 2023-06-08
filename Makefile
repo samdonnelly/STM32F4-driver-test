@@ -108,6 +108,11 @@ Middlewares/Third_Party/FatFs/src/option/syscall.c \
 Middlewares/Third_Party/FatFs/src/option/ccsbcs.c
 
 
+# C++ sources
+CXX_SOURCES = \
+../STM32F4-driver-library/sources/lsm303agr_driver.cpp \
+
+
 # ASM sources
 ASM_SOURCES =  \
 startup_stm32f411xe.s
