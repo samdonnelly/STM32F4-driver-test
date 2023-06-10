@@ -328,7 +328,7 @@ void timers_test_app()
         ws2812_colour_set(DEVICE_ONE, led_colour[WS2812_LED_0], WS2812_LED_0); 
         ws2812_send(DEVICE_ONE); 
 
-        button_block_1 = SET; 
+        button_block_1 = SET_BIT; 
     }
     // Check if the button is released  
     else if (debounce_released((uint8_t)GPIOX_PIN_0) && button_block_1) 
@@ -348,7 +348,7 @@ void timers_test_app()
         ws2812_colour_set(DEVICE_ONE, led_colour[WS2812_LED_1], WS2812_LED_1); 
         ws2812_send(DEVICE_ONE); 
 
-        button_block_2 = SET; 
+        button_block_2 = SET_BIT; 
     }
     // Check if the button is released  
     else if (debounce_released((uint8_t)GPIOX_PIN_1) && button_block_2) 
@@ -368,7 +368,7 @@ void timers_test_app()
         ws2812_colour_set(DEVICE_ONE, led_colour[WS2812_LED_2], WS2812_LED_2); 
         ws2812_send(DEVICE_ONE); 
 
-        button_block_3 = SET; 
+        button_block_3 = SET_BIT; 
     }
     // Check if the button is released  
     else if (debounce_released((uint8_t)GPIOX_PIN_2) && button_block_3) 
@@ -388,7 +388,7 @@ void timers_test_app()
         ws2812_colour_set(DEVICE_ONE, led_colour[WS2812_LED_3], WS2812_LED_3); 
         ws2812_send(DEVICE_ONE); 
 
-        button_block_4 = SET; 
+        button_block_4 = SET_BIT; 
     }
     // Check if the button is released  
     else if (debounce_released((uint8_t)GPIOX_PIN_3) && button_block_4) 

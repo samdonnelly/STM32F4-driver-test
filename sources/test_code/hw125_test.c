@@ -913,7 +913,7 @@ void file_seek(void)
 // Navigate to the beginning of the file 
 void file_rewind(void) 
 {
-    hw125_test_record.fresult = f_lseek(&hw125_test_record.file, RESET); 
+    hw125_test_record.fresult = f_lseek(&hw125_test_record.file, RESET_ZERO); 
 }
 
 

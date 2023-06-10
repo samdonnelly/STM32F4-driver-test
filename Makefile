@@ -39,6 +39,7 @@ C_SOURCES =  \
 Core/Src/main.c \
 Core/Src/stm32f4xx_it.c \
 Core/Src/stm32f4xx_hal_msp.c \
+Core/Src/system_stm32f4xx.c \
 sources/user_init.c \
 sources/user_app.c \
 sources/int_handlers.c \
@@ -59,30 +60,37 @@ sources/test_code/timers_test.c \
 sources/test_code/uart_test.c \
 sources/test_code/ws2812_test.c \
 sources/config_files/m8q_config.c \
-../STM32F4-driver-library/sources/analog_driver.c \
-../STM32F4-driver-library/sources/data_filters.c \
-../STM32F4-driver-library/sources/dma_driver.c \
-../STM32F4-driver-library/sources/gpio_driver.c \
-../STM32F4-driver-library/sources/hc05_driver.c \
-../STM32F4-driver-library/sources/hc05_controller.c \
-../STM32F4-driver-library/sources/hd44780u_driver.c \
-../STM32F4-driver-library/sources/hd44780u_controller.c \
-../STM32F4-driver-library/sources/hw125_driver.c \
-../STM32F4-driver-library/sources/hw125_controller.c \
-../STM32F4-driver-library/sources/i2c_comm.c \
-../STM32F4-driver-library/sources/interrupt_driver.c \
-../STM32F4-driver-library/sources/linked_list_driver.c \
-../STM32F4-driver-library/sources/m8q_driver.c \
-../STM32F4-driver-library/sources/m8q_controller.c \
-../STM32F4-driver-library/sources/mpu6050_driver.c \
-../STM32F4-driver-library/sources/mpu6050_controller.c \
-../STM32F4-driver-library/sources/spi_comm.c \
-../STM32F4-driver-library/sources/stm32f411xe_custom.c \
-../STM32F4-driver-library/sources/switch_debounce.c \
-../STM32F4-driver-library/sources/timers.c \
-../STM32F4-driver-library/sources/tools.c \
-../STM32F4-driver-library/sources/uart_comm.c \
-../STM32F4-driver-library/sources/ws2812_driver.c \
+../STM32F4-driver-library/sources/devices/hc05_driver.c \
+../STM32F4-driver-library/sources/devices/hc05_controller.c \
+../STM32F4-driver-library/sources/devices/hd44780u_driver.c \
+../STM32F4-driver-library/sources/devices/hd44780u_controller.c \
+../STM32F4-driver-library/sources/devices/hw125_driver.c \
+../STM32F4-driver-library/sources/devices/hw125_controller.c \
+../STM32F4-driver-library/sources/devices/m8q_driver.c \
+../STM32F4-driver-library/sources/devices/m8q_controller.c \
+../STM32F4-driver-library/sources/devices/mpu6050_driver.c \
+../STM32F4-driver-library/sources/devices/mpu6050_controller.c \
+../STM32F4-driver-library/sources/devices/ws2812_driver.c \
+../STM32F4-driver-library/sources/peripherals/analog_driver.c \
+../STM32F4-driver-library/sources/peripherals/dma_driver.c \
+../STM32F4-driver-library/sources/peripherals/gpio_driver.c \
+../STM32F4-driver-library/sources/peripherals/i2c_comm.c \
+../STM32F4-driver-library/sources/peripherals/interrupt_driver.c \
+../STM32F4-driver-library/sources/peripherals/spi_comm.c \
+../STM32F4-driver-library/sources/peripherals/timers.c \
+../STM32F4-driver-library/sources/peripherals/uart_comm.c \
+../STM32F4-driver-library/sources/tools/data_filters.c \
+../STM32F4-driver-library/sources/tools/linked_list_driver.c \
+../STM32F4-driver-library/sources/tools/stm32f411xe_custom.c \
+../STM32F4-driver-library/sources/tools/switch_debounce.c \
+../STM32F4-driver-library/sources/tools/tools.c \
+../STM32F4-driver-library/stmcode/FATFS/Target/user_diskio.c \
+../STM32F4-driver-library/stmcode/FATFS/App/fatfs.c \
+../STM32F4-driver-library/stmcode/Middlewares/Third_Party/FatFs/src/diskio.c \
+../STM32F4-driver-library/stmcode/Middlewares/Third_Party/FatFs/src/ff.c \
+../STM32F4-driver-library/stmcode/Middlewares/Third_Party/FatFs/src/ff_gen_drv.c \
+../STM32F4-driver-library/stmcode/Middlewares/Third_Party/FatFs/src/option/syscall.c \
+../STM32F4-driver-library/stmcode/Middlewares/Third_Party/FatFs/src/option/ccsbcs.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c \
@@ -97,20 +105,12 @@ Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c \
-Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c \
-Core/Src/system_stm32f4xx.c \
-FATFS/Target/user_diskio.c \
-FATFS/App/fatfs.c \
-Middlewares/Third_Party/FatFs/src/diskio.c \
-Middlewares/Third_Party/FatFs/src/ff.c \
-Middlewares/Third_Party/FatFs/src/ff_gen_drv.c \
-Middlewares/Third_Party/FatFs/src/option/syscall.c \
-Middlewares/Third_Party/FatFs/src/option/ccsbcs.c
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c 
 
 
 # C++ sources
 CXX_SOURCES = \
-../STM32F4-driver-library/sources/lsm303agr_driver.cpp \
+../STM32F4-driver-library/sources/devices/lsm303agr_driver.cpp \
 
 
 # ASM sources
@@ -172,14 +172,16 @@ C_INCLUDES =  \
 -Iheaders \
 -Iheaders/test_code \
 -Iheaders/config_files \
--I../STM32F4-driver-library/headers \
+-I../STM32F4-driver-library/headers/devices \
+-I../STM32F4-driver-library/headers/peripherals \
+-I../STM32F4-driver-library/headers/tools \
+-I../STM32F4-driver-library/stmcode/FATFS/Target \
+-I../STM32F4-driver-library/stmcode/FATFS/App \
+-I../STM32F4-driver-library/stmcode/Middlewares/Third_Party/FatFs/src \
+-I../STM32F4-driver-library/stmcode/Drivers/CMSIS/Device/ST/STM32F4xx/Include \
+-I../STM32F4-driver-library/stmcode/Drivers/CMSIS/Include \
 -IDrivers/STM32F4xx_HAL_Driver/Inc \
--IDrivers/STM32F4xx_HAL_Driver/Inc/Legacy \
--IDrivers/CMSIS/Device/ST/STM32F4xx/Include \
--IDrivers/CMSIS/Include \
--IFATFS/Target \
--IFATFS/App \
--IMiddlewares/Third_Party/FatFs/src
+-IDrivers/STM32F4xx_HAL_Driver/Inc/Legacy
 
 
 # compile gcc flags
