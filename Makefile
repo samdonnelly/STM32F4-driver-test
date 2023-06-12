@@ -52,6 +52,7 @@ sources/test_code/hd44780u_test.c \
 sources/test_code/hw125_test.c \
 sources/test_code/i2c_test.c \
 sources/test_code/interrupt_test.c \
+sources/test_code/lsm303agr_test.c \
 sources/test_code/m8q_test.c \
 sources/test_code/mpu6050_test.c \
 sources/test_code/spi_test.c \

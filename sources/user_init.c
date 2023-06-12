@@ -24,5 +24,5 @@
 void user_init()
 {
     // Setup code here
-    mpu6050_test_init(); 
+    lsm303agr_test_init(); 
 }

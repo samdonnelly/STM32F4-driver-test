@@ -29,6 +29,7 @@
 #include "hw125_test.h"
 #include "i2c_test.h"
 #include "interrupt_test.h"
+#include "lsm303agr_test.h"
 #include "m8q_test.h"
 #include "mpu6050_test.h"
 #include "spi_test.h"

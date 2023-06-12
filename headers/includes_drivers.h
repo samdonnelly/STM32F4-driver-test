@@ -23,6 +23,7 @@
 #include "mpu6050_driver.h"
 #include "hd44780u_driver.h"
 #include "hc05_driver.h"
+#include "lsm303agr_driver.h"
 #include "m8q_driver.h"
 #include "ws2812_driver.h" 
 
