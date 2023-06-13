@@ -24,12 +24,14 @@
 // Global variables 
 
 // String 1 LED colour data - Green, Red, Blue 
-static uint8_t s1_colour_data[WS2812_LED_NUM][WS2812_COLOUR_PER_LED]; 
+// static uint8_t s1_colour_data[WS2812_LED_NUM][WS2812_COLOUR_PER_LED]; 
+static uint32_t s1_colour_data[WS2812_LED_NUM]; 
 
 #if WS2812_SECOND_DEVICE 
 
 // String 2 LED colour data - Green, Red, Blue 
-static uint8_t s2_colour_data[WS2812_LED_NUM][WS2812_COLOUR_PER_LED]; 
+// static uint8_t s2_colour_data[WS2812_LED_NUM][WS2812_COLOUR_PER_LED]; 
+static uint32_t s2_colour_data[WS2812_LED_NUM]; 
 
 #endif   // WS2812_SECOND_DEVICE 
 
@@ -100,13 +102,13 @@ void ws2812_test_init()
 
     // Clear colour data and turn off the LEDs 
     memset((void *)s1_colour_data[WS2812_LED_0], CLEAR, sizeof(s1_colour_data)); 
-    ws2812_send(DEVICE_ONE); 
+    ws2812_send(DEVICE_ONE, s1_colour_data); 
 
 #if WS2812_SECOND_DEVICE 
 
     // Clear colour data and turn off the LEDs 
     memset((void *)s2_colour_data[WS2812_LED_0], CLEAR, sizeof(s2_colour_data)); 
-    ws2812_send(DEVICE_TWO); 
+    ws2812_send(DEVICE_TWO, s2_colour_data); 
 
 #endif   // WS2812_SECOND_DEVICE 
 
@@ -124,36 +126,40 @@ void ws2812_test_app()
     static uint8_t LED_current = WS2812_LED_0; 
 
     // Update the previous LED colour data 
-    s1_colour_data[LED_previous][WS2812_GREEN] = 0; 
-    s1_colour_data[LED_previous][WS2812_RED]   = 0; 
-    s1_colour_data[LED_previous][WS2812_BLUE]  = 0; 
+    // s1_colour_data[LED_previous][WS2812_GREEN] = 0; 
+    // s1_colour_data[LED_previous][WS2812_RED]   = 0; 
+    // s1_colour_data[LED_previous][WS2812_BLUE]  = 0; 
+    s1_colour_data[LED_previous] = 0x000000; 
 
     // Update the current LED colour data 
-    s1_colour_data[LED_current][WS2812_GREEN] = 0; 
-    s1_colour_data[LED_current][WS2812_RED]   = 30; 
-    s1_colour_data[LED_current][WS2812_BLUE]  = 30; 
+    // s1_colour_data[LED_current][WS2812_GREEN] = 0; 
+    // s1_colour_data[LED_current][WS2812_RED]   = 30; 
+    // s1_colour_data[LED_current][WS2812_BLUE]  = 30; 
+    s1_colour_data[LED_previous] = 0x001E1E; 
 
     // Write the LED data 
-    ws2812_colour_set(DEVICE_ONE, s1_colour_data[LED_previous], LED_previous); 
-    ws2812_colour_set(DEVICE_ONE, s1_colour_data[LED_current], LED_current); 
-    ws2812_send(DEVICE_ONE); 
+    // ws2812_colour_set(DEVICE_ONE, s1_colour_data[LED_previous], LED_previous); 
+    // ws2812_colour_set(DEVICE_ONE, s1_colour_data[LED_current], LED_current); 
+    ws2812_send(DEVICE_ONE, s1_colour_data); 
 
 #if WS2812_SECOND_DEVICE 
 
     // Update the previous LED colour data 
-    s2_colour_data[LED_previous][WS2812_GREEN] = 0; 
-    s2_colour_data[LED_previous][WS2812_RED]   = 0; 
-    s2_colour_data[LED_previous][WS2812_BLUE]  = 0; 
+    // s2_colour_data[LED_previous][WS2812_GREEN] = 0; 
+    // s2_colour_data[LED_previous][WS2812_RED]   = 0; 
+    // s2_colour_data[LED_previous][WS2812_BLUE]  = 0; 
+    s2_colour_data[LED_previous] = 0x000000; 
 
     // Update the current LED colour data 
-    s2_colour_data[LED_current][WS2812_GREEN] = 45; 
-    s2_colour_data[LED_current][WS2812_RED]   = 170; 
-    s2_colour_data[LED_current][WS2812_BLUE]  = 0; 
+    // s2_colour_data[LED_current][WS2812_GREEN] = 45; 
+    // s2_colour_data[LED_current][WS2812_RED]   = 170; 
+    // s2_colour_data[LED_current][WS2812_BLUE]  = 0; 
+    s2_colour_data[LED_previous] = 0x2DAA00; 
 
     // Write the LED data 
-    ws2812_colour_set(DEVICE_TWO, s2_colour_data[LED_previous], LED_previous); 
-    ws2812_colour_set(DEVICE_TWO, s2_colour_data[LED_current], LED_current); 
-    ws2812_send(DEVICE_TWO); 
+    // ws2812_colour_set(DEVICE_TWO, s2_colour_data[LED_previous], LED_previous); 
+    // ws2812_colour_set(DEVICE_TWO, s2_colour_data[LED_current], LED_current); 
+    ws2812_send(DEVICE_TWO, s2_colour_data); 
 
 #endif   // WS2812_SECOND_DEVICE 
 
