@@ -321,7 +321,7 @@ void timers_test_app()
     // Check if the button is pressed 
     if (debounce_pressed((uint8_t)GPIOX_PIN_0) && !button_block_1) 
     {
-        // Turn on the LED 
+        // Toggle the LED 
         led_colour[WS2812_LED_0][WS2812_GREEN] = 0  - led_colour[WS2812_LED_0][WS2812_GREEN]; 
         led_colour[WS2812_LED_0][WS2812_RED]   = 30 - led_colour[WS2812_LED_0][WS2812_RED]; 
         led_colour[WS2812_LED_0][WS2812_BLUE]  = 30 - led_colour[WS2812_LED_0][WS2812_BLUE]; 
@@ -341,7 +341,7 @@ void timers_test_app()
     // Check if the button is pressed 
     if (debounce_pressed((uint8_t)GPIOX_PIN_1) && !button_block_2) 
     {
-        // Turn on the LED 
+        // Toggle the LED 
         led_colour[WS2812_LED_1][WS2812_GREEN] = 30 - led_colour[WS2812_LED_1][WS2812_GREEN]; 
         led_colour[WS2812_LED_1][WS2812_RED]   = 30 - led_colour[WS2812_LED_1][WS2812_RED]; 
         led_colour[WS2812_LED_1][WS2812_BLUE]  = 0  - led_colour[WS2812_LED_1][WS2812_BLUE]; 
@@ -361,7 +361,7 @@ void timers_test_app()
     // Check if the button is pressed 
     if (debounce_pressed((uint8_t)GPIOX_PIN_2) && !button_block_3) 
     {
-        // Turn on the LED 
+        // Toggle the LED 
         led_colour[WS2812_LED_2][WS2812_GREEN] = 30 - led_colour[WS2812_LED_2][WS2812_GREEN]; 
         led_colour[WS2812_LED_2][WS2812_RED]   = 0  - led_colour[WS2812_LED_2][WS2812_RED]; 
         led_colour[WS2812_LED_2][WS2812_BLUE]  = 30 - led_colour[WS2812_LED_2][WS2812_BLUE]; 
@@ -381,7 +381,7 @@ void timers_test_app()
     // Check if the button is pressed 
     if (debounce_pressed((uint8_t)GPIOX_PIN_3) && !button_block_4) 
     {
-        // Turn on the LED 
+        // Toggle the LED 
         led_colour[WS2812_LED_3][WS2812_GREEN] = 30 - led_colour[WS2812_LED_3][WS2812_GREEN]; 
         led_colour[WS2812_LED_3][WS2812_RED]   = 30 - led_colour[WS2812_LED_3][WS2812_RED]; 
         led_colour[WS2812_LED_3][WS2812_BLUE]  = 30 - led_colour[WS2812_LED_3][WS2812_BLUE]; 
