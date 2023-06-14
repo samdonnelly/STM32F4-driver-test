@@ -35,7 +35,6 @@ static uint32_t no_block_delay_clk_freq;
 #if TIM_WS2812 
 
 // LED colour data - Green, Red, Blue 
-// static uint8_t led_colour[WS2812_LED_NUM][WS2812_COLOUR_PER_LED]; 
 static uint32_t led_colour_data[WS2812_LED_NUM]; 
 
 #endif   // TIM_WS2812 
@@ -168,8 +167,6 @@ void timers_test_init()
         PIN_6); 
 
     // Clear colour data and turn off the LEDs 
-    // memset((void *)led_colour[WS2812_LED_0], CLEAR, sizeof(led_colour)); 
-    // ws2812_send(DEVICE_ONE); 
     memset((void *)led_colour_data, CLEAR, sizeof(led_colour_data)); 
     ws2812_send(DEVICE_ONE, led_colour_data); 
 
@@ -325,14 +322,8 @@ void timers_test_app()
     if (debounce_pressed((uint8_t)GPIOX_PIN_0) && !button_block_1) 
     {
         // Toggle the LED 
-        // led_colour[WS2812_LED_0][WS2812_GREEN] = 0  - led_colour[WS2812_LED_0][WS2812_GREEN]; 
-        // led_colour[WS2812_LED_0][WS2812_RED]   = 30 - led_colour[WS2812_LED_0][WS2812_RED]; 
-        // led_colour[WS2812_LED_0][WS2812_BLUE]  = 30 - led_colour[WS2812_LED_0][WS2812_BLUE]; 
-        // ws2812_colour_set(DEVICE_ONE, led_colour[WS2812_LED_0], WS2812_LED_0); 
-        // ws2812_send(DEVICE_ONE); 
         led_colour_data[WS2812_LED_0] = 0x001E1E - led_colour_data[WS2812_LED_0]; 
         ws2812_send(DEVICE_ONE, led_colour_data); 
-
         button_block_1 = SET_BIT; 
     }
     // Check if the button is released  
@@ -347,14 +338,8 @@ void timers_test_app()
     if (debounce_pressed((uint8_t)GPIOX_PIN_1) && !button_block_2) 
     {
         // Toggle the LED 
-        // led_colour[WS2812_LED_1][WS2812_GREEN] = 30 - led_colour[WS2812_LED_1][WS2812_GREEN]; 
-        // led_colour[WS2812_LED_1][WS2812_RED]   = 30 - led_colour[WS2812_LED_1][WS2812_RED]; 
-        // led_colour[WS2812_LED_1][WS2812_BLUE]  = 0  - led_colour[WS2812_LED_1][WS2812_BLUE]; 
-        // ws2812_colour_set(DEVICE_ONE, led_colour[WS2812_LED_1], WS2812_LED_1); 
-        // ws2812_send(DEVICE_ONE); 
         led_colour_data[WS2812_LED_0] = 0x1E1E00 - led_colour_data[WS2812_LED_0]; 
         ws2812_send(DEVICE_ONE, led_colour_data); 
-
         button_block_2 = SET_BIT; 
     }
     // Check if the button is released  
@@ -369,14 +354,8 @@ void timers_test_app()
     if (debounce_pressed((uint8_t)GPIOX_PIN_2) && !button_block_3) 
     {
         // Toggle the LED 
-        // led_colour[WS2812_LED_2][WS2812_GREEN] = 30 - led_colour[WS2812_LED_2][WS2812_GREEN]; 
-        // led_colour[WS2812_LED_2][WS2812_RED]   = 0  - led_colour[WS2812_LED_2][WS2812_RED]; 
-        // led_colour[WS2812_LED_2][WS2812_BLUE]  = 30 - led_colour[WS2812_LED_2][WS2812_BLUE]; 
-        // ws2812_colour_set(DEVICE_ONE, led_colour[WS2812_LED_2], WS2812_LED_2); 
-        // ws2812_send(DEVICE_ONE); 
         led_colour_data[WS2812_LED_0] = 0x1E001E - led_colour_data[WS2812_LED_0]; 
         ws2812_send(DEVICE_ONE, led_colour_data); 
-
         button_block_3 = SET_BIT; 
     }
     // Check if the button is released  
@@ -391,14 +370,8 @@ void timers_test_app()
     if (debounce_pressed((uint8_t)GPIOX_PIN_3) && !button_block_4) 
     {
         // Toggle the LED 
-        // led_colour[WS2812_LED_3][WS2812_GREEN] = 30 - led_colour[WS2812_LED_3][WS2812_GREEN]; 
-        // led_colour[WS2812_LED_3][WS2812_RED]   = 30 - led_colour[WS2812_LED_3][WS2812_RED]; 
-        // led_colour[WS2812_LED_3][WS2812_BLUE]  = 30 - led_colour[WS2812_LED_3][WS2812_BLUE]; 
-        // ws2812_colour_set(DEVICE_ONE, led_colour[WS2812_LED_3], WS2812_LED_3); 
-        // ws2812_send(DEVICE_ONE); 
         led_colour_data[WS2812_LED_0] = 0x1E1E1E - led_colour_data[WS2812_LED_0]; 
         ws2812_send(DEVICE_ONE, led_colour_data); 
-
         button_block_4 = SET_BIT; 
     }
     // Check if the button is released  

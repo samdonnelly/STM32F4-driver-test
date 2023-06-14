@@ -24,5 +24,4 @@
 void user_app()
 {
     // Looped code here
-    ws2812_test_app(); 
 }
