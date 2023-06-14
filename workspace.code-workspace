@@ -47,7 +47,8 @@
 			"hw125_test.h": "c",
 			"mpu6050_test.h": "c",
 			"stdlib.h": "c",
-			"lsm303agr_test.h": "c"
+			"lsm303agr_test.h": "c",
+			"main.h": "c"
 		}
 	}
 }
