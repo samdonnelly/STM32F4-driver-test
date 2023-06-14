@@ -24,5 +24,5 @@
 void user_app()
 {
     // Looped code here
-    lsm303agr_test_app(); 
+    ws2812_test_app(); 
 }
