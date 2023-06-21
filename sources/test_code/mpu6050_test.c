@@ -147,6 +147,10 @@ void mpu6050_test_init()
 
     //===================================================
     // Accelerometer initialization 
+
+    // NOTE: If the HD44780U LCD screen is connected to the same I2C bus then that needs to be 
+    //       initialized first. For some reason the uninitialized screen interferes with the bus 
+    //       and prevents the mpu6050 from being initialized properly. 
     
     // Initialize the accelerometer 
     mpu6050_init(
