@@ -129,7 +129,10 @@ typedef enum {
     SMT_STATE_FUNC_PTR_3, 
     SMT_STATE_FUNC_PTR_4, 
     SMT_STATE_FUNC_PTR_5, 
-    SMT_STATE_FUNC_PTR_6 
+    SMT_STATE_FUNC_PTR_6, 
+    SMT_STATE_FUNC_PTR_7, 
+    SMT_STATE_FUNC_PTR_8, 
+    SMT_STATE_FUNC_PTR_9 
 } smt_state_func_ptr_index_t; 
 
 

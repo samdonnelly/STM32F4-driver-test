@@ -41,56 +41,46 @@ void mpu6050_cntrl_test_device_two(void);   // Choose device two
 // User command table 
 static state_request_t mpu6050_state_cmds[MPU6050_NUM_TEST_CMDS] = 
 {
-    {"dev_one",     SMT_ARGS_0, SMT_STATE_FUNC_PTR_2, SMT_ARGS_0},   // 0
-    {"dev_two",     SMT_ARGS_0, SMT_STATE_FUNC_PTR_2, SMT_ARGS_0},   // 1
-    {"reset",       SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, SMT_ARGS_0},   // 2
-    {"lp_set",      SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, SMT_ARGS_0},   // 3
-    {"lp_clear",    SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, SMT_ARGS_0},   // 4
-    {"state",       SMT_ARGS_0, SMT_STATE_FUNC_PTR_3, SMT_ARGS_0},   // 5
-    {"fault",       SMT_ARGS_0, SMT_STATE_FUNC_PTR_4, SMT_ARGS_0},   // 6
-    {"raw_accel_x", SMT_ARGS_0, SMT_STATE_FUNC_PTR_5, SMT_ARGS_0},   // 7
-    {"raw_accel_y", SMT_ARGS_0, SMT_STATE_FUNC_PTR_5, SMT_ARGS_0},   // 8
-    {"raw_accel_z", SMT_ARGS_0, SMT_STATE_FUNC_PTR_5, SMT_ARGS_0},   // 9
-    {"raw_gyro_x",  SMT_ARGS_0, SMT_STATE_FUNC_PTR_5, SMT_ARGS_0},   // 10
-    {"raw_gyro_y",  SMT_ARGS_0, SMT_STATE_FUNC_PTR_5, SMT_ARGS_0},   // 11
-    {"raw_gyro_z",  SMT_ARGS_0, SMT_STATE_FUNC_PTR_5, SMT_ARGS_0},   // 12
-    {"raw_temp",    SMT_ARGS_0, SMT_STATE_FUNC_PTR_5, SMT_ARGS_0},   // 13
-    {"accel_x",     SMT_ARGS_0, SMT_STATE_FUNC_PTR_6, SMT_ARGS_0},   // 14
-    {"accel_y",     SMT_ARGS_0, SMT_STATE_FUNC_PTR_6, SMT_ARGS_0},   // 15
-    {"accel_z",     SMT_ARGS_0, SMT_STATE_FUNC_PTR_6, SMT_ARGS_0},   // 16
-    {"gyro_x",      SMT_ARGS_0, SMT_STATE_FUNC_PTR_6, SMT_ARGS_0},   // 17
-    {"gyro_y",      SMT_ARGS_0, SMT_STATE_FUNC_PTR_6, SMT_ARGS_0},   // 18
-    {"gyro_z",      SMT_ARGS_0, SMT_STATE_FUNC_PTR_6, SMT_ARGS_0},   // 19
-    {"temp",        SMT_ARGS_0, SMT_STATE_FUNC_PTR_6, SMT_ARGS_0},   // 20
-    {"execute", 0, 0, 0}                                             // 21
+    {"dev_one",     SMT_ARGS_0, SMT_STATE_FUNC_PTR_3, SMT_ARG_BUFF_POS_0},   // 0
+    {"dev_two",     SMT_ARGS_0, SMT_STATE_FUNC_PTR_3, SMT_ARG_BUFF_POS_0},   // 1
+    {"lp_set",      SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, SMT_ARG_BUFF_POS_0},   // 2
+    {"lp_clear",    SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, SMT_ARG_BUFF_POS_0},   // 3
+    {"sample",      SMT_ARGS_1, SMT_STATE_FUNC_PTR_2, SMT_ARG_BUFF_POS_0},   // 4
+    {"read_state",  SMT_ARGS_1, SMT_STATE_FUNC_PTR_2, SMT_ARG_BUFF_POS_1},   // 5
+    {"read",        SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, SMT_ARG_BUFF_POS_0},   // 6
+    {"reset",       SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, SMT_ARG_BUFF_POS_0},   // 7
+    {"state",       SMT_ARGS_0, SMT_STATE_FUNC_PTR_4, SMT_ARG_BUFF_POS_0},   // 8
+    {"fault",       SMT_ARGS_0, SMT_STATE_FUNC_PTR_5, SMT_ARG_BUFF_POS_0},   // 9
+    {"accel_raw",   SMT_ARGS_0, SMT_STATE_FUNC_PTR_6, SMT_ARG_BUFF_POS_0},   // 10
+    {"gyro_raw",    SMT_ARGS_0, SMT_STATE_FUNC_PTR_6, SMT_ARG_BUFF_POS_0},   // 11
+    {"temp_raw",    SMT_ARGS_0, SMT_STATE_FUNC_PTR_7, SMT_ARG_BUFF_POS_0},   // 12
+    {"accel",       SMT_ARGS_0, SMT_STATE_FUNC_PTR_8, SMT_ARG_BUFF_POS_0},   // 13
+    {"gyro",        SMT_ARGS_0, SMT_STATE_FUNC_PTR_8, SMT_ARG_BUFF_POS_0},   // 14
+    {"temp",        SMT_ARGS_0, SMT_STATE_FUNC_PTR_9, SMT_ARG_BUFF_POS_0},   // 15
+    {"execute", 0, 0, 0}                                                     // 16
 }; 
 
 
 // Function pointer table 
 static mpu6050_func_ptrs_t m8q_state_func[MPU6050_NUM_TEST_CMDS] = 
 {
-    {NULL, &mpu6050_cntrl_test_device_one, NULL, NULL, NULL, NULL}, 
-    {NULL, &mpu6050_cntrl_test_device_two, NULL, NULL, NULL, NULL}, 
-    {&mpu6050_set_reset_flag, NULL, NULL, NULL, NULL, NULL}, 
-    {&mpu6050_set_low_power, NULL, NULL, NULL, NULL, NULL}, 
-    {&mpu6050_clear_low_power, NULL, NULL, NULL, NULL, NULL}, 
-    {NULL, NULL, &mpu6050_get_state, NULL, NULL, NULL}, 
-    {NULL, NULL, NULL, &mpu6050_get_fault_code, NULL, NULL}, 
-    {NULL, NULL, NULL, NULL, &mpu6050_get_accel_x_raw, NULL}, 
-    {NULL, NULL, NULL, NULL, &mpu6050_get_accel_y_raw, NULL}, 
-    {NULL, NULL, NULL, NULL, &mpu6050_get_accel_z_raw, NULL}, 
-    {NULL, NULL, NULL, NULL, &mpu6050_get_gyro_x_raw, NULL}, 
-    {NULL, NULL, NULL, NULL, &mpu6050_get_gyro_y_raw, NULL}, 
-    {NULL, NULL, NULL, NULL, &mpu6050_get_gyro_z_raw, NULL}, 
-    {NULL, NULL, NULL, NULL, &mpu6050_get_temp_raw, NULL}, 
-    {NULL, NULL, NULL, NULL, NULL, &mpu6050_get_accel_x}, 
-    {NULL, NULL, NULL, NULL, NULL, &mpu6050_get_accel_y}, 
-    {NULL, NULL, NULL, NULL, NULL, &mpu6050_get_accel_z}, 
-    {NULL, NULL, NULL, NULL, NULL, &mpu6050_get_gyro_x}, 
-    {NULL, NULL, NULL, NULL, NULL, &mpu6050_get_gyro_y}, 
-    {NULL, NULL, NULL, NULL, NULL, &mpu6050_get_gyro_z}, 
-    {NULL, NULL, NULL, NULL, NULL, &mpu6050_get_temp}, 
-    {NULL, NULL, NULL, NULL, NULL, NULL} 
+    {NULL, NULL, &mpu6050_cntrl_test_device_one, NULL, NULL, NULL, NULL, NULL, NULL}, 
+    {NULL, NULL, &mpu6050_cntrl_test_device_two, NULL, NULL, NULL, NULL, NULL, NULL}, 
+    {&mpu6050_set_low_power, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}, 
+    {&mpu6050_clear_low_power, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}, 
+    {NULL, &mpu6050_set_smpl_type, NULL, NULL, NULL, NULL, NULL, NULL, NULL}, 
+    {NULL, &mpu6050_set_read_state, NULL, NULL, NULL, NULL, NULL, NULL, NULL}, 
+    {&mpu6050_set_read_flag, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}, 
+    {&mpu6050_set_reset_flag, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}, 
+    {NULL, NULL, NULL, &mpu6050_get_state, NULL, NULL, NULL, NULL, NULL}, 
+    {NULL, NULL, NULL, NULL, &mpu6050_get_fault_code, NULL, NULL, NULL, NULL}, 
+    {NULL, NULL, NULL, NULL, NULL, &mpu6050_get_accel_raw, NULL, NULL, NULL}, 
+    {NULL, NULL, NULL, NULL, NULL, &mpu6050_get_gyro_raw, NULL, NULL, NULL}, 
+    {NULL, NULL, NULL, NULL, NULL, NULL, &mpu6050_get_temp_raw, NULL, NULL}, 
+    {NULL, NULL, NULL, NULL, NULL, NULL, NULL, &mpu6050_get_accel, NULL}, 
+    {NULL, NULL, NULL, NULL, NULL, NULL, NULL, &mpu6050_get_gyro, NULL}, 
+    {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &mpu6050_get_temp}, 
+    {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL} 
 }; 
 
 
@@ -145,12 +135,29 @@ void mpu6050_test_init()
     
     //===================================================
 
+#if MPU6050_LCD_ON_BUS 
+
+    //===================================================
+    // HD44780U LCD setup 
+
+    // Must come before setup of other devices on the same I2C bus 
+
+    // Driver 
+    hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH);
+
+    // Contoller 
+    hd44780u_controller_init(TIM9); 
+
+    //===================================================
+
+#endif   // MPU6050_LCD_ON_BUS 
+
     //===================================================
     // Accelerometer initialization 
 
     // NOTE: If the HD44780U LCD screen is connected to the same I2C bus then that needs to be 
     //       initialized first. For some reason the uninitialized screen interferes with the bus 
-    //       and prevents the mpu6050 from being initialized properly. 
+    //       and prevents the mpu6050 from being initialized properly. See above. 
     
     // Initialize the accelerometer 
     mpu6050_init(
@@ -271,7 +278,15 @@ void mpu6050_test_app()
     // Controller test code 
 
     // General purpose arguments array 
-    static char user_args[1][1]; 
+    static char user_args[1][STATE_USER_TEST_INPUT]; 
+
+    // Arguments for mpu6050_setter_ptr_2 
+    static uint8_t param[2]; 
+
+    // Sensor buffers 
+    static int16_t mpu6050_temp_sensor; 
+    static float mpu6050_accel[MPU6050_NUM_AXIS]; 
+    static float mpu6050_gyro[MPU6050_NUM_AXIS]; 
 
     // Control flags 
     uint8_t arg_convert = 0; 
@@ -295,46 +310,61 @@ void mpu6050_test_app()
             {
                 switch (mpu6050_state_cmds[i].func_ptr_index)
                 {
-                    case SMT_STATE_FUNC_PTR_1: 
-                        (m8q_state_func[i].setter_1)(mpu6050_cntrl_test_device); 
-                        break; 
+                    // case SMT_STATE_FUNC_PTR_1: 
+                    //     (m8q_state_func[i].setter_1)(mpu6050_cntrl_test_device); 
+                    //     break; 
 
-                    case SMT_STATE_FUNC_PTR_2: 
-                        (m8q_state_func[i].setter_2)(); 
-                        break; 
+                    // case SMT_STATE_FUNC_PTR_2: 
+                    //     (m8q_state_func[i].setter_2)(
+                    //         mpu6050_cntrl_test_device, 
+                    //         param[mpu6050_state_cmds[i].arg_buff_index]); 
+                    //     break; 
 
-                    case SMT_STATE_FUNC_PTR_3: 
-                        uart_send_new_line(USART2); 
-                        uart_send_integer(
-                            USART2, 
-                            (int16_t)(m8q_state_func[i].getter_1)(mpu6050_cntrl_test_device)); 
-                        uart_send_new_line(USART2); 
-                        break; 
+                    // case SMT_STATE_FUNC_PTR_3: 
+                    //     (m8q_state_func[i].setter_3)(); 
+                    //     break; 
 
-                    case SMT_STATE_FUNC_PTR_4: 
-                        uart_send_new_line(USART2); 
-                        uart_send_integer(
-                            USART2, 
-                            (int16_t)(m8q_state_func[i].getter_2)(mpu6050_cntrl_test_device)); 
-                        uart_send_new_line(USART2); 
-                        break; 
+                    // case SMT_STATE_FUNC_PTR_4: 
+                    //     uart_send_new_line(USART2); 
+                    //     uart_send_integer(
+                    //         USART2, 
+                    //         (int16_t)(m8q_state_func[i].getter_1)(mpu6050_cntrl_test_device)); 
+                    //     uart_send_new_line(USART2); 
+                    //     break; 
 
-                    case SMT_STATE_FUNC_PTR_5: 
-                        uart_send_new_line(USART2); 
-                        uart_send_integer(
-                            USART2, 
-                            (m8q_state_func[i].getter_3)(mpu6050_cntrl_test_device)); 
-                        uart_send_new_line(USART2); 
-                        break; 
+                    // case SMT_STATE_FUNC_PTR_5: 
+                    //     uart_send_new_line(USART2); 
+                    //     uart_send_integer(
+                    //         USART2, 
+                    //         (int16_t)(m8q_state_func[i].getter_2)(mpu6050_cntrl_test_device)); 
+                    //     uart_send_new_line(USART2); 
+                    //     break; 
 
-                    case SMT_STATE_FUNC_PTR_6: 
-                        uart_send_new_line(USART2); 
-                        uart_send_integer(
-                            USART2, 
-                            (int16_t)((m8q_state_func[i].getter_4)(
-                                mpu6050_cntrl_test_device) * SCALE_100)); 
-                        uart_send_new_line(USART2); 
-                        break; 
+                    // case SMT_STATE_FUNC_PTR_6: 
+                    //     (m8q_state_func[i].getter_3)(
+                    //         mpu6050_cntrl_test_device, 
+                    //     ); 
+                    //     break; 
+
+                    // case SMT_STATE_FUNC_PTR_7: 
+                    //     uart_send_new_line(USART2); 
+                    //     uart_send_integer(
+                    //         USART2, 
+                    //         (m8q_state_func[i].getter_3)(mpu6050_cntrl_test_device)); 
+                    //     uart_send_new_line(USART2); 
+                    //     break; 
+
+                    // case SMT_STATE_FUNC_PTR_8: 
+                    //     break; 
+
+                    // case SMT_STATE_FUNC_PTR_9: 
+                    //     uart_send_new_line(USART2); 
+                    //     uart_send_integer(
+                    //         USART2, 
+                    //         (int16_t)((m8q_state_func[i].getter_4)(
+                    //             mpu6050_cntrl_test_device) * SCALE_100)); 
+                    //     uart_send_new_line(USART2); 
+                    //     break; 
 
                     default: 
                         break; 
