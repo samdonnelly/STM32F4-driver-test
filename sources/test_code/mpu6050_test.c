@@ -278,15 +278,14 @@ void mpu6050_test_app()
     // Controller test code 
 
     // General purpose arguments array 
-    static char user_args[1][STATE_USER_TEST_INPUT]; 
+    static char user_args[STATE_USER_TEST_INPUT]; 
 
     // Arguments for mpu6050_setter_ptr_2 
     static uint8_t param[2]; 
 
     // Sensor buffers 
-    static int16_t mpu6050_temp_sensor; 
-    static float mpu6050_accel[MPU6050_NUM_AXIS]; 
-    static float mpu6050_gyro[MPU6050_NUM_AXIS]; 
+    static float imu_data_float[MPU6050_NUM_AXIS]; 
+    static int16_t imu_data_int[MPU6050_NUM_AXIS]; 
 
     // Control flags 
     uint8_t arg_convert = 0; 
@@ -296,7 +295,7 @@ void mpu6050_test_app()
     // Determine what to do from user input 
     state_machine_test(
         mpu6050_state_cmds, 
-        user_args[0], 
+        user_args, 
         &cmd_index, 
         &arg_convert, 
         &set_get_status); 
@@ -310,66 +309,107 @@ void mpu6050_test_app()
             {
                 switch (mpu6050_state_cmds[i].func_ptr_index)
                 {
-                    // case SMT_STATE_FUNC_PTR_1: 
-                    //     (m8q_state_func[i].setter_1)(mpu6050_cntrl_test_device); 
-                    //     break; 
+                    case SMT_STATE_FUNC_PTR_1: 
+                        (m8q_state_func[i].setter_1)(
+                            mpu6050_cntrl_test_device); 
+                        break; 
 
-                    // case SMT_STATE_FUNC_PTR_2: 
-                    //     (m8q_state_func[i].setter_2)(
-                    //         mpu6050_cntrl_test_device, 
-                    //         param[mpu6050_state_cmds[i].arg_buff_index]); 
-                    //     break; 
+                    case SMT_STATE_FUNC_PTR_2: 
+                        (m8q_state_func[i].setter_2)(
+                            mpu6050_cntrl_test_device, 
+                            param[mpu6050_state_cmds[i].arg_buff_index]); 
+                        break; 
 
-                    // case SMT_STATE_FUNC_PTR_3: 
-                    //     (m8q_state_func[i].setter_3)(); 
-                    //     break; 
+                    case SMT_STATE_FUNC_PTR_3: 
+                        (m8q_state_func[i].setter_3)(); 
+                        break; 
 
-                    // case SMT_STATE_FUNC_PTR_4: 
-                    //     uart_send_new_line(USART2); 
-                    //     uart_send_integer(
-                    //         USART2, 
-                    //         (int16_t)(m8q_state_func[i].getter_1)(mpu6050_cntrl_test_device)); 
-                    //     uart_send_new_line(USART2); 
-                    //     break; 
+                    case SMT_STATE_FUNC_PTR_4: 
+                        uart_send_new_line(USART2); 
+                        uart_send_integer(
+                            USART2, 
+                            (int16_t)(m8q_state_func[i].getter_1)(mpu6050_cntrl_test_device)); 
+                        uart_send_new_line(USART2); 
+                        break; 
 
-                    // case SMT_STATE_FUNC_PTR_5: 
-                    //     uart_send_new_line(USART2); 
-                    //     uart_send_integer(
-                    //         USART2, 
-                    //         (int16_t)(m8q_state_func[i].getter_2)(mpu6050_cntrl_test_device)); 
-                    //     uart_send_new_line(USART2); 
-                    //     break; 
+                    case SMT_STATE_FUNC_PTR_5: 
+                        uart_send_new_line(USART2); 
+                        uart_send_integer(
+                            USART2, 
+                            (int16_t)(m8q_state_func[i].getter_2)(mpu6050_cntrl_test_device)); 
+                        uart_send_new_line(USART2); 
+                        break; 
 
-                    // case SMT_STATE_FUNC_PTR_6: 
-                    //     (m8q_state_func[i].getter_3)(
-                    //         mpu6050_cntrl_test_device, 
-                    //     ); 
-                    //     break; 
+                    case SMT_STATE_FUNC_PTR_6: 
+                        (m8q_state_func[i].getter_3)(
+                            mpu6050_cntrl_test_device, 
+                            &imu_data_int[MPU6050_X_AXIS], 
+                            &imu_data_int[MPU6050_Y_AXIS], 
+                            &imu_data_int[MPU6050_Z_AXIS]); 
+                        uart_send_new_line(USART2); 
+                        uart_sendstring(USART2, "X: ");
+                        uart_send_integer(USART2, imu_data_int[MPU6050_X_AXIS]); 
+                        uart_sendstring(USART2, "  Y: ");
+                        uart_send_integer(USART2, imu_data_int[MPU6050_Y_AXIS]); 
+                        uart_sendstring(USART2, "  Z: ");
+                        uart_send_integer(USART2, imu_data_int[MPU6050_Z_AXIS]); 
+                        uart_send_new_line(USART2); 
+                        break; 
 
-                    // case SMT_STATE_FUNC_PTR_7: 
-                    //     uart_send_new_line(USART2); 
-                    //     uart_send_integer(
-                    //         USART2, 
-                    //         (m8q_state_func[i].getter_3)(mpu6050_cntrl_test_device)); 
-                    //     uart_send_new_line(USART2); 
-                    //     break; 
+                    case SMT_STATE_FUNC_PTR_7: 
+                        uart_send_new_line(USART2); 
+                        uart_send_integer(
+                            USART2, 
+                            (m8q_state_func[i].getter_4)(mpu6050_cntrl_test_device)); 
+                        uart_send_new_line(USART2); 
+                        break; 
 
-                    // case SMT_STATE_FUNC_PTR_8: 
-                    //     break; 
+                    case SMT_STATE_FUNC_PTR_8: 
+                        (m8q_state_func[i].getter_5)(
+                            mpu6050_cntrl_test_device, 
+                            &imu_data_float[MPU6050_X_AXIS], 
+                            &imu_data_float[MPU6050_Y_AXIS], 
+                            &imu_data_float[MPU6050_Z_AXIS]); 
+                        uart_send_new_line(USART2); 
+                        uart_sendstring(USART2, "X: ");
+                        uart_send_integer(USART2, 
+                            (int16_t)(imu_data_float[MPU6050_X_AXIS] * SCALE_100)); 
+                        uart_sendstring(USART2, "  Y: ");
+                        uart_send_integer(USART2, 
+                            (int16_t)(imu_data_float[MPU6050_Y_AXIS] * SCALE_100)); 
+                        uart_sendstring(USART2, "  Z: ");
+                        uart_send_integer(USART2, 
+                            (int16_t)(imu_data_float[MPU6050_Z_AXIS] * SCALE_100)); 
+                        uart_send_new_line(USART2); 
+                        break; 
 
-                    // case SMT_STATE_FUNC_PTR_9: 
-                    //     uart_send_new_line(USART2); 
-                    //     uart_send_integer(
-                    //         USART2, 
-                    //         (int16_t)((m8q_state_func[i].getter_4)(
-                    //             mpu6050_cntrl_test_device) * SCALE_100)); 
-                    //     uart_send_new_line(USART2); 
-                    //     break; 
+                    case SMT_STATE_FUNC_PTR_9: 
+                        uart_send_new_line(USART2); 
+                        uart_send_integer(
+                            USART2, 
+                            (int16_t)((m8q_state_func[i].getter_6)(
+                                mpu6050_cntrl_test_device) * SCALE_100)); 
+                        uart_send_new_line(USART2); 
+                        break; 
 
                     default: 
                         break; 
                 }
             }
+        }
+    }
+
+    // Check if user argument input should be converted and assigned 
+    if (arg_convert)
+    {
+        switch (mpu6050_state_cmds[cmd_index].func_ptr_index)
+        {
+            case SMT_STATE_FUNC_PTR_2: 
+                param[mpu6050_state_cmds[cmd_index].arg_buff_index] = atoi(user_args); 
+                break; 
+
+            default: 
+                break; 
         }
     }
 
