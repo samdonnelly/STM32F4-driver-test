@@ -65,7 +65,6 @@ void m8q_test_init()
     tim_enable(TIM9); 
 
     // Initialize GPIO ports 
-    // TODO remove this step from other comm and device inits 
     gpio_port_init(); 
 
     // Initialize UART
