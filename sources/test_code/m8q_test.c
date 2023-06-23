@@ -101,15 +101,16 @@ void m8q_test_init()
     char m8q_config_messages[M8Q_CONFIG_MSG_NUM][M8Q_CONFIG_MSG_MAX_LEN]; 
     m8q_config_copy(m8q_config_messages); 
 
-    uint16_t init_error_code = m8q_init(I2C1, 
-                                        GPIOC, 
-                                        PIN_10, 
-                                        PIN_11, 
-                                        M8Q_CONFIG_MSG_NUM, 
-                                        M8Q_CONFIG_MSG_MAX_LEN, 
-                                        (uint8_t *)m8q_config_messages[0]); 
+    m8q_init(
+        I2C1, 
+        GPIOC, 
+        PIN_10, 
+        PIN_11, 
+        M8Q_CONFIG_MSG_NUM, 
+        M8Q_CONFIG_MSG_MAX_LEN, 
+        (uint8_t *)m8q_config_messages[0]); 
     
-    if (init_error_code) 
+    if (0) 
     {
         uart_sendstring(USART2, "M8Q init fault.\r\n"); 
     }
