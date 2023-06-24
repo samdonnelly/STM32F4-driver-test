@@ -56,6 +56,17 @@ static m8q_func_ptrs_t m8q_state_func[M8Q_NUM_USER_CMDS] =
 // Setup code
 void m8q_test_init()
 {
+    //===================================================
+    // General setup 
+
+    // Initialize GPIO ports 
+    gpio_port_init(); 
+
+    //===================================================
+
+    //===================================================
+    // Timers 
+
     // Initialize timers 
     tim_9_to_11_counter_init(
         TIM9, 
@@ -64,8 +75,10 @@ void m8q_test_init()
         TIM_UP_INT_DISABLE); 
     tim_enable(TIM9); 
 
-    // Initialize GPIO ports 
-    gpio_port_init(); 
+    //===================================================
+
+    //===================================================
+    // Peripherals 
 
     // Initialize UART
     uart_init(
@@ -87,6 +100,8 @@ void m8q_test_init()
         I2C_APB1_42MHZ,
         I2C_CCR_SM_42_100,
         I2C_TRISE_1000_42);
+
+    //===================================================
 
     //==================================================
     // M8Q test mode selection 
@@ -110,7 +125,7 @@ void m8q_test_init()
         M8Q_CONFIG_MSG_MAX_LEN, 
         (uint8_t *)m8q_config_messages[0]); 
     
-    if (0) 
+    if (m8q_get_status()) 
     {
         uart_sendstring(USART2, "M8Q init fault.\r\n"); 
     }
@@ -199,52 +214,75 @@ void m8q_test_app()
     // Data record, power save mode and TX-Ready testing 
 
     // Local variables 
-    uint8_t counter = 0; 
-    static uint8_t flipper = 0; 
+    uint8_t counter = CLEAR; 
+    static uint8_t flipper = CLEAR; 
     static uint16_t timer = 0x48B8; 
     static uint8_t blink = 0; 
 
     //  M8Q data 
-    uint16_t lat_deg_min = 0; 
-    uint32_t lat_min_frac = 0; 
-    volatile uint8_t NS = 0; 
-    uint16_t lon_deg_min = 0; 
-    uint32_t lon_min_frac = 0; 
-    volatile uint8_t EW = 0; 
-    volatile uint16_t navstat = 0; 
+    uint16_t lat_deg_min = CLEAR; 
+    uint32_t lat_min_frac = CLEAR; 
+    volatile uint8_t NS = CLEAR; 
+    uint16_t lon_deg_min = CLEAR; 
+    uint32_t lon_min_frac = CLEAR; 
+    volatile uint8_t EW = CLEAR; 
+    volatile uint16_t navstat = CLEAR; 
     uint8_t utc_time[BYTE_9]; 
     uint8_t utc_date[BYTE_6]; 
 
-    while (TRUE)
-    {
-        if (m8q_get_tx_ready())
-        {
-            // Read the data 
-            m8q_read(); 
-            counter++; 
+    // while (TRUE)
+    // {
+    //     if (m8q_get_tx_ready())
+    //     {
+    //         // Read the data 
+    //         m8q_read(); 
+    //         counter++; 
 
-            // Blink the board LED for visual feedback 
-            blink = GPIO_HIGH - blink; 
-            gpio_write(GPIOA, GPIOX_PIN_5, blink); 
-        }
-        else
+    //         // Blink the board LED for visual feedback 
+    //         blink = GPIO_HIGH - blink; 
+    //         gpio_write(GPIOA, GPIOX_PIN_5, blink); 
+    //     }
+    //     else
+    //     {
+    //         if (counter == 2)
+    //         {
+    //             m8q_get_lat(&lat_deg_min, &lat_min_frac); 
+    //             NS = m8q_get_NS(); 
+    //             m8q_get_long(&lon_deg_min, &lon_min_frac); 
+    //             EW = m8q_get_EW(); 
+    //             navstat = m8q_get_navstat(); 
+    //             m8q_get_time(utc_time); 
+    //             m8q_get_date(utc_date); 
+    //             counter = 0; 
+    //         }
+    //         break; 
+    //     }
+    // }
+
+    if (m8q_get_tx_ready())
+    {
+        // Read the data 
+        m8q_read(); 
+        counter++; 
+
+        // Blink the board LED for visual feedback 
+        blink = GPIO_HIGH - blink; 
+        gpio_write(GPIOA, GPIOX_PIN_5, blink); 
+        
+        if (counter == 2)
         {
-            if (counter == 2)
-            {
-                m8q_get_lat(&lat_deg_min, &lat_min_frac); 
-                NS = m8q_get_NS(); 
-                m8q_get_long(&lon_deg_min, &lon_min_frac); 
-                EW = m8q_get_EW(); 
-                navstat = m8q_get_navstat(); 
-                m8q_get_time(utc_time); 
-                m8q_get_date(utc_date); 
-                counter = 0; 
-            }
-            break; 
+            m8q_get_lat(&lat_deg_min, &lat_min_frac); 
+            NS = m8q_get_NS(); 
+            m8q_get_long(&lon_deg_min, &lon_min_frac); 
+            EW = m8q_get_EW(); 
+            navstat = m8q_get_navstat(); 
+            m8q_get_time(utc_time); 
+            m8q_get_date(utc_date); 
+            counter = CLEAR; 
         }
     }
 
-    // Toggle the EXTINT pin 
+    // Toggle the EXTINT pin to set low power mode 
     if (!(--timer))
     {
         m8q_set_low_power(flipper); 
