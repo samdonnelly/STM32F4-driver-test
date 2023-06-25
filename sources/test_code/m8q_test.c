@@ -210,16 +210,21 @@ void m8q_test_app()
 
 #else 
 
-    //===================================================
-    // Data record, power save mode and TX-Ready testing 
-
+    //==================================================
     // Local variables 
+
+#if M8Q_MSG_COUNT 
+
+    uint8_t count = CLEAR; 
+
+#else   // M8Q_MSG_COUNT 
+
     uint8_t counter = CLEAR; 
     static uint8_t flipper = CLEAR; 
     static uint16_t timer = 0x48B8; 
     static uint8_t blink = 0; 
 
-    //  M8Q data 
+    // M8Q data 
     uint16_t lat_deg_min = CLEAR; 
     uint32_t lat_min_frac = CLEAR; 
     volatile uint8_t NS = CLEAR; 
@@ -230,55 +235,61 @@ void m8q_test_app()
     uint8_t utc_time[BYTE_9]; 
     uint8_t utc_date[BYTE_6]; 
 
-    // while (TRUE)
-    // {
-    //     if (m8q_get_tx_ready())
-    //     {
-    //         // Read the data 
-    //         m8q_read(); 
-    //         counter++; 
+#endif   // M8Q_MSG_COUNT 
 
-    //         // Blink the board LED for visual feedback 
-    //         blink = GPIO_HIGH - blink; 
-    //         gpio_write(GPIOA, GPIOX_PIN_5, blink); 
-    //     }
-    //     else
-    //     {
-    //         if (counter == 2)
-    //         {
-    //             m8q_get_lat(&lat_deg_min, &lat_min_frac); 
-    //             NS = m8q_get_NS(); 
-    //             m8q_get_long(&lon_deg_min, &lon_min_frac); 
-    //             EW = m8q_get_EW(); 
-    //             navstat = m8q_get_navstat(); 
-    //             m8q_get_time(utc_time); 
-    //             m8q_get_date(utc_date); 
-    //             counter = 0; 
-    //         }
-    //         break; 
-    //     }
-    // }
+    //==================================================
 
-    if (m8q_get_tx_ready())
+    //===================================================
+    // Data record, power save mode and TX-Ready testing 
+    
+#if M8Q_MSG_COUNT 
+
+    while (TRUE)
     {
-        // Read the data 
-        m8q_read(); 
-        counter++; 
-
-        // Blink the board LED for visual feedback 
-        blink = GPIO_HIGH - blink; 
-        gpio_write(GPIOA, GPIOX_PIN_5, blink); 
-        
-        if (counter == 2)
+        if (m8q_get_tx_ready())
         {
-            m8q_get_lat(&lat_deg_min, &lat_min_frac); 
-            NS = m8q_get_NS(); 
-            m8q_get_long(&lon_deg_min, &lon_min_frac); 
-            EW = m8q_get_EW(); 
-            navstat = m8q_get_navstat(); 
-            m8q_get_time(utc_time); 
-            m8q_get_date(utc_date); 
-            counter = CLEAR; 
+            m8q_read(); 
+            count++; 
+        }
+        else
+        {
+            if (count)
+            {
+                uart_send_integer(USART2, (int16_t)count); 
+                uart_send_new_line(USART2); 
+            }
+            break; 
+        }
+    }
+
+#else   // M8Q_MSG_COUNT 
+
+    while (TRUE)
+    {
+        if (m8q_get_tx_ready())
+        {
+            // Read the data 
+            m8q_read(); 
+            counter++; 
+
+            // Blink the board LED for visual feedback 
+            blink = GPIO_HIGH - blink; 
+            gpio_write(GPIOA, GPIOX_PIN_5, blink); 
+        }
+        else
+        {
+            if (counter == 2)
+            {
+                m8q_get_lat(&lat_deg_min, &lat_min_frac); 
+                NS = m8q_get_NS(); 
+                m8q_get_long(&lon_deg_min, &lon_min_frac); 
+                EW = m8q_get_EW(); 
+                navstat = m8q_get_navstat(); 
+                m8q_get_time(utc_time); 
+                m8q_get_date(utc_date); 
+                counter = 0; 
+            }
+            break; 
         }
     }
 
@@ -296,7 +307,9 @@ void m8q_test_app()
         if (!flipper) while (!(m8q_read())); 
     }
 
-    tim_delay_ms(TIM9, 1);
+    tim_delay_ms(TIM9, 1); 
+
+#endif   // M8Q_MSG_COUNT 
 
     //===================================================
 

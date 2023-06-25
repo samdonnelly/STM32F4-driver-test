@@ -24,5 +24,5 @@
 void user_init()
 {
     // Setup code here
-    mpu6050_test_init(); 
+    m8q_test_init(); 
 }
