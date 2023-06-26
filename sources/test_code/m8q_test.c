@@ -217,7 +217,16 @@ void m8q_test_app()
 
     uint8_t count = CLEAR; 
 
-#else   // M8Q_MSG_COUNT 
+#endif   // M8Q_MSG_COUNT 
+
+#if M8Q_DATA_SIZE_CHECK 
+
+    uint16_t data_size; 
+    uint8_t current_time[10]; 
+
+#endif   // M8Q_DATA_SIZE_CHECK 
+
+#if M8Q_TEST_OTHER 
 
     uint8_t counter = CLEAR; 
     static uint8_t flipper = CLEAR; 
@@ -235,7 +244,7 @@ void m8q_test_app()
     uint8_t utc_time[BYTE_9]; 
     uint8_t utc_date[BYTE_6]; 
 
-#endif   // M8Q_MSG_COUNT 
+#endif   // M8Q_TEST_OTHER 
 
     //==================================================
 
@@ -262,7 +271,26 @@ void m8q_test_app()
         }
     }
 
-#else   // M8Q_MSG_COUNT 
+#endif   // M8Q_MSG_COUNT 
+
+#if M8Q_DATA_SIZE_CHECK 
+
+    if (m8q_get_tx_ready())
+    {
+        // m8q_check_data_size(&data_size); 
+        m8q_read(); 
+        m8q_get_time(current_time); 
+        // uart_send_integer(USART2, (int16_t)data_size); 
+        uart_sendstring(USART2, (char *)current_time); 
+        uart_send_new_line(USART2); 
+        memset((void *)current_time, CLEAR, sizeof(current_time)); 
+    }
+
+    tim_delay_ms(TIM9, 1000); 
+
+#endif   // M8Q_DATA_SIZE_CHECK 
+
+#if M8Q_TEST_OTHER 
 
     while (TRUE)
     {
@@ -309,7 +337,7 @@ void m8q_test_app()
 
     tim_delay_ms(TIM9, 1); 
 
-#endif   // M8Q_MSG_COUNT 
+#endif   // M8Q_TEST_OTHER 
 
     //===================================================
 

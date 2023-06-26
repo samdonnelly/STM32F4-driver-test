@@ -31,7 +31,9 @@
 
 // Conditional compilation 
 #define M8Q_CONTROLLER_TEST 0     // Choose between driver and controller test code 
-#define M8Q_MSG_COUNT 1           // Code that counts and prints number of incoming messages 
+#define M8Q_MSG_COUNT 0           // Code that counts and prints number of incoming messages 
+#define M8Q_DATA_SIZE_CHECK 1     // Code that checks the data size available 
+#define M8Q_TEST_OTHER 0          // Other test code 
 
 #define M8Q_NUM_USER_CMDS 6       // Number of defined user commands 
 #define M8Q_MAX_SETTER_ARGS 2     // Maximum arguments of all function pointer below 
