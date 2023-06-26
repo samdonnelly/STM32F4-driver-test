@@ -75,6 +75,25 @@ void m8q_test_init()
         TIM_UP_INT_DISABLE); 
     tim_enable(TIM9); 
 
+#if M8Q_DATA_CHECK 
+
+    // Periodic (counter update) interrupt timer 
+    tim_9_to_11_counter_init(
+        TIM10, 
+        TIM_84MHZ_100US_PSC, 
+        0x0032,  // ARR=50, (50 counts)*(100us/count) = 5ms 
+        TIM_UP_INT_ENABLE); 
+
+    tim_enable(TIM10); 
+
+    // Initialize interrupt handler flags 
+    int_handler_init(); 
+
+    // Enable the interrupt handlers 
+    nvic_config(TIM1_UP_TIM10_IRQn, EXTI_PRIORITY_0); 
+
+#endif   // M8Q_DATA_CHECK 
+
     //===================================================
 
     //===================================================
@@ -103,7 +122,25 @@ void m8q_test_init()
 
     //===================================================
 
-    //==================================================
+#if M8Q_DATA_CHECK 
+
+    //===================================================
+    // User button setup 
+
+    // The user buttons are used to trigger data reads and data size checks 
+
+    // Initialize the GPIO pins for the buttons 
+    gpio_pin_init(GPIOC, PIN_0, MODER_INPUT, OTYPER_PP, OSPEEDR_HIGH, PUPDR_PU); 
+    gpio_pin_init(GPIOC, PIN_1, MODER_INPUT, OTYPER_PP, OSPEEDR_HIGH, PUPDR_PU); 
+
+    // Initialize the button debouncer 
+    debounce_init(GPIOX_PIN_0 |GPIOX_PIN_1 ); 
+
+    //===================================================
+
+#endif   // M8Q_DATA_CHECK 
+
+    //==================================================+
     // M8Q test mode selection 
 
 #if M8Q_USER_CONFIG 
@@ -138,11 +175,11 @@ void m8q_test_init()
     // Initialize the state machine test code 
     state_machine_init(M8Q_NUM_USER_CMDS); 
 
-#endif
+#endif   // M8Q_CONTROLLER_TEST 
 
-#endif
+#endif   // M8Q_USER_CONFIG 
 
-    //==================================================
+    //==================================================+
 
     // Delay to let everything finish setup before starting to send and receieve data 
     tim_delay_ms(TIM9, 500); 
@@ -219,12 +256,14 @@ void m8q_test_app()
 
 #endif   // M8Q_MSG_COUNT 
 
-#if M8Q_DATA_SIZE_CHECK 
+#if M8Q_DATA_CHECK 
 
+    static uint8_t button_block_1 = CLEAR; 
+    static uint8_t button_block_2 = CLEAR; 
     uint16_t data_size; 
     uint8_t current_time[10]; 
 
-#endif   // M8Q_DATA_SIZE_CHECK 
+#endif   // M8Q_DATA_CHECK 
 
 #if M8Q_TEST_OTHER 
 
@@ -273,22 +312,73 @@ void m8q_test_app()
 
 #endif   // M8Q_MSG_COUNT 
 
-#if M8Q_DATA_SIZE_CHECK 
+#if M8Q_DATA_CHECK 
 
-    if (m8q_get_tx_ready())
+    // Test plan to check if data is skipped or overwritten: 
+    // - Let the module get a connection and start reporting the UTC time 
+    // - Coorelate the UTC time to local time as a reference 
+    // - Read a time stamp and make note of it 
+    // - Let the module data buffer fill up with data by checking the data size 
+    // - Read data and check the updated time 
+    // - If the time read is the most up to date then data should be getting over-
+    //   written, otherwise data should be getting blocked. 
+
+    //===================================================
+    // Update the button status on periodic interrupt 
+
+    if (handler_flags.tim1_up_tim10_glbl_flag)
     {
-        // m8q_check_data_size(&data_size); 
-        m8q_read(); 
-        m8q_get_time(current_time); 
-        // uart_send_integer(USART2, (int16_t)data_size); 
-        uart_sendstring(USART2, (char *)current_time); 
-        uart_send_new_line(USART2); 
-        memset((void *)current_time, CLEAR, sizeof(current_time)); 
+        // Clear interrupt handler 
+        handler_flags.tim1_up_tim10_glbl_flag = CLEAR; 
+
+        // Update the user button status 
+        debounce((uint8_t)gpio_port_read(GPIOC)); 
+    }
+    
+    //===================================================
+
+    //===================================================
+    // Do things if the buttons are pressed 
+
+    // If button 1 is pressed then read and check the time 
+    if (debounce_pressed((uint8_t)GPIOX_PIN_0) && !button_block_1) 
+    {
+        if (m8q_get_tx_ready())
+        {
+            m8q_read(); 
+            m8q_get_time(current_time); 
+            uart_sendstring(USART2, (char *)current_time); 
+            uart_send_new_line(USART2); 
+            memset((void *)current_time, CLEAR, sizeof(current_time)); 
+        }
+
+        button_block_1 = SET_BIT; 
+    }
+    else if (debounce_released((uint8_t)GPIOX_PIN_0) && button_block_1) 
+    {
+        button_block_1 = CLEAR; 
     }
 
-    tim_delay_ms(TIM9, 1000); 
+    // If button 2 is pressed then check the data size 
+    if (debounce_pressed((uint8_t)GPIOX_PIN_1) && !button_block_2) 
+    {
+        if (m8q_get_tx_ready())
+        {
+            m8q_check_data_size(&data_size); 
+            uart_send_integer(USART2, (int16_t)data_size); 
+            uart_send_new_line(USART2); 
+        }
 
-#endif   // M8Q_DATA_SIZE_CHECK 
+        button_block_2 = SET_BIT; 
+    }
+    else if (debounce_released((uint8_t)GPIOX_PIN_1) && button_block_2) 
+    {
+        button_block_2 = CLEAR; 
+    }
+
+    //===================================================
+
+#endif   // M8Q_DATA_CHECK 
 
 #if M8Q_TEST_OTHER 
 
