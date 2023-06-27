@@ -28,11 +28,15 @@
 // User command table 
 static state_request_t m8q_state_cmds[M8Q_NUM_USER_CMDS] = 
 {
-    {"lp_set",   0, M8Q_SETTER_PTR_1, 0}, 
-    {"lp_clear", 0, M8Q_SETTER_PTR_1, 0}, 
-    {"reset",    0, M8Q_SETTER_PTR_1, 0}, 
-    {"state",    0, M8Q_GETTER_PTR_1, 0}, 
-    {"navstat",  0, M8Q_GETTER_PTR_1, 0}, 
+    {"read_ready_set",   0, M8Q_SETTER_PTR_1, 0}, 
+    {"read_ready_clear", 0, M8Q_SETTER_PTR_1, 0}, 
+    {"read_set",         0, M8Q_SETTER_PTR_1, 0}, 
+    {"read_clear",       0, M8Q_SETTER_PTR_1, 0}, 
+    {"lp_set",           0, M8Q_SETTER_PTR_1, 0}, 
+    {"lp_clear",         0, M8Q_SETTER_PTR_1, 0}, 
+    {"reset",            0, M8Q_SETTER_PTR_1, 0}, 
+    {"state",            0, M8Q_GETTER_PTR_1, 0}, 
+    {"fault",            0, M8Q_GETTER_PTR_1, 0}, 
     {"execute", 0, 0, 0} 
 }; 
 
@@ -40,11 +44,15 @@ static state_request_t m8q_state_cmds[M8Q_NUM_USER_CMDS] =
 // Function pointer table 
 static m8q_func_ptrs_t m8q_state_func[M8Q_NUM_USER_CMDS] = 
 {
+    {&m8q_set_read_ready, NULL}, 
+    {&m8q_clear_read_ready, NULL}, 
+    {&m8q_set_read_flag, NULL}, 
+    {&m8q_clear_read_flag, NULL}, 
     {&m8q_set_low_pwr_flag, NULL}, 
     {&m8q_clear_low_pwr_flag, NULL}, 
     {&m8q_set_reset_flag, NULL}, 
     {NULL, &m8q_get_state}, 
-    {NULL, &m8q_get_nav_state}, 
+    {NULL, &m8q_get_fault_code}, 
     {NULL, NULL} 
 }; 
 
