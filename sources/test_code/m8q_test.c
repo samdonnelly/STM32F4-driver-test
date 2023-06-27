@@ -28,15 +28,25 @@
 // User command table 
 static state_request_t m8q_state_cmds[M8Q_NUM_USER_CMDS] = 
 {
-    {"read_ready_set",   0, M8Q_SETTER_PTR_1, 0}, 
-    {"read_ready_clear", 0, M8Q_SETTER_PTR_1, 0}, 
-    {"read_set",         0, M8Q_SETTER_PTR_1, 0}, 
-    {"read_clear",       0, M8Q_SETTER_PTR_1, 0}, 
-    {"lp_set",           0, M8Q_SETTER_PTR_1, 0}, 
-    {"lp_clear",         0, M8Q_SETTER_PTR_1, 0}, 
-    {"reset",            0, M8Q_SETTER_PTR_1, 0}, 
-    {"state",            0, M8Q_GETTER_PTR_1, 0}, 
-    {"fault",            0, M8Q_GETTER_PTR_1, 0}, 
+    // Controller functions 
+    {"rr_set",     SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, SMT_ARG_BUFF_POS_0}, 
+    {"rr_clear",   SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, SMT_ARG_BUFF_POS_0}, 
+    {"read_set",   SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, SMT_ARG_BUFF_POS_0}, 
+    {"read_clear", SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, SMT_ARG_BUFF_POS_0}, 
+    {"lp_set",     SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, SMT_ARG_BUFF_POS_0}, 
+    {"lp_clear",   SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, SMT_ARG_BUFF_POS_0}, 
+    {"reset",      SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, SMT_ARG_BUFF_POS_0}, 
+    {"state",      SMT_ARGS_0, SMT_STATE_FUNC_PTR_2, SMT_ARG_BUFF_POS_0}, 
+    {"fault",      SMT_ARGS_0, SMT_STATE_FUNC_PTR_3, SMT_ARG_BUFF_POS_0}, 
+    // Driver functions 
+    {"navstat",    SMT_ARGS_0, SMT_STATE_FUNC_PTR_3, SMT_ARG_BUFF_POS_0}, 
+    {"lat",        SMT_ARGS_0, SMT_STATE_FUNC_PTR_4, SMT_ARG_BUFF_POS_0}, 
+    {"long",       SMT_ARGS_0, SMT_STATE_FUNC_PTR_4, SMT_ARG_BUFF_POS_0}, 
+    {"NS",         SMT_ARGS_0, SMT_STATE_FUNC_PTR_5, SMT_ARG_BUFF_POS_0}, 
+    {"EW",         SMT_ARGS_0, SMT_STATE_FUNC_PTR_5, SMT_ARG_BUFF_POS_0}, 
+    {"time",       SMT_ARGS_0, SMT_STATE_FUNC_PTR_6, SMT_ARG_BUFF_POS_0}, 
+    {"date",       SMT_ARGS_0, SMT_STATE_FUNC_PTR_6, SMT_ARG_BUFF_POS_0}, 
+    // Execute command 
     {"execute", 0, 0, 0} 
 }; 
 
@@ -44,16 +54,26 @@ static state_request_t m8q_state_cmds[M8Q_NUM_USER_CMDS] =
 // Function pointer table 
 static m8q_func_ptrs_t m8q_state_func[M8Q_NUM_USER_CMDS] = 
 {
-    {&m8q_set_read_ready, NULL}, 
-    {&m8q_clear_read_ready, NULL}, 
-    {&m8q_set_read_flag, NULL}, 
-    {&m8q_clear_read_flag, NULL}, 
-    {&m8q_set_low_pwr_flag, NULL}, 
-    {&m8q_clear_low_pwr_flag, NULL}, 
-    {&m8q_set_reset_flag, NULL}, 
-    {NULL, &m8q_get_state}, 
-    {NULL, &m8q_get_fault_code}, 
-    {NULL, NULL} 
+    // Controller functions 
+    {&m8q_set_read_ready, NULL, NULL, NULL, NULL, NULL}, 
+    {&m8q_clear_read_ready, NULL, NULL, NULL, NULL, NULL}, 
+    {&m8q_set_read_flag, NULL, NULL, NULL, NULL, NULL}, 
+    {&m8q_clear_read_flag, NULL, NULL, NULL, NULL, NULL}, 
+    {&m8q_set_low_pwr_flag, NULL, NULL, NULL, NULL, NULL}, 
+    {&m8q_clear_low_pwr_flag, NULL, NULL, NULL, NULL, NULL}, 
+    {&m8q_set_reset_flag, NULL, NULL, NULL, NULL, NULL}, 
+    {NULL, &m8q_get_state, NULL, NULL, NULL}, 
+    {NULL, NULL, &m8q_get_fault_code, NULL, NULL}, 
+    // Driver functions 
+    {NULL, NULL, &m8q_get_navstat, NULL, NULL, NULL}, 
+    {NULL, NULL, NULL, &m8q_get_lat, NULL, NULL}, 
+    {NULL, NULL, NULL, &m8q_get_long, NULL, NULL}, 
+    {NULL, NULL, NULL, NULL, &m8q_get_NS, NULL}, 
+    {NULL, NULL, NULL, NULL, &m8q_get_EW, NULL}, 
+    {NULL, NULL, NULL, NULL, NULL, &m8q_get_time}, 
+    {NULL, NULL, NULL, NULL, NULL, &m8q_get_date}, 
+    // Execute command 
+    {NULL, NULL, NULL, NULL, NULL, NULL} 
 }; 
 
 #endif 
@@ -214,13 +234,23 @@ void m8q_test_app()
     static char user_args[M8Q_MAX_SETTER_ARGS][STATE_USER_TEST_INPUT]; 
 
     // Control flags 
-    uint8_t arg_convert = 0; 
-    uint32_t set_get_status = 0; 
-    uint8_t cmd_index = 0; 
-    uint8_t state = 0; 
+    uint8_t arg_convert = CLEAR; 
+    uint32_t set_get_status = CLEAR; 
+    uint8_t cmd_index = CLEAR; 
+
+    // Data buffers 
+    uint16_t navstat = CLEAR; 
+    uint16_t deg_min = CLEAR; 
+    uint32_t min_frac = CLEAR; 
+    uint8_t utc[9]; 
 
     // Determine what to do from user input 
-    state_machine_test(m8q_state_cmds, user_args[0], &cmd_index, &arg_convert, &set_get_status); 
+    state_machine_test(
+        m8q_state_cmds, 
+        user_args[0], 
+        &cmd_index, 
+        &arg_convert, 
+        &set_get_status); 
 
     // Check if there are any setters or getters requested 
     if (set_get_status)
@@ -231,15 +261,54 @@ void m8q_test_app()
             {
                 switch (m8q_state_cmds[i].func_ptr_index)
                 {
-                    case M8Q_SETTER_PTR_1: 
-                        (m8q_state_func[i].setter)(); 
+                    case SMT_STATE_FUNC_PTR_1: 
+                        (m8q_state_func[i].setter_1)(); 
                         break; 
 
-                    case M8Q_GETTER_PTR_1: 
-                        state = (m8q_state_func[i].getter)(); 
-                        uart_sendstring(USART2, "\n"); 
-                        uart_send_integer(USART2, (int16_t)state); 
+                    case SMT_STATE_FUNC_PTR_2: 
                         uart_send_new_line(USART2); 
+                        uart_send_integer(USART2, (int16_t)(m8q_state_func[i].getter_1)()); 
+                        uart_send_new_line(USART2); 
+
+                    case SMT_STATE_FUNC_PTR_3: 
+                        uart_send_new_line(USART2); 
+
+                        if (i == 9)  // NAVSTAT index 
+                        {
+                            navstat = (m8q_state_func[i].getter_2)(); 
+                            uart_sendchar(USART2, (uint8_t)(navstat >> SHIFT_8)); 
+                            uart_sendchar(USART2, (uint8_t)(navstat)); 
+                        }
+                        else
+                        {
+                            uart_send_integer(USART2, (int16_t)(m8q_state_func[i].getter_2)()); 
+                        }
+
+                        uart_send_new_line(USART2); 
+                        
+                        break; 
+
+                    case SMT_STATE_FUNC_PTR_4: 
+                        (m8q_state_func[i].getter_3)(&deg_min, &min_frac); 
+                        uart_send_new_line(USART2); 
+                        uart_sendstring(USART2, "deg_min: "); 
+                        uart_send_new_line(USART2); 
+                        uart_sendstring(USART2, "min_frac: "); 
+                        break; 
+
+                    case SMT_STATE_FUNC_PTR_5: 
+                        uart_send_new_line(USART2); 
+                        uart_sendchar(USART2, (m8q_state_func[i].getter_4)()); 
+                        uart_send_new_line(USART2); 
+                        break; 
+
+                    case SMT_STATE_FUNC_PTR_6: 
+                        memset((void *)utc, CLEAR, sizeof(utc)); 
+                        (m8q_state_func[i].getter_5)(utc); 
+                        uart_send_new_line(USART2); 
+                        uart_sendstring(USART2, (char *)utc); 
+                        uart_send_new_line(USART2); 
+                        break; 
 
                     default: 
                         break; 
