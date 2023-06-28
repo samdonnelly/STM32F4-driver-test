@@ -269,6 +269,7 @@ void m8q_test_app()
                         uart_send_new_line(USART2); 
                         uart_send_integer(USART2, (int16_t)(m8q_state_func[i].getter_1)()); 
                         uart_send_new_line(USART2); 
+                        break; 
 
                     case SMT_STATE_FUNC_PTR_3: 
                         uart_send_new_line(USART2); 
