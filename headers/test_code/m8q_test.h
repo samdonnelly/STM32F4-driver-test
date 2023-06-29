@@ -87,12 +87,12 @@ typedef uint16_t (*m8q_getter_ptr_2)(void);
  * 
  * @details This function pointer is used for calling the following getters from the device 
  *          controller: 
- *           - m8q_get_lat 
- *           - m8q_get_long 
+ *           - m8q_get_lat_str 
+ *           - m8q_get_long_str 
  */
 typedef void (*m8q_getter_ptr_3)(
-    uint16_t *deg_min, 
-    uint32_t *min_frac); 
+    uint8_t *deg_min, 
+    uint8_t *min_frac); 
 
 
 /**

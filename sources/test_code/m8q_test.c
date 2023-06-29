@@ -66,8 +66,8 @@ static m8q_func_ptrs_t m8q_state_func[M8Q_NUM_USER_CMDS] =
     {NULL, NULL, &m8q_get_fault_code, NULL, NULL}, 
     // Driver functions 
     {NULL, NULL, &m8q_get_navstat, NULL, NULL, NULL}, 
-    {NULL, NULL, NULL, &m8q_get_lat, NULL, NULL}, 
-    {NULL, NULL, NULL, &m8q_get_long, NULL, NULL}, 
+    {NULL, NULL, NULL, &m8q_get_lat_str, NULL, NULL}, 
+    {NULL, NULL, NULL, &m8q_get_long_str, NULL, NULL}, 
     {NULL, NULL, NULL, NULL, &m8q_get_NS, NULL}, 
     {NULL, NULL, NULL, NULL, &m8q_get_EW, NULL}, 
     {NULL, NULL, NULL, NULL, NULL, &m8q_get_time}, 
@@ -240,8 +240,8 @@ void m8q_test_app()
 
     // Data buffers 
     uint16_t navstat = CLEAR; 
-    uint16_t deg_min = CLEAR; 
-    uint32_t min_frac = CLEAR; 
+    uint8_t deg_min[M8Q_COO_LEN]; 
+    uint8_t min_frac[M8Q_COO_LEN]; 
     uint8_t utc[9]; 
 
     // Determine what to do from user input 
@@ -290,11 +290,14 @@ void m8q_test_app()
                         break; 
 
                     case SMT_STATE_FUNC_PTR_4: 
-                        (m8q_state_func[i].getter_3)(&deg_min, &min_frac); 
+                        (m8q_state_func[i].getter_3)(deg_min, min_frac); 
                         uart_send_new_line(USART2); 
                         uart_sendstring(USART2, "deg_min: "); 
+                        uart_sendstring(USART2, (char *)deg_min); 
                         uart_send_new_line(USART2); 
                         uart_sendstring(USART2, "min_frac: "); 
+                        uart_sendstring(USART2, (char *)min_frac); 
+                        uart_send_new_line(USART2); 
                         break; 
 
                     case SMT_STATE_FUNC_PTR_5: 
