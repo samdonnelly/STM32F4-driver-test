@@ -25,6 +25,7 @@
 #include "hc05_driver.h"
 #include "lsm303agr_driver.h"
 #include "m8q_driver.h"
+#include "nrf24l01_driver.h"
 #include "ws2812_driver.h" 
 
 // Controllers 
