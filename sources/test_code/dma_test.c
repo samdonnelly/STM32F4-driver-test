@@ -203,7 +203,9 @@ void dma_test_app()
         tim_delay_ms(TIM9, 10);  // Wait for button bounce to settle 
     }
     else if (user_button && button_block)
+    {
         button_block--; 
+    }
 
 #endif   // DMA_TEST_MODE_1 
 
