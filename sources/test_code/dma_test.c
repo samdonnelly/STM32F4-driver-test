@@ -189,8 +189,8 @@ void dma_test_app()
 #if DMA_TEST_MODE_1 
 
     // Local variables 
-    static uint8_t user_button = 0; 
-    static uint8_t button_block = 0; 
+    static uint8_t user_button = CLEAR; 
+    static uint8_t button_block = CLEAR; 
 
     // Read the user button state 
     user_button = gpio_read(GPIOC, GPIOX_PIN_13); 
