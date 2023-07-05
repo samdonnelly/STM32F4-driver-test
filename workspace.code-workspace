@@ -48,7 +48,9 @@
 			"mpu6050_test.h": "c",
 			"stdlib.h": "c",
 			"lsm303agr_test.h": "c",
-			"main.h": "c"
+			"main.h": "c",
+			"m8q_driver.h": "c",
+			"linked_list_driver.h": "c"
 		}
 	}
 }

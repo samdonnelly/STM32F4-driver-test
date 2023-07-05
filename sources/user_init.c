@@ -24,4 +24,5 @@
 void user_init()
 {
     // Setup code here
+    lsm303agr_test_init(); 
 }
