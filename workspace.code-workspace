@@ -50,7 +50,8 @@
 			"lsm303agr_test.h": "c",
 			"main.h": "c",
 			"m8q_driver.h": "c",
-			"linked_list_driver.h": "c"
+			"linked_list_driver.h": "c",
+			"lsm303agr_driver.h": "c"
 		}
 	}
 }

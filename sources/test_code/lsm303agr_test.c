@@ -24,6 +24,15 @@
 void lsm303agr_test_init(void)
 {
     // Setup code for the gpio_test here 
+
+    lsm303agr_init(
+        I2C1, 
+        LSM303AGR_M_ODR_10, 
+        LSM303AGR_M_MODE_CONT, 
+        LSM303AGR_CFG_DISABLE, 
+        LSM303AGR_CFG_DISABLE, 
+        LSM303AGR_CFG_DISABLE, 
+        LSM303AGR_CFG_DISABLE); 
 } 
 
 
