@@ -20,34 +20,10 @@
 //=======================================================================================
 
 
-//=======================================================================================
-// 
-
-void lsm303agr_init(
-    I2C_TypeDef *, 
-    lsm303agr_m_odr_cfg_t, 
-    lsm303agr_m_sys_mode_t, 
-    lsm303agr_cfg_t, 
-    lsm303agr_cfg_t, 
-    lsm303agr_cfg_t, 
-    lsm303agr_cfg_t); 
-
-//=======================================================================================
-
-
 // Setup code
 void lsm303agr_test_init(void)
 {
     // Setup code for the gpio_test here 
-
-    lsm303agr_init(
-        I2C1, 
-        LSM303AGR_M_ODR_10, 
-        LSM303AGR_M_MODE_CONT, 
-        LSM303AGR_CFG_DISABLE, 
-        LSM303AGR_CFG_DISABLE, 
-        LSM303AGR_CFG_DISABLE, 
-        LSM303AGR_CFG_DISABLE); 
 } 
 
 
