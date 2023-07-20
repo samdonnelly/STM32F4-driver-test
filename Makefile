@@ -111,8 +111,10 @@ sources/config_files/m8q_config.c \
 
 # C++ sources
 CXX_SOURCES = \
+sources/project_init.cpp \
+sources/project_app.cpp \
 ../STM32F4-driver-library/sources/devices/lsm303agr_driver.cpp \
-../STM32F4-driver-library/sources/devices/nrf24l01_driver.cpp \
+../STM32F4-driver-library/sources/devices/nrf24l01_driver.cpp 
 
 
 # ASM sources

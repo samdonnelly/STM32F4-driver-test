@@ -25,6 +25,8 @@
 /* USER CODE BEGIN Includes */
 #include "user_init.h"
 #include "user_app.h"
+#include "project_init.h"
+#include "project_app.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -85,6 +87,7 @@ int main(void)
 
   // Run setup code
   user_init();
+  project_init();
 
   /* USER CODE END SysInit */
 
@@ -101,6 +104,7 @@ int main(void)
   {
     // Run looped code
     user_app();
+    project_app();
     
     /* USER CODE END WHILE */
 

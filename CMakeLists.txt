@@ -1,23 +1,29 @@
 # STM32 Minimal CMake project for C/C++ projects
 cmake_minimum_required(VERSION 3.12)
+
 ###############################################################################
 # Set project name and source code folder location
-project(sample-f407vg)
-set(PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Project)
+project(STM32F4-driver-test)
+# set(PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Project)
+set(PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 option(DUMP_ASM "Create full assembly of final executable" OFF)
 
 # Set microcontroller information
-set(MCU_FAMILY STM32F4xx)
-set(MCU_MODEL STM32F407xx)
+# set(MCU_FAMILY STM32F4xx)
+set(MCU_FAMILY STM32F4xe)
+# set(MCU_MODEL STM32F411xx)
+set(MCU_MODEL STM32F411xe)
 set(CPU_PARAMETERS
     -mcpu=cortex-m4
     -mthumb
     -mfpu=fpv4-sp-d16
     -mfloat-abi=hard)
 
-set(STARTUP_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/CubeMX/startup_stm32f407xx.s)
-set(MCU_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/CubeMX/STM32F407VGTx_FLASH.ld)
+# set(STARTUP_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/CubeMX/startup_stm32f411xe.s)
+set(STARTUP_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/startup_stm32f411xe.s)
+# set(MCU_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/CubeMX/STM32F411RETx_FLASH.ld)
+set(MCU_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/STM32F411RETx_FLASH.ld)
 
 ###############################################################################
 set(EXECUTABLE ${CMAKE_PROJECT_NAME})
