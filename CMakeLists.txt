@@ -5,15 +5,15 @@ cmake_minimum_required(VERSION 3.12)
 # Set project name and source code folder location
 project(STM32F4-driver-test)
 # set(PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Project)
-set(PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+# set(PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 option(DUMP_ASM "Create full assembly of final executable" OFF)
 
 # Set microcontroller information
-# set(MCU_FAMILY STM32F4xx)
-set(MCU_FAMILY STM32F4xe)
-# set(MCU_MODEL STM32F411xx)
-set(MCU_MODEL STM32F411xe)
+set(MCU_FAMILY STM32F4xx)
+# set(MCU_FAMILY STM32F4xe)
+set(MCU_MODEL STM32F411xx)
+# set(MCU_MODEL STM32F411xE)
 set(CPU_PARAMETERS
     -mcpu=cortex-m4
     -mthumb
@@ -37,70 +37,103 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
 ###############################################################################
+
+# Headers 
 set(STM32CUBEMX_INCLUDE_DIRECTORIES
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/${MCU_FAMILY}_HAL_Driver/Inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/${MCU_FAMILY}_HAL_Driver/Inc/Legacy
-    ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/CMSIS/Device/ST/${MCU_FAMILY}/Include
-    ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/CMSIS/Include)
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/FATFS/Target
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/FATFS/App
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Middlewares/Third_Party/FatFs/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/CMSIS/Device/ST/STM32F4xx/Include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/CMSIS/Include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/STM32F4xx_HAL_Driver/Inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy)
 
-set(PROJECT_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR})
+set(PROJECT_INCLUDE_DIRECTORIES 
+    ${CMAKE_CURRENT_SOURCE_DIR}/headers
+    ${CMAKE_CURRENT_SOURCE_DIR}/headers/test_code
+    ${CMAKE_CURRENT_SOURCE_DIR}/headers/config_files
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/headers/devices
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/headers/peripherals
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/headers/tools)
 
-file(GLOB_RECURSE STM32CUBEMX_SOURCES CONFIGURE_DEPENDS
-    ${CMAKE_CURRENT_SOURCE_DIR}/Core/*.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/*.c)
+# Sources 
+# file(GLOB_RECURSE STM32CUBEMX_SOURCES CONFIGURE_DEPENDS
+file(GLOB_RECURSE STM32CUBEMX_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/FATFS/Target/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/FATFS/App/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Middlewares/Third_Party/FatFs/src/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Middlewares/Third_Party/FatFs/src/option/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/STM32F4xx_HAL_Driver/Src/*.c)
 
-file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
-    ${PROJECT_DIR}/*.cpp
-    ${PROJECT_DIR}/*.c)
+# file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
+file(GLOB_RECURSE PROJECT_SOURCES FOLLOW_SYMLINKS
+    ${CMAKE_CURRENT_SOURCE_DIR}/sources/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/sources/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/sources/test_code/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/sources/test_code/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/sources/config_files/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/sources/config_files/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/sources/devices/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/sources/devices/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/sources/peripherals/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/sources/peripherals/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/sources/tools/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/sources/tools/*.cpp)
 
+# Executable files 
 add_executable(${EXECUTABLE}
     ${STM32CUBEMX_SOURCES} 
     ${PROJECT_SOURCES}
     ${STARTUP_SCRIPT})
 
+# Embedded macros (defines) 
 target_compile_definitions(${EXECUTABLE} PRIVATE
     #$<$<CONFIG:Debug>:DEBUG>
     ${MCU_MODEL}
     USE_HAL_DRIVER)
 
+# Add header directories (***AFTER add_executable) 
 target_include_directories(${EXECUTABLE} SYSTEM PRIVATE
     ${STM32CUBEMX_INCLUDE_DIRECTORIES})
-
 target_include_directories(${EXECUTABLE} PRIVATE
     ${PROJECT_INCLUDE_DIRECTORIES})
-###############################################################################
-target_compile_options(${EXECUTABLE} PRIVATE
-${CPU_PARAMETERS}
-    -Wall
-    -Wextra
-    -Wpedantic
-    -Wshadow
-    -Wdouble-promotion
-    -Wformat=2 -Wformat-truncation
-    -Wundef
-    -fno-common
-    -Wno-unused-parameter
-    $<$<COMPILE_LANGUAGE:CXX>:
-        -Wconversion # STM libraries!
-        -Wno-volatile
-        -Wold-style-cast
-        -Wuseless-cast
-        -Wsuggest-override>
-    $<$<CONFIG:Debug>:-Og -g3 -ggdb>
-    $<$<CONFIG:Release>:-Og -g0>)
 
-target_link_options(${EXECUTABLE} PRIVATE
-    -T${MCU_LINKER_SCRIPT}
+###############################################################################
+
+# Compiler and linker options 
+target_compile_options(${EXECUTABLE} PRIVATE
     ${CPU_PARAMETERS}
-    -Wl,-Map=${CMAKE_PROJECT_NAME}.map
-    --specs=nosys.specs
-    -Wl,--start-group
-    -lc
-    -lm
-    -lstdc++
-    -Wl,--end-group
-    -Wl,--print-memory-usage)
+        -Wall
+        -Wextra
+        -Wpedantic
+        -Wshadow
+        -Wdouble-promotion
+        -Wformat=2 -Wformat-truncation
+        -Wundef
+        -fno-common
+        -Wno-unused-parameter
+        $<$<COMPILE_LANGUAGE:CXX>:
+            -Wconversion # STM libraries!
+            -Wno-volatile
+            -Wold-style-cast
+            -Wuseless-cast
+            -Wsuggest-override>
+        $<$<CONFIG:Debug>:-Og -g3 -ggdb>
+        $<$<CONFIG:Release>:-Og -g0>)
+
+    target_link_options(${EXECUTABLE} PRIVATE
+        -T${MCU_LINKER_SCRIPT}
+        ${CPU_PARAMETERS}
+        -Wl,-Map=${CMAKE_PROJECT_NAME}.map
+        --specs=nosys.specs
+        -Wl,--start-group
+        -lc
+        -lm
+        -lstdc++
+        -Wl,--end-group
+        -Wl,--print-memory-usage)
 
 # The last command can take a couple of seconds on larger project, usefull for debugging
 add_custom_command(TARGET ${EXECUTABLE} POST_BUILD
