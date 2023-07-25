@@ -7,15 +7,11 @@ include(./arm-none-eabi-gcc.cmake)
 
 # Set project name and source code folder location
 project(STM32F4-driver-test)
-# set(PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Project)
-# set(PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 option(DUMP_ASM "Create full assembly of final executable" OFF)
 
 # Set microcontroller information
 set(MCU_FAMILY STM32F4xx)
-# set(MCU_FAMILY STM32F4xe)
-# set(MCU_MODEL STM32F411xx)
 set(MCU_MODEL STM32F411xE)
 set(CPU_PARAMETERS
     -mcpu=cortex-m4
@@ -23,9 +19,7 @@ set(CPU_PARAMETERS
     -mfpu=fpv4-sp-d16
     -mfloat-abi=hard)
 
-# set(STARTUP_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/CubeMX/startup_stm32f411xe.s)
 set(STARTUP_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/startup_stm32f411xe.s)
-# set(MCU_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/CubeMX/STM32F411RETx_FLASH.ld)
 set(MCU_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/STM32F411RETx_FLASH.ld)
 
 ###############################################################################
@@ -135,10 +129,10 @@ target_compile_options(${EXECUTABLE} PRIVATE
         -fno-common
         -Wno-unused-parameter
         $<$<COMPILE_LANGUAGE:CXX>:
-            -Wconversion # STM libraries!
+            # -Wconversion # STM libraries!
             -Wno-volatile
-            -Wold-style-cast
-            -Wuseless-cast
+            # -Wold-style-cast
+            # -Wuseless-cast
             -Wsuggest-override>
         $<$<CONFIG:Debug>:-Og -g3 -ggdb>
         $<$<CONFIG:Release>:-Og -g0>)
