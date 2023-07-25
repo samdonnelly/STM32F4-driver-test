@@ -2,6 +2,9 @@
 cmake_minimum_required(VERSION 3.12)
 
 ###############################################################################
+
+include(./arm-none-eabi-gcc.cmake)
+
 # Set project name and source code folder location
 project(STM32F4-driver-test)
 # set(PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Project)
@@ -12,8 +15,8 @@ option(DUMP_ASM "Create full assembly of final executable" OFF)
 # Set microcontroller information
 set(MCU_FAMILY STM32F4xx)
 # set(MCU_FAMILY STM32F4xe)
-set(MCU_MODEL STM32F411xx)
-# set(MCU_MODEL STM32F411xE)
+# set(MCU_MODEL STM32F411xx)
+set(MCU_MODEL STM32F411xE)
 set(CPU_PARAMETERS
     -mcpu=cortex-m4
     -mthumb
@@ -58,17 +61,34 @@ set(PROJECT_INCLUDE_DIRECTORIES
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/headers/tools)
 
 # Sources 
-# file(GLOB_RECURSE STM32CUBEMX_SOURCES CONFIGURE_DEPENDS
-file(GLOB_RECURSE STM32CUBEMX_SOURCES
+file(GLOB_RECURSE STM32CUBEMX_SOURCES CONFIGURE_DEPENDS
+# file(GLOB_RECURSE STM32CUBEMX_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/*.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/FATFS/Target/*.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/FATFS/App/*.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Middlewares/Third_Party/FatFs/src/*.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Middlewares/Third_Party/FatFs/src/option/*.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/STM32F4xx_HAL_Driver/Src/*.c)
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/FATFS/Target/user_diskio.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/FATFS/App/fatfs.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Middlewares/Third_Party/FatFs/src/diskio.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Middlewares/Third_Party/FatFs/src/ff.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Middlewares/Third_Party/FatFs/src/ff_gen_drv.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Middlewares/Third_Party/FatFs/src/option/syscall.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Middlewares/Third_Party/FatFs/src/option/ccsbcs.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c)
 
-# file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
-file(GLOB_RECURSE PROJECT_SOURCES FOLLOW_SYMLINKS
+file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
+# file(GLOB_RECURSE PROJECT_SOURCES FOLLOW_SYMLINKS
     ${CMAKE_CURRENT_SOURCE_DIR}/sources/*.c
     ${CMAKE_CURRENT_SOURCE_DIR}/sources/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/sources/test_code/*.c

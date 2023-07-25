@@ -62,8 +62,8 @@ static m8q_func_ptrs_t m8q_state_func[M8Q_NUM_USER_CMDS] =
     {&m8q_set_low_pwr_flag, NULL, NULL, NULL, NULL, NULL}, 
     {&m8q_clear_low_pwr_flag, NULL, NULL, NULL, NULL, NULL}, 
     {&m8q_set_reset_flag, NULL, NULL, NULL, NULL, NULL}, 
-    {NULL, &m8q_get_state, NULL, NULL, NULL}, 
-    {NULL, NULL, &m8q_get_fault_code, NULL, NULL}, 
+    {NULL, &m8q_get_state, NULL, NULL, NULL, NULL}, 
+    {NULL, NULL, &m8q_get_fault_code, NULL, NULL, NULL}, 
     // Driver functions 
     {NULL, NULL, &m8q_get_navstat, NULL, NULL, NULL}, 
     {NULL, NULL, NULL, &m8q_get_lat_str, NULL, NULL}, 
