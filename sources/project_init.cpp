@@ -26,7 +26,7 @@
 // Project initialization 
 void project_init(void)
 {
-    // 
+    // Project initialization code 
 }
 
 //=======================================================================================

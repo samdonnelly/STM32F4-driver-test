@@ -26,7 +26,7 @@
 // Project application  
 void project_app(void)
 {
-    // 
+    // Project application code 
 }
 
 //=======================================================================================
