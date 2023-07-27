@@ -75,7 +75,11 @@ void lsm303agr_test_init(void)
         LSM303AGR_CFG_DISABLE, 
         LSM303AGR_CFG_DISABLE, 
         LSM303AGR_CFG_DISABLE, 
-        LSM303AGR_CFG_DISABLE); 
+        LSM303AGR_CFG_DISABLE, 
+        LSM303AGR_Y_AXIS, 
+        LSM303AGR_AXIS_POS, 
+        LSM303AGR_Z_AXIS, 
+        LSM303AGR_AXIS_POS); 
 } 
 
 
@@ -99,10 +103,17 @@ void lsm303agr_test_app(void)
 
     uart_sendstring(USART2, "mz = ");
     uart_send_integer(USART2, mz_data);
-    uart_send_spaces(USART2, UART_SPACE_2);
+    uart_send_new_line(USART2); 
+
+    uart_sendstring(USART2, "heading = ");
+    uart_send_integer(USART2, lsm303agr_m_get_heading());
+    uart_send_spaces(USART2, UART_SPACE_3); 
 
     // Delay 
-    tim_delay_ms(TIM9, 100);
+    tim_delay_ms(TIM9, 250);
+
+    // Go up a line in the terminal to overwrite old data 
+    uart_sendstring(USART2, "\033[1A"); 
 
     // Go to a the start of the line in the terminal 
     uart_sendstring(USART2, "\r"); 

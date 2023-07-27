@@ -52,7 +52,8 @@
 			"m8q_driver.h": "c",
 			"linked_list_driver.h": "c",
 			"lsm303agr_driver.h": "c",
-			"uart_comm.h": "c"
+			"uart_comm.h": "c",
+			"cmath": "cpp"
 		}
 	}
 }
