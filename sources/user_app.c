@@ -23,5 +23,6 @@
 // User application 
 void user_app()
 {
-    // Looped code here
+    // Looped code here 
+    lsm303agr_test_app(); 
 }
