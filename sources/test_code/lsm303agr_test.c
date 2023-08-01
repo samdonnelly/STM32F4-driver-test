@@ -41,6 +41,9 @@ void lsm303agr_test_init(void)
 {
     // Setup code for the gpio_test here 
 
+    //===================================================
+    // Initialize peripherals 
+
     // Initialize GPIO ports 
     gpio_port_init(); 
 
@@ -72,15 +75,55 @@ void lsm303agr_test_init(void)
         I2C_APB1_42MHZ,
         I2C_CCR_SM_42_100,
         I2C_TRISE_1000_42);
+    
+    //===================================================
+
+#if LSM303AGR_TEST_NAV 
+
+    //===================================================
+    // Navigation test init 
+
+    // Screen init 
+
+    // GPS init 
+
+    // PWM init 
+
+    //===================================================
+
+#endif   // LSM303AGR_TEST_NAV 
 
     //==================================================
     // LSM303AGR init 
 
+    // TODO 
+    // - Test magnetometer heading with low power, idle (mode), different ODR, LFP enabled, 
+    //   and offset cancellation 
+
     // Set offsets. These are used to correct for errors in the magnetometer readings. This 
     // is application dependent so it is part of the device init and not integrated into the 
     // driver/library. 
+    // 
     // Calibration steps: 
-    // 1. 
+    // 1. Set the below values to zero. 
+    // 2. Make sure LSM303AGR_TEST_HEADING is enabled and build the project. 
+    // 3. Connect the LSM303AGR to the STM32, connect the STM32F4 to your machine, open PuTTy 
+    //    so you can see the output and flash the code. 
+    // 4. Using a trusted compasss (such as the one on your phone), align it in the North 
+    //    direction, then align the long edge of the LSM303AGR (X-axis) with the compass so 
+    //    they're both pointing North. 
+    // 5. Observe the output of the magnetometer via Putty (Note that depending on the compass 
+    //    you use you may have to move it away from the magnetometer once it's aligned or else 
+    //    else you could get magnetometer interference - this happens with phone compasses). 
+    //    Note the difference between the magnetometer output and the compass heading and 
+    //    record it in offsets[0] below. If the magnetometer reading is clockwise of the compass 
+    //    heading then the value recorded will be negative. Recorded offsets are scaled by 10. 
+    //    Compass and magnetometer heading are from 0-359 degrees. For example, if the compass 
+    //    reads 0 degrees (Magnetic North) and the magnetometer output reads +105 (10.5 degrees) 
+    //    then the offset recorded is -105. 
+    // 6. Repeat steps 4 and 5 for all directions in 45 degree increments (NE, E, SE, etc.) and 
+    //    record each subsequent direction in the next 'offsets' element. 
+
     offsets[0] = -100;    // N  (0/360deg) direction heading offset (degrees * 10) 
     offsets[1] = -20;     // NE (45deg) direction heading offset (degrees * 10) 
     offsets[2] = 0;       // E  (90deg) direction heading offset (degrees * 10) 
@@ -146,4 +189,7 @@ void lsm303agr_test_app(void)
 
     // Go to a the start of the line in the terminal 
     uart_sendstring(USART2, "\r"); 
+
+#if LSM303AGR_TEST_NAV 
+#endif   //LSM303AGR_TEST_NAV 
 }

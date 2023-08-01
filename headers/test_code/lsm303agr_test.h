@@ -29,6 +29,7 @@
 // Conditional compilation 
 #define LSM303AGR_TEST_AXIS 0             // Magnetometer axis values 
 #define LSM303AGR_TEST_HEADING 1          // Heading (compass) test 
+#define LSM303AGR_TEST_NAV 0              // Navigating with compass test 
 
 //=======================================================================================
 
