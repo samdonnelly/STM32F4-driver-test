@@ -23,9 +23,15 @@
 //=======================================================================================
 // Global variables 
 
+#if LSM303AGR_TEST_AXIS 
 static int16_t mx_data; 
 static int16_t my_data; 
 static int16_t mz_data; 
+#endif   // LSM303AGR_TEST_AXIS 
+
+#if LSM303AGR_TEST_HEADING 
+static int16_t offsets[8]; 
+#endif   // LSM303AGR_TEST_HEADING 
 
 //=======================================================================================
 
@@ -67,19 +73,35 @@ void lsm303agr_test_init(void)
         I2C_CCR_SM_42_100,
         I2C_TRISE_1000_42);
 
+    //==================================================
     // LSM303AGR init 
+
+    // Set offsets. These are used to correct for errors in the magnetometer readings. This 
+    // is application dependent so it is part of the device init and not integrated into the 
+    // driver/library. 
+    // Calibration steps: 
+    // 1. 
+    offsets[0] = -100;    // N  (0/360deg) direction heading offset (degrees * 10) 
+    offsets[1] = -20;     // NE (45deg) direction heading offset (degrees * 10) 
+    offsets[2] = 0;       // E  (90deg) direction heading offset (degrees * 10) 
+    offsets[3] = 0;       // SE (135deg) direction heading offset (degrees * 10) 
+    offsets[4] = 180;     // S  (180deg) direction heading offset (degrees * 10) 
+    offsets[5] = 200;     // SW (225deg) direction heading offset (degrees * 10) 
+    offsets[6] = 140;     // W  (270deg) direction heading offset (degrees * 10) 
+    offsets[7] = -90;     // NW (315deg) direction heading offset (degrees * 10) 
+
+    // Driver init 
     lsm303agr_init(
         I2C1, 
+        offsets, 
         LSM303AGR_M_ODR_10, 
         LSM303AGR_M_MODE_CONT, 
         LSM303AGR_CFG_DISABLE, 
         LSM303AGR_CFG_DISABLE, 
         LSM303AGR_CFG_DISABLE, 
-        LSM303AGR_CFG_DISABLE, 
-        LSM303AGR_Y_AXIS, 
-        LSM303AGR_AXIS_POS, 
-        LSM303AGR_Z_AXIS, 
-        LSM303AGR_AXIS_POS); 
+        LSM303AGR_CFG_DISABLE); 
+    
+    //==================================================
 } 
 
 
@@ -90,6 +112,8 @@ void lsm303agr_test_app(void)
 
     // Update the magnetometer data 
     lsm303agr_m_read(); 
+
+#if LSM303AGR_TEST_AXIS 
     lsm303agr_m_get_data(&mx_data, &my_data, &mz_data); 
 
     // Display the first device results - values are scaled to remove decimal 
@@ -104,16 +128,21 @@ void lsm303agr_test_app(void)
     uart_sendstring(USART2, "mz = ");
     uart_send_integer(USART2, mz_data);
     uart_send_new_line(USART2); 
+#endif   // LSM303AGR_TEST_AXIS 
 
+#if LSM303AGR_TEST_HEADING 
     uart_sendstring(USART2, "heading = ");
     uart_send_integer(USART2, lsm303agr_m_get_heading());
-    uart_send_spaces(USART2, UART_SPACE_3); 
+    uart_send_spaces(USART2, UART_SPACE_2); 
+#endif   // LSM303AGR_TEST_HEADING 
 
     // Delay 
     tim_delay_ms(TIM9, 250);
 
+#if LSM303AGR_TEST_AXIS 
     // Go up a line in the terminal to overwrite old data 
     uart_sendstring(USART2, "\033[1A"); 
+#endif   // LSM303AGR_TEST_AXIS 
 
     // Go to a the start of the line in the terminal 
     uart_sendstring(USART2, "\r"); 
