@@ -23,15 +23,32 @@
 //=======================================================================================
 // Global variables 
 
+static int16_t offsets[8]; 
+
 #if LSM303AGR_TEST_AXIS 
 static int16_t mx_data; 
 static int16_t my_data; 
 static int16_t mz_data; 
 #endif   // LSM303AGR_TEST_AXIS 
 
-#if LSM303AGR_TEST_HEADING 
-static int16_t offsets[8]; 
-#endif   // LSM303AGR_TEST_HEADING 
+#if LSM303AGR_TEST_NAV 
+#endif   // LSM303AGR_TEST_NAV 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Function prototypes 
+
+#if LSM303AGR_TEST_NAV 
+
+// GPS coordinate surface distance 
+uint8_t lsm303agr_gps_rad(
+    double *gps1, 
+    double *gps2, 
+    double surf_dist_thresh); 
+
+#endif   // LSM303AGR_TEST_NAV 
 
 //=======================================================================================
 
@@ -153,6 +170,7 @@ void lsm303agr_test_app(void)
 {
     // Test code for the gpio_test here 
 
+#if LSM303AGR_TEST_HEADING 
     // Update the magnetometer data 
     lsm303agr_m_read(); 
 
@@ -173,11 +191,9 @@ void lsm303agr_test_app(void)
     uart_send_new_line(USART2); 
 #endif   // LSM303AGR_TEST_AXIS 
 
-#if LSM303AGR_TEST_HEADING 
     uart_sendstring(USART2, "heading = ");
     uart_send_integer(USART2, lsm303agr_m_get_heading());
     uart_send_spaces(USART2, UART_SPACE_2); 
-#endif   // LSM303AGR_TEST_HEADING 
 
     // Delay 
     tim_delay_ms(TIM9, 150);
@@ -189,7 +205,45 @@ void lsm303agr_test_app(void)
 
     // Go to a the start of the line in the terminal 
     uart_sendstring(USART2, "\r"); 
+#endif   // LSM303AGR_TEST_HEADING 
 
 #if LSM303AGR_TEST_NAV 
 #endif   //LSM303AGR_TEST_NAV 
 }
+
+
+#if LSM303AGR_TEST_NAV 
+
+// GPS coordinate radius check 
+uint8_t lsm303agr_gps_rad(
+    double *gps1, 
+    double *gps2, 
+    double surf_dist_thresh)
+{
+    // Local variables 
+    double lat1 = *gps1++; 
+    double lon1 = *gps1; 
+    double lat2 = *gps2++; 
+    double lon2 = *gps2; 
+    double surf_dist = CLEAR; 
+    uint8_t gps_rad = CLEAR; 
+    double eq1, eq2, eq3, eq4, eq5; 
+
+    eq1 = cos(LSM303AGR_TEST_90DEG - lat2)*sin(lon2 - lon1); 
+    eq2 = cos(LSM303AGR_TEST_90DEG - lat1)*sin(LSM303AGR_TEST_90DEG - lat2); 
+    eq3 = sin(LSM303AGR_TEST_90DEG - lat1)*cos(LSM303AGR_TEST_90DEG - lat2)*cos(lon2 - lon1); 
+    eq4 = sin(LSM303AGR_TEST_90DEG - lat1)*sin(LSM303AGR_TEST_90DEG - lat2); 
+    eq5 = cos(LSM303AGR_TEST_90DEG - lat1)*cos(LSM303AGR_TEST_90DEG - lat2)*cos(lon2 - lon1); 
+
+    surf_dist = atan2(sqrt((eq2 - eq3)*(eq2 - eq3) + (eq1*eq1)), (eq4 + eq5)) * 
+                LSM303AGR_TEST_EARTH_R*LSM303AGR_TEST_KM_TO_M; 
+
+    if (surf_dist < surf_dist_thresh)
+    {
+        gps_rad = SET_BIT; 
+    }
+
+    return gps_rad; 
+}
+
+#endif   // LSM303AGR_TEST_NAV 

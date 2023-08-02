@@ -27,9 +27,15 @@
 // Macros 
 
 // Conditional compilation 
+#define LSM303AGR_TEST_HEADING 0          // Heading (compass) test 
 #define LSM303AGR_TEST_AXIS 0             // Magnetometer axis values 
-#define LSM303AGR_TEST_HEADING 1          // Heading (compass) test 
-#define LSM303AGR_TEST_NAV 0              // Navigating with compass test 
+#define LSM303AGR_TEST_NAV 1              // Navigating with compass test 
+
+// Calculation 
+#define LSM303AGR_TEST_EARTH_R 6371       // Average Earch radius (km) 
+#define LSM303AGR_TEST_KM_TO_M 1000       // Km and m scaler 
+#define LSM303AGR_TEST_SURF_DIST 10       // Surface distance threshold (m) 
+#define LSM303AGR_TEST_90DEG 3.14159/2    // PI/2 
 
 //=======================================================================================
 
