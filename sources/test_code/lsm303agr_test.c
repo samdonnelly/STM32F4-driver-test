@@ -180,7 +180,7 @@ void lsm303agr_test_app(void)
 #endif   // LSM303AGR_TEST_HEADING 
 
     // Delay 
-    tim_delay_ms(TIM9, 250);
+    tim_delay_ms(TIM9, 150);
 
 #if LSM303AGR_TEST_AXIS 
     // Go up a line in the terminal to overwrite old data 
