@@ -1011,7 +1011,7 @@ uint8_t format_input(
 
                     if ((nibble >= ZERO_CHAR) && (nibble <= NINE_CHAR))
                     {
-                        nibble -= HEX_TO_NUM_CHAR; 
+                        nibble -= NUM_TO_CHAR_OFFSET; 
                     }
                     else if ((nibble >= A_CHAR) && (nibble <= F_CHAR)) 
                     {

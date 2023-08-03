@@ -54,7 +54,8 @@
 			"lsm303agr_driver.h": "c",
 			"uart_comm.h": "c",
 			"cmath": "cpp",
-			"lsm303agr_a_driver.h": "c"
+			"lsm303agr_a_driver.h": "c",
+			"math.h": "c"
 		}
 	}
 }

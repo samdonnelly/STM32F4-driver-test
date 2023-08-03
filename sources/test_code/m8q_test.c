@@ -21,6 +21,21 @@
 
 
 //=======================================================================================
+// Function prototypes 
+
+/**
+ * @brief GPS coordinate radius check 
+ * 
+ * @details Calculate surface distance and compare to threshold 
+ * 
+ * @return uint8_t 
+ */
+uint8_t m8q_test_gps_rad(void); 
+
+//=======================================================================================
+
+
+//=======================================================================================
 // Globals 
 
 #if M8Q_CONTROLLER_TEST
@@ -77,6 +92,20 @@ static m8q_func_ptrs_t m8q_state_func[M8Q_NUM_USER_CMDS] =
 }; 
 
 #endif 
+
+
+#if M8Q_TEST_LOCATION 
+
+// Sample waypoints 
+static m8q_test_waypoints_t waypoints[M8Q_TEST_NUM_WAYPOINTS] = 
+{
+    {50.962010, -114.065890}, 
+    {50.962340, -114.065930}, 
+    {50.962340, -114.066260}, 
+    {50.961730, -114.066080} 
+}; 
+
+#endif   // M8Q_TEST_LOCATION 
 
 //=======================================================================================
 
@@ -168,8 +197,20 @@ void m8q_test_init()
 
 #endif   // M8Q_DATA_CHECK 
 
+#if M8Q_TEST_LOCATION 
+
+    //===================================================
+    // Screen setup (to provide user feedback) 
+
+    // Driver 
+    hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH);
+
+    //===================================================
+
+#endif   // M8Q_TEST_LOCATION 
+
     //==================================================+
-    // M8Q test mode selection 
+    // M8Q device setup 
 
 #if M8Q_USER_CONFIG 
 
@@ -346,7 +387,7 @@ void m8q_test_app()
 
 #endif   // M8Q_DATA_CHECK 
 
-#if M8Q_TEST_OTHER 
+#if M8Q_TEST_LOCATION 
 
     uint8_t counter = CLEAR; 
     static uint8_t flipper = CLEAR; 
@@ -364,7 +405,7 @@ void m8q_test_app()
     uint8_t utc_time[BYTE_9]; 
     uint8_t utc_date[BYTE_6]; 
 
-#endif   // M8Q_TEST_OTHER 
+#endif   // M8Q_TEST_LOCATION 
 
     //==================================================
 
@@ -403,6 +444,11 @@ void m8q_test_app()
     // - Read data and check the updated time 
     // - If the time read is the most up to date then data should be getting over-
     //   written, otherwise data should be getting blocked. 
+
+    // Answer to test question 
+    // - Data is queued up in the devices message buffer and you must read the oldest 
+    //   messages to clear the queue before you can read the newset messages. The device 
+    //   message buffer is only so bit so once it is full then data is lost. 
 
     //===================================================
     // Update the button status on periodic interrupt 
@@ -461,7 +507,19 @@ void m8q_test_app()
 
 #endif   // M8Q_DATA_CHECK 
 
-#if M8Q_TEST_OTHER 
+#if M8Q_TEST_LOCATION 
+
+    // State machine 
+    // - Two states: not connected and connected 
+    // - Not connected: do nothing until a location is found 
+    // - Connected: read a desired coordinate at an index if needed, read new location 
+    //              as it comes in, find the distance to the desired coordinate after 
+    //              a location read, display distance on screen (meters), check if the 
+    //              distance is below the threshold, if no then continue to "search", 
+    //              if yes then increment waypoint index and read new coordinate and 
+    //              repeat. If waypoint index overflows then reset it so you navigate 
+    //              in a circle. Check for a GPS connection continuously - if lost 
+    //              then revert to not connected state - preserve waypoint index. 
 
     while (TRUE)
     {
@@ -479,14 +537,14 @@ void m8q_test_app()
         {
             if (counter == 2)
             {
-                m8q_get_lat(&lat_deg_min, &lat_min_frac); 
-                NS = m8q_get_NS(); 
-                m8q_get_long(&lon_deg_min, &lon_min_frac); 
-                EW = m8q_get_EW(); 
-                navstat = m8q_get_navstat(); 
-                m8q_get_time(utc_time); 
-                m8q_get_date(utc_date); 
-                counter = 0; 
+                // m8q_get_lat(&lat_deg_min, &lat_min_frac); 
+                // NS = m8q_get_NS(); 
+                // m8q_get_long(&lon_deg_min, &lon_min_frac); 
+                // EW = m8q_get_EW(); 
+                // navstat = m8q_get_navstat(); 
+                // m8q_get_time(utc_time); 
+                // m8q_get_date(utc_date); 
+                // counter = 0; 
             }
             break; 
         }
@@ -508,7 +566,7 @@ void m8q_test_app()
 
     tim_delay_ms(TIM9, 1); 
 
-#endif   // M8Q_TEST_OTHER 
+#endif   // M8Q_TEST_LOCATION 
 
     //===================================================
 
@@ -516,3 +574,14 @@ void m8q_test_app()
 
 #endif   // M8Q_USER_CONFIG
 }
+
+
+#if M8Q_TEST_LOCATION 
+
+// GPS coordinate radius check - calculate surface distance and compare to threshold 
+uint8_t m8q_test_gps_rad(void)
+{
+    // 
+}
+
+#endif   // M8Q_TEST_LOCATION 
