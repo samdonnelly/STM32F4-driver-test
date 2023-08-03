@@ -21,6 +21,14 @@
 
 
 //=======================================================================================
+// TODO 
+// - Test magnetometer heading with low power, idle (mode), different ODR, LFP enabled, 
+//   and offset cancellation 
+// - Change double calculations to scaled integer calculations (int32_t) 
+//=======================================================================================
+
+
+//=======================================================================================
 // Global variables 
 
 static int16_t offsets[8]; 
@@ -42,11 +50,34 @@ static int16_t mz_data;
 
 #if LSM303AGR_TEST_NAV 
 
-// GPS coordinate surface distance 
+/**
+ * @brief GPS coordinate surface distance 
+ * 
+ * @details 
+ * 
+ * @param gps1 
+ * @param gps2 
+ * @param surf_dist_thresh 
+ * @return uint8_t 
+ */
 uint8_t lsm303agr_gps_rad(
     double *gps1, 
     double *gps2, 
     double surf_dist_thresh); 
+
+
+/**
+ * @brief Heading error - done every heading update (~10Hz) 
+ * 
+ * @details 
+ * 
+ * @param heading_desired 
+ * @param heading_current 
+ * @return int16_t 
+ */
+int16_t lsm303agr_heading_error(
+    int16_t heading_desired, 
+    int16_t heading_current); 
 
 #endif   // LSM303AGR_TEST_NAV 
 
@@ -112,10 +143,6 @@ void lsm303agr_test_init(void)
 
     //==================================================
     // LSM303AGR init 
-
-    // TODO 
-    // - Test magnetometer heading with low power, idle (mode), different ODR, LFP enabled, 
-    //   and offset cancellation 
 
     // Set offsets. These are used to correct for errors in the magnetometer readings. This 
     // is application dependent so it is part of the device init and not integrated into the 
@@ -214,7 +241,13 @@ void lsm303agr_test_app(void)
 
 #if LSM303AGR_TEST_NAV 
 
-// GPS coordinate radius check 
+// True North calibration - performed as requested (system state) 
+
+
+// Format M8Q GPS readings 
+
+
+// GPS coordinate radius check - done once after an updated location is read 
 uint8_t lsm303agr_gps_rad(
     double *gps1, 
     double *gps2, 
@@ -229,12 +262,16 @@ uint8_t lsm303agr_gps_rad(
     uint8_t gps_rad = CLEAR; 
     double eq1, eq2, eq3, eq4, eq5; 
 
+    // TODO the cooredinates must either be passed as radians or converted to radians 
+
     eq1 = cos(LSM303AGR_TEST_90DEG - lat2)*sin(lon2 - lon1); 
     eq2 = cos(LSM303AGR_TEST_90DEG - lat1)*sin(LSM303AGR_TEST_90DEG - lat2); 
     eq3 = sin(LSM303AGR_TEST_90DEG - lat1)*cos(LSM303AGR_TEST_90DEG - lat2)*cos(lon2 - lon1); 
     eq4 = sin(LSM303AGR_TEST_90DEG - lat1)*sin(LSM303AGR_TEST_90DEG - lat2); 
     eq5 = cos(LSM303AGR_TEST_90DEG - lat1)*cos(LSM303AGR_TEST_90DEG - lat2)*cos(lon2 - lon1); 
 
+    // atan2 is used because it produces an angle between +/-180 (pi) and the central angle 
+    // should always be positive and never greater than 180 
     surf_dist = atan2(sqrt((eq2 - eq3)*(eq2 - eq3) + (eq1*eq1)), (eq4 + eq5)) * 
                 LSM303AGR_TEST_EARTH_R*LSM303AGR_TEST_KM_TO_M; 
 
@@ -245,5 +282,71 @@ uint8_t lsm303agr_gps_rad(
 
     return gps_rad; 
 }
+
+
+// Desired heading calculation - done once after an updated location is read 
+int16_t lsm303agr_heading_calc(
+    double *gps1, 
+    double *gps2)
+{
+    // Local variables 
+    double lat1 = *gps1++; 
+    double lon1 = *gps1; 
+    double lat2 = *gps2++; 
+    double lon2 = *gps2; 
+    double num, den; 
+    double heading_temp = CLEAR; 
+    int16_t heading = CLEAR; 
+
+    // Calculate the numerator and denominator of the atan calculation 
+    num = cos(lat2)*sin(lon2-lon1); 
+    den = cos(lat1)*sin(lat2) - sin(lat1)*cos(lat2)*cos(lon2-lon1); 
+
+    // Calculate the heading 
+    heading_temp = atan(num/den); 
+
+    // Convert heading to degrees 
+    heading = (int16_t)(heading_temp*10*180/3.14159); 
+
+    // Correct the calculated heading if needed 
+    if (den < 0)
+    {
+        heading += LSM303AGR_M_HEAD_DIFF; 
+    }
+    else if (num < 0)
+    {
+        heading += LSM303AGR_M_HEAD_MAX; 
+    }
+
+    return heading; 
+}
+
+
+// Heading error - done every heading update (~10Hz) 
+int16_t lsm303agr_heading_error(
+    int16_t heading_desired, 
+    int16_t heading_current)
+{
+    // Local variables 
+    int16_t heading_error = CLEAR; 
+
+    // Calculate the heading error 
+    heading_error = heading_desired - heading_current; 
+
+    // Correct the error for when the heading crosses the 0/360 degree boundary 
+    if (heading_error > LSM303AGR_M_HEAD_DIFF)
+    {
+        heading_error -= LSM303AGR_M_HEAD_MAX; 
+    }
+    else if (heading_error < -LSM303AGR_M_HEAD_DIFF)
+    {
+        heading_error += LSM303AGR_M_HEAD_MAX; 
+    }
+
+    return heading_error; 
+}
+
+
+// Motor controller - called after evry heading update 
 
 #endif   // LSM303AGR_TEST_NAV 
