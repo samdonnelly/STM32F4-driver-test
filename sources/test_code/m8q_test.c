@@ -28,9 +28,17 @@
  * 
  * @details Calculate surface distance and compare to threshold 
  * 
- * @return uint8_t 
+ * @param lat1 
+ * @param lon1 
+ * @param lat2 
+ * @param lon2 
+ * @return int16_t 
  */
-uint8_t m8q_test_gps_rad(void); 
+int16_t m8q_test_gps_rad(
+    double lat1, 
+    double lon1, 
+    double lat2, 
+    double lon2); 
 
 //=======================================================================================
 
@@ -104,6 +112,10 @@ static m8q_test_waypoints_t waypoints[M8Q_TEST_NUM_WAYPOINTS] =
     {50.962340, -114.066260}, 
     {50.961730, -114.066080} 
 }; 
+
+static m8q_test_waypoints_t waypoint; 
+
+static char screen_msg[20]; 
 
 #endif   // M8Q_TEST_LOCATION 
 
@@ -203,7 +215,8 @@ void m8q_test_init()
     // Screen setup (to provide user feedback) 
 
     // Driver 
-    hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH);
+    hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH); 
+    hd44780u_clear(); 
 
     //===================================================
 
@@ -389,21 +402,21 @@ void m8q_test_app()
 
 #if M8Q_TEST_LOCATION 
 
-    uint8_t counter = CLEAR; 
-    static uint8_t flipper = CLEAR; 
-    static uint16_t timer = 0x48B8; 
-    static uint8_t blink = 0; 
+    // uint8_t counter = CLEAR; 
+    // static uint8_t flipper = CLEAR; 
+    // static uint16_t timer = 0x48B8; 
+    // static uint8_t blink = 0; 
 
-    // M8Q data 
-    uint16_t lat_deg_min = CLEAR; 
-    uint32_t lat_min_frac = CLEAR; 
-    volatile uint8_t NS = CLEAR; 
-    uint16_t lon_deg_min = CLEAR; 
-    uint32_t lon_min_frac = CLEAR; 
-    volatile uint8_t EW = CLEAR; 
-    volatile uint16_t navstat = CLEAR; 
-    uint8_t utc_time[BYTE_9]; 
-    uint8_t utc_date[BYTE_6]; 
+    // // M8Q data 
+    // uint16_t lat_deg_min = CLEAR; 
+    // uint32_t lat_min_frac = CLEAR; 
+    // volatile uint8_t NS = CLEAR; 
+    // uint16_t lon_deg_min = CLEAR; 
+    // uint32_t lon_min_frac = CLEAR; 
+    // volatile uint8_t EW = CLEAR; 
+    // volatile uint16_t navstat = CLEAR; 
+    // uint8_t utc_time[BYTE_9]; 
+    // uint8_t utc_date[BYTE_6]; 
 
 #endif   // M8Q_TEST_LOCATION 
 
@@ -521,50 +534,134 @@ void m8q_test_app()
     //              in a circle. Check for a GPS connection continuously - if lost 
     //              then revert to not connected state - preserve waypoint index. 
 
-    while (TRUE)
-    {
-        if (m8q_get_tx_ready())
-        {
-            // Read the data 
-            m8q_read(); 
-            counter++; 
+    //==================================================
+    // New code 
 
-            // Blink the board LED for visual feedback 
-            blink = GPIO_HIGH - blink; 
-            gpio_write(GPIOA, GPIOX_PIN_5, blink); 
-        }
-        else
+    // Local variables 
+    uint8_t run = CLEAR; 
+    double lat_current = CLEAR; 
+    double lon_current = CLEAR; 
+    int16_t radius = CLEAR; 
+    static uint8_t waypoint_index = CLEAR; 
+    static uint8_t waypoint_status = SET_BIT; 
+
+    // Device will update once per second 
+    while (m8q_get_tx_ready())
+    {
+        m8q_read(); 
+        run++; 
+    }
+
+    // New data to work with 
+    if (run)
+    {
+        // Check the connection status 
+        if (m8q_get_navstat() == M8Q_NAVSTAT_G3)
         {
-            if (counter == 2)
+            // GPS connection 
+
+            // Get the updated location 
+            lat_current = m8q_get_lat(); 
+            lon_current = m8q_get_long(); 
+
+            // Read waypoint if needed 
+            if (waypoint_status)
             {
-                // m8q_get_lat(&lat_deg_min, &lat_min_frac); 
-                // NS = m8q_get_NS(); 
-                // m8q_get_long(&lon_deg_min, &lon_min_frac); 
-                // EW = m8q_get_EW(); 
-                // navstat = m8q_get_navstat(); 
-                // m8q_get_time(utc_time); 
-                // m8q_get_date(utc_date); 
-                // counter = 0; 
+                waypoint.lat = waypoints[waypoint_index].lat; 
+                waypoint.lon = waypoints[waypoint_index].lon; 
+
+                waypoint_status = CLEAR; 
+
+                // Adjust waypoint index 
+                if (++waypoint_index == M8Q_TEST_NUM_WAYPOINTS)
+                {
+                    waypoint_index = CLEAR; 
+                }
             }
-            break; 
+
+            // Update GPS radius 
+            radius = m8q_test_gps_rad(
+                lat_current, 
+                lon_current, 
+                waypoint.lat, 
+                waypoint.lon); 
+
+            // Display the radius to the screen 
+            snprintf(screen_msg, 20, "Radius: %um   ", radius); 
+            hd44780u_line_set(HD44780U_L1, screen_msg, HD44780U_CURSOR_NO_OFFSET); 
+            hd44780u_cursor_pos(HD44780U_START_L1, HD44780U_CURSOR_NO_OFFSET);
+            hd44780u_send_line(HD44780U_L1); 
+
+            // Check the radius - if less than 10 meters (scaled by 10 --> 10*10) 
+            if (radius < 100)
+            {
+                // Indicate that a new waypoint needs to be read 
+                waypoint_status = SET_BIT; 
+            }
+        }
+        else 
+        {
+            // No GPS connection 
+
+            // Display status on screen 
+            hd44780u_clear(); 
+            hd44780u_line_set(HD44780U_L1, "No connection", HD44780U_CURSOR_NO_OFFSET); 
+            hd44780u_cursor_pos(HD44780U_START_L1, HD44780U_CURSOR_NO_OFFSET);
+            hd44780u_send_line(HD44780U_L1); 
         }
     }
 
-    // Toggle the EXTINT pin to set low power mode 
-    if (!(--timer))
-    {
-        m8q_set_low_power(flipper); 
-        flipper = GPIO_HIGH - flipper; 
-        timer = 0x68B8; 
-        tim_delay_ms(TIM9, 150);  // Give time for the receiver to startup from sleep mode 
+    //==================================================
 
-        // The following line of code was needed in order for the TX_READY input pin to start 
-        // functioning normally again after low power mode. Make this part of a state when 
-        // returning from low power mode.  
-        if (!flipper) while (!(m8q_read())); 
-    }
+    //==================================================
+    // Old code - to be replaced 
 
-    tim_delay_ms(TIM9, 1); 
+    // while (TRUE)
+    // {
+    //     if (m8q_get_tx_ready())
+    //     {
+    //         // Read the data 
+    //         m8q_read(); 
+    //         counter++; 
+
+    //         // Blink the board LED for visual feedback 
+    //         blink = GPIO_HIGH - blink; 
+    //         gpio_write(GPIOA, GPIOX_PIN_5, blink); 
+    //     }
+    //     else
+    //     {
+    //         if (counter == 2)
+    //         {
+    //             // m8q_get_lat(&lat_deg_min, &lat_min_frac); 
+    //             // NS = m8q_get_NS(); 
+    //             // m8q_get_long(&lon_deg_min, &lon_min_frac); 
+    //             // EW = m8q_get_EW(); 
+    //             // navstat = m8q_get_navstat(); 
+    //             // m8q_get_time(utc_time); 
+    //             // m8q_get_date(utc_date); 
+    //             // counter = 0; 
+    //         }
+    //         break; 
+    //     }
+    // }
+
+    // // Toggle the EXTINT pin to set low power mode 
+    // if (!(--timer))
+    // {
+    //     m8q_set_low_power(flipper); 
+    //     flipper = GPIO_HIGH - flipper; 
+    //     timer = 0x68B8; 
+    //     tim_delay_ms(TIM9, 150);  // Give time for the receiver to startup from sleep mode 
+
+    //     // The following line of code was needed in order for the TX_READY input pin to start 
+    //     // functioning normally again after low power mode. Make this part of a state when 
+    //     // returning from low power mode.  
+    //     if (!flipper) while (!(m8q_read())); 
+    // }
+
+    // tim_delay_ms(TIM9, 1); 
+    
+    //==================================================
 
 #endif   // M8Q_TEST_LOCATION 
 
@@ -579,9 +676,40 @@ void m8q_test_app()
 #if M8Q_TEST_LOCATION 
 
 // GPS coordinate radius check - calculate surface distance and compare to threshold 
-uint8_t m8q_test_gps_rad(void)
+int16_t m8q_test_gps_rad(
+    double lat1, 
+    double lon1, 
+    double lat2, 
+    double lon2)
 {
-    // 
+    // Local variables 
+    int16_t gps_rad = CLEAR; 
+    double surf_dist = CLEAR; 
+    double eq1, eq2, eq3, eq4, eq5; 
+    double deg_to_rad = 3.14159/180.0; 
+    double pi_over_2 = 3.14159/2.0; 
+    double earth_rad = 6371.0; 
+    double km_to_m = 1000.0; 
+
+    // Convert coordinates to radians 
+    lat1 *= deg_to_rad; 
+    lon1 *= deg_to_rad; 
+    lat2 *= deg_to_rad; 
+    lon2 *= deg_to_rad; 
+
+    eq1 = cos(pi_over_2 - lat2)*sin(lon2 - lon1); 
+    eq2 = cos(pi_over_2 - lat1)*sin(pi_over_2 - lat2); 
+    eq3 = sin(pi_over_2 - lat1)*cos(pi_over_2 - lat2)*cos(lon2 - lon1); 
+    eq4 = sin(pi_over_2 - lat1)*sin(pi_over_2 - lat2); 
+    eq5 = cos(pi_over_2 - lat1)*cos(pi_over_2 - lat2)*cos(lon2 - lon1); 
+
+    // atan2 is used because it produces an angle between +/-180 (pi) and the central angle 
+    // should always be positive and never greater than 180 
+    surf_dist = atan2(sqrt((eq2 - eq3)*(eq2 - eq3) + (eq1*eq1)), (eq4 + eq5)) * 
+                earth_rad*km_to_m; 
+    gps_rad = (int16_t)(surf_dist*10); 
+
+    return gps_rad; 
 }
 
 #endif   // M8Q_TEST_LOCATION 
