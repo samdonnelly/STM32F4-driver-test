@@ -42,6 +42,11 @@
 
 // Location testing 
 #define M8Q_TEST_NUM_WAYPOINTS 4  // Number of waypoints for location testing 
+#define M8Q_TEST_CALC_SCALE 10    // Scalar for calculated data 
+#define M8Q_TEST_PI_RAD 3.14159   // PI 
+#define M8Q_TEST_180_DEG 180      // 180 degrees 
+#define M8Q_TEST_EARTH_RAD 6371   // Earch average radius (km) 
+#define M8Q_TEST_KM_TO_M 1000     // Km to m conversion 
 
 //=======================================================================================
 

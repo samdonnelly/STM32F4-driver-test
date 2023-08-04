@@ -26,13 +26,13 @@
 /**
  * @brief User command input prompt 
  */
-void hd44780u_cmd_prompt(void); 
+void smt_cmd_prompt(void); 
 
 
 /**
  * @brief Setter argument input prompt 
  */
-void hd44780u_arg_prompt(void); 
+void smt_arg_prompt(void); 
 
 //================================================================================
 
@@ -89,7 +89,7 @@ void state_machine_init(
     memset((void *)test_params.user_input, CLEAR, STATE_USER_TEST_INPUT); 
 
     // Display the first user input prompt 
-    hd44780u_cmd_prompt(); 
+    smt_cmd_prompt(); 
 }
 
 
@@ -197,8 +197,8 @@ void state_machine_test(
     // Display the user interface as needed 
     if (test_params.display_flag)
     {
-        if (test_params.arg_flag) hd44780u_arg_prompt(); 
-        else hd44780u_cmd_prompt(); 
+        if (test_params.arg_flag) smt_arg_prompt(); 
+        else smt_cmd_prompt(); 
         test_params.display_flag = CLEAR; 
     }
     else if (test_params.display_mask)
@@ -211,7 +211,7 @@ void state_machine_test(
 
 
 // Command input prompt 
-void hd44780u_cmd_prompt(void)
+void smt_cmd_prompt(void)
 {
     uart_send_new_line(USART2); 
     uart_sendstring(USART2, "cmd >>> "); 
@@ -219,7 +219,7 @@ void hd44780u_cmd_prompt(void)
 
 
 // Argument input prompt 
-void hd44780u_arg_prompt(void)
+void smt_arg_prompt(void)
 {
     uart_send_new_line(USART2); 
     uart_sendstring(USART2, "arg >>> "); 
