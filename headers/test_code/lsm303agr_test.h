@@ -20,6 +20,9 @@
 
 #include "includes_drivers.h"
 
+// Test code 
+#include "m8q_test.h"            // Included for coordinate calculation functions 
+
 //=======================================================================================
 
 
@@ -27,15 +30,16 @@
 // Macros 
 
 // Conditional compilation 
-#define LSM303AGR_TEST_HEADING 0          // Heading (compass) test 
-#define LSM303AGR_TEST_AXIS 0             // Magnetometer axis values 
-#define LSM303AGR_TEST_NAV 1              // Navigating with compass test 
+#define LSM303AGR_TEST_HEADING 0          // Heading with magnetometer as a compass 
+#define LSM303AGR_TEST_AXIS 0             // Magnetometer axis readings 
+#define LSM303AGR_TEST_NAV 1              // Navigating with magnetometer as a compass 
+#define LSM303AGR_TEST_SCREEN 1           // HD44780U screen on same I2C bus as device 
 
-// Calculation 
-#define LSM303AGR_TEST_EARTH_R 6371       // Average Earch radius (km) 
-#define LSM303AGR_TEST_KM_TO_M 1000       // Km and m scaler 
-#define LSM303AGR_TEST_SURF_DIST 10       // Surface distance threshold (m) 
-#define LSM303AGR_TEST_90DEG 3.14159/2    // PI/2 
+// Mavigation test 
+#define LSM303AGR_TEST_NUM_DIRS 8         // Number of directions of heading offset calcs 
+#define LSM303AGR_TEST_NUM_WAYPOINTS 5    // Number of waypoints for location testing 
+#define LSM303AGR_TEST_M_READ_INT 200000  // Magnetometer read interval (us) 
+#define LSM303AGR_TEST_GPS_RAD 50         // GPS radius threshold (m*10) 
 
 //=======================================================================================
 

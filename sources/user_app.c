@@ -24,6 +24,5 @@
 void user_app()
 {
     // Looped code here 
-    // lsm303agr_test_app(); 
-    m8q_test_app(); 
+    lsm303agr_test_app(); 
 }
