@@ -21,57 +21,6 @@
 
 
 //=======================================================================================
-// Function prototypes 
-
-#if M8Q_TEST_LOCATION 
-
-/**
- * @brief GPS coordinate radius check 
- * 
- * @details Calculates the surface distance between the devices current location and the 
- *          target waypoint. The distance is returned in meters*10 (meters = radius/10). 
- *          The central angle between the devices location and the waypoint is found and
- *          used along with the average Earth radius to calculate the surface distance. 
- * 
- * @param lat1 : current device latitude 
- * @param lon1 : current device longitude 
- * @param lat2 : target waypoint latitude 
- * @param lon2 : target waypoint longitude 
- * @return int16_t : scaled surface distance between location and waypoint 
- */
-int16_t m8q_test_gps_rad(
-    double lat1, 
-    double lon1, 
-    double lat2, 
-    double lon2); 
-
-
-/**
- * @brief GPS heading calculation 
- * 
- * @details Calculates the heading between the current device location and the target 
- *          waypoint. The heading is an angle between 0-359.9 degrees from true North in 
- *          the clockwise direction. The return value is the heading expressed in 
- *          degrees*10. 
- * 
- * @param lat1 : current device latitude 
- * @param lon1 : current device longitude 
- * @param lat2 : target waypoint latitude 
- * @param lon2 : target waypoint longitude 
- * @return int16_t : scaled 0-360 degree true North heading 
- */
-int16_t m8q_test_gps_heading(
-    double lat1, 
-    double lon1, 
-    double lat2, 
-    double lon2); 
-
-#endif   // M8Q_TEST_LOCATION 
-
-//=======================================================================================
-
-
-//=======================================================================================
 // Global varaibles 
 
 #if M8Q_CONTROLLER_TEST
@@ -647,8 +596,6 @@ void m8q_test_app()
 //=======================================================================================
 // Test functions 
 
-#if M8Q_TEST_LOCATION 
-
 // GPS coordinate radius check - calculate surface distance and compare to threshold 
 int16_t m8q_test_gps_rad(
     double lat1, 
@@ -658,7 +605,7 @@ int16_t m8q_test_gps_rad(
 {
     // Local variables 
     int16_t gps_rad = CLEAR; 
-    double surf_dist = CLEAR; 
+    static double surf_dist = CLEAR; 
     double eq1, eq2, eq3, eq4, eq5; 
     double deg_to_rad = M8Q_TEST_PI_RAD/M8Q_TEST_180_DEG; 
     double pi_over_2 = M8Q_TEST_PI_RAD/2.0; 
@@ -677,10 +624,11 @@ int16_t m8q_test_gps_rad(
     eq4 = sin(pi_over_2 - lat1)*sin(pi_over_2 - lat2); 
     eq5 = cos(pi_over_2 - lat1)*cos(pi_over_2 - lat2)*cos(lon2 - lon1); 
 
-    // atan2 is used because it produces an angle between +/-180 (pi) and the central angle 
-    // should always be positive and never greater than 180 
-    surf_dist = atan2(sqrt((eq2 - eq3)*(eq2 - eq3) + (eq1*eq1)), (eq4 + eq5)) * 
-                earth_rad*km_to_m; 
+    // atan2 is used because it produces an angle between +/-180 (pi). The central angle 
+    // should always be positive and never greater than 180. 
+    // Calculate the radius using a low pass filter to smooth the data. 
+    surf_dist += ((atan2(sqrt((eq2 - eq3)*(eq2 - eq3) + (eq1*eq1)), (eq4 + eq5)) * 
+                 earth_rad*km_to_m) - surf_dist)*M8Q_TEST_RADIUS_GAIN; 
     gps_rad = (int16_t)(surf_dist*M8Q_TEST_CALC_SCALE); 
 
     return gps_rad; 
@@ -696,7 +644,7 @@ int16_t m8q_test_gps_heading(
 {
     // Local variables 
     int16_t heading = CLEAR; 
-    double heading_temp = CLEAR; 
+    static double heading_temp = CLEAR; 
     double num, den; 
     double deg_to_rad = M8Q_TEST_PI_RAD/M8Q_TEST_180_DEG; 
 
@@ -710,8 +658,9 @@ int16_t m8q_test_gps_heading(
     num = cos(lat2)*sin(lon2-lon1); 
     den = cos(lat1)*sin(lat2) - sin(lat1)*cos(lat2)*cos(lon2-lon1); 
 
-    // Calculate the heading 
-    heading_temp = atan(num/den); 
+    // Calculate the heading between coordinates. 
+    // A low pass filter is used to smooth the data. 
+    heading_temp += (atan(num/den) - heading_temp)*M8Q_TEST_HEADING_GAIN; 
 
     // Convert heading to degrees 
     heading = (int16_t)(heading_temp*M8Q_TEST_CALC_SCALE/deg_to_rad); 
@@ -728,7 +677,5 @@ int16_t m8q_test_gps_heading(
 
     return heading; 
 }
-
-#endif   // M8Q_TEST_LOCATION 
 
 //=======================================================================================

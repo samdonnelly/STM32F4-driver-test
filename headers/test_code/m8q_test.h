@@ -31,22 +31,24 @@
 // Macros 
 
 // Conditional compilation 
-#define M8Q_CONTROLLER_TEST 0     // Choose between driver and controller test code 
-#define M8Q_MSG_COUNT 0           // Code that counts and prints number of incoming messages 
-#define M8Q_DATA_CHECK 0          // Code that checks the data size available 
-#define M8Q_TEST_LOCATION 1       // Code for testing positioning against waypoints 
+#define M8Q_CONTROLLER_TEST 0        // Choose between driver and controller test code 
+#define M8Q_MSG_COUNT 0              // Code that counts and prints number of incoming messages 
+#define M8Q_DATA_CHECK 0             // Code that checks the data size available 
+#define M8Q_TEST_LOCATION 1          // Code for testing positioning against waypoints 
 
 // Controller testing 
-#define M8Q_NUM_USER_CMDS 17      // Number of defined user commands 
-#define M8Q_MAX_SETTER_ARGS 1     // Maximum arguments of all function pointer below 
+#define M8Q_NUM_USER_CMDS 17         // Number of defined user commands 
+#define M8Q_MAX_SETTER_ARGS 1        // Maximum arguments of all function pointer below 
 
 // Location testing 
-#define M8Q_TEST_NUM_WAYPOINTS 4  // Number of waypoints for location testing 
-#define M8Q_TEST_CALC_SCALE 10    // Scalar for calculated data 
-#define M8Q_TEST_PI_RAD 3.14159   // PI 
-#define M8Q_TEST_180_DEG 180      // 180 degrees 
-#define M8Q_TEST_EARTH_RAD 6371   // Earch average radius (km) 
-#define M8Q_TEST_KM_TO_M 1000     // Km to m conversion 
+#define M8Q_TEST_NUM_WAYPOINTS 4     // Number of waypoints for location testing 
+#define M8Q_TEST_CALC_SCALE 10       // Scalar for calculated data 
+#define M8Q_TEST_PI_RAD 3.14159      // PI 
+#define M8Q_TEST_180_DEG 180         // 180 degrees 
+#define M8Q_TEST_EARTH_RAD 6371      // Earch average radius (km) 
+#define M8Q_TEST_KM_TO_M 1000        // Km to m conversion 
+#define M8Q_TEST_HEADING_GAIN 0.5    // GPS heading low pass filter gain 
+#define M8Q_TEST_RADIUS_GAIN 0.5     // GPS radius low pass filter gain 
 
 //=======================================================================================
 
@@ -173,6 +175,48 @@ void m8q_test_init(void);
  * @brief M8Q test code 
  */
 void m8q_test_app(void); 
+
+
+/**
+ * @brief GPS coordinate radius check 
+ * 
+ * @details Calculates the surface distance between the devices current location and the 
+ *          target waypoint. The distance is returned in meters*10 (meters = radius/10). 
+ *          The central angle between the devices location and the waypoint is found and
+ *          used along with the average Earth radius to calculate the surface distance. 
+ * 
+ * @param lat1 : current device latitude 
+ * @param lon1 : current device longitude 
+ * @param lat2 : target waypoint latitude 
+ * @param lon2 : target waypoint longitude 
+ * @return int16_t : scaled surface distance between location and waypoint 
+ */
+int16_t m8q_test_gps_rad(
+    double lat1, 
+    double lon1, 
+    double lat2, 
+    double lon2); 
+
+
+/**
+ * @brief GPS heading calculation 
+ * 
+ * @details Calculates the heading between the current device location and the target 
+ *          waypoint. The heading is an angle between 0-359.9 degrees from true North in 
+ *          the clockwise direction. The return value is the heading expressed in 
+ *          degrees*10. 
+ * 
+ * @param lat1 : current device latitude 
+ * @param lon1 : current device longitude 
+ * @param lat2 : target waypoint latitude 
+ * @param lon2 : target waypoint longitude 
+ * @return int16_t : scaled 0-360 degree true North heading 
+ */
+int16_t m8q_test_gps_heading(
+    double lat1, 
+    double lon1, 
+    double lat2, 
+    double lon2); 
 
 //=======================================================================================
 
