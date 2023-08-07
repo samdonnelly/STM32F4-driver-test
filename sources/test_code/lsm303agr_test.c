@@ -53,6 +53,18 @@ int16_t lsm303agr_test_heading_error(
     int16_t heading_desired, 
     int16_t heading_current); 
 
+
+/**
+ * @brief Motor controller 
+ * 
+ * @details 
+ * 
+ * @param error 
+ * @return int16_t 
+ */
+int16_t lsm303agr_test_pid(
+    int16_t error); 
+
 //=======================================================================================
 
 
@@ -120,6 +132,13 @@ typedef struct lsm303agr_test_nav_s
     int16_t mag_heading; 
     uint8_t waypoint_index; 
     uint8_t waypoint_status; 
+
+    // PID controller 
+    int16_t kp;                            // Proportional control constant 
+    int16_t ki;                            // Integral control constant 
+    int16_t kd;                            // Derivative control constant 
+    int16_t err_sum;                       // Sum of errors - for integral 
+    int16_t err_prev;                      // Previous error - for derivative 
 }
 lsm303agr_test_nav_t; 
 
@@ -220,6 +239,9 @@ void lsm303agr_test_init(void)
     lsm303agr_test_nav.mag_heading = CLEAR; 
     lsm303agr_test_nav.waypoint_index = CLEAR; 
     lsm303agr_test_nav.waypoint_status = SET_BIT; 
+    lsm303agr_test_nav.kp = LSM303AGR_TEST_KP; 
+    lsm303agr_test_nav.ki = LSM303AGR_TEST_KI; 
+    lsm303agr_test_nav.kd = LSM303AGR_TEST_KD; 
 
     //===================================================
 
@@ -557,5 +579,54 @@ int16_t lsm303agr_test_heading_error(
 
 
 // Motor controller - called after every heading update 
+int16_t lsm303agr_test_pid(
+    int16_t error)
+{
+    // Local variables 
+    int16_t proportional = CLEAR; 
+    int16_t integral = CLEAR; 
+    int16_t derivative = CLEAR; 
+
+    //==================================================
+    // Proportional 
+
+    // Calculate the proportional portion 
+    proportional = LSM303AGR_TEST_KP*error; 
+    
+    //==================================================
+
+    //==================================================
+    // Integral 
+
+    // Integrate the error 
+    lsm303agr_test_nav.err_sum += error; 
+
+    // Cap the error if it is too large 
+    if (lsm303agr_test_nav.err_sum > 1800)
+    {
+        lsm303agr_test_nav.err_sum = 1800; 
+    }
+    else if (lsm303agr_test_nav.err_sum < -1800)
+    {
+        lsm303agr_test_nav.err_sum = -1800; 
+    }
+
+    // Calculate the integral portion 
+    integral = lsm303agr_test_nav.err_sum * LSM303AGR_TEST_KI; 
+    
+    //==================================================
+
+    //==================================================
+    // Derivative 
+
+    // Calculate the derivative portion 
+    derivative = LSM303AGR_TEST_KP*(error - lsm303agr_test_nav.err_prev); 
+    lsm303agr_test_nav.err_prev = error; 
+    
+    //==================================================
+
+    // PID output 
+    return proportional + integral + derivative; 
+}
 
 //=======================================================================================

@@ -40,6 +40,9 @@
 #define LSM303AGR_TEST_NUM_WAYPOINTS 5    // Number of waypoints for location testing 
 #define LSM303AGR_TEST_M_READ_INT 200000  // Magnetometer read interval (us) 
 #define LSM303AGR_TEST_GPS_RAD 50         // GPS radius threshold (m*10) 
+#define LSM303AGR_TEST_KP 1               // Proportional control constant 
+#define LSM303AGR_TEST_KI 0               // Integral control constant 
+#define LSM303AGR_TEST_KD 0               // Derivative control constant 
 
 //=======================================================================================
 
