@@ -143,6 +143,11 @@ typedef struct lsm303agr_test_nav_s
     int16_t kd;                            // Derivative control constant 
     int16_t err_sum;                       // Sum of errors - for integral 
     int16_t err_prev;                      // Previous error - for derivative 
+
+    // PWM output 
+    int16_t pid_out;                       // PID controller output 
+    uint16_t m1_pwm_cnt;                   // Motor 1 PWM counter transition 
+    uint16_t m2_pwm_cnt;                   // Motor 2 PWM counter transition 
 }
 lsm303agr_test_nav_t; 
 
@@ -246,6 +251,11 @@ void lsm303agr_test_init(void)
     lsm303agr_test_nav.kp = LSM303AGR_TEST_KP; 
     lsm303agr_test_nav.ki = LSM303AGR_TEST_KI; 
     lsm303agr_test_nav.kd = LSM303AGR_TEST_KD; 
+    lsm303agr_test_nav.err_sum = CLEAR; 
+    lsm303agr_test_nav.err_prev = CLEAR; 
+    lsm303agr_test_nav.pid_out = CLEAR; 
+    lsm303agr_test_nav.m1_pwm_cnt = LSM303AGR_TEST_PWM_N + LSM303AGR_TEST_PWM_BASE; 
+    lsm303agr_test_nav.m2_pwm_cnt = LSM303AGR_TEST_PWM_N - LSM303AGR_TEST_PWM_BASE; 
 
     //===================================================
 
@@ -377,7 +387,14 @@ void lsm303agr_test_app(void)
         lsm303agr_test_nav.heading_error = 
             lsm303agr_test_heading_error(lsm303agr_test_nav.gps_heading, 
                                          lsm303agr_test_nav.mag_heading); 
-            
+
+        // Calculate the motor PWM output 
+        lsm303agr_test_nav.pid_out = 
+            (lsm303agr_test_pid(lsm303agr_test_nav.heading_error) >> SHIFT_5); 
+        lsm303agr_test_nav.m1_pwm_cnt = 
+            LSM303AGR_TEST_PWM_N + LSM303AGR_TEST_PWM_BASE + lsm303agr_test_nav.pid_out; 
+        lsm303agr_test_nav.m2_pwm_cnt = 
+            LSM303AGR_TEST_PWM_N - LSM303AGR_TEST_PWM_BASE + lsm303agr_test_nav.pid_out; 
     }
 
     // Once there is data available on the device, read all messages. The device will 
@@ -462,18 +479,38 @@ void lsm303agr_test_app(void)
             snprintf(
                 lsm303agr_test_nav.screen_msg, 
                 HD44780U_LINE_LEN, 
-                "GPS: %udeg    ", 
-                lsm303agr_test_nav.gps_heading); 
+                "ERR: %ddeg    ", 
+                lsm303agr_test_nav.heading_error); 
             hd44780u_line_set(
                 HD44780U_L2, 
                 lsm303agr_test_nav.screen_msg, 
                 HD44780U_CURSOR_NO_OFFSET); 
 
+            // snprintf(
+            //     lsm303agr_test_nav.screen_msg, 
+            //     HD44780U_LINE_LEN, 
+            //     "GPS: %udeg    ", 
+            //     lsm303agr_test_nav.gps_heading); 
+            // hd44780u_line_set(
+            //     HD44780U_L3, 
+            //     lsm303agr_test_nav.screen_msg, 
+            //     HD44780U_CURSOR_NO_OFFSET); 
+
+            // snprintf(
+            //     lsm303agr_test_nav.screen_msg, 
+            //     HD44780U_LINE_LEN, 
+            //     "MAG: %udeg    ", 
+            //     lsm303agr_test_nav.mag_heading); 
+            // hd44780u_line_set(
+            //     HD44780U_L4, 
+            //     lsm303agr_test_nav.screen_msg, 
+            //     HD44780U_CURSOR_NO_OFFSET); 
+            
             snprintf(
                 lsm303agr_test_nav.screen_msg, 
                 HD44780U_LINE_LEN, 
-                "MAG: %udeg    ", 
-                lsm303agr_test_nav.mag_heading); 
+                "M1:  %u", 
+                lsm303agr_test_nav.m1_pwm_cnt); 
             hd44780u_line_set(
                 HD44780U_L3, 
                 lsm303agr_test_nav.screen_msg, 
@@ -482,8 +519,8 @@ void lsm303agr_test_app(void)
             snprintf(
                 lsm303agr_test_nav.screen_msg, 
                 HD44780U_LINE_LEN, 
-                "ERR: %ddeg    ", 
-                lsm303agr_test_nav.heading_error); 
+                "M2:  %u", 
+                lsm303agr_test_nav.m2_pwm_cnt); 
             hd44780u_line_set(
                 HD44780U_L4, 
                 lsm303agr_test_nav.screen_msg, 
