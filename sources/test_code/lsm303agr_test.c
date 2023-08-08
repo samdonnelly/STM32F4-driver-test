@@ -33,9 +33,13 @@
 /**
  * @brief Get the true North heading 
  * 
- * @details 
+ * @details Reads the heading from the magnetometer and adds the true North heading offset 
+ *          stored in 'mag_tn_correction' (global variable below). After the offset is 
+ *          added the heading is checked to see if it is outside the acceptable heading 
+ *          range (0-359.9 degrees) and if it is then it's corrected to be withing range 
+ *          (ex. 365 degrees gets corrected to 5 degrees which is the same thing). 
  * 
- * @return int16_t 
+ * @return int16_t : True North heading 
  */
 int16_t lsm303agr_test_heading(void); 
 
