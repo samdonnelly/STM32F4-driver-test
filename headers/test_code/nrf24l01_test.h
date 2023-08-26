@@ -28,7 +28,9 @@
 
 // Conditional compilation 
 // Test RF module and SD card on same SPI bus but multiple SPI pins 
-#define NRF24L01_DEV1_EN 0       // Device 1 enable --> opposite of this is used for device 2 
+#define NRF24L01_DEV1_EN 0       // Device 1 enable 
+#define NRF24L01_DEV2_EN 0       // Device 2 enable 
+#define NRF24L01_HEARTBEAT 0     // Heartbeat test code 
 
 //=======================================================================================
 
