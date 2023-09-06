@@ -90,6 +90,7 @@ void timers_test_init()
         GPIOC, 
         PIN_6, 
         TIM_DIR_UP, 
+        CLEAR, 
         PWM_ARR, 
         TIM_OCM_PWM1, 
         TIM_OCPE_ENABLE, 
