@@ -35,6 +35,9 @@
 #define ESC_FWD_SPEED_LIM 1600      // Forward PWM pulse time limit (us) 
 #define ESC_REV_SPEED_LIM 1400      // Reverse PWM pulse time limit (us) 
 
+// User input 
+#define ESC_INPUT_BUF_LEN 5         // User input buffer length 
+
 //=======================================================================================
 
 

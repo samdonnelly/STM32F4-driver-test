@@ -27,11 +27,28 @@
 
 //=======================================================================================
 // Function prototypes 
+
+/**
+ * @brief User input check and conversion 
+ * 
+ * @param input_buff : stores to raw user input 
+ * @param input_num : stores the converted number input 
+ * @return uint8_t : status of the input check --> TRUE : valid, FALSE : invalid 
+ */
+uint8_t esc_test_input_check(
+    char *input_buff, 
+    uint32_t *input_num); 
+
 //=======================================================================================
 
 
 //=======================================================================================
 // Global variables 
+
+// User data 
+static char cmd_buff[ESC_INPUT_BUF_LEN]; 
+static uint32_t pwm_input; 
+
 //=======================================================================================
 
 
@@ -76,6 +93,9 @@ void esc_readytosky_test_init(void)
 
     tim_enable(TIM3); 
 
+    // Set the initial PWM value 
+    tim_ccr(TIM3, ESC_NEUTRAL_TIME, TIM_CHANNEL_4); 
+
 #else   // ESC_PARAM_ID 
 
     // ESC driver setup 
@@ -109,6 +129,22 @@ void esc_readytosky_test_init(void)
     tim_enable(TIM3); 
 
 #endif   // ESC_PARAM_ID 
+
+    //===================================================
+    // Variable init 
+
+    memset((void *)cmd_buff, CLEAR, sizeof(cmd_buff)); 
+    pwm_input = CLEAR; 
+
+    //===================================================
+
+    //===================================================
+    // User init 
+
+    // Send a user prompt to the terminal 
+    uart_sendstring(USART2, ">>> "); 
+
+    //===================================================
 }
 
 //=======================================================================================
@@ -121,8 +157,42 @@ void esc_readytosky_test_app(void)
 {
     // Local variables 
 
-    // Ready UART user input 
-    // If new input date then update output 
+    // Check if data is available to be read 
+    if (uart_data_ready(USART2))
+    {
+        // Read the available data 
+        uart_getstr(USART2, cmd_buff, ESC_INPUT_BUF_LEN, UART_STR_TERM_CARRIAGE); 
+
+        // Clear the data register of any additional data 
+        while (uart_data_ready(USART2))
+        {
+            uart_clear_dr(USART2); 
+        }
+
+        // Check that the input is a valid number 
+        if (esc_test_input_check(cmd_buff, &pwm_input))
+        {
+            // Compare the input to the allowable input range 
+            if (pwm_input > ESC_FWD_SPEED_LIM)
+            {
+                pwm_input = ESC_FWD_SPEED_LIM; 
+            }
+            else if (pwm_input < ESC_REV_SPEED_LIM)
+            {
+                pwm_input = ESC_REV_SPEED_LIM; 
+            }
+
+            // Update the PWM value 
+            tim_ccr(TIM3, pwm_input, TIM_CHANNEL_4); 
+        }
+        else 
+        {
+            uart_sendstring(USART2, "\r\nInvalid input\r\n"); 
+        }
+
+        // Send a user prompt to the terminal 
+        uart_sendstring(USART2, "\r\n>>> "); 
+    }
 
 #if ESC_PARAM_ID 
 
@@ -143,5 +213,44 @@ void esc_readytosky_test_app(void)
 
 //=======================================================================================
 // Test functions 
-//=======================================================================================
 
+// User input check and conversion 
+uint8_t esc_test_input_check(
+    char *input_buff, 
+    uint32_t *input_num)
+{
+    // Local varaibles 
+    uint8_t input_len = CLEAR; 
+    uint32_t digit = CLEAR; 
+
+    // Clear the previous input number conversion 
+    *input_num = CLEAR; 
+
+    // Check that all the characters are digits and get the input length 
+    for (uint8_t i = 0; i < ESC_INPUT_BUF_LEN; i++)
+    {
+        if (input_buff[i] == NULL_CHAR)
+        {
+            break; 
+        }
+
+        input_len++; 
+
+        // If the character is not a digit then it's an invalid input 
+        if ((input_buff[i] < ZERO_CHAR) && (input_buff[i] > NINE_CHAR))
+        {
+            return FALSE; 
+        }
+    }
+
+    // Convert the input to a number 
+    for (uint8_t i = 0; i < input_len; i++)
+    {
+        digit = (uint32_t)(input_buff[i] - NUM_TO_CHAR_OFFSET); 
+        *input_num += digit*(uint32_t)pow((double)10, (double)(input_len-i-1)); 
+    }
+
+    return TRUE; 
+}
+
+//=======================================================================================
