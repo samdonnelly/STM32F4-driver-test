@@ -55,7 +55,8 @@
 			"uart_comm.h": "c",
 			"cmath": "cpp",
 			"lsm303agr_a_driver.h": "c",
-			"math.h": "c"
+			"math.h": "c",
+			"esc_readytosky_test.h": "c"
 		}
 	}
 }
