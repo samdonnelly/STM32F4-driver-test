@@ -71,6 +71,14 @@ void esc_readytosky_test_init(void)
         PIN_2, 
         UART_BAUD_9600, 
         UART_CLOCK_42); 
+
+    // General purpose timer 
+    tim_9_to_11_counter_init(
+        TIM9, 
+        TIM_84MHZ_1US_PSC, 
+        0xFFFF,  // Max ARR value 
+        TIM_UP_INT_DISABLE); 
+    tim_enable(TIM9); 
     
     //===================================================
 
@@ -94,7 +102,8 @@ void esc_readytosky_test_init(void)
     tim_enable(TIM3); 
 
     // Set the initial PWM value 
-    tim_ccr(TIM3, ESC_NEUTRAL_TIME, TIM_CHANNEL_4); 
+    // tim_ccr(TIM3, ESC_NEUTRAL_TIME, TIM_CHANNEL_4); 
+    tim_ccr(TIM3, CLEAR, TIM_CHANNEL_4); 
 
 #else   // ESC_PARAM_ID 
 
@@ -137,14 +146,6 @@ void esc_readytosky_test_init(void)
     pwm_input = CLEAR; 
 
     //===================================================
-
-    //===================================================
-    // User init 
-
-    // Send a user prompt to the terminal 
-    uart_sendstring(USART2, ">>> "); 
-
-    //===================================================
 }
 
 //=======================================================================================
@@ -157,42 +158,35 @@ void esc_readytosky_test_app(void)
 {
     // Local variables 
 
-    // Check if data is available to be read 
-    if (uart_data_ready(USART2))
+    // Get the info from the user 
+    uart_sendstring(USART2, "\r\n>>> "); 
+    while(!uart_data_ready(USART2)); 
+
+    // Retrieve and format the input 
+    uart_getstr(USART2, cmd_buff, ESC_INPUT_BUF_LEN, UART_STR_TERM_CARRIAGE); 
+
+    // Check that the input is a valid number 
+    if (esc_test_input_check(cmd_buff, &pwm_input))
     {
-        // Read the available data 
-        uart_getstr(USART2, cmd_buff, ESC_INPUT_BUF_LEN, UART_STR_TERM_CARRIAGE); 
+        // // Compare the input to the allowable input range 
+        // if (pwm_input > ESC_FWD_SPEED_LIM)
+        // {
+        //     pwm_input = ESC_FWD_SPEED_LIM; 
+        // }
+        // else if (pwm_input < ESC_REV_SPEED_LIM)
+        // {
+        //     pwm_input = ESC_REV_SPEED_LIM; 
+        // }
 
-        // Clear the data register of any additional data 
-        while (uart_data_ready(USART2))
-        {
-            uart_clear_dr(USART2); 
-        }
-
-        // Check that the input is a valid number 
-        if (esc_test_input_check(cmd_buff, &pwm_input))
-        {
-            // Compare the input to the allowable input range 
-            if (pwm_input > ESC_FWD_SPEED_LIM)
-            {
-                pwm_input = ESC_FWD_SPEED_LIM; 
-            }
-            else if (pwm_input < ESC_REV_SPEED_LIM)
-            {
-                pwm_input = ESC_REV_SPEED_LIM; 
-            }
-
-            // Update the PWM value 
-            tim_ccr(TIM3, pwm_input, TIM_CHANNEL_4); 
-        }
-        else 
-        {
-            uart_sendstring(USART2, "\r\nInvalid input\r\n"); 
-        }
-
-        // Send a user prompt to the terminal 
-        uart_sendstring(USART2, "\r\n>>> "); 
+        // Update the PWM value 
+        tim_ccr(TIM3, pwm_input, TIM_CHANNEL_4); 
     }
+    else 
+    {
+        uart_sendstring(USART2, "\r\nInvalid input\r\n"); 
+    }
+
+    tim_delay_ms(TIM9, 50); 
 
 #if ESC_PARAM_ID 
 
@@ -222,31 +216,33 @@ uint8_t esc_test_input_check(
     // Local varaibles 
     uint8_t input_len = CLEAR; 
     uint32_t digit = CLEAR; 
+    char *buff_ptr = input_buff; 
 
     // Clear the previous input number conversion 
     *input_num = CLEAR; 
 
     // Check that all the characters are digits and get the input length 
-    for (uint8_t i = 0; i < ESC_INPUT_BUF_LEN; i++)
+    for (uint8_t i = 0; i < ESC_INPUT_MAX_LEN; i++)
     {
-        if (input_buff[i] == NULL_CHAR)
+        if (*buff_ptr == CR_CHAR)
         {
             break; 
         }
 
-        input_len++; 
-
         // If the character is not a digit then it's an invalid input 
-        if ((input_buff[i] < ZERO_CHAR) && (input_buff[i] > NINE_CHAR))
+        if ((*buff_ptr < ZERO_CHAR) || (*buff_ptr > NINE_CHAR))
         {
             return FALSE; 
         }
+
+        input_len++; 
+        buff_ptr++; 
     }
 
     // Convert the input to a number 
     for (uint8_t i = 0; i < input_len; i++)
     {
-        digit = (uint32_t)(input_buff[i] - NUM_TO_CHAR_OFFSET); 
+        digit = (uint32_t)(*input_buff++ - NUM_TO_CHAR_OFFSET); 
         *input_num += digit*(uint32_t)pow((double)10, (double)(input_len-i-1)); 
     }
 

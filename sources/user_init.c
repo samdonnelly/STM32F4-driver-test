@@ -24,5 +24,6 @@
 void user_init()
 {
     // Setup code here 
-    nrf24l01_test_init(); 
+    // nrf24l01_test_init(); 
+    esc_readytosky_test_init(); 
 }

@@ -28,7 +28,7 @@
 
 // Conditional compilation 
 #define ESC_PARAM_ID 1              // Parameter identification code - no driver just timers 
-#define ESC_PERIOD 3000             // ESC PWM timer period (auto-reload register) 
+#define ESC_PERIOD 20000            // ESC PWM timer period (auto-reload register) 
 #define ESC_SECOND_DEVICE 0         // Second device code 
 
 // Parameters 
@@ -36,7 +36,8 @@
 #define ESC_REV_SPEED_LIM 1400      // Reverse PWM pulse time limit (us) 
 
 // User input 
-#define ESC_INPUT_BUF_LEN 5         // User input buffer length 
+#define ESC_INPUT_BUF_LEN 15        // User input buffer length 
+#define ESC_INPUT_MAX_LEN 5         // User input max length 
 
 //=======================================================================================
 
