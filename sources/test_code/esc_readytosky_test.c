@@ -37,7 +37,7 @@
  */
 uint8_t esc_test_input_check(
     char *input_buff, 
-    uint32_t *input_num); 
+    int16_t *input_num); 
 
 //=======================================================================================
 
@@ -47,7 +47,9 @@ uint8_t esc_test_input_check(
 
 // User data 
 static char cmd_buff[ESC_INPUT_BUF_LEN]; 
-static uint32_t pwm_input; 
+static int16_t pwm_input; 
+static int16_t dev_num_request; 
+static device_number_t dev_num; 
 
 //=======================================================================================
 
@@ -99,11 +101,10 @@ void esc_readytosky_test_init(void)
         TIM_CCP_AH, 
         TIM_UP_DMA_DISABLE); 
 
-    tim_enable(TIM3); 
-
     // Set the initial PWM value 
-    // tim_ccr(TIM3, ESC_NEUTRAL_TIME, TIM_CHANNEL_4); 
-    tim_ccr(TIM3, CLEAR, TIM_CHANNEL_4); 
+    tim_ccr(TIM3, ESC_NEUTRAL_TIME, TIM_CHANNEL_4); 
+
+    tim_enable(TIM3); 
 
 #else   // ESC_PARAM_ID 
 
@@ -144,6 +145,8 @@ void esc_readytosky_test_init(void)
 
     memset((void *)cmd_buff, CLEAR, sizeof(cmd_buff)); 
     pwm_input = CLEAR; 
+    dev_num_request = CLEAR; 
+    dev_num = DEVICE_ONE; 
 
     //===================================================
 }
@@ -165,41 +168,73 @@ void esc_readytosky_test_app(void)
     // Retrieve and format the input 
     uart_getstr(USART2, cmd_buff, ESC_INPUT_BUF_LEN, UART_STR_TERM_CARRIAGE); 
 
+#if ESC_PARAM_ID 
+
     // Check that the input is a valid number 
     if (esc_test_input_check(cmd_buff, &pwm_input))
     {
-        // // Compare the input to the allowable input range 
-        // if (pwm_input > ESC_FWD_SPEED_LIM)
-        // {
-        //     pwm_input = ESC_FWD_SPEED_LIM; 
-        // }
-        // else if (pwm_input < ESC_REV_SPEED_LIM)
-        // {
-        //     pwm_input = ESC_REV_SPEED_LIM; 
-        // }
+        // Compare the input to the allowable input range 
+        if (pwm_input > ESC_FWD_SPEED_LIM)
+        {
+            pwm_input = ESC_FWD_SPEED_LIM; 
+        }
+        else if (pwm_input < ESC_REV_SPEED_LIM)
+        {
+            pwm_input = ESC_REV_SPEED_LIM; 
+        }
 
         // Update the PWM value 
-        tim_ccr(TIM3, pwm_input, TIM_CHANNEL_4); 
+        tim_ccr(TIM3, (uint32_t)pwm_input, TIM_CHANNEL_4); 
     }
+    
+#else   // ESC_PARAM_ID 
+
+    // Check that the input is a valid number 
+    if (esc_test_input_check(cmd_buff, &pwm_input))
+    {
+        // Write PWM command to ESC/motor 
+        esc_readytosky_send(dev_num, pwm_input); 
+    }
+
+#if ESC_SECOND_DEVICE 
+    
+    // Change the device number if requested 
+    else if (str_compare(cmd_buff, "device", BYTE_0)) 
+    {
+        uart_sendstring(USART2, "\r\ndevice number: "); 
+        while(!uart_data_ready(USART2)); 
+
+        // Retrieve and format the input 
+        uart_getstr(USART2, cmd_buff, ESC_INPUT_BUF_LEN, UART_STR_TERM_CARRIAGE); 
+
+        // Evaluate the input 
+        if (esc_test_input_check(cmd_buff, &dev_num_request)) 
+        {
+            switch (dev_num_request)
+            {
+                case 1: 
+                    dev_num = DEVICE_ONE; 
+                    break; 
+                case 2: 
+                    dev_num = DEVICE_TWO; 
+                    break; 
+                default: 
+                    dev_num = DEVICE_ONE; 
+                    break; 
+            }
+        }
+    }
+
+#endif   // ESC_SECOND_DEVICE 
+
+#endif   // ESC_PARAM_ID 
+    
     else 
     {
         uart_sendstring(USART2, "\r\nInvalid input\r\n"); 
     }
 
     tim_delay_ms(TIM9, 50); 
-
-#if ESC_PARAM_ID 
-
-#else   // ESC_PARAM_ID 
-
-    // Write PWM command to ESC/motor 
-    esc_readytosky_send(); 
-
-#if ESC_SECOND_DEVICE 
-
-#endif   // ESC_SECOND_DEVICE 
-
-#endif   // ESC_PARAM_ID 
 }
 
 //=======================================================================================
@@ -211,18 +246,27 @@ void esc_readytosky_test_app(void)
 // User input check and conversion 
 uint8_t esc_test_input_check(
     char *input_buff, 
-    uint32_t *input_num)
+    int16_t *input_num)
 {
     // Local varaibles 
     uint8_t input_len = CLEAR; 
-    uint32_t digit = CLEAR; 
+    int16_t digit = CLEAR; 
     char *buff_ptr = input_buff; 
+    uint8_t sign = CLEAR; 
 
     // Clear the previous input number conversion 
     *input_num = CLEAR; 
 
+    // Check for a minus sign first 
+    if (*buff_ptr == MINUS_CHAR)
+    {
+        sign++; 
+        buff_ptr++; 
+        input_buff++; 
+    }
+
     // Check that all the characters are digits and get the input length 
-    for (uint8_t i = 0; i < ESC_INPUT_MAX_LEN; i++)
+    for (uint8_t i = 0; i < (ESC_INPUT_MAX_LEN - sign); i++)
     {
         if (*buff_ptr == CR_CHAR)
         {
@@ -240,10 +284,16 @@ uint8_t esc_test_input_check(
     }
 
     // Convert the input to a number 
-    for (uint8_t i = 0; i < input_len; i++)
+    for (uint8_t i = CLEAR; i < input_len; i++)
     {
-        digit = (uint32_t)(*input_buff++ - NUM_TO_CHAR_OFFSET); 
-        *input_num += digit*(uint32_t)pow((double)10, (double)(input_len-i-1)); 
+        digit = (int16_t)(*input_buff++ - NUM_TO_CHAR_OFFSET); 
+        *input_num += digit*(int16_t)pow((double)10, (double)(input_len-i-1)); 
+    }
+
+    // If the input is negative then add a negative sign 
+    if (sign)
+    {
+        *input_num = ~(*input_num) + 1; 
     }
 
     return TRUE; 
