@@ -29,6 +29,23 @@
 // Function prototypes 
 
 #if ESC_CONTROLLER_MODE 
+
+/**
+ * @brief ADC to ESC command mapping 
+ * 
+ * @details Takes the raw ADC value and converts it to a throttle command between -100% 
+ *          (full reverse) and 100% (full forward). Note that there is a deadband in the 
+ *          middle of the ADC values (100-155) that will produce a 0% throttle command. 
+ *          
+ *          NOTE: This mapping is done under the assumption that the ADC is 8-bits - i.e. 
+ *                reads from 0-255. 
+ * 
+ * @param adc_val : ADC input reading (0-255) 
+ * @return int16_t : mapped throttle command to be sent to the ESC driver 
+ */
+int16_t esc_test_adc_mapping(
+    uint16_t adc_val); 
+
 #else   // ESC_CONTROLLER_MODE 
 
 /**
@@ -258,6 +275,9 @@ void esc_readytosky_test_init(void)
 
     //===================================================
 
+    // Start the ADC conversions 
+    adc_start(ADC1); 
+
 #else   // ESC_CONTROLLER_MODE 
 
 #if ESC_PARAM_ID 
@@ -371,11 +391,9 @@ void esc_readytosky_test_app(void)
     //===================================================
     // Manual joystick/knob control of the ESC(s) 
 
-    // Read ADC input 
-
-    // Convert ADC input to a throttle command 
-
-    // Send throttle command to the driver 
+    // Convert the ADC value to a throttle command and send it to the ESC 
+    esc_readytosky_send(DEVICE_ONE, esc_test_adc_mapping(adc_data[0])); 
+    esc_readytosky_send(DEVICE_TWO, esc_test_adc_mapping(adc_data[1])); 
 
 #if ESC_SECOND_DEVICE 
 
@@ -482,6 +500,29 @@ void esc_readytosky_test_app(void)
 // Test functions 
 
 #if ESC_CONTROLLER_MODE 
+
+// ADC to ESC command mapping 
+int16_t esc_test_adc_mapping(
+    uint16_t adc_val)
+{
+    // Local variables 
+    int16_t throttle_cmd = CLEAR;   // Assume 0% throttle and change if different 
+
+    // Check if there is a forward or reverse throttle command 
+    if (adc_val > ESC_ADC_FWD_LIM)
+    {
+        // Forward 
+        throttle_cmd = adc_val - ESC_ADC_FWD_LIM; 
+    }
+    else if (adc_val < ESC_ADC_REV_LIM)
+    {
+        // Reverse 
+        throttle_cmd = adc_val - ESC_ADC_REV_LIM; 
+    }
+
+    return throttle_cmd; 
+}
+
 #else   // ESC_CONTROLLER_MODE 
 
 // User input check and conversion 

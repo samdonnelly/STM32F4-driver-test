@@ -43,6 +43,8 @@
 
 // Data 
 #define ESC_ADC_BUFF_LEN 2          // ADC buffer size 
+#define ESC_ADC_REV_LIM 100         // ADC value reverse command limit 
+#define ESC_ADC_FWD_LIM 155         // ADC value forward command limit 
 
 //=======================================================================================
 
