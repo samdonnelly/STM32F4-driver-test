@@ -27,8 +27,9 @@
 // Macros 
 
 // Conditional compilation 
-#define ESC_PARAM_ID 1              // Parameter identification code - no driver just timers 
-#define ESC_SECOND_DEVICE 0         // Second device code 
+#define ESC_CONTROLLER_MODE 1       // Code to control the ESC via a controller - knobs 
+#define ESC_PARAM_ID 0              // Parameter identification code - no driver just timers 
+#define ESC_SECOND_DEVICE 1         // Second device code 
 
 // Parameters 
 #define ESC_PERIOD 20000            // ESC PWM timer period (auto-reload register) 
@@ -38,6 +39,10 @@
 // User input 
 #define ESC_INPUT_BUF_LEN 15        // User input buffer length 
 #define ESC_INPUT_MAX_LEN 5         // User input max length 
+#define ESC_NUM_TEST_CMDS 2         // Number of user commands available 
+
+// Data 
+#define ESC_ADC_BUFF_LEN 2          // ADC buffer size 
 
 //=======================================================================================
 
