@@ -27,7 +27,7 @@
 // Macros 
 
 // Conditional compilation 
-#define ESC_CONTROLLER_MODE 1       // Code to control the ESC via a controller - knobs 
+#define ESC_CONTROLLER_MODE 0       // Code to control the ESC via a controller - knobs 
 #define ESC_PARAM_ID 0              // Parameter identification code - no driver just timers 
 #define ESC_SECOND_DEVICE 1         // Second device code 
 

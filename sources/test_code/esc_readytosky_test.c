@@ -124,8 +124,8 @@ esc_test_user_cmds_t;
 // User commands 
 static esc_test_user_cmds_t cmd_table[ESC_NUM_TEST_CMDS] = 
 {
-    {"esc1", &esc_test_esc1_select}, 
-    {"esc2", &esc_test_esc2_select} 
+    {"esc1\r", &esc_test_esc1_select}, 
+    {"esc2\r", &esc_test_esc2_select} 
 }; 
 
 #endif   // ESC_SECOND_DEVICE 
