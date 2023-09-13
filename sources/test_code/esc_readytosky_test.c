@@ -60,7 +60,9 @@ uint8_t esc_test_input_check(
     int16_t *input_num); 
 
 #if ESC_PARAM_ID 
+
 #else   // ESC_PARAM_ID 
+
 #if ESC_SECOND_DEVICE 
 
 /**
@@ -88,9 +90,6 @@ void esc_test_esc2_select(void);
 //=======================================================================================
 // Global variables 
 
-// User data 
-static int16_t pwm_input; 
-
 #if ESC_CONTROLLER_MODE 
 
 // Data storage 
@@ -99,9 +98,11 @@ static uint16_t adc_data[ESC_ADC_BUFF_LEN];  // Location for the DMA to store AD
 #else   // ESC_CONTROLLER_MODE 
 
 // User data 
+static int16_t pwm_input; 
 static char cmd_buff[ESC_INPUT_BUF_LEN]; 
 
 #if ESC_PARAM_ID 
+
 #else   // ESC_PARAM_ID 
 
 // User data 
@@ -350,14 +351,13 @@ void esc_readytosky_test_init(void)
     //===================================================
     // Variable init 
 
-    pwm_input = CLEAR; 
-
 #if ESC_CONTROLLER_MODE 
 
     memset((void *)adc_data, CLEAR, sizeof(adc_data)); 
 
 #else   // ESC_CONTROLLER_MODE 
 
+    pwm_input = CLEAR; 
     memset((void *)cmd_buff, CLEAR, sizeof(cmd_buff)); 
 
 #if ESC_PARAM_ID 
@@ -391,13 +391,29 @@ void esc_readytosky_test_app(void)
     //===================================================
     // Manual joystick/knob control of the ESC(s) 
 
-    // Convert the ADC value to a throttle command and send it to the ESC 
-    esc_readytosky_send(DEVICE_ONE, esc_test_adc_mapping(adc_data[0])); 
-    esc_readytosky_send(DEVICE_TWO, esc_test_adc_mapping(adc_data[1])); 
+    // For testing the throttle command value: 
+    uart_sendstring(USART2, "ESC 1 cmd: "); 
+    uart_send_integer(USART2, esc_test_adc_mapping(adc_data[0])); 
+    uart_send_new_line(USART2); 
+
+    // // Convert the ADC value to a throttle command and send it to the ESC 
+    // esc_readytosky_send(DEVICE_ONE, esc_test_adc_mapping(adc_data[0])); 
 
 #if ESC_SECOND_DEVICE 
 
+    // For testing the throttle command value: 
+    uart_sendstring(USART2, "ESC 2 cmd: "); 
+    uart_send_integer(USART2, esc_test_adc_mapping(adc_data[1])); 
+
+    // Go up a line in the terminal to overwrite old data 
+    uart_sendstring(USART2, "\033[1A"); 
+
+    // esc_readytosky_send(DEVICE_TWO, esc_test_adc_mapping(adc_data[1])); 
+
 #endif   // ESC_SECOND_DEVICE 
+
+    // Go to a the start of the line in the terminal 
+    uart_sendstring(USART2, "\r"); 
 
     //===================================================
 
@@ -490,7 +506,7 @@ void esc_readytosky_test_app(void)
 
 #endif   // ESC_CONTROLLER_MODE 
 
-    tim_delay_ms(TIM9, 10); 
+    tim_delay_ms(TIM9, 50); 
 }
 
 //=======================================================================================

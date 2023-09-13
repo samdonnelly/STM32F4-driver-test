@@ -264,8 +264,9 @@ void hw125_test_init()
     // SPI2 and slave select pin for SD card 
     spi_init(
         SPI2, 
-        GPIOB, 
+        GPIOB,   // SCK pin GPIO port 
         PIN_10,  // SCK pin 
+        GPIOB,   // Data (MISO/MOSI) pin GPIO port 
         PIN_14,  // MISO pin 
         PIN_15,  // MOSI pin 
         SPI_BR_FPCLK_8, 
