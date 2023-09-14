@@ -113,9 +113,9 @@ void nrf24l01_test_init(void)
     nrf24l01_init(
         SPI2, 
         GPIOC, 
-        GPIOX_PIN_1, 
+        PIN_1, 
         GPIOC, 
-        GPIOX_PIN_0, 
+        PIN_0, 
         NRF24L01_DR_250KBPS, 
         NRF24L01_RF_FREQ); 
 

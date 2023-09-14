@@ -21,11 +21,6 @@
 
 
 //=======================================================================================
-// Notes 
-//=======================================================================================
-
-
-//=======================================================================================
 // Function prototypes 
 
 #if ESC_CONTROLLER_MODE 
@@ -196,6 +191,9 @@ void esc_readytosky_test_init(void)
         ESC_REV_SPEED_LIM); 
 
 #endif   // ESC_SECOND_DEVICE 
+
+    // Enable the PWM timer 
+    tim_enable(TIM3); 
 
     //=================================================== 
 
@@ -391,29 +389,14 @@ void esc_readytosky_test_app(void)
     //===================================================
     // Manual joystick/knob control of the ESC(s) 
 
-    // For testing the throttle command value: 
-    uart_sendstring(USART2, "ESC 1 cmd: "); 
-    uart_send_integer(USART2, esc_test_adc_mapping(adc_data[0])); 
-    uart_send_new_line(USART2); 
-
-    // // Convert the ADC value to a throttle command and send it to the ESC 
-    // esc_readytosky_send(DEVICE_ONE, esc_test_adc_mapping(adc_data[0])); 
+    // Convert the ADC value to a throttle command and send it to the ESC 
+    esc_readytosky_send(DEVICE_ONE, esc_test_adc_mapping(adc_data[0])); 
 
 #if ESC_SECOND_DEVICE 
 
-    // For testing the throttle command value: 
-    uart_sendstring(USART2, "ESC 2 cmd: "); 
-    uart_send_integer(USART2, esc_test_adc_mapping(adc_data[1])); 
-
-    // Go up a line in the terminal to overwrite old data 
-    uart_sendstring(USART2, "\033[1A"); 
-
-    // esc_readytosky_send(DEVICE_TWO, esc_test_adc_mapping(adc_data[1])); 
+    esc_readytosky_send(DEVICE_TWO, esc_test_adc_mapping(adc_data[1])); 
 
 #endif   // ESC_SECOND_DEVICE 
-
-    // Go to a the start of the line in the terminal 
-    uart_sendstring(USART2, "\r"); 
 
     //===================================================
 
