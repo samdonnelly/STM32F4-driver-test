@@ -51,6 +51,15 @@ typedef struct nrf24l01_test_trackers_s
     // Timing information 
     TIM_TypeDef *timer_nonblocking;             // Timer used for non-blocking delays 
     tim_compare_t delay_timer;                  // Delay timing info 
+
+    // State 
+    uint8_t state; 
+    uint8_t ping; 
+
+    // Data 
+    uint8_t read_buff[NRF24L01_MAX_PACK_LEN]; 
+    uint8_t write_buff[NRF24L01_MAX_PACK_LEN]; 
+    uint8_t response[NRF24L01_MAX_PACK_LEN]; 
 }
 nrf24l01_test_trackers_t; 
 
@@ -58,19 +67,32 @@ nrf24l01_test_trackers_t;
 static nrf24l01_test_trackers_t trackers; 
 
 #elif NRF24L01_MULTI_SPI 
-    // 
+
 #elif NRF24L01_RC 
-    // 
+
 #endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
 
 #else   // NRF24L01_DEV1_CODE --> End of device 1 code, start of device 2 code 
-    // 
+
 #if NRF24L01_HEARTBEAT 
-    // 
+
+// Device tracker data record 
+typedef struct nrf24l01_test_trackers_s 
+{
+    // Data 
+    uint8_t read_buff[NRF24L01_MAX_PACK_LEN]; 
+    uint8_t write_buff[NRF24L01_MAX_PACK_LEN]; 
+    uint8_t message[NRF24L01_MAX_PACK_LEN]; 
+}
+nrf24l01_test_trackers_t; 
+
+// Device tracker instance 
+static nrf24l01_test_trackers_t trackers; 
+
 #elif NRF24L01_MULTI_SPI 
-    // 
+
 #elif NRF24L01_RC 
-    // 
+
 #endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
 
 #endif   // NRF24L01_DEV1_CODE --> End of device 2 code 
@@ -183,6 +205,17 @@ void nrf24l01_test_init(void)
     trackers.delay_timer.time_cnt = CLEAR; 
     trackers.delay_timer.time_start = SET_BIT; 
 
+    // State 
+    trackers.state = SET_BIT; 
+    trackers.ping = SET_BIT; 
+
+    // Data 
+    memset((void *)trackers.read_buff, CLEAR, sizeof(trackers.read_buff)); 
+    memset((void *)trackers.write_buff, CLEAR, sizeof(trackers.write_buff)); 
+    memset((void *)trackers.response, CLEAR, sizeof(trackers.response)); 
+    strcpy(trackers.write_buff, "ping"); 
+    strcpy(trackers.response, "ping_confirm"); 
+
 #elif NRF24L01_MULTI_SPI 
     // 
 #elif NRF24L01_RC 
@@ -192,7 +225,14 @@ void nrf24l01_test_init(void)
 #else   // NRF24L01_DEV1_CODE --> End of device 1 code, start of device 2 code 
     // 
 #if NRF24L01_HEARTBEAT 
-    // 
+    
+    // Data 
+    memset((void *)trackers.read_buff, CLEAR, sizeof(trackers.read_buff)); 
+    memset((void *)trackers.write_buff, CLEAR, sizeof(trackers.write_buff)); 
+    memset((void *)trackers.message, CLEAR, sizeof(trackers.message)); 
+    strcpy(trackers.write_buff, "ping_confirm"); 
+    strcpy(trackers.message, "ping"); 
+
 #elif NRF24L01_MULTI_SPI 
     // 
 #elif NRF24L01_RC 
@@ -220,8 +260,8 @@ void nrf24l01_test_init(void)
 //   there is still communication. 
 
 // Multi-SPI 
-// - Device 1 (master) sends a 'ping' to device 2 (slave) upon user request 
-// - Device 2 reads ping and attempts to save an acknowledgment to an SD card 
+// - Device 1 (master) sends a user input message to device 2 (slave) upon user request 
+// - Device 2 reads message and attempts to save it to a file on an SD card 
 // - Device 2 reports back the status of the SD card write to device 1 
 
 // RC 
@@ -244,6 +284,48 @@ void nrf24l01_test_app(void)
                     &trackers.delay_timer.time_start))
     {
         // trackers.delay_timer.time_start = SET_BIT; 
+
+        // Check to see if a ping was received 
+        if (trackers.ping)
+        {
+            // Ping seen. Clear the ping flag so we have to search for a new ping and check if 
+            // we are currently in the not seen state. 
+            trackers.ping = CLEAR_BIT; 
+            if (!trackers.state)
+            {
+                // Ping not seen state. Change the state flag and send an update message that a 
+                // ping has now been seen 
+                trackers.state = SET_BIT; 
+                uart_sendstring(USART2, "\r\nDevice found.\r\n"); 
+            }
+        }
+        else
+        {
+            // Ping not seen. Check if we are currently in the seen state. 
+            if (trackers.state)
+            {
+                // Ping seen state. Change the state flag and send an update message that the 
+                // device has been lost. 
+                trackers.state = CLEAR_BIT; 
+                uart_sendstring(USART2, "\r\nDevice lost.\r\n"); 
+            }
+        }
+
+        // Send a ping 
+        nrf24l01_send_payload(trackers.write_buff); 
+    }
+
+    // Check if any data has been received 
+    if (nrf24l01_data_ready_status())
+    {
+        // Data has been received. Read the payload from the device FIFO and check to see if 
+        // it's the ping response. If it is then set to ping flag to indicate the device was 
+        // seen. 
+        nrf24l01_receive_payload(trackers.read_buff); 
+        if (str_compare(trackers.response, trackers.read_buff, BYTE_0)) 
+        {
+            trackers.ping = SET_BIT; 
+        }
     }
 
 #elif NRF24L01_MULTI_SPI 
@@ -255,7 +337,19 @@ void nrf24l01_test_app(void)
 #else   // NRF24L01_DEV1_CODE --> End of device 1 code, start of device 2 code 
     // 
 #if NRF24L01_HEARTBEAT 
-    // 
+    
+    // Check if any data has been received 
+    if (nrf24l01_data_ready_status())
+    {
+        // Data has been received. Read the payload from the device FIFO and check to see if 
+        // it's a ping. If it is then send back a ping response. 
+        nrf24l01_receive_payload(trackers.read_buff); 
+        if (str_compare(trackers.message, trackers.read_buff, BYTE_0)) 
+        {
+            nrf24l01_send_payload(trackers.write_buff); 
+        }
+    }
+
 #elif NRF24L01_MULTI_SPI 
     // 
 #elif NRF24L01_RC 
