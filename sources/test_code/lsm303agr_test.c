@@ -567,6 +567,8 @@ void lsm303agr_test_app(void)
 //=======================================================================================
 // Test functions 
 
+#if LSM303AGR_TEST_NAV 
+
 // Get the true North heading 
 int16_t lsm303agr_test_heading(void)
 {
@@ -595,6 +597,8 @@ int16_t lsm303agr_test_heading(void)
     return tn_heading; 
 }
 
+#endif   // LSM303AGR_TEST_NAV 
+
 
 // Heading error 
 int16_t lsm303agr_test_heading_error(
@@ -620,6 +624,8 @@ int16_t lsm303agr_test_heading_error(
     return heading_error; 
 }
 
+
+#if LSM303AGR_TEST_NAV 
 
 // Motor controller - called after every heading update 
 int16_t lsm303agr_test_pid(
@@ -671,5 +677,7 @@ int16_t lsm303agr_test_pid(
     // PID output 
     return proportional + integral + derivative; 
 }
+
+#endif   // LSM303AGR_TEST_NAV 
 
 //=======================================================================================

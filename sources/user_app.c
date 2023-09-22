@@ -24,6 +24,5 @@
 void user_app()
 {
     // Looped code here 
-    // nrf24l01_test_app(); 
-    esc_readytosky_test_app(); 
+    lsm303agr_test_app(); 
 }

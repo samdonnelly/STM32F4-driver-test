@@ -23,7 +23,7 @@
 //=======================================================================================
 // Setup code
 
-void dma_test_init(void)
+void uart_test_init(void)
 {
     // Initialize GPIO ports 
     gpio_port_init(); 
@@ -74,7 +74,7 @@ void dma_test_init(void)
 //=======================================================================================
 // Test code 
 
-void dma_test_app(void)
+void uart_test_app(void)
 {
     // 
 }

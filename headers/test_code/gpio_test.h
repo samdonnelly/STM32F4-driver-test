@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief UART test code header 
+ * @brief GPIO test code header 
  * 
  * @version 0.1
  * @date 2023-09-20
@@ -12,8 +12,8 @@
  * 
  */
 
-#ifndef _UART_TEST_H_ 
-#define _UART_TEST_H_ 
+#ifndef _GPIO_TEST_H_ 
+#define _GPIO_TEST_H_ 
 
 //=======================================================================================
 // Includes 
@@ -29,24 +29,19 @@
 
 
 //=======================================================================================
-// Enums 
-//=======================================================================================
-
-
-//=======================================================================================
 // Function prototypes 
 
 /**
- * @brief UART test setup code 
+ * @brief GPIO test setup code 
  */
-void uart_test_init(void); 
+void gpio_test_init(void); 
 
 
 /**
- * @brief UART test application code 
+ * @brief GPIO test application code 
  */
-void uart_test_app(void); 
+void gpio_test_app(void); 
 
 //=======================================================================================
 
-#endif   // _UART_TEST_H_ 
+#endif   // _GPIO_TEST_H_ 

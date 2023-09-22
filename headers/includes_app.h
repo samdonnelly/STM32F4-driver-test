@@ -24,6 +24,7 @@
 #include "analog_test.h"
 #include "dma_test.h"
 #include "esc_readytosky_test.h"
+#include "gpio_test.h"
 #include "hc05_test.h"
 #include "hd44780u_test.h"
 #include "hw125_test.h"
@@ -33,6 +34,7 @@
 #include "mpu6050_test.h"
 #include "nrf24l01_test.h"
 #include "timers_test.h"
+#include "uart_test.h"
 #include "ws2812_test.h" 
 
 //=======================================================================================

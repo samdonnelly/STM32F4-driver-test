@@ -232,8 +232,8 @@ void nrf24l01_test_init(void)
     memset((void *)trackers.read_buff, CLEAR, sizeof(trackers.read_buff)); 
     memset((void *)trackers.write_buff, CLEAR, sizeof(trackers.write_buff)); 
     memset((void *)trackers.message, CLEAR, sizeof(trackers.message)); 
-    strcpy(trackers.write_buff, "ping_confirm"); 
-    strcpy(trackers.message, "ping"); 
+    strcpy((char *)trackers.write_buff, "ping_confirm"); 
+    strcpy((char *)trackers.message, "ping"); 
 
 #elif NRF24L01_MULTI_SPI 
     // 
@@ -346,7 +346,7 @@ void nrf24l01_test_app(void)
         // Data has been received. Read the payload from the device FIFO and check to see if 
         // it's a ping. If it is then send back a ping response. 
         nrf24l01_receive_payload(trackers.read_buff); 
-        if (str_compare(trackers.message, trackers.read_buff, BYTE_0)) 
+        if (str_compare((char *)trackers.message, (char *)trackers.read_buff, BYTE_0)) 
         {
             nrf24l01_send_payload(trackers.write_buff); 
         }
