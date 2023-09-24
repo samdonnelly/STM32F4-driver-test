@@ -24,5 +24,5 @@
 void user_init()
 {
     // Setup code here 
-    dma_test_init(); 
+    nrf24l01_test_init(); 
 }

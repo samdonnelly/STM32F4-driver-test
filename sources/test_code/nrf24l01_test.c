@@ -21,19 +21,6 @@
 
 
 //=======================================================================================
-// Notes 
-
-// Notes 
-// - With two devices, they should both remain in RX mode to wait for data until they 
-//   need to be used for sending data. 
-
-// Tests 
-// - Heartbeat / handshake between two devices 
-
-//=======================================================================================
-
-
-//=======================================================================================
 // Function prototypes 
 //=======================================================================================
 
@@ -171,10 +158,10 @@ void nrf24l01_test_init(void)
 
     nrf24l01_init(
         SPI2, 
-        GPIOC, 
-        PIN_1, 
-        GPIOC, 
-        PIN_0, 
+        GPIOC,   // Slave select pin GPIO port 
+        PIN_1,   // Slave select pin number 
+        GPIOC,   // Enable pin (CE) GPIO port 
+        PIN_0,   // Enable pin (CE) number 
         TIM9, 
         NRF24L01_DR_250KBPS, 
         NRF24L01_RF_FREQ); 
@@ -208,15 +195,15 @@ void nrf24l01_test_init(void)
     trackers.delay_timer.time_start = SET_BIT; 
 
     // State 
-    trackers.state = SET_BIT; 
-    trackers.ping = SET_BIT; 
+    trackers.state = CLEAR_BIT; 
+    trackers.ping = CLEAR_BIT; 
 
     // Data 
     memset((void *)trackers.read_buff, CLEAR, sizeof(trackers.read_buff)); 
     memset((void *)trackers.write_buff, CLEAR, sizeof(trackers.write_buff)); 
     memset((void *)trackers.response, CLEAR, sizeof(trackers.response)); 
-    strcpy(trackers.write_buff, "ping"); 
-    strcpy(trackers.response, "ping_confirm"); 
+    strcpy((char *)trackers.write_buff, "ping"); 
+    strcpy((char *)trackers.response, "ping_confirm"); 
 
 #elif NRF24L01_MULTI_SPI 
     // 
@@ -324,7 +311,7 @@ void nrf24l01_test_app(void)
         // it's the ping response. If it is then set to ping flag to indicate the device was 
         // seen. 
         nrf24l01_receive_payload(trackers.read_buff); 
-        if (str_compare(trackers.response, trackers.read_buff, BYTE_0)) 
+        if (str_compare((char *)trackers.response, (char *)trackers.read_buff, BYTE_0)) 
         {
             trackers.ping = SET_BIT; 
         }
