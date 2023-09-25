@@ -301,18 +301,20 @@ void nrf24l01_test_app(void)
         }
 
         // Send a ping 
-        nrf24l01_send_payload(trackers.write_buff); 
+        nrf24l01_send_payload(trackers.write_buff, 4); 
     }
 
     // Check if any data has been received 
     if (nrf24l01_data_ready_status())
     {
+        uart_sendstring(USART2, "\r\nData!\r\n"); 
         // Data has been received. Read the payload from the device FIFO and check to see if 
         // it's the ping response. If it is then set to ping flag to indicate the device was 
         // seen. 
         nrf24l01_receive_payload(trackers.read_buff); 
         if (str_compare((char *)trackers.response, (char *)trackers.read_buff, BYTE_0)) 
         {
+            uart_sendstring(USART2, "\r\nPing!\r\n"); 
             trackers.ping = SET_BIT; 
         }
     }
@@ -330,12 +332,14 @@ void nrf24l01_test_app(void)
     // Check if any data has been received 
     if (nrf24l01_data_ready_status())
     {
+        uart_sendstring(USART2, "\r\nData!\r\n"); 
         // Data has been received. Read the payload from the device FIFO and check to see if 
         // it's a ping. If it is then send back a ping response. 
         nrf24l01_receive_payload(trackers.read_buff); 
         if (str_compare((char *)trackers.message, (char *)trackers.read_buff, BYTE_0)) 
         {
-            nrf24l01_send_payload(trackers.write_buff); 
+            uart_sendstring(USART2, "\r\nPing!\r\n"); 
+            nrf24l01_send_payload(trackers.write_buff, 12); 
         }
     }
 
