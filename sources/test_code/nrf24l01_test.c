@@ -274,50 +274,57 @@ void nrf24l01_test_app(void)
     {
         // trackers.delay_timer.time_start = SET_BIT; 
 
-        // Check to see if a ping was received 
-        if (trackers.ping)
-        {
-            // Ping seen. Clear the ping flag so we have to search for a new ping and check if 
-            // we are currently in the not seen state. 
-            trackers.ping = CLEAR_BIT; 
-            if (!trackers.state)
-            {
-                // Ping not seen state. Change the state flag and send an update message that a 
-                // ping has now been seen 
-                trackers.state = SET_BIT; 
-                uart_sendstring(USART2, "\r\nDevice found.\r\n"); 
-            }
-        }
-        else
-        {
-            // Ping not seen. Check if we are currently in the seen state. 
-            if (trackers.state)
-            {
-                // Ping seen state. Change the state flag and send an update message that the 
-                // device has been lost. 
-                trackers.state = CLEAR_BIT; 
-                uart_sendstring(USART2, "\r\nDevice lost.\r\n"); 
-            }
-        }
+        // // Check to see if a ping was received 
+        // if (trackers.ping)
+        // {
+        //     // Ping seen. Clear the ping flag so we have to search for a new ping and check if 
+        //     // we are currently in the not seen state. 
+        //     trackers.ping = CLEAR_BIT; 
+        //     if (!trackers.state)
+        //     {
+        //         // Ping not seen state. Change the state flag and send an update message that a 
+        //         // ping has now been seen 
+        //         trackers.state = SET_BIT; 
+        //         uart_sendstring(USART2, "\r\nDevice found.\r\n"); 
+        //     }
+        // }
+        // else
+        // {
+        //     // Ping not seen. Check if we are currently in the seen state. 
+        //     if (trackers.state)
+        //     {
+        //         // Ping seen state. Change the state flag and send an update message that the 
+        //         // device has been lost. 
+        //         trackers.state = CLEAR_BIT; 
+        //         uart_sendstring(USART2, "\r\nDevice lost.\r\n"); 
+        //     }
+        // }
 
         // Send a ping 
-        nrf24l01_send_payload(trackers.write_buff, 4); 
-    }
-
-    // Check if any data has been received 
-    if (nrf24l01_data_ready_status())
-    {
-        uart_sendstring(USART2, "\r\nData!\r\n"); 
-        // Data has been received. Read the payload from the device FIFO and check to see if 
-        // it's the ping response. If it is then set to ping flag to indicate the device was 
-        // seen. 
-        nrf24l01_receive_payload(trackers.read_buff); 
-        if (str_compare((char *)trackers.response, (char *)trackers.read_buff, BYTE_0)) 
+        if (nrf24l01_send_payload(trackers.write_buff, 4))
         {
-            uart_sendstring(USART2, "\r\nPing!\r\n"); 
-            trackers.ping = SET_BIT; 
+            uart_sendstring(USART2, "\r\nSent!\r\n"); 
+        } 
+        else 
+        {
+            uart_sendstring(USART2, "\r\nNope.\r\n"); 
         }
     }
+
+    // // Check if any data has been received 
+    // if (nrf24l01_data_ready_status())
+    // {
+    //     uart_sendstring(USART2, "\r\nData!\r\n"); 
+    //     // Data has been received. Read the payload from the device FIFO and check to see if 
+    //     // it's the ping response. If it is then set to ping flag to indicate the device was 
+    //     // seen. 
+    //     nrf24l01_receive_payload(trackers.read_buff); 
+    //     if (str_compare((char *)trackers.response, (char *)trackers.read_buff, BYTE_0)) 
+    //     {
+    //         uart_sendstring(USART2, "\r\nPing!\r\n"); 
+    //         trackers.ping = SET_BIT; 
+    //     }
+    // }
 
 #elif NRF24L01_MULTI_SPI 
     // 
@@ -332,15 +339,15 @@ void nrf24l01_test_app(void)
     // Check if any data has been received 
     if (nrf24l01_data_ready_status())
     {
-        uart_sendstring(USART2, "\r\nData!\r\n"); 
+        uart_sendstring(USART2, "\r\nGot it.\r\n"); 
         // Data has been received. Read the payload from the device FIFO and check to see if 
         // it's a ping. If it is then send back a ping response. 
         nrf24l01_receive_payload(trackers.read_buff); 
-        if (str_compare((char *)trackers.message, (char *)trackers.read_buff, BYTE_0)) 
-        {
-            uart_sendstring(USART2, "\r\nPing!\r\n"); 
-            nrf24l01_send_payload(trackers.write_buff, 12); 
-        }
+        // if (str_compare((char *)trackers.message, (char *)trackers.read_buff, BYTE_0)) 
+        // {
+        //     uart_sendstring(USART2, "\r\nPing!\r\n"); 
+        //     nrf24l01_send_payload(trackers.write_buff, 12); 
+        // }
     }
 
 #elif NRF24L01_MULTI_SPI 

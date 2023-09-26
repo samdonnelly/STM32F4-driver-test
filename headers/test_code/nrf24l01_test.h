@@ -27,7 +27,7 @@
 // Macros 
 
 // Configuration 
-#define NRF24L01_RF_FREQ 2       // 2400 MHz + this value --> communication frequency (MHz) 
+#define NRF24L01_RF_FREQ 10      // 2400 MHz + this value --> communication frequency (MHz) 
 
 // Conditional compilation 
 // The test code has code for two RF modules meant for use on separate controllers since 
@@ -40,7 +40,7 @@
 #define NRF24L01_RC 0            // Remote control test code 
 
 // Heartbeat 
-#define NRF24L01_HB_PERIOD 2500000   // Time between heartbeat checks 
+#define NRF24L01_HB_PERIOD 4000000   // Time between heartbeat checks (us) 
 
 // Multi-SPI 
 
