@@ -28,6 +28,9 @@
 //=======================================================================================
 // Global variables 
 
+// 
+static uint8_t pipe_addr_buff[NRF24l01_ADDR_WIDTH] = {0xB3, 0xB4, 0xB5, 0xB6, 0x05}; 
+
 #if NRF24L01_DEV1_CODE   // Start of device 1 code 
 
 #if NRF24L01_HEARTBEAT 
@@ -44,9 +47,9 @@ typedef struct nrf24l01_test_trackers_s
     uint8_t ping; 
 
     // Data 
-    uint8_t read_buff[NRF24L01_MAX_PACK_LEN]; 
-    uint8_t write_buff[NRF24L01_MAX_PACK_LEN]; 
-    uint8_t response[NRF24L01_MAX_PACK_LEN]; 
+    uint8_t read_buff[NRF24L01_MAX_PAYLOAD_LEN]; 
+    uint8_t write_buff[NRF24L01_MAX_PAYLOAD_LEN]; 
+    uint8_t response[NRF24L01_MAX_PAYLOAD_LEN]; 
 }
 nrf24l01_test_trackers_t; 
 
@@ -67,9 +70,9 @@ static nrf24l01_test_trackers_t trackers;
 typedef struct nrf24l01_test_trackers_s 
 {
     // Data 
-    uint8_t read_buff[NRF24L01_MAX_PACK_LEN]; 
-    uint8_t write_buff[NRF24L01_MAX_PACK_LEN]; 
-    uint8_t message[NRF24L01_MAX_PACK_LEN]; 
+    uint8_t read_buff[NRF24L01_MAX_PAYLOAD_LEN]; 
+    // uint8_t write_buff[NRF24L01_MAX_PAYLOAD_LEN]; 
+    // uint8_t message[NRF24L01_MAX_PAYLOAD_LEN]; 
 }
 nrf24l01_test_trackers_t; 
 
@@ -163,8 +166,16 @@ void nrf24l01_test_init(void)
         GPIOC,   // Enable pin (CE) GPIO port 
         PIN_0,   // Enable pin (CE) number 
         TIM9, 
-        NRF24L01_DR_250KBPS, 
+        NRF24L01_DR_2MBPS, 
         NRF24L01_RF_FREQ); 
+
+#if NRF24L01_DEV1_CODE 
+    nrf24l01_ptx_config(pipe_addr_buff); 
+#else   // NRF24L01_DEV1_CODE 
+    nrf24l01_prx_config(pipe_addr_buff, NRF24L01_DP_1); 
+#endif   // NRF24L01_DEV1_CODE 
+
+    nrf24l01_read_all_reg(); 
 
     //===================================================
 
@@ -179,6 +190,17 @@ void nrf24l01_test_init(void)
 #endif   // NRF24L01_MULTI_SPI 
     
     //===================================================
+
+    //==================================================
+    // GPIO 
+
+#if NRF24L01_DEV1_CODE 
+    // Board LED - on when logic low 
+    gpio_pin_init(GPIOA, PIN_5, MODER_GPO, OTYPER_PP, OSPEEDR_HIGH, PUPDR_NO); 
+#else   // NRF24L01_DEV1_CODE 
+#endif   // NRF24L01_DEV1_CODE 
+
+    //==================================================
 
     //===================================================
     // Variable initialization 
@@ -217,10 +239,10 @@ void nrf24l01_test_init(void)
     
     // Data 
     memset((void *)trackers.read_buff, CLEAR, sizeof(trackers.read_buff)); 
-    memset((void *)trackers.write_buff, CLEAR, sizeof(trackers.write_buff)); 
-    memset((void *)trackers.message, CLEAR, sizeof(trackers.message)); 
-    strcpy((char *)trackers.write_buff, "ping_confirm"); 
-    strcpy((char *)trackers.message, "ping"); 
+    // memset((void *)trackers.write_buff, CLEAR, sizeof(trackers.write_buff)); 
+    // memset((void *)trackers.message, CLEAR, sizeof(trackers.message)); 
+    // strcpy((char *)trackers.write_buff, "ping_confirm"); 
+    // strcpy((char *)trackers.message, "ping"); 
 
 #elif NRF24L01_MULTI_SPI 
     // 
@@ -264,6 +286,9 @@ void nrf24l01_test_app(void)
 
 #if NRF24L01_HEARTBEAT 
 
+    // 
+    static gpio_pin_state_t led_state = GPIO_LOW; 
+
     // Periodically ping the second device 
     if (tim_compare(trackers.timer_nonblocking, 
                     trackers.delay_timer.clk_freq, 
@@ -303,15 +328,23 @@ void nrf24l01_test_app(void)
         // // 
         // nrf24l01_send_payload(trackers.write_buff, 4); 
 
-        // Send a ping 
+        // // Send a ping 
+        // if (nrf24l01_send_payload(trackers.write_buff, 4))
+        // {
+        //     uart_sendstring(USART2, "\r\nSent!\r\n"); 
+        // } 
+        // else 
+        // {
+        //     uart_sendstring(USART2, "\r\nNope.\r\n"); 
+        // }
+
+        // Try sending out a payload and toggle the led if it was sent 
         if (nrf24l01_send_payload(trackers.write_buff, 4))
         {
-            uart_sendstring(USART2, "\r\nSent!\r\n"); 
+            led_state = GPIO_HIGH - led_state; 
+            gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
+            uart_sendstring(USART2, "\r\nyes\r\n"); 
         } 
-        else 
-        {
-            uart_sendstring(USART2, "\r\nNope.\r\n"); 
-        }
     }
 
     // // Check if any data has been received 
@@ -339,11 +372,15 @@ void nrf24l01_test_app(void)
 #if NRF24L01_HEARTBEAT 
     
     // Check if any data has been received 
-    if (nrf24l01_data_ready_status())
+    if (nrf24l01_data_ready_status(NRF24L01_DP_1))
     {
         // Data has been received. Read the payload from the device FIFO and check to see if 
         // it's a ping. If it is then send back a ping response. 
-        nrf24l01_receive_payload(trackers.read_buff); 
+        nrf24l01_receive_payload(trackers.read_buff, NRF24L01_DP_1); 
+        trackers.read_buff[4] = NULL_CHAR; 
+        uart_sendstring(USART2, (char *)trackers.read_buff); 
+        uart_send_new_line(USART2); 
+        memset((void *)trackers.read_buff, CLEAR, sizeof(trackers.read_buff)); 
         // if (str_compare((char *)trackers.message, (char *)trackers.read_buff, BYTE_0)) 
         // {
         //     uart_sendstring(USART2, "\r\nPing!\r\n"); 
