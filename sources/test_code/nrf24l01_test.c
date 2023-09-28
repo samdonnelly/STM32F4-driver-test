@@ -228,7 +228,8 @@ void nrf24l01_test_init(void)
 #if NRF24L01_HEARTBEAT 
     
     // Data 
-    memset((void *)nrf24l01_test_trackers.read_buff, CLEAR, 
+    memset((void *)nrf24l01_test_trackers.read_buff, 
+           CLEAR, 
            sizeof(nrf24l01_test_trackers.read_buff)); 
 
 #elif NRF24L01_MULTI_SPI 
@@ -287,7 +288,7 @@ void nrf24l01_test_app(void)
         // nrf24l01_test_trackers.delay_timer.time_start = SET_BIT; 
 
         // Try sending out a payload and toggle the led if it was sent 
-        if (nrf24l01_send_payload(nrf24l01_test_trackers.write_buff, 4))
+        if (nrf24l01_send_payload(nrf24l01_test_trackers.write_buff))
         {
             led_state = GPIO_HIGH - led_state; 
             gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
@@ -308,13 +309,12 @@ void nrf24l01_test_app(void)
     if (nrf24l01_data_ready_status(NRF24L01_DP_1))
     {
         // Data has been received. Read the payload from the device RX FIFO and display the 
-        // data in the terminal.  
+        // data in the terminal. 
         nrf24l01_receive_payload(nrf24l01_test_trackers.read_buff, NRF24L01_DP_1); 
-        nrf24l01_test_trackers.read_buff[4] = NULL_CHAR; 
         uart_sendstring(USART2, (char *)nrf24l01_test_trackers.read_buff); 
         uart_send_new_line(USART2); 
-        memset((void *)nrf24l01_test_trackers.read_buff, CLEAR, 
-               sizeof(nrf24l01_test_trackers.read_buff)); 
+        // memset((void *)nrf24l01_test_trackers.read_buff, CLEAR, 
+        //        sizeof(nrf24l01_test_trackers.read_buff)); 
     }
 
 #elif NRF24L01_MULTI_SPI 
