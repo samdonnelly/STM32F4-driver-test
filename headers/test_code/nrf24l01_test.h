@@ -34,7 +34,7 @@
 // they're made for wireless communication between devices. The following macro ensures only 
 // one controller code or the other is enabled. This can be toggled to easily flash the 
 // correct code to a controller. 
-#define NRF24L01_DEV1_CODE 0     // Device code selection 
+#define NRF24L01_DEV1_CODE 1     // Device code selection 
 #define NRF24L01_HEARTBEAT 1     // Heartbeat test code 
 #define NRF24L01_MULTI_SPI 0     // Test code using SD card for same SPI bus on multiple pins 
 #define NRF24L01_RC 0            // Remote control test code 
