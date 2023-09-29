@@ -163,8 +163,8 @@ void hc05_test_init()
         PIN_2, 
         UART_FRAC_42_9600, 
         UART_MANT_42_9600, 
-        UART_DMA_TX_DISABLE, 
-        UART_DMA_RX_DISABLE); 
+        UART_DMA_DISABLE, 
+        UART_DMA_DISABLE); 
 
     // UART1 for the HC05 module 
     uart_init(
@@ -174,8 +174,8 @@ void hc05_test_init()
         PIN_9, 
         UART_FRAC_84_115200, 
         UART_MANT_84_115200, 
-        UART_DMA_TX_DISABLE, 
-        UART_DMA_RX_DISABLE); 
+        UART_DMA_DISABLE, 
+        UART_DMA_DISABLE); 
 
     //===================================================
 

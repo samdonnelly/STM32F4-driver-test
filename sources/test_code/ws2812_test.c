@@ -67,8 +67,8 @@ void ws2812_test_init()
         PIN_2, 
         UART_FRAC_42_9600, 
         UART_MANT_42_9600, 
-        UART_DMA_TX_DISABLE, 
-        UART_DMA_RX_DISABLE); 
+        UART_DMA_DISABLE, 
+        UART_DMA_DISABLE); 
     
     //==================================================
 

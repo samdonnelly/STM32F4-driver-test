@@ -56,8 +56,8 @@ void int_test_init()
         PIN_2, 
         UART_FRAC_42_9600, 
         UART_MANT_42_9600, 
-        UART_DMA_TX_DISABLE, 
-        UART_DMA_RX_DISABLE); 
+        UART_DMA_DISABLE, 
+        UART_DMA_DISABLE); 
     
     // Initialize timers 
     tim_9_to_11_counter_init(

@@ -188,8 +188,8 @@ void lsm303agr_test_init(void)
         PIN_2, 
         UART_FRAC_42_9600, 
         UART_MANT_42_9600, 
-        UART_DMA_TX_DISABLE, 
-        UART_DMA_RX_DISABLE); 
+        UART_DMA_DISABLE, 
+        UART_DMA_DISABLE); 
 
     // Initialize I2C1
     i2c_init(
