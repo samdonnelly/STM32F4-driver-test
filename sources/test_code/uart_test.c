@@ -21,6 +21,15 @@
 
 
 //=======================================================================================
+// Global variables 
+
+// Buffer where DMA UART data gets stored 
+static uint8_t uart_dma_buff[30]; 
+
+//=======================================================================================
+
+
+//=======================================================================================
 // Setup code
 
 void uart_test_init(void)
@@ -44,28 +53,54 @@ void uart_test_init(void)
 
     // Initialize the DMA stream 
     dma_stream_init(
-        DMA2, 
-        DMA2_Stream0, 
-        DMA_CHNL_0, 
+        DMA1, 
+        DMA1_Stream5, 
+        DMA_CHNL_4, 
         DMA_DIR_PM, 
         DMA_CM_ENABLE,
         DMA_PRIOR_VHI, 
-        DMA_ADDR_INCREMENT, 
+        DMA_ADDR_INCREMENT,   // Increment the buffer pointer to fill the buffer 
         DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
-        DMA_DATA_SIZE_HALF, 
-        DMA_DATA_SIZE_HALF); 
+        DMA_DATA_SIZE_BYTE, 
+        DMA_DATA_SIZE_BYTE); 
 
-    // // Configure the DMA stream 
-    // dma_stream_config(
-    //     DMA2_Stream0, 
-    //     (uint32_t)(&ADC1->DR), 
-    //     (uint32_t)adc_data, 
-    //     (uint16_t)ADC_BUFF_SIZE); 
+    // Configure the DMA stream 
+    dma_stream_config(
+        DMA1_Stream5, 
+        (uint32_t)(&USART2->DR), 
+        (uint32_t)uart_dma_buff, 
+        (uint16_t)30); 
+
+    // Enable transfer complete interrupts 
+    dma_int_config(
+        DMA1_Stream5, 
+        DMA_TCIE_ENABLE, 
+        DMA_HTIE_DISABLE, 
+        DMA_TEIE_DISABLE, 
+        DMA_DMEIE_DISABLE); 
 
     // Enable the DMA stream 
-    dma_stream_enable(DMA2_Stream0); 
+    dma_stream_enable(DMA1_Stream5); 
     
     //===================================================
+
+    //==================================================
+    // Initialize interrupts 
+
+    // Enable the interrupt handlers (called for each interrupt) 
+    nvic_config(DMA1_Stream5_IRQn, EXTI_PRIORITY_0); 
+
+    //==================================================
+
+    //==================================================
+    // Initialize variables 
+
+    memset((void *)uart_dma_buff, CLEAR, sizeof(uart_dma_buff)); 
+
+    //==================================================
+
+    uart_sendstring(USART2, "\r\n>>> "); 
+
 } 
 
 //=======================================================================================
@@ -76,7 +111,17 @@ void uart_test_init(void)
 
 void uart_test_app(void)
 {
-    // 
+    // If new UART DMA data is available in the buffer then print it to the terminal 
+    if (handler_flags.dma1_5_flag)
+    {
+        // Reset the DMA1 Stream 5 interrupt flag 
+        handler_flags.dma1_5_flag = CLEAR; 
+
+        uart_send_new_line(USART2); 
+        uart_sendstring(USART2, (char *)uart_dma_buff); 
+        uart_send_new_line(USART2); 
+        uart_sendstring(USART2, "\r\n>>> "); 
+    }
 }
 
 //=======================================================================================
