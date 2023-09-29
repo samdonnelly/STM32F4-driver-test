@@ -65,6 +65,7 @@ typedef struct nrf24l01_test_trackers_s
 {
     // Data 
     uint8_t read_buff[NRF24L01_MAX_PAYLOAD_LEN]; 
+    uint8_t message[NRF24L01_MAX_PAYLOAD_LEN]; 
 }
 nrf24l01_test_trackers_t; 
 
@@ -231,6 +232,7 @@ void nrf24l01_test_init(void)
     memset((void *)nrf24l01_test_trackers.read_buff, 
            CLEAR, 
            sizeof(nrf24l01_test_trackers.read_buff)); 
+    strcpy((char *)nrf24l01_test_trackers.message, "ping"); 
 
 #elif NRF24L01_MULTI_SPI 
     // 
@@ -304,17 +306,42 @@ void nrf24l01_test_app(void)
 #else   // NRF24L01_DEV1_CODE --> End of device 1 code, start of device 2 code 
     // 
 #if NRF24L01_HEARTBEAT 
+
+    // Local variables 
+    static uint16_t payload_count = CLEAR; 
+    static uint16_t match_count = CLEAR; 
+    uint8_t status_buff[NRF24L01_MAX_PAYLOAD_LEN]; 
     
     // Check if any data has been received 
     if (nrf24l01_data_ready_status(NRF24L01_DP_1))
     {
-        // Data has been received. Read the payload from the device RX FIFO and display the 
-        // data in the terminal. 
+        payload_count++; 
+
+        // Data has been received. Read the payload from the device RX FIFO. 
         nrf24l01_receive_payload(nrf24l01_test_trackers.read_buff, NRF24L01_DP_1); 
-        uart_sendstring(USART2, (char *)nrf24l01_test_trackers.read_buff); 
-        uart_send_new_line(USART2); 
-        // memset((void *)nrf24l01_test_trackers.read_buff, CLEAR, 
-        //        sizeof(nrf24l01_test_trackers.read_buff)); 
+
+        // Compare the payload to the reference message to check for a match 
+        if (str_compare((char *)nrf24l01_test_trackers.message, 
+                        (char *)nrf24l01_test_trackers.read_buff, BYTE_1))
+        {
+            match_count++; 
+
+            // Messages match. 
+        }
+
+        uart_sendstring(USART2, "\r"); 
+        snprintf(
+            (char *)status_buff, 
+            NRF24L01_MAX_PAYLOAD_LEN, 
+            "PL: %u, M: %u", 
+            payload_count, 
+            match_count); 
+        uart_sendstring(USART2, (char *)status_buff); 
+
+        // uart_sendstring(USART2, (char *)(&nrf24l01_test_trackers.read_buff[1])); 
+        // uart_send_new_line(USART2); 
+        memset((void *)nrf24l01_test_trackers.read_buff, CLEAR, 
+               sizeof(nrf24l01_test_trackers.read_buff)); 
     }
 
 #elif NRF24L01_MULTI_SPI 
