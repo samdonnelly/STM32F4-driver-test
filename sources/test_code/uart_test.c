@@ -142,26 +142,7 @@ void uart_test_app(void)
         handler_flags.usart2_flag = CLEAR; 
 
         // Copy the new contents in the circular buffer to the user input buffer 
-        for (uint8_t i = CLEAR; i < UART_TEST_MAX_INPUT; i++)
-        {
-            // Reset the circular buffer index if needed 
-            if (buff_index >= UART_TEST_MAX_INPUT)
-            {
-                buff_index = CLEAR; 
-            }
-
-            // Populate the user input buffer - terminate the input at the end 
-            if (uart_dma_buff[buff_index] == CR_CHAR)
-            {
-                user_in_buff[i] = NULL_CHAR; 
-                buff_index++; 
-                break; 
-            }
-            else 
-            {
-                user_in_buff[i] = uart_dma_buff[buff_index++]; 
-            }
-        }
+        cb_parse(uart_dma_buff, user_in_buff, &buff_index, UART_TEST_MAX_INPUT); 
 
         // Echo the user input back to the terminal 
         uart_send_new_line(USART2); 
