@@ -35,13 +35,12 @@
 // they're made for wireless communication between devices. The following macro ensures only 
 // one controller code or the other is enabled. This can be toggled to easily flash the 
 // correct code to a controller. 
-#define NRF24L01_DEV1_CODE 1     // Device code selection 
+#define NRF24L01_DEV1_CODE 0     // Device code selection 
 #define NRF24L01_HEARTBEAT 1     // Heartbeat test code 
 #define NRF24L01_MULTI_SPI 0     // Test code using SD card for same SPI bus on multiple pins 
 #define NRF24L01_RC 0            // Remote control test code 
 
 // Heartbeat 
-#define NRF24L01_HB_NUM_STATES 4     // Number of test states 
 #define NRF24L01_HB_PERIOD 1000000   // Time between heartbeat checks (us) 
 
 // Multi-SPI 
@@ -53,8 +52,9 @@
 #define NRF24L01_FWD_THRUST 0x2B   // "+" character that indicates forward thrust 
 #define NRF24L01_REV_THRUST 0x2D   // "-" character that indicates reverse thrust 
 
-// User input 
+// User commands 
 #define NRF24L01_TEST_MAX_INPUT 30   // Max user input command length (bytes) 
+#define NRF24L01_NUM_USER_CMDS 3     // Number of test states 
 
 //=======================================================================================
 

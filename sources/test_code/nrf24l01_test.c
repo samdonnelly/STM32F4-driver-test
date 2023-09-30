@@ -43,20 +43,51 @@
 //=======================================================================================
 // Function prototypes 
 
-// RF channel set state 
-void nrf24l01_test_rf_ch_state(void); 
+#if NRF24L01_DEV1_CODE   // Start of device 1 code 
 
-// RF data rate set state 
-void nrf24l01_test_rf_dr_state(void); 
-
-// RF power output set state 
-void nrf24l01_test_rf_pwr_state(void); 
+#if NRF24L01_HEARTBEAT 
 
 // Heatbeat test - TX device state 
-void nrf24l01_test_hb_tx_state(void); 
+void nrf24l01_test_hb_tx(void); 
+
+#elif NRF24L01_MULTI_SPI 
+
+#elif NRF24L01_RC 
+
+#endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
+
+#else   // NRF24L01_DEV1_CODE --> End of device 1 code, start of device 2 code 
+
+#if NRF24L01_HEARTBEAT 
 
 // Heatbeat test - RX device state 
-void nrf24l01_test_hb_rx_state(void); 
+void nrf24l01_test_hb_rx(void); 
+
+#elif NRF24L01_MULTI_SPI 
+
+#elif NRF24L01_RC 
+
+#endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
+
+#endif   // NRF24L01_DEV1_CODE --> End of device 2 code 
+
+// Parse the user command into an ID and value 
+uint8_t nrf24l01_test_parse_cmd(void); 
+
+// RF channel set state 
+void nrf24l01_test_rf_ch(
+    uint8_t rf_ch); 
+
+// RF data rate set state 
+void nrf24l01_test_rf_dr(
+    uint8_t rf_dr); 
+
+// RF power output set state 
+void nrf24l01_test_rf_pwr(
+    uint8_t rf_pwr); 
+
+// Invalid input user feedback 
+void nrf24l01_test_invalid_input(void); 
 
 //=======================================================================================
 
@@ -67,56 +98,63 @@ void nrf24l01_test_hb_rx_state(void);
 // Address sent by the PTX and address accepted by the PRX 
 static uint8_t pipe_addr_buff[NRF24l01_ADDR_WIDTH] = {0xB3, 0xB4, 0xB5, 0xB6, 0x05}; 
 
+//==================================================
+// Test data record 
+
 // Device tracker data record 
 typedef struct nrf24l01_test_trackers_s 
 {
     // Timing information 
-    TIM_TypeDef *timer_nonblocking;   // Timer used for non-blocking delays 
-    tim_compare_t delay_timer;        // Delay timing info 
+    TIM_TypeDef *timer_nonblocking;              // Timer used for non-blocking delays 
+    tim_compare_t delay_timer;                   // Delay timing info 
 
     // User commands 
-    uint8_t user_buff[NRF24L01_TEST_MAX_INPUT];  // Circular buffer for all user inputs 
-    uint8_t cmd_buff[NRF24L01_TEST_MAX_INPUT];   // User command 
-    uint8_t buff_index;                          // Circular buffer index 
+    uint8_t user_buff[NRF24L01_TEST_MAX_INPUT];  // Circular buffer (CB) that stores user inputs 
+    uint8_t buff_index;                          // CB index used for parsing commands 
+    uint8_t cmd_buff[NRF24L01_TEST_MAX_INPUT];   // Stores a user command parsed from the CB 
+    uint8_t cmd_id[NRF24L01_TEST_MAX_INPUT];     // Stores the ID of the user command 
+    uint8_t cmd_value;                           // Stores the value of the user command 
 
-    // Data 
+    // Serial terminal IO control 
+    uint8_t new_data_flag;                       // Indicates new cmd available 
+    uint8_t rx_idle;                             // RX read idle flag 
+
+    // Payload buffers 
     uint8_t hb_msg[NRF24L01_MAX_PAYLOAD_LEN];    // Heartbeat message 
     uint8_t read_buff[NRF24L01_MAX_PAYLOAD_LEN]; // Data read by PRX from PTX device 
-
-    // 
-    uint8_t cmd_index; 
-
-    // Control flags 
-    uint8_t state_progress : 1; 
-    uint8_t new_param      : 1; 
-    uint8_t first_pass     : 1; 
 }
 nrf24l01_test_trackers_t; 
 
 // Device tracker instance 
 static nrf24l01_test_trackers_t nrf24l01_test_data; 
 
-#if NRF24L01_DEV1_CODE   // Start of device 1 code 
+//==================================================
 
-#if NRF24L01_HEARTBEAT 
+//==================================================
+// User commands 
 
 // Command pointers 
 typedef struct nrf24l01_user_cmds_s 
 {
     char user_cmds[NRF24L01_TEST_MAX_INPUT]; 
-    void (*nrf24l01_test_func_ptr)(void); 
+    void (*nrf24l01_test_func_ptr)(uint8_t); 
 }
 nrf24l01_user_cmds_t; 
 
 
 // User commands 
-static nrf24l01_user_cmds_t cmd_table[NRF24L01_HB_NUM_STATES] = 
+static nrf24l01_user_cmds_t cmd_table[NRF24L01_NUM_USER_CMDS] = 
 {
-    {"ch_set",   &nrf24l01_test_rf_ch_state}, 
-    {"dr_set",   &nrf24l01_test_rf_dr_state}, 
-    {"pwr_set",  &nrf24l01_test_rf_pwr_state}, 
-    {"run",      &nrf24l01_test_hb_tx_state} 
+    {"rfch",   &nrf24l01_test_rf_ch}, 
+    {"rfdr",   &nrf24l01_test_rf_dr}, 
+    {"rfpwr",  &nrf24l01_test_rf_pwr} 
 }; 
+
+//==================================================
+
+#if NRF24L01_DEV1_CODE   // Start of device 1 code 
+
+#if NRF24L01_HEARTBEAT 
 
 #elif NRF24L01_MULTI_SPI 
 
@@ -310,7 +348,7 @@ void nrf24l01_test_init(void)
     //==================================================
 
     //==================================================
-    // Variable initialization 
+    // Variable and user initialization 
 
     // Timing information 
     nrf24l01_test_data.timer_nonblocking = TIM9; 
@@ -322,21 +360,25 @@ void nrf24l01_test_init(void)
 
     // User commands 
     memset((void *)nrf24l01_test_data.user_buff, CLEAR, sizeof(nrf24l01_test_data.user_buff)); 
-    memset((void *)nrf24l01_test_data.cmd_buff, CLEAR, sizeof(nrf24l01_test_data.cmd_buff)); 
     nrf24l01_test_data.buff_index = CLEAR; 
+    memset((void *)nrf24l01_test_data.cmd_buff, CLEAR, sizeof(nrf24l01_test_data.cmd_buff)); 
+    memset((void *)nrf24l01_test_data.cmd_id, CLEAR, sizeof(nrf24l01_test_data.cmd_id)); 
+    nrf24l01_test_data.cmd_value = CLEAR; 
+
+    // Serial terminal IO control 
+    nrf24l01_test_data.new_data_flag = CLEAR_BIT; 
+    nrf24l01_test_data.rx_idle = CLEAR_BIT; 
 
     // Payload data 
     memset((void *)nrf24l01_test_data.hb_msg, CLEAR, sizeof(nrf24l01_test_data.hb_msg)); 
     memset((void *)nrf24l01_test_data.read_buff, CLEAR, sizeof(nrf24l01_test_data.read_buff)); 
     strcpy((char *)nrf24l01_test_data.hb_msg, "ping"); 
 
-    // 
-    nrf24l01_test_data.state_progress = CLEAR_BIT; 
-    nrf24l01_test_data.cmd_index = CLEAR; 
-
 #if NRF24L01_DEV1_CODE   // Start of device 1 code 
 
 #if NRF24L01_HEARTBEAT 
+
+    uart_sendstring(USART2, "\r\n>>> "); 
 
 #elif NRF24L01_MULTI_SPI 
     // 
@@ -357,8 +399,6 @@ void nrf24l01_test_init(void)
 #endif   // NRF24L01_DEV1_CODE --> End of device 2 code 
 
     //==================================================
-
-    uart_sendstring(USART2, "\r\n>>> "); 
 }
 
 //=======================================================================================
@@ -382,34 +422,35 @@ void nrf24l01_test_app(void)
             &nrf24l01_test_data.buff_index, 
             UART_TEST_MAX_INPUT); 
 
-        // 
-        if (!nrf24l01_test_data.state_progress)
+        // Validate the input - parse into an ID and value if valid 
+        if (nrf24l01_test_parse_cmd())
         {
-            // Loop through available commands to look for a match 
-            for (uint8_t i = CLEAR; i < NRF24L01_HB_NUM_STATES; i++) 
+            // Valid input - compare ID to the available pre-defined commands. If there's 
+            // a match then go to the command function. 
+            nrf24l01_test_data.new_data_flag = SET_BIT; 
+            for (uint8_t i = CLEAR; i < NRF24L01_NUM_USER_CMDS; i++) 
             {
-                if (str_compare((char *)nrf24l01_test_data.cmd_buff, cmd_table[i].user_cmds, BYTE_0)) 
+                if (str_compare(
+                        cmd_table[i].user_cmds, 
+                        (char *)nrf24l01_test_data.cmd_id, 
+                        BYTE_0)) 
                 {
-                    nrf24l01_test_data.cmd_index = i; 
-                    nrf24l01_test_data.state_progress = SET_BIT; 
+                    (cmd_table[i].nrf24l01_test_func_ptr)(nrf24l01_test_data.cmd_value); 
+                    nrf24l01_test_data.new_data_flag = CLEAR_BIT; 
                     break; 
-                }
-
-                if (i == 3)
-                {
-                    uart_sendstring(USART2, "\r\nrun\r\n"); 
-                    uart_sendstring(USART2, "\r\n>>> "); 
                 }
             }
         }
-    }
 
-    // Go to the state function 
-    (cmd_table[nrf24l01_test_data.cmd_index].nrf24l01_test_func_ptr)(); 
+        uart_sendstring(USART2, "\r\n>>> "); 
+    }
 
 #if NRF24L01_DEV1_CODE   // Start of device 1 code 
 
 #if NRF24L01_HEARTBEAT 
+
+    // Run the normal TX state 
+    nrf24l01_test_hb_tx(); 
 
 #elif NRF24L01_MULTI_SPI 
     // 
@@ -420,6 +461,26 @@ void nrf24l01_test_app(void)
 #else   // NRF24L01_DEV1_CODE --> End of device 1 code, start of device 2 code 
     // 
 #if NRF24L01_HEARTBEAT 
+
+    // If the new data flag is set then toggle the RX idle flag. The RX idle flag will control 
+    // whether the normal RX state is run where data gets output to the serial terminal. If the 
+    // RX idle flag is set then the state won't run and nothing will be output which will provide 
+    // a chance to run config commands by the user. The new data flag gets set when there is a 
+    // valid user input but it does not match one of the pre-defined commands. 
+    if (nrf24l01_test_data.new_data_flag)
+    {
+        nrf24l01_test_data.rx_idle = SET_BIT - nrf24l01_test_data.rx_idle; 
+        nrf24l01_test_data.new_data_flag = CLEAR_BIT; 
+
+        if (!nrf24l01_test_data.rx_idle)
+        {
+            uart_send_new_line(USART2); 
+        }
+    }
+    if (!nrf24l01_test_data.rx_idle)
+    {
+        nrf24l01_test_hb_rx(); 
+    }
 
 #elif NRF24L01_MULTI_SPI 
     // 
@@ -436,72 +497,12 @@ void nrf24l01_test_app(void)
 //=======================================================================================
 // Test functions 
 
-// RF channel set state 
-void nrf24l01_test_rf_ch_state(void)
-{
-    // 
-    nrf24l01_test_data.state_progress = CLEAR_BIT; 
-    nrf24l01_test_data.cmd_index = SET_3; 
-    uart_sendstring(USART2, "\r\nrf_ch\r\n"); 
-    uart_sendstring(USART2, "\r\n>>> "); 
+#if NRF24L01_DEV1_CODE   // Start of device 1 code 
 
-    // 
-    if (nrf24l01_test_data.first_pass)
-    {
-        // Display prompt for the user and clear the first pass flag 
-        uart_sendstring(USART2, "\r\nchannel: "); 
-        nrf24l01_test_data.first_pass = CLEAR_BIT; 
-    }
-    else 
-    {
-        if (nrf24l01_test_data.new_param)
-        {
-            // Validate the input 
-            if (1) // Change to data good 
-            {
-                // Data valid 
-                // Update parameter 
-                // Display successful update message 
-            }
-            else 
-            {
-                // Data not valid 
-                // Display invalid input message 
-            }
-
-            // Reset control variables 
-            nrf24l01_test_data.state_progress = CLEAR_BIT; 
-            nrf24l01_test_data.first_pass = SET_BIT; 
-            nrf24l01_test_data.cmd_index = CLEAR; 
-        }
-    }
-}
-
-
-// RF data rate set state 
-void nrf24l01_test_rf_dr_state(void)
-{
-    // 
-    nrf24l01_test_data.state_progress = CLEAR_BIT; 
-    nrf24l01_test_data.cmd_index = SET_3; 
-    uart_sendstring(USART2, "\r\nrf_dr\r\n"); 
-    uart_sendstring(USART2, "\r\n>>> "); 
-}
-
-
-// RF power output set state 
-void nrf24l01_test_rf_pwr_state(void)
-{
-    // 
-    nrf24l01_test_data.state_progress = CLEAR_BIT; 
-    nrf24l01_test_data.cmd_index = SET_3; 
-    uart_sendstring(USART2, "\r\nrf_pwr\r\n"); 
-    uart_sendstring(USART2, "\r\n>>> "); 
-}
-
+#if NRF24L01_HEARTBEAT 
 
 // Heatbeat test - TX device state 
-void nrf24l01_test_hb_tx_state(void)
+void nrf24l01_test_hb_tx(void)
 {
     // Local variables 
     static gpio_pin_state_t led_state = GPIO_LOW; 
@@ -514,7 +515,8 @@ void nrf24l01_test_hb_tx_state(void)
                     &nrf24l01_test_data.delay_timer.time_cnt, 
                     &nrf24l01_test_data.delay_timer.time_start))
     {
-        // nrf24l01_test_data.delay_timer.time_start = SET_BIT; 
+        // time_start flag does not need to be set again because this timer runs 
+        // continuously. 
 
         // Try sending out a payload and toggle the led if it was sent 
         if (nrf24l01_send_payload(nrf24l01_test_data.hb_msg))
@@ -525,9 +527,18 @@ void nrf24l01_test_hb_tx_state(void)
     }
 }
 
+#elif NRF24L01_MULTI_SPI 
+
+#elif NRF24L01_RC 
+
+#endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
+
+#else   // NRF24L01_DEV1_CODE --> End of device 1 code, start of device 2 code 
+
+#if NRF24L01_HEARTBEAT 
 
 // Heatbeat test - RX device state 
-void nrf24l01_test_hb_rx_state(void)
+void nrf24l01_test_hb_rx(void)
 {
     // Local variables 
     static uint16_t payload_count = CLEAR; 
@@ -537,34 +548,183 @@ void nrf24l01_test_hb_rx_state(void)
     // Check if any data has been received 
     if (nrf24l01_data_ready_status(NRF24L01_DP_1))
     {
-        payload_count++; 
+        // payload_count++; 
 
         // Data has been received. Read the payload from the device RX FIFO. 
         nrf24l01_receive_payload(nrf24l01_test_data.read_buff, NRF24L01_DP_1); 
 
-        // Compare the payload to the reference message to check for a match 
-        if (str_compare((char *)nrf24l01_test_data.hb_msg, 
-                        (char *)nrf24l01_test_data.read_buff, BYTE_1))
-        {
-            match_count++; 
+        // // Compare the payload to the reference message to check for a match 
+        // if (str_compare((char *)nrf24l01_test_data.hb_msg, 
+        //                 (char *)nrf24l01_test_data.read_buff, BYTE_1))
+        // {
+        //     match_count++; 
 
-            // Messages match. 
-        }
+        //     // Messages match. 
+        // }
 
-        uart_sendstring(USART2, "\r"); 
-        snprintf(
-            (char *)status_buff, 
-            NRF24L01_MAX_PAYLOAD_LEN, 
-            "PL: %u, M: %u", 
-            payload_count, 
-            match_count); 
-        uart_sendstring(USART2, (char *)status_buff); 
+        // uart_sendstring(USART2, "\r"); 
+        // snprintf(
+        //     (char *)status_buff, 
+        //     NRF24L01_MAX_PAYLOAD_LEN, 
+        //     "PL: %u, M: %u", 
+        //     payload_count, 
+        //     match_count); 
+        // uart_sendstring(USART2, (char *)status_buff); 
 
-        // uart_sendstring(USART2, (char *)(&nrf24l01_test_data.read_buff[1])); 
-        // uart_send_new_line(USART2); 
+        uart_sendstring(USART2, (char *)(&nrf24l01_test_data.read_buff[1])); 
+        uart_send_new_line(USART2); 
         memset((void *)nrf24l01_test_data.read_buff, CLEAR, 
                sizeof(nrf24l01_test_data.read_buff)); 
     }
+}
+
+#elif NRF24L01_MULTI_SPI 
+
+#elif NRF24L01_RC 
+
+#endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
+
+#endif   // NRF24L01_DEV1_CODE --> End of device 2 code 
+
+
+// Parse the user command into an ID and value 
+uint8_t nrf24l01_test_parse_cmd(void)
+{
+    // Local variables 
+    uint8_t id_flag = SET_BIT; 
+    uint8_t id_index = CLEAR; 
+    uint8_t data = CLEAR; 
+    uint8_t cmd_value[NRF24L01_TEST_MAX_INPUT]; 
+    uint8_t value_size = CLEAR; 
+
+    // Initialize data 
+    memset((void *)nrf24l01_test_data.cmd_id, CLEAR, sizeof(nrf24l01_test_data.cmd_id)); 
+    nrf24l01_test_data.cmd_value = CLEAR; 
+    memset((void *)cmd_value, CLEAR, sizeof(cmd_value)); 
+
+    // Parse the command into an ID and value 
+    for (uint8_t i = CLEAR; nrf24l01_test_data.cmd_buff[i] != NULL_CHAR; i++)
+    {
+        data = nrf24l01_test_data.cmd_buff[i]; 
+
+        if (id_flag)
+        {
+            // cmd ID parsing 
+
+            id_index = i; 
+
+            // Check that the command byte is within range 
+            if (data >= A_LO_CHAR && data <= Z_LO_CHAR)
+            {
+                // Valid character byte seen 
+                nrf24l01_test_data.cmd_id[i] = data; 
+            }
+            else if (data >= ZERO_CHAR && data <= NINE_CHAR)
+            {
+                // Valid digit character byte seen 
+                id_flag = CLEAR_BIT; 
+                nrf24l01_test_data.cmd_id[i] = NULL_CHAR; 
+                cmd_value[i-id_index] = data; 
+                value_size++; 
+            }
+            else 
+            {
+                // Valid data not seen 
+                return FALSE; 
+            }
+        }
+        else 
+        {
+            // cmd value parsing 
+
+            if (data >= ZERO_CHAR && data <= NINE_CHAR)
+            {
+                // Valid digit character byte seen 
+                cmd_value[i-id_index] = data; 
+                value_size++; 
+            }
+            else 
+            {
+                // Valid data not seen 
+                return FALSE; 
+            }
+        }
+    }
+
+    // Calculate the cmd value 
+    for (uint8_t i = CLEAR; i < value_size; i++)
+    {
+        nrf24l01_test_data.cmd_value += (uint8_t)char_to_int(cmd_value[i], value_size-i-1); 
+    }
+
+    return TRUE; 
+}
+
+
+// RF channel set state 
+void nrf24l01_test_rf_ch(
+    uint8_t rf_ch)
+{
+    // Check that input is within bounds 
+    if (rf_ch <= NRF24L01_RF_CH_MAX)
+    {
+        nrf24l01_set_rf_channel(rf_ch); 
+        if (nrf24l01_get_rf_ch() == rf_ch)
+        {
+            uart_sendstring(USART2, "\r\nSuccess.\r\n"); 
+        }
+    }
+    else 
+    {
+        nrf24l01_test_invalid_input(); 
+    }
+}
+
+
+// RF data rate set state 
+void nrf24l01_test_rf_dr(
+    uint8_t rf_dr)
+{
+    // Check that input is within bounds 
+    if (rf_dr <= (uint8_t)NRF24L01_DR_250KBPS)
+    {
+        nrf24l01_set_rf_dr((nrf24l01_data_rate_t)rf_dr); 
+        if (nrf24l01_get_rf_dr() == (nrf24l01_data_rate_t)rf_dr)
+        {
+            uart_sendstring(USART2, "\r\nSuccess.\r\n"); 
+        }
+    }
+    else 
+    {
+        nrf24l01_test_invalid_input(); 
+    }
+}
+
+
+// RF power output set state 
+void nrf24l01_test_rf_pwr(
+    uint8_t rf_pwr)
+{
+    // Check that input is within bounds 
+    if (rf_pwr <= (uint8_t)NRF24L01_RF_PWR_0DBM)
+    {
+        nrf24l01_set_rf_pwr((nrf24l01_rf_pwr_t)rf_pwr); 
+        if (nrf24l01_get_rf_pwr() == (nrf24l01_rf_pwr_t)rf_pwr)
+        {
+            uart_sendstring(USART2, "\r\nSuccess.\r\n"); 
+        }
+    }
+    else 
+    {
+        nrf24l01_test_invalid_input(); 
+    }
+}
+
+
+// Invalid input user feedback 
+void nrf24l01_test_invalid_input(void)
+{
+    uart_sendstring(USART2, "\r\nInvalid cmd value.\r\n"); 
 }
 
 //=======================================================================================
