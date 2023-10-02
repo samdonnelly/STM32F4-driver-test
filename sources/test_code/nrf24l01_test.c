@@ -313,7 +313,7 @@ void nrf24l01_test_init(void)
     // Set the devices initial communication parameters - can be updated as needed 
     nrf24l01_set_rf_channel(NRF24L01_RF_FREQ); 
     nrf24l01_set_rf_dr(NRF24L01_DR_2MBPS); 
-    nrf24l01_set_rf_pwr(NRF24L01_RF_PWR_0DBM); 
+    nrf24l01_set_rf_pwr(NRF24L01_RF_PWR_6DBM); 
 
     // Configure the PTX and PRX settings depending on the devices role/purpose 
 #if NRF24L01_DEV1_CODE 
@@ -506,6 +506,8 @@ void nrf24l01_test_hb_tx(void)
 {
     // Local variables 
     static gpio_pin_state_t led_state = GPIO_LOW; 
+    static uint8_t tx_attempt = CLEAR_BIT; 
+    static uint8_t tx_count = CLEAR; 
 
     // Periodically ping the second device 
     if (tim_compare(nrf24l01_test_data.timer_nonblocking, 
@@ -518,13 +520,33 @@ void nrf24l01_test_hb_tx(void)
         // time_start flag does not need to be set again because this timer runs 
         // continuously. 
 
-        // Try sending out a payload and toggle the led if it was sent 
-        if (nrf24l01_send_payload(nrf24l01_test_data.hb_msg))
+        // // Try sending out a payload and toggle the led if it was sent 
+        // if (nrf24l01_send_payload(nrf24l01_test_data.hb_msg))
+        // {
+        //     led_state = GPIO_HIGH - led_state; 
+        //     gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
+        // } 
+
+        // 
+        tx_attempt = SET_BIT; 
+    }
+
+    // 
+    if (tx_attempt)
+    {
+        // Send out a payload 
+        nrf24l01_send_payload(nrf24l01_test_data.hb_msg); 
+
+        // Reset the attempts counts if it's maxed out 
+        if (++tx_count >= 5)
         {
+            tx_attempt = CLEAR_BIT; 
+            // Toggle the LED to signify the end of the attempts 
             led_state = GPIO_HIGH - led_state; 
             gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
-        } 
+        }
     }
+    // Look for a response 
 }
 
 #elif NRF24L01_MULTI_SPI 
@@ -541,38 +563,24 @@ void nrf24l01_test_hb_tx(void)
 void nrf24l01_test_hb_rx(void)
 {
     // Local variables 
-    static uint16_t payload_count = CLEAR; 
-    static uint16_t match_count = CLEAR; 
-    uint8_t status_buff[NRF24L01_MAX_PAYLOAD_LEN]; 
     
     // Check if any data has been received 
     if (nrf24l01_data_ready_status(NRF24L01_DP_1))
     {
-        // payload_count++; 
-
         // Data has been received. Read the payload from the device RX FIFO. 
         nrf24l01_receive_payload(nrf24l01_test_data.read_buff, NRF24L01_DP_1); 
 
-        // // Compare the payload to the reference message to check for a match 
-        // if (str_compare((char *)nrf24l01_test_data.hb_msg, 
-        //                 (char *)nrf24l01_test_data.read_buff, BYTE_1))
-        // {
-        //     match_count++; 
+        // 
+        if (str_compare((char *)nrf24l01_test_data.hb_msg, 
+                        (char *)nrf24l01_test_data.read_buff, 
+                        BYTE_0))
+        {
+            uart_sendstring(USART2, (char *)(&nrf24l01_test_data.read_buff[1])); 
+            uart_send_new_line(USART2); 
+        }
 
-        //     // Messages match. 
-        // }
-
-        // uart_sendstring(USART2, "\r"); 
-        // snprintf(
-        //     (char *)status_buff, 
-        //     NRF24L01_MAX_PAYLOAD_LEN, 
-        //     "PL: %u, M: %u", 
-        //     payload_count, 
-        //     match_count); 
-        // uart_sendstring(USART2, (char *)status_buff); 
-
-        uart_sendstring(USART2, (char *)(&nrf24l01_test_data.read_buff[1])); 
-        uart_send_new_line(USART2); 
+        // uart_sendstring(USART2, (char *)(&nrf24l01_test_data.read_buff[1])); 
+        // uart_send_new_line(USART2); 
         memset((void *)nrf24l01_test_data.read_buff, CLEAR, 
                sizeof(nrf24l01_test_data.read_buff)); 
     }

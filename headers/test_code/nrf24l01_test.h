@@ -41,7 +41,7 @@
 #define NRF24L01_RC 0            // Remote control test code 
 
 // Heartbeat 
-#define NRF24L01_HB_PERIOD 1000000   // Time between heartbeat checks (us) 
+#define NRF24L01_HB_PERIOD 2000000   // Time between heartbeat checks (us) 
 
 // Multi-SPI 
 
