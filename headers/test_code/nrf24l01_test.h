@@ -35,13 +35,14 @@
 // they're made for wireless communication between devices. The following macro ensures only 
 // one controller code or the other is enabled. This can be toggled to easily flash the 
 // correct code to a controller. 
-#define NRF24L01_DEV1_CODE 1     // Device code selection 
+#define NRF24L01_DEV1_CODE 0     // Device code selection 
 #define NRF24L01_HEARTBEAT 1     // Heartbeat test code 
 #define NRF24L01_MULTI_SPI 0     // Test code using SD card for same SPI bus on multiple pins 
 #define NRF24L01_RC 0            // Remote control test code 
 
 // Heartbeat 
 #define NRF24L01_HB_PERIOD 500000   // Time between heartbeat checks (us) 
+#define NRF24L01_HB_TIMEOUT 30      // period*timeout = time before conecction lost status 
 
 // Multi-SPI 
 
@@ -53,7 +54,27 @@
 
 // User commands 
 #define NRF24L01_TEST_MAX_INPUT 30   // Max user input command length (bytes) 
-#define NRF24L01_NUM_USER_CMDS 3     // Number of test states 
+#define NRF24L01_NUM_USER_CMDS 4     // Number of test states 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Enums 
+
+/**
+ * @brief Test "states" 
+ * 
+ * @details 
+ */
+typedef enum {
+    NRF24L01_TEST_DEV1_HB_STATE, 
+    NRF24L01_TEST_DEV1_MSPI_STATE, 
+    NRF24L01_TEST_DEV1_RC_STATE, 
+    NRF24L01_TEST_DEV2_HB_STATE, 
+    NRF24L01_TEST_DEV2_MSPI_STATE, 
+    NRF24L01_TEST_DEV2_RC_STATE 
+} nrf24l01_test_states_t; 
 
 //=======================================================================================
 

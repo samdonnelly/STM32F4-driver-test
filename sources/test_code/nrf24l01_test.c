@@ -47,9 +47,6 @@
 
 #if NRF24L01_HEARTBEAT 
 
-// Heatbeat test - TX device state 
-void nrf24l01_test_hb_tx(void); 
-
 #elif NRF24L01_MULTI_SPI 
 
 #elif NRF24L01_RC 
@@ -59,9 +56,6 @@ void nrf24l01_test_hb_tx(void);
 #else   // NRF24L01_DEV1_CODE --> End of device 1 code, start of device 2 code 
 
 #if NRF24L01_HEARTBEAT 
-
-// Heatbeat test - RX device state 
-void nrf24l01_test_hb_rx(void); 
 
 #elif NRF24L01_MULTI_SPI 
 
@@ -86,6 +80,10 @@ void nrf24l01_test_rf_dr(
 void nrf24l01_test_rf_pwr(
     uint8_t rf_pwr); 
 
+// PRX device connection status 
+void nrf24l01_test_status(
+    uint8_t status); 
+
 // Invalid input user feedback 
 void nrf24l01_test_invalid_input(void); 
 
@@ -105,23 +103,23 @@ static uint8_t pipe_addr_buff[NRF24l01_ADDR_WIDTH] = {0xB3, 0xB4, 0xB5, 0xB6, 0x
 typedef struct nrf24l01_test_trackers_s 
 {
     // Timing information 
-    TIM_TypeDef *timer_nonblocking;              // Timer used for non-blocking delays 
-    tim_compare_t delay_timer;                   // Delay timing info 
+    TIM_TypeDef *timer_nonblocking;                // Timer used for non-blocking delays 
+    tim_compare_t delay_timer;                     // Delay timing info 
 
     // User commands 
-    uint8_t user_buff[NRF24L01_TEST_MAX_INPUT];  // Circular buffer (CB) that stores user inputs 
-    uint8_t buff_index;                          // CB index used for parsing commands 
-    uint8_t cmd_buff[NRF24L01_TEST_MAX_INPUT];   // Stores a user command parsed from the CB 
-    uint8_t cmd_id[NRF24L01_TEST_MAX_INPUT];     // Stores the ID of the user command 
-    uint8_t cmd_value;                           // Stores the value of the user command 
-
-    // Serial terminal IO control 
-    uint8_t new_data_flag;                       // Indicates new cmd available 
-    uint8_t rx_idle;                             // RX read idle flag 
+    uint8_t user_buff[NRF24L01_TEST_MAX_INPUT];    // Circular buffer (CB) that stores user inputs 
+    uint8_t buff_index;                            // CB index used for parsing commands 
+    uint8_t cmd_buff[NRF24L01_TEST_MAX_INPUT];     // Stores a user command parsed from the CB 
+    uint8_t cmd_id[NRF24L01_TEST_MAX_INPUT];       // Stores the ID of the user command 
+    uint8_t cmd_value;                             // Stores the value of the user command 
 
     // Payload buffers 
-    uint8_t hb_msg[NRF24L01_MAX_PAYLOAD_LEN];    // Heartbeat message 
-    uint8_t read_buff[NRF24L01_MAX_PAYLOAD_LEN]; // Data read by PRX from PTX device 
+    uint8_t hb_msg[NRF24L01_MAX_PAYLOAD_LEN];      // Heartbeat message 
+    uint8_t read_buff[NRF24L01_MAX_PAYLOAD_LEN];   // Data read by PRX from PTX device 
+
+    // Status 
+    uint8_t state;                                 // Test code "state" 
+    uint8_t conn_status;                           // Device connection status 
 }
 nrf24l01_test_trackers_t; 
 
@@ -138,6 +136,7 @@ typedef struct nrf24l01_user_cmds_s
 {
     char user_cmds[NRF24L01_TEST_MAX_INPUT]; 
     void (*nrf24l01_test_func_ptr)(uint8_t); 
+    uint8_t cmd_mask; 
 }
 nrf24l01_user_cmds_t; 
 
@@ -145,9 +144,10 @@ nrf24l01_user_cmds_t;
 // User commands 
 static nrf24l01_user_cmds_t cmd_table[NRF24L01_NUM_USER_CMDS] = 
 {
-    {"rfch",   &nrf24l01_test_rf_ch}, 
-    {"rfdr",   &nrf24l01_test_rf_dr}, 
-    {"rfpwr",  &nrf24l01_test_rf_pwr} 
+    {"rfch",   &nrf24l01_test_rf_ch,  0x3F}, 
+    {"rfdr",   &nrf24l01_test_rf_dr,  0x3F}, 
+    {"rfpwr",  &nrf24l01_test_rf_pwr, 0x3F}, 
+    {"status", &nrf24l01_test_status, 0x38} 
 }; 
 
 //==================================================
@@ -342,7 +342,6 @@ void nrf24l01_test_init(void)
 #if NRF24L01_DEV1_CODE 
     // Board LED - on when logic low 
     gpio_pin_init(GPIOA, PIN_5, MODER_GPO, OTYPER_PP, OSPEEDR_HIGH, PUPDR_NO); 
-#else   // NRF24L01_DEV1_CODE 
 #endif   // NRF24L01_DEV1_CODE 
 
     //==================================================
@@ -365,40 +364,51 @@ void nrf24l01_test_init(void)
     memset((void *)nrf24l01_test_data.cmd_id, CLEAR, sizeof(nrf24l01_test_data.cmd_id)); 
     nrf24l01_test_data.cmd_value = CLEAR; 
 
-    // Serial terminal IO control 
-    nrf24l01_test_data.new_data_flag = CLEAR_BIT; 
-    nrf24l01_test_data.rx_idle = CLEAR_BIT; 
-
     // Payload data 
     memset((void *)nrf24l01_test_data.hb_msg, CLEAR, sizeof(nrf24l01_test_data.hb_msg)); 
     memset((void *)nrf24l01_test_data.read_buff, CLEAR, sizeof(nrf24l01_test_data.read_buff)); 
     strcpy((char *)nrf24l01_test_data.hb_msg, "ping"); 
 
+    // Status 
+    nrf24l01_test_data.conn_status = CLEAR_BIT; 
+
 #if NRF24L01_DEV1_CODE   // Start of device 1 code 
 
 #if NRF24L01_HEARTBEAT 
 
-    uart_sendstring(USART2, "\r\n>>> "); 
+    nrf24l01_test_data.state = NRF24L01_TEST_DEV1_HB_STATE; 
 
 #elif NRF24L01_MULTI_SPI 
-    // 
+
+    nrf24l01_test_data.state = NRF24L01_TEST_DEV1_MSPI_STATE; 
+    
 #elif NRF24L01_RC 
-    // 
+    
+    nrf24l01_test_data.state = NRF24L01_TEST_DEV1_RC_STATE; 
+
 #endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
 
 #else   // NRF24L01_DEV1_CODE --> End of device 1 code, start of device 2 code 
     // 
 #if NRF24L01_HEARTBEAT 
 
+    nrf24l01_test_data.state = NRF24L01_TEST_DEV2_HB_STATE; 
+
 #elif NRF24L01_MULTI_SPI 
-    // 
+    
+    nrf24l01_test_data.state = NRF24L01_TEST_DEV2_MSPI_STATE; 
+
 #elif NRF24L01_RC 
-    // 
+
+    nrf24l01_test_data.state = NRF24L01_TEST_DEV2_RC_STATE; 
+
 #endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
 
 #endif   // NRF24L01_DEV1_CODE --> End of device 2 code 
 
     //==================================================
+
+    uart_sendstring(USART2, "\r\n>>> "); 
 }
 
 //=======================================================================================
@@ -425,19 +435,23 @@ void nrf24l01_test_app(void)
         // Validate the input - parse into an ID and value if valid 
         if (nrf24l01_test_parse_cmd())
         {
-            // Valid input - compare ID to the available pre-defined commands. If there's 
-            // a match then go to the command function. 
-            nrf24l01_test_data.new_data_flag = SET_BIT; 
+            // Valid input - compare the ID to each of the available pre-defined commands 
             for (uint8_t i = CLEAR; i < NRF24L01_NUM_USER_CMDS; i++) 
             {
-                if (str_compare(
-                        cmd_table[i].user_cmds, 
-                        (char *)nrf24l01_test_data.cmd_id, 
-                        BYTE_0)) 
+                // Check that the command is available for the "state" before comparing it 
+                // against the ID. 
+                if (cmd_table[i].cmd_mask & (SET_BIT << nrf24l01_test_data.state))
                 {
-                    (cmd_table[i].nrf24l01_test_func_ptr)(nrf24l01_test_data.cmd_value); 
-                    nrf24l01_test_data.new_data_flag = CLEAR_BIT; 
-                    break; 
+                    // Command available. Compare with the ID. 
+                    if (str_compare(
+                            cmd_table[i].user_cmds, 
+                            (char *)nrf24l01_test_data.cmd_id, 
+                            BYTE_0)) 
+                    {
+                        // ID matched to a command. Execute the command. 
+                        (cmd_table[i].nrf24l01_test_func_ptr)(nrf24l01_test_data.cmd_value); 
+                        break; 
+                    }
                 }
             }
         }
@@ -449,8 +463,27 @@ void nrf24l01_test_app(void)
 
 #if NRF24L01_HEARTBEAT 
 
-    // Run the normal TX state 
-    nrf24l01_test_hb_tx(); 
+    // Local variables 
+    static gpio_pin_state_t led_state = GPIO_LOW; 
+
+    // Periodically send a ping to the PRX device 
+    if (tim_compare(nrf24l01_test_data.timer_nonblocking, 
+                    nrf24l01_test_data.delay_timer.clk_freq, 
+                    NRF24L01_HB_PERIOD, 
+                    &nrf24l01_test_data.delay_timer.time_cnt_total, 
+                    &nrf24l01_test_data.delay_timer.time_cnt, 
+                    &nrf24l01_test_data.delay_timer.time_start))
+    {
+        // time_start flag does not need to be set again because this timer runs 
+        // continuously. 
+
+        // Try sending out a payload and toggle the led if it was sent 
+        if (nrf24l01_send_payload(nrf24l01_test_data.hb_msg))
+        {
+            led_state = GPIO_HIGH - led_state; 
+            gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
+        } 
+    }
 
 #elif NRF24L01_MULTI_SPI 
     // 
@@ -462,24 +495,50 @@ void nrf24l01_test_app(void)
     // 
 #if NRF24L01_HEARTBEAT 
 
-    // If the new data flag is set then toggle the RX idle flag. The RX idle flag will control 
-    // whether the normal RX state is run where data gets output to the serial terminal. If the 
-    // RX idle flag is set then the state won't run and nothing will be output which will provide 
-    // a chance to run config commands by the user. The new data flag gets set when there is a 
-    // valid user input but it does not match one of the pre-defined commands. 
-    if (nrf24l01_test_data.new_data_flag)
-    {
-        nrf24l01_test_data.rx_idle = SET_BIT - nrf24l01_test_data.rx_idle; 
-        nrf24l01_test_data.new_data_flag = CLEAR_BIT; 
+    // Local variables 
+    static uint8_t timeout_count = CLEAR; 
 
-        if (!nrf24l01_test_data.rx_idle)
+    // Increment the timeout counter periodically 
+    if (tim_compare(nrf24l01_test_data.timer_nonblocking, 
+                    nrf24l01_test_data.delay_timer.clk_freq, 
+                    NRF24L01_HB_PERIOD, 
+                    &nrf24l01_test_data.delay_timer.time_cnt_total, 
+                    &nrf24l01_test_data.delay_timer.time_cnt, 
+                    &nrf24l01_test_data.delay_timer.time_start))
+    {
+        // time_start flag does not need to be set again because this timer runs 
+        // continuously. 
+
+        // Increment the timeout count until it's at the threshold at which point hold 
+        // the count and clear the connection status. 
+        if (timeout_count >= NRF24L01_HB_TIMEOUT)
         {
-            uart_send_new_line(USART2); 
+            nrf24l01_test_data.conn_status = CLEAR_BIT; 
+        }
+        else 
+        {
+            timeout_count++; 
         }
     }
-    if (!nrf24l01_test_data.rx_idle)
+    
+    // Check if a payload has been received 
+    if (nrf24l01_data_ready_status(NRF24L01_DP_1))
     {
-        nrf24l01_test_hb_rx(); 
+        // Payload has been received. Read the payload from the device RX FIFO. 
+        nrf24l01_receive_payload(nrf24l01_test_data.read_buff, NRF24L01_DP_1); 
+
+        // Check to see if the received payload matches the heartbeat message 
+        if (str_compare((char *)nrf24l01_test_data.hb_msg, 
+                        (char *)nrf24l01_test_data.read_buff, 
+                        BYTE_1))
+        {
+            // Heartbeat message received - reset the timeout and set the connection status 
+            timeout_count = CLEAR; 
+            nrf24l01_test_data.conn_status = SET_BIT; 
+        }
+
+        memset((void *)nrf24l01_test_data.read_buff, CLEAR, 
+               sizeof(nrf24l01_test_data.read_buff)); 
     }
 
 #elif NRF24L01_MULTI_SPI 
@@ -501,32 +560,6 @@ void nrf24l01_test_app(void)
 
 #if NRF24L01_HEARTBEAT 
 
-// Heatbeat test - TX device state 
-void nrf24l01_test_hb_tx(void)
-{
-    // Local variables 
-    static gpio_pin_state_t led_state = GPIO_LOW; 
-
-    // Periodically ping the second device 
-    if (tim_compare(nrf24l01_test_data.timer_nonblocking, 
-                    nrf24l01_test_data.delay_timer.clk_freq, 
-                    NRF24L01_HB_PERIOD, 
-                    &nrf24l01_test_data.delay_timer.time_cnt_total, 
-                    &nrf24l01_test_data.delay_timer.time_cnt, 
-                    &nrf24l01_test_data.delay_timer.time_start))
-    {
-        // time_start flag does not need to be set again because this timer runs 
-        // continuously. 
-
-        // Try sending out a payload and toggle the led if it was sent 
-        if (nrf24l01_send_payload(nrf24l01_test_data.hb_msg))
-        {
-            led_state = GPIO_HIGH - led_state; 
-            gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
-        } 
-    }
-}
-
 #elif NRF24L01_MULTI_SPI 
 
 #elif NRF24L01_RC 
@@ -536,35 +569,6 @@ void nrf24l01_test_hb_tx(void)
 #else   // NRF24L01_DEV1_CODE --> End of device 1 code, start of device 2 code 
 
 #if NRF24L01_HEARTBEAT 
-
-// TODO change this to not output the message and add a ststus command for the user 
-
-// Heatbeat test - RX device state 
-void nrf24l01_test_hb_rx(void)
-{
-    // Local variables 
-    
-    // Check if any data has been received 
-    if (nrf24l01_data_ready_status(NRF24L01_DP_1))
-    {
-        // Data has been received. Read the payload from the device RX FIFO. 
-        nrf24l01_receive_payload(nrf24l01_test_data.read_buff, NRF24L01_DP_1); 
-
-        // 
-        if (str_compare((char *)nrf24l01_test_data.hb_msg, 
-                        (char *)nrf24l01_test_data.read_buff, 
-                        BYTE_1))
-        {
-            uart_sendstring(USART2, (char *)(&nrf24l01_test_data.read_buff[1])); 
-            uart_send_new_line(USART2); 
-        }
-
-        // uart_sendstring(USART2, (char *)(&nrf24l01_test_data.read_buff[1])); 
-        // uart_send_new_line(USART2); 
-        memset((void *)nrf24l01_test_data.read_buff, CLEAR, 
-               sizeof(nrf24l01_test_data.read_buff)); 
-    }
-}
 
 #elif NRF24L01_MULTI_SPI 
 
@@ -705,6 +709,21 @@ void nrf24l01_test_rf_pwr(
     else 
     {
         nrf24l01_test_invalid_input(); 
+    }
+}
+
+
+// PRX device connection status 
+void nrf24l01_test_status(
+    uint8_t dummy_status)
+{
+    if (nrf24l01_test_data.conn_status)
+    {
+        uart_sendstring(USART2, "\r\nConnected.\r\n"); 
+    }
+    else 
+    {
+        uart_sendstring(USART2, "\r\nNot connected.\r\n"); 
     }
 }
 
