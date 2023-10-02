@@ -506,8 +506,6 @@ void nrf24l01_test_hb_tx(void)
 {
     // Local variables 
     static gpio_pin_state_t led_state = GPIO_LOW; 
-    static uint8_t tx_attempt = CLEAR_BIT; 
-    static uint8_t tx_count = CLEAR; 
 
     // Periodically ping the second device 
     if (tim_compare(nrf24l01_test_data.timer_nonblocking, 
@@ -520,33 +518,13 @@ void nrf24l01_test_hb_tx(void)
         // time_start flag does not need to be set again because this timer runs 
         // continuously. 
 
-        // // Try sending out a payload and toggle the led if it was sent 
-        // if (nrf24l01_send_payload(nrf24l01_test_data.hb_msg))
-        // {
-        //     led_state = GPIO_HIGH - led_state; 
-        //     gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
-        // } 
-
-        // 
-        tx_attempt = SET_BIT; 
-    }
-
-    // 
-    if (tx_attempt)
-    {
-        // Send out a payload 
-        nrf24l01_send_payload(nrf24l01_test_data.hb_msg); 
-
-        // Reset the attempts counts if it's maxed out 
-        if (++tx_count >= 5)
+        // Try sending out a payload and toggle the led if it was sent 
+        if (nrf24l01_send_payload(nrf24l01_test_data.hb_msg))
         {
-            tx_attempt = CLEAR_BIT; 
-            // Toggle the LED to signify the end of the attempts 
             led_state = GPIO_HIGH - led_state; 
             gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
-        }
+        } 
     }
-    // Look for a response 
 }
 
 #elif NRF24L01_MULTI_SPI 
@@ -558,6 +536,8 @@ void nrf24l01_test_hb_tx(void)
 #else   // NRF24L01_DEV1_CODE --> End of device 1 code, start of device 2 code 
 
 #if NRF24L01_HEARTBEAT 
+
+// TODO change this to not output the message and add a ststus command for the user 
 
 // Heatbeat test - RX device state 
 void nrf24l01_test_hb_rx(void)
@@ -573,7 +553,7 @@ void nrf24l01_test_hb_rx(void)
         // 
         if (str_compare((char *)nrf24l01_test_data.hb_msg, 
                         (char *)nrf24l01_test_data.read_buff, 
-                        BYTE_0))
+                        BYTE_1))
         {
             uart_sendstring(USART2, (char *)(&nrf24l01_test_data.read_buff[1])); 
             uart_send_new_line(USART2); 

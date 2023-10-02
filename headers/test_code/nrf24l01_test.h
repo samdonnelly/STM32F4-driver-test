@@ -35,16 +35,15 @@
 // they're made for wireless communication between devices. The following macro ensures only 
 // one controller code or the other is enabled. This can be toggled to easily flash the 
 // correct code to a controller. 
-#define NRF24L01_DEV1_CODE 0     // Device code selection 
+#define NRF24L01_DEV1_CODE 1     // Device code selection 
 #define NRF24L01_HEARTBEAT 1     // Heartbeat test code 
 #define NRF24L01_MULTI_SPI 0     // Test code using SD card for same SPI bus on multiple pins 
 #define NRF24L01_RC 0            // Remote control test code 
 
 // Heartbeat 
-#define NRF24L01_HB_PERIOD 2000000   // Time between heartbeat checks (us) 
+#define NRF24L01_HB_PERIOD 500000   // Time between heartbeat checks (us) 
 
 // Multi-SPI 
-
 
 // RC 
 #define NRF24L01_LEFT_MOTOR 0x4C   // "L" character that indicates left motor 
@@ -55,17 +54,6 @@
 // User commands 
 #define NRF24L01_TEST_MAX_INPUT 30   // Max user input command length (bytes) 
 #define NRF24L01_NUM_USER_CMDS 3     // Number of test states 
-
-//=======================================================================================
-
-
-//=======================================================================================
-// Function pointers 
-
-// /**
-//  * @brief nrf24l01 test function pointer 
-//  */
-// typedef void (*nrf24l01_test_func_ptr)(void); 
 
 //=======================================================================================
 
