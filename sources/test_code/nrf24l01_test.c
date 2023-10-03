@@ -66,7 +66,10 @@
 #endif   // NRF24L01_DEV1_CODE --> End of device 2 code 
 
 // Parse the user command into an ID and value 
-uint8_t nrf24l01_test_parse_cmd(void); 
+uint8_t nrf24l01_test_parse_cmd(
+    uint8_t *command_id, 
+    uint8_t *command_value, 
+    uint8_t *command_buffer); 
 
 // RF channel set state 
 void nrf24l01_test_rf_ch(
@@ -116,6 +119,7 @@ typedef struct nrf24l01_test_trackers_s
     // Payload buffers 
     uint8_t hb_msg[NRF24L01_MAX_PAYLOAD_LEN];      // Heartbeat message 
     uint8_t read_buff[NRF24L01_MAX_PAYLOAD_LEN];   // Data read by PRX from PTX device 
+    uint8_t write_buff[NRF24L01_MAX_PAYLOAD_LEN];  // Data sent to PRX from PTX device 
 
     // Status 
     uint8_t state;                                 // Test code "state" 
@@ -159,6 +163,9 @@ static nrf24l01_user_cmds_t cmd_table[NRF24L01_NUM_USER_CMDS] =
 #elif NRF24L01_MULTI_SPI 
 
 #elif NRF24L01_RC 
+
+// Data storage 
+static uint16_t adc_data[NRF24L01_TEST_ADC_NUM];  // Location for the DMA to store ADC values 
 
 #endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
 
@@ -225,8 +232,47 @@ void nrf24l01_test_init(void)
     
     //==================================================
 
+    //===================================================
+    // ADC setup - for user controller mode 
+
+#if NRF24L01_RC && NRF24L01_DEV1_CODE 
+
+    // Initialize the ADC port (called once) 
+    adc_port_init(
+        ADC1, 
+        ADC1_COMMON, 
+        ADC_PCLK2_4, 
+        ADC_RES_8, 
+        ADC_EOC_EACH, 
+        ADC_SCAN_ENABLE, 
+        ADC_CONT_ENABLE, 
+        ADC_DMA_ENABLE, 
+        ADC_DDS_ENABLE, 
+        ADC_EOC_INT_DISABLE, 
+        ADC_OVR_INT_DISABLE); 
+
+    // Initialize the ADC pins and channels (called for each pin/channel) 
+    adc_pin_init(ADC1, GPIOA, PIN_6, ADC_CHANNEL_6, ADC_SMP_15); 
+    adc_pin_init(ADC1, GPIOA, PIN_7, ADC_CHANNEL_7, ADC_SMP_15); 
+
+    // Set the ADC conversion sequence (called for each sequence entry) 
+    adc_seq(ADC1, ADC_CHANNEL_6, ADC_SEQ_1); 
+    adc_seq(ADC1, ADC_CHANNEL_7, ADC_SEQ_2); 
+
+    // Set the sequence length (called once and only for more than one channel) 
+    adc_seq_len_set(ADC1, ADC_SEQ_2); 
+
+    // Turn the ADC on 
+    adc_on(ADC1); 
+
+#endif   // NRF24L01_RC && NRF24L01_DEV1_CODE 
+    
+    //===================================================
+
     //==================================================
     // Initialize DMA 
+
+    // UART input 
 
     // Initialize the DMA stream 
     dma_stream_init(
@@ -250,6 +296,38 @@ void nrf24l01_test_init(void)
 
     // Enable the DMA stream 
     dma_stream_enable(DMA1_Stream5); 
+
+#if NRF24L01_RC && NRF24L01_DEV1_CODE 
+
+    // ADC input 
+
+    // Initialize the DMA stream 
+    dma_stream_init(
+        DMA2, 
+        DMA2_Stream0, 
+        DMA_CHNL_0, 
+        DMA_DIR_PM, 
+        DMA_CM_ENABLE,
+        DMA_PRIOR_VHI, 
+        DMA_ADDR_INCREMENT, 
+        DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
+        DMA_DATA_SIZE_HALF, 
+        DMA_DATA_SIZE_HALF); 
+
+    // Configure the DMA stream 
+    dma_stream_config(
+        DMA2_Stream0, 
+        (uint32_t)(&ADC1->DR), 
+        (uint32_t)adc_data, 
+        (uint16_t)NRF24L01_TEST_ADC_NUM); 
+
+    // Enable the DMA stream 
+    dma_stream_enable(DMA2_Stream0); 
+
+    // Start the ADC conversions 
+    adc_start(ADC1); 
+
+#endif   // NRF24L01_RC && NRF24L01_DEV1_CODE 
 
     //==================================================
 
@@ -336,6 +414,41 @@ void nrf24l01_test_init(void)
     
     //==================================================
 
+    //===================================================
+    // ESC driver setup 
+
+#if NRF24L01_RC && !NRF24L01_DEV1_CODE 
+
+    // ESC driver setup 
+    esc_readytosky_init(
+        DEVICE_ONE, 
+        TIM3, 
+        TIM_CHANNEL_4, 
+        GPIOB, 
+        PIN_1, 
+        TIM_84MHZ_1US_PSC, 
+        ESC_PERIOD, 
+        ESC_FWD_SPEED_LIM, 
+        ESC_REV_SPEED_LIM); 
+
+    esc_readytosky_init(
+        DEVICE_TWO, 
+        TIM3, 
+        TIM_CHANNEL_3, 
+        GPIOB, 
+        PIN_0, 
+        TIM_84MHZ_1US_PSC, 
+        ESC_PERIOD, 
+        ESC_FWD_SPEED_LIM, 
+        ESC_REV_SPEED_LIM); 
+
+    // Enable the PWM timer 
+    tim_enable(TIM3); 
+
+#endif   // NRF24L01_RC && !NRF24L01_DEV1_CODE 
+
+    //=================================================== 
+
     //==================================================
     // GPIO 
 
@@ -367,6 +480,7 @@ void nrf24l01_test_init(void)
     // Payload data 
     memset((void *)nrf24l01_test_data.hb_msg, CLEAR, sizeof(nrf24l01_test_data.hb_msg)); 
     memset((void *)nrf24l01_test_data.read_buff, CLEAR, sizeof(nrf24l01_test_data.read_buff)); 
+    memset((void *)nrf24l01_test_data.write_buff, CLEAR, sizeof(nrf24l01_test_data.write_buff)); 
     strcpy((char *)nrf24l01_test_data.hb_msg, "ping"); 
 
     // Status 
@@ -385,6 +499,7 @@ void nrf24l01_test_init(void)
 #elif NRF24L01_RC 
     
     nrf24l01_test_data.state = NRF24L01_TEST_DEV1_RC_STATE; 
+    memset((void *)adc_data, CLEAR, sizeof(adc_data)); 
 
 #endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
 
@@ -433,7 +548,9 @@ void nrf24l01_test_app(void)
             UART_TEST_MAX_INPUT); 
 
         // Validate the input - parse into an ID and value if valid 
-        if (nrf24l01_test_parse_cmd())
+        if (nrf24l01_test_parse_cmd(nrf24l01_test_data.cmd_id, 
+                                    &nrf24l01_test_data.cmd_value, 
+                                    nrf24l01_test_data.cmd_buff))
         {
             // Valid input - compare the ID to each of the available pre-defined commands 
             for (uint8_t i = CLEAR; i < NRF24L01_NUM_USER_CMDS; i++) 
@@ -488,7 +605,57 @@ void nrf24l01_test_app(void)
 #elif NRF24L01_MULTI_SPI 
     // 
 #elif NRF24L01_RC 
-    // 
+    
+    // Local variables 
+    static gpio_pin_state_t led_state = GPIO_LOW; 
+    static uint8_t thruster = CLEAR; 
+    char side = CLEAR; 
+    char sign = NRF24L01_FWD_THRUST; 
+    int16_t throttle = CLEAR; 
+
+    // Periodically send the throttle command - alternate between left and right side throttle 
+    // commands for each send. 
+    if (tim_compare(nrf24l01_test_data.timer_nonblocking, 
+                    nrf24l01_test_data.delay_timer.clk_freq, 
+                    NRF24L01_RC_PERIOD, 
+                    &nrf24l01_test_data.delay_timer.time_cnt_total, 
+                    &nrf24l01_test_data.delay_timer.time_cnt, 
+                    &nrf24l01_test_data.delay_timer.time_start))
+    {
+        // time_start flag does not need to be set again because this timer runs 
+        // continuously. 
+
+        // Choose between right and left thruster 
+        side = (thruster) ? NRF24L01_LEFT_MOTOR : NRF24L01_RIGHT_MOTOR; 
+
+        // Read the ADC input and format the value for writing to the payload 
+        throttle = esc_test_adc_mapping(adc_data[thruster]); 
+        if (throttle < 0)
+        {
+            // If the throttle is negative then change the value to positive and set the sign 
+            // in the payload as negative. This helps on the receiving end. 
+            throttle = ~throttle + 1; 
+            sign = NRF24L01_REV_THRUST; 
+        }
+
+        // Format the payload with the thruster specifier and the throttle then send the 
+        // payload. 
+        snprintf(
+            (char *)nrf24l01_test_data.write_buff, 
+            NRF24L01_TEST_MAX_INPUT, 
+            "%c%c%d", 
+            side, sign, throttle); 
+
+        if (nrf24l01_send_payload(nrf24l01_test_data.write_buff))
+        {
+            led_state = GPIO_HIGH - led_state; 
+            gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
+        } 
+
+        // Toggle the thruster flag 
+        thruster = SET_BIT - thruster; 
+    }
+
 #endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
 
 #else   // NRF24L01_DEV1_CODE --> End of device 1 code, start of device 2 code 
@@ -544,7 +711,49 @@ void nrf24l01_test_app(void)
 #elif NRF24L01_MULTI_SPI 
     // 
 #elif NRF24L01_RC 
-    // 
+
+    // TODO filter the incoming throttle command - the thruster output is not steady 
+    // most likely due to noisy signals being received. 
+    
+    // Local variables 
+    int16_t throttle = CLEAR; 
+
+    // Check if a payload has been received 
+    if (nrf24l01_data_ready_status(NRF24L01_DP_1))
+    {
+        // Payload has been received. Read the payload from the device RX FIFO. 
+        nrf24l01_receive_payload(nrf24l01_test_data.read_buff, NRF24L01_DP_1); 
+
+        // Validate the payload format 
+        if (nrf24l01_test_parse_cmd(nrf24l01_test_data.cmd_id, 
+                                    &nrf24l01_test_data.cmd_value, 
+                                    &nrf24l01_test_data.read_buff[1]))
+        {
+            // Check to see if the ID and value match a valid throttle command 
+            if (nrf24l01_test_data.cmd_id[1] == NRF24L01_FWD_THRUST)
+            {
+                throttle = nrf24l01_test_data.cmd_value; 
+            }
+            else if (nrf24l01_test_data.cmd_id[1] == NRF24L01_REV_THRUST)
+            {
+                throttle = ~(nrf24l01_test_data.cmd_value) + 1; 
+            }
+
+            // 
+            if (nrf24l01_test_data.cmd_id[0] == NRF24L01_RIGHT_MOTOR)
+            {
+                esc_readytosky_send(DEVICE_ONE, throttle); 
+            }
+            else if (nrf24l01_test_data.cmd_id[0] == NRF24L01_LEFT_MOTOR) 
+            {
+                esc_readytosky_send(DEVICE_TWO, throttle); 
+            }
+        }
+
+        memset((void *)nrf24l01_test_data.read_buff, CLEAR, 
+               sizeof(nrf24l01_test_data.read_buff)); 
+    }
+
 #endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
 
 #endif   // NRF24L01_DEV1_CODE --> End of device 2 code 
@@ -580,7 +789,10 @@ void nrf24l01_test_app(void)
 
 
 // Parse the user command into an ID and value 
-uint8_t nrf24l01_test_parse_cmd(void)
+uint8_t nrf24l01_test_parse_cmd(
+    uint8_t *command_id, 
+    uint8_t *command_value, 
+    uint8_t *command_buffer)
 {
     // Local variables 
     uint8_t id_flag = SET_BIT; 
@@ -590,14 +802,19 @@ uint8_t nrf24l01_test_parse_cmd(void)
     uint8_t value_size = CLEAR; 
 
     // Initialize data 
-    memset((void *)nrf24l01_test_data.cmd_id, CLEAR, sizeof(nrf24l01_test_data.cmd_id)); 
-    nrf24l01_test_data.cmd_value = CLEAR; 
+    // memset((void *)nrf24l01_test_data.cmd_id, CLEAR, sizeof(nrf24l01_test_data.cmd_id)); 
+    // nrf24l01_test_data.cmd_value = CLEAR; 
+    memset((void *)command_id, CLEAR, sizeof(command_id)); 
+    *command_value = CLEAR; 
     memset((void *)cmd_value, CLEAR, sizeof(cmd_value)); 
 
     // Parse the command into an ID and value 
-    for (uint8_t i = CLEAR; nrf24l01_test_data.cmd_buff[i] != NULL_CHAR; i++)
+    // for (uint8_t i = CLEAR; nrf24l01_test_data.cmd_buff[i] != NULL_CHAR; i++)
+    for (uint8_t i = CLEAR; command_buffer[i] != NULL_CHAR; i++)
+
     {
-        data = nrf24l01_test_data.cmd_buff[i]; 
+        // data = nrf24l01_test_data.cmd_buff[i]; 
+        data = command_buffer[i]; 
 
         if (id_flag)
         {
@@ -606,16 +823,19 @@ uint8_t nrf24l01_test_parse_cmd(void)
             id_index = i; 
 
             // Check that the command byte is within range 
-            if (data >= A_LO_CHAR && data <= Z_LO_CHAR)
+            if ((data >= A_LO_CHAR && data <= Z_LO_CHAR) || 
+                (data >= A_UP_CHAR && data <= Z_UP_CHAR))
             {
                 // Valid character byte seen 
-                nrf24l01_test_data.cmd_id[i] = data; 
+                // nrf24l01_test_data.cmd_id[i] = data; 
+                command_id[i] = data; 
             }
             else if (data >= ZERO_CHAR && data <= NINE_CHAR)
             {
                 // Valid digit character byte seen 
                 id_flag = CLEAR_BIT; 
-                nrf24l01_test_data.cmd_id[i] = NULL_CHAR; 
+                // nrf24l01_test_data.cmd_id[i] = NULL_CHAR; 
+                command_id[i] = NULL_CHAR; 
                 cmd_value[i-id_index] = data; 
                 value_size++; 
             }
@@ -646,7 +866,8 @@ uint8_t nrf24l01_test_parse_cmd(void)
     // Calculate the cmd value 
     for (uint8_t i = CLEAR; i < value_size; i++)
     {
-        nrf24l01_test_data.cmd_value += (uint8_t)char_to_int(cmd_value[i], value_size-i-1); 
+        // nrf24l01_test_data.cmd_value += (uint8_t)char_to_int(cmd_value[i], value_size-i-1); 
+        *command_value += (uint8_t)char_to_int(cmd_value[i], value_size-i-1); 
     }
 
     return TRUE; 

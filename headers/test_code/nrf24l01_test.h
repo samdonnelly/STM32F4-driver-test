@@ -36,9 +36,9 @@
 // one controller code or the other is enabled. This can be toggled to easily flash the 
 // correct code to a controller. 
 #define NRF24L01_DEV1_CODE 0     // Device code selection 
-#define NRF24L01_HEARTBEAT 1     // Heartbeat test code 
+#define NRF24L01_HEARTBEAT 0     // Heartbeat test code 
 #define NRF24L01_MULTI_SPI 0     // Test code using SD card for same SPI bus on multiple pins 
-#define NRF24L01_RC 0            // Remote control test code 
+#define NRF24L01_RC 1            // Remote control test code 
 
 // Heartbeat 
 #define NRF24L01_HB_PERIOD 500000   // Time between heartbeat checks (us) 
@@ -47,10 +47,12 @@
 // Multi-SPI 
 
 // RC 
-#define NRF24L01_LEFT_MOTOR 0x4C   // "L" character that indicates left motor 
-#define NRF24L01_RIGHT_MOTOR 0x52  // "R" character that indicates right motor 
-#define NRF24L01_FWD_THRUST 0x2B   // "+" character that indicates forward thrust 
-#define NRF24L01_REV_THRUST 0x2D   // "-" character that indicates reverse thrust 
+#define NRF24L01_LEFT_MOTOR 0x4C         // "L" character that indicates left motor 
+#define NRF24L01_RIGHT_MOTOR 0x52        // "R" character that indicates right motor 
+#define NRF24L01_FWD_THRUST 0x50         // "P" (positive) - indicates forward thrust 
+#define NRF24L01_REV_THRUST 0x4E         // "N" (negative) - indicates reverse thrust 
+#define NRF24L01_TEST_ADC_NUM 2          // Number of ADCs used for throttle command 
+#define NRF24L01_RC_PERIOD 50000         // Time between throttle command sends (us) 
 
 // User commands 
 #define NRF24L01_TEST_MAX_INPUT 30   // Max user input command length (bytes) 
