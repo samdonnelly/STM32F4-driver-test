@@ -43,51 +43,69 @@
 //=======================================================================================
 // Function prototypes 
 
-#if NRF24L01_DEV1_CODE   // Start of device 1 code 
-
-#if NRF24L01_HEARTBEAT 
-
-#elif NRF24L01_MULTI_SPI 
-
-#elif NRF24L01_RC 
-
-#endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
-
-#else   // NRF24L01_DEV1_CODE --> End of device 1 code, start of device 2 code 
-
-#if NRF24L01_HEARTBEAT 
-
-#elif NRF24L01_MULTI_SPI 
-
-#elif NRF24L01_RC 
-
-#endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
-
-#endif   // NRF24L01_DEV1_CODE --> End of device 2 code 
-
-// Parse the user command into an ID and value 
+/**
+ * @brief Parse the user command into an ID and value 
+ * 
+ * @details 
+ * 
+ * @param command_id 
+ * @param command_value 
+ * @param command_buffer 
+ * @return uint8_t 
+ */
 uint8_t nrf24l01_test_parse_cmd(
-    uint8_t *command_id, 
-    uint8_t *command_value, 
     uint8_t *command_buffer); 
 
-// RF channel set state 
+
+/**
+ * @brief RF channel set state 
+ * 
+ * @details 
+ * 
+ * @param rf_ch 
+ */
 void nrf24l01_test_rf_ch(
     uint8_t rf_ch); 
 
-// RF data rate set state 
+
+/**
+ * @brief RF data rate set state 
+ * 
+ * @details 
+ * 
+ * @param rf_dr 
+ */
 void nrf24l01_test_rf_dr(
     uint8_t rf_dr); 
 
-// RF power output set state 
+
+/**
+ * @brief RF power output set state 
+ * 
+ * @details 
+ * 
+ * @param rf_pwr 
+ */
 void nrf24l01_test_rf_pwr(
     uint8_t rf_pwr); 
 
-// PRX device connection status 
+
+/**
+ * @brief PRX device connection status 
+ * 
+ * @details 
+ * 
+ * @param status 
+ */
 void nrf24l01_test_status(
     uint8_t status); 
 
-// Invalid input user feedback 
+
+/**
+ * @brief Invalid input user feedback 
+ * 
+ * @details 
+ */
 void nrf24l01_test_invalid_input(void); 
 
 //=======================================================================================
@@ -96,8 +114,16 @@ void nrf24l01_test_invalid_input(void);
 //=======================================================================================
 // Global variables 
 
+//==================================================
+// Data 
+
 // Address sent by the PTX and address accepted by the PRX 
 static uint8_t pipe_addr_buff[NRF24l01_ADDR_WIDTH] = {0xB3, 0xB4, 0xB5, 0xB6, 0x05}; 
+
+// ADC storage 
+static uint16_t adc_data[NRF24L01_TEST_ADC_NUM];  // Location for the DMA to store ADC values 
+
+//==================================================
 
 //==================================================
 // Test data record 
@@ -156,31 +182,6 @@ static nrf24l01_user_cmds_t cmd_table[NRF24L01_NUM_USER_CMDS] =
 
 //==================================================
 
-#if NRF24L01_DEV1_CODE   // Start of device 1 code 
-
-#if NRF24L01_HEARTBEAT 
-
-#elif NRF24L01_MULTI_SPI 
-
-#elif NRF24L01_RC 
-
-// Data storage 
-static uint16_t adc_data[NRF24L01_TEST_ADC_NUM];  // Location for the DMA to store ADC values 
-
-#endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
-
-#else   // NRF24L01_DEV1_CODE --> End of device 1 code, start of device 2 code 
-
-#if NRF24L01_HEARTBEAT 
-
-#elif NRF24L01_MULTI_SPI 
-
-#elif NRF24L01_RC 
-
-#endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
-
-#endif   // NRF24L01_DEV1_CODE --> End of device 2 code 
-
 //=======================================================================================
 
 
@@ -189,6 +190,8 @@ static uint16_t adc_data[NRF24L01_TEST_ADC_NUM];  // Location for the DMA to sto
 
 void nrf24l01_test_init(void)
 {
+    // Universal (to all nrf24l01 tests) setup code 
+
     //==================================================
     // General setup 
 
@@ -232,49 +235,10 @@ void nrf24l01_test_init(void)
     
     //==================================================
 
-    //===================================================
-    // ADC setup - for user controller mode 
-
-#if NRF24L01_RC && NRF24L01_DEV1_CODE 
-
-    // Initialize the ADC port (called once) 
-    adc_port_init(
-        ADC1, 
-        ADC1_COMMON, 
-        ADC_PCLK2_4, 
-        ADC_RES_8, 
-        ADC_EOC_EACH, 
-        ADC_SCAN_ENABLE, 
-        ADC_CONT_ENABLE, 
-        ADC_DMA_ENABLE, 
-        ADC_DDS_ENABLE, 
-        ADC_EOC_INT_DISABLE, 
-        ADC_OVR_INT_DISABLE); 
-
-    // Initialize the ADC pins and channels (called for each pin/channel) 
-    adc_pin_init(ADC1, GPIOA, PIN_6, ADC_CHANNEL_6, ADC_SMP_15); 
-    adc_pin_init(ADC1, GPIOA, PIN_7, ADC_CHANNEL_7, ADC_SMP_15); 
-
-    // Set the ADC conversion sequence (called for each sequence entry) 
-    adc_seq(ADC1, ADC_CHANNEL_6, ADC_SEQ_1); 
-    adc_seq(ADC1, ADC_CHANNEL_7, ADC_SEQ_2); 
-
-    // Set the sequence length (called once and only for more than one channel) 
-    adc_seq_len_set(ADC1, ADC_SEQ_2); 
-
-    // Turn the ADC on 
-    adc_on(ADC1); 
-
-#endif   // NRF24L01_RC && NRF24L01_DEV1_CODE 
-    
-    //===================================================
-
     //==================================================
     // Initialize DMA 
 
-    // UART input 
-
-    // Initialize the DMA stream 
+    // Initialize the DMA stream for the UART 
     dma_stream_init(
         DMA1, 
         DMA1_Stream5, 
@@ -287,47 +251,15 @@ void nrf24l01_test_init(void)
         DMA_DATA_SIZE_BYTE, 
         DMA_DATA_SIZE_BYTE); 
 
-    // Configure the DMA stream 
+    // Configure the DMA stream for the UART 
     dma_stream_config(
         DMA1_Stream5, 
         (uint32_t)(&USART2->DR), 
         (uint32_t)nrf24l01_test_data.user_buff, 
         (uint16_t)NRF24L01_TEST_MAX_INPUT); 
 
-    // Enable the DMA stream 
+    // Enable the DMA stream for the UART 
     dma_stream_enable(DMA1_Stream5); 
-
-#if NRF24L01_RC && NRF24L01_DEV1_CODE 
-
-    // ADC input 
-
-    // Initialize the DMA stream 
-    dma_stream_init(
-        DMA2, 
-        DMA2_Stream0, 
-        DMA_CHNL_0, 
-        DMA_DIR_PM, 
-        DMA_CM_ENABLE,
-        DMA_PRIOR_VHI, 
-        DMA_ADDR_INCREMENT, 
-        DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
-        DMA_DATA_SIZE_HALF, 
-        DMA_DATA_SIZE_HALF); 
-
-    // Configure the DMA stream 
-    dma_stream_config(
-        DMA2_Stream0, 
-        (uint32_t)(&ADC1->DR), 
-        (uint32_t)adc_data, 
-        (uint16_t)NRF24L01_TEST_ADC_NUM); 
-
-    // Enable the DMA stream 
-    dma_stream_enable(DMA2_Stream0); 
-
-    // Start the ADC conversions 
-    adc_start(ADC1); 
-
-#endif   // NRF24L01_RC && NRF24L01_DEV1_CODE 
 
     //==================================================
 
@@ -356,24 +288,6 @@ void nrf24l01_test_init(void)
         SPI_BR_FPCLK_16, 
         SPI_CLOCK_MODE_0); 
 
-#if NRF24L01_MULTI_SPI && !NRF24L01_DEV1_CODE 
-
-    // SPI2 and slave select pin for SD card 
-    // This is on different pins than the RF module to test if the same SPI bus works across 
-    // multiple pins. 
-    spi_init(
-        SPI2, 
-        GPIOB,   // SCK pin GPIO port 
-        PIN_10,  // SCK pin 
-        GPIOB,   // Data (MISO/MOSI) pin GPIO port 
-        PIN_14,  // MISO pin 
-        PIN_15,  // MOSI pin 
-        SPI_BR_FPCLK_16, 
-        SPI_CLOCK_MODE_0); 
-    spi_ss_init(GPIOB, PIN_12); 
-
-#endif   // NRF24L01_MULTI_SPI && NRF24L01_DEV1_CODE 
-
     //==================================================
 
     //==================================================
@@ -393,31 +307,227 @@ void nrf24l01_test_init(void)
     nrf24l01_set_rf_dr(NRF24L01_DR_2MBPS); 
     nrf24l01_set_rf_pwr(NRF24L01_RF_PWR_6DBM); 
 
-    // Configure the PTX and PRX settings depending on the devices role/purpose 
-#if NRF24L01_DEV1_CODE 
+    // PTX and PRX setup is required and is found below depending on the device 
+
+    //==================================================
+
+    //==================================================
+    // Initialize variables 
+
+    // Timing information 
+    nrf24l01_test_data.timer_nonblocking = TIM9; 
+    nrf24l01_test_data.delay_timer.clk_freq = 
+        tim_get_pclk_freq(nrf24l01_test_data.timer_nonblocking); 
+    nrf24l01_test_data.delay_timer.time_cnt_total = CLEAR; 
+    nrf24l01_test_data.delay_timer.time_cnt = CLEAR; 
+    nrf24l01_test_data.delay_timer.time_start = SET_BIT; 
+
+    // User commands 
+    memset((void *)nrf24l01_test_data.user_buff, CLEAR, sizeof(nrf24l01_test_data.user_buff)); 
+    nrf24l01_test_data.buff_index = CLEAR; 
+    memset((void *)nrf24l01_test_data.cmd_buff, CLEAR, sizeof(nrf24l01_test_data.cmd_buff)); 
+    memset((void *)nrf24l01_test_data.cmd_id, CLEAR, sizeof(nrf24l01_test_data.cmd_id)); 
+    nrf24l01_test_data.cmd_value = CLEAR; 
+
+    // Payload data 
+    memset((void *)nrf24l01_test_data.hb_msg, CLEAR, sizeof(nrf24l01_test_data.hb_msg)); 
+    memset((void *)nrf24l01_test_data.read_buff, CLEAR, sizeof(nrf24l01_test_data.read_buff)); 
+    memset((void *)nrf24l01_test_data.write_buff, CLEAR, sizeof(nrf24l01_test_data.write_buff)); 
+    strcpy((char *)nrf24l01_test_data.hb_msg, "ping"); 
+
+    // Status 
+    nrf24l01_test_data.conn_status = CLEAR_BIT; 
+    
+    //==================================================
+
+
+#if NRF24L01_DEV1_CODE   // Start of device 1 code 
+
+    // Device one setup code 
+
+    //==================================================
+    // Initialize the device driver 
+
+    // Configure the PTX settings depending on the devices role/purpose 
     nrf24l01_ptx_config(pipe_addr_buff); 
-#else   // NRF24L01_DEV1_CODE 
+
+    //==================================================
+
+    //==================================================
+    // GPIO 
+
+    // Board LED - on when logic low 
+    gpio_pin_init(GPIOA, PIN_5, MODER_GPO, OTYPER_PP, OSPEEDR_HIGH, PUPDR_NO); 
+
+    //==================================================
+
+#if NRF24L01_HEARTBEAT 
+    
+    // Device one - Heartbeat setup code 
+
+    //==================================================
+    // Initialize variables 
+
+    nrf24l01_test_data.state = NRF24L01_TEST_DEV1_HB_STATE; 
+    
+    //==================================================
+
+#elif NRF24L01_MULTI_SPI 
+    
+    // Device one - Multiple SPI devices setup code 
+
+    //==================================================
+    // Initialize variables 
+
+    nrf24l01_test_data.state = NRF24L01_TEST_DEV1_MSPI_STATE; 
+    
+    //==================================================
+
+#elif NRF24L01_RC 
+    
+    // Device one - RC setup code 
+
+    //===================================================
+    // ADC setup - for user controller mode 
+
+    // Initialize the ADC port (called once) 
+    adc_port_init(
+        ADC1, 
+        ADC1_COMMON, 
+        ADC_PCLK2_4, 
+        ADC_RES_8, 
+        ADC_EOC_EACH, 
+        ADC_SCAN_ENABLE, 
+        ADC_CONT_ENABLE, 
+        ADC_DMA_ENABLE, 
+        ADC_DDS_ENABLE, 
+        ADC_EOC_INT_DISABLE, 
+        ADC_OVR_INT_DISABLE); 
+
+    // Initialize the ADC pins and channels (called for each pin/channel) 
+    adc_pin_init(ADC1, GPIOA, PIN_6, ADC_CHANNEL_6, ADC_SMP_15); 
+    adc_pin_init(ADC1, GPIOA, PIN_7, ADC_CHANNEL_7, ADC_SMP_15); 
+
+    // Set the ADC conversion sequence (called for each sequence entry) 
+    adc_seq(ADC1, ADC_CHANNEL_6, ADC_SEQ_1); 
+    adc_seq(ADC1, ADC_CHANNEL_7, ADC_SEQ_2); 
+
+    // Set the sequence length (called once and only for more than one channel) 
+    adc_seq_len_set(ADC1, ADC_SEQ_2); 
+
+    // Turn the ADC on 
+    adc_on(ADC1); 
+    
+    //===================================================
+
+    //==================================================
+    // Initialize DMA 
+
+    // Initialize the DMA stream for the ADC 
+    dma_stream_init(
+        DMA2, 
+        DMA2_Stream0, 
+        DMA_CHNL_0, 
+        DMA_DIR_PM, 
+        DMA_CM_ENABLE,
+        DMA_PRIOR_VHI, 
+        DMA_ADDR_INCREMENT, 
+        DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
+        DMA_DATA_SIZE_HALF, 
+        DMA_DATA_SIZE_HALF); 
+
+    // Configure the DMA stream for the ADC 
+    dma_stream_config(
+        DMA2_Stream0, 
+        (uint32_t)(&ADC1->DR), 
+        (uint32_t)adc_data, 
+        (uint16_t)NRF24L01_TEST_ADC_NUM); 
+
+    // Enable the DMA stream for the ADC 
+    dma_stream_enable(DMA2_Stream0); 
+
+    // Start the ADC conversions (continuous mode) 
+    adc_start(ADC1); 
+
+    //==================================================
+
+    //==================================================
+    // Initialize variables 
+
+    nrf24l01_test_data.state = NRF24L01_TEST_DEV1_RC_STATE; 
+    memset((void *)adc_data, CLEAR, sizeof(adc_data)); 
+    
+    //==================================================
+
+#endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
+
+#else   // NRF24L01_DEV1_CODE --> End of device 1 code, start of device 2 code 
+    
+    // Device two setup code 
+
+    //==================================================
+    // Initialize the device driver 
+
+    // Configure the PRX settings depending on the devices role/purpose 
     nrf24l01_prx_config(pipe_addr_buff, NRF24L01_DP_1); 
-#endif   // NRF24L01_DEV1_CODE 
+
+    //==================================================
+
+#if NRF24L01_HEARTBEAT 
+    
+    // Device two - Heartbeat setup code 
+
+    //==================================================
+    // Initialize variables 
+
+    nrf24l01_test_data.state = NRF24L01_TEST_DEV2_HB_STATE; 
+    
+    //==================================================
+
+#elif NRF24L01_MULTI_SPI 
+    
+    // Device two - Multiple SPI devices setup code 
+
+    //==================================================
+    // Initialize SPI 
+
+    // SPI2 and slave select pin for SD card 
+    // This is on different pins than the RF module to test if the same SPI bus works across 
+    // multiple pins. 
+    spi_init(
+        SPI2, 
+        GPIOB,   // SCK pin GPIO port 
+        PIN_10,  // SCK pin 
+        GPIOB,   // Data (MISO/MOSI) pin GPIO port 
+        PIN_14,  // MISO pin 
+        PIN_15,  // MOSI pin 
+        SPI_BR_FPCLK_16, 
+        SPI_CLOCK_MODE_0); 
+    spi_ss_init(GPIOB, PIN_12); 
 
     //==================================================
 
     //==================================================
     // Initialize SD card --> for testing multiple SPI pins on the same SPI bus 
 
-#if NRF24L01_MULTI_SPI && !NRF24L01_DEV1_CODE 
-
     // SD card user initialization 
     hw125_user_init(SPI2, GPIOB, GPIOX_PIN_12); 
-
-#endif   // NRF24L01_MULTI_SPI 
     
     //==================================================
 
+    //==================================================
+    // Initialize variables 
+
+    nrf24l01_test_data.state = NRF24L01_TEST_DEV2_MSPI_STATE; 
+    
+    //==================================================
+
+#elif NRF24L01_RC 
+    
+    // Device two - RC setup code 
+
     //===================================================
     // ESC driver setup 
-
-#if NRF24L01_RC && !NRF24L01_DEV1_CODE 
 
     // ESC driver setup 
     esc_readytosky_init(
@@ -445,84 +555,20 @@ void nrf24l01_test_init(void)
     // Enable the PWM timer 
     tim_enable(TIM3); 
 
-#endif   // NRF24L01_RC && !NRF24L01_DEV1_CODE 
-
     //=================================================== 
 
     //==================================================
-    // GPIO 
-
-#if NRF24L01_DEV1_CODE 
-    // Board LED - on when logic low 
-    gpio_pin_init(GPIOA, PIN_5, MODER_GPO, OTYPER_PP, OSPEEDR_HIGH, PUPDR_NO); 
-#endif   // NRF24L01_DEV1_CODE 
-
-    //==================================================
-
-    //==================================================
-    // Variable and user initialization 
-
-    // Timing information 
-    nrf24l01_test_data.timer_nonblocking = TIM9; 
-    nrf24l01_test_data.delay_timer.clk_freq = 
-        tim_get_pclk_freq(nrf24l01_test_data.timer_nonblocking); 
-    nrf24l01_test_data.delay_timer.time_cnt_total = CLEAR; 
-    nrf24l01_test_data.delay_timer.time_cnt = CLEAR; 
-    nrf24l01_test_data.delay_timer.time_start = SET_BIT; 
-
-    // User commands 
-    memset((void *)nrf24l01_test_data.user_buff, CLEAR, sizeof(nrf24l01_test_data.user_buff)); 
-    nrf24l01_test_data.buff_index = CLEAR; 
-    memset((void *)nrf24l01_test_data.cmd_buff, CLEAR, sizeof(nrf24l01_test_data.cmd_buff)); 
-    memset((void *)nrf24l01_test_data.cmd_id, CLEAR, sizeof(nrf24l01_test_data.cmd_id)); 
-    nrf24l01_test_data.cmd_value = CLEAR; 
-
-    // Payload data 
-    memset((void *)nrf24l01_test_data.hb_msg, CLEAR, sizeof(nrf24l01_test_data.hb_msg)); 
-    memset((void *)nrf24l01_test_data.read_buff, CLEAR, sizeof(nrf24l01_test_data.read_buff)); 
-    memset((void *)nrf24l01_test_data.write_buff, CLEAR, sizeof(nrf24l01_test_data.write_buff)); 
-    strcpy((char *)nrf24l01_test_data.hb_msg, "ping"); 
-
-    // Status 
-    nrf24l01_test_data.conn_status = CLEAR_BIT; 
-
-#if NRF24L01_DEV1_CODE   // Start of device 1 code 
-
-#if NRF24L01_HEARTBEAT 
-
-    nrf24l01_test_data.state = NRF24L01_TEST_DEV1_HB_STATE; 
-
-#elif NRF24L01_MULTI_SPI 
-
-    nrf24l01_test_data.state = NRF24L01_TEST_DEV1_MSPI_STATE; 
-    
-#elif NRF24L01_RC 
-    
-    nrf24l01_test_data.state = NRF24L01_TEST_DEV1_RC_STATE; 
-    memset((void *)adc_data, CLEAR, sizeof(adc_data)); 
-
-#endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
-
-#else   // NRF24L01_DEV1_CODE --> End of device 1 code, start of device 2 code 
-    // 
-#if NRF24L01_HEARTBEAT 
-
-    nrf24l01_test_data.state = NRF24L01_TEST_DEV2_HB_STATE; 
-
-#elif NRF24L01_MULTI_SPI 
-    
-    nrf24l01_test_data.state = NRF24L01_TEST_DEV2_MSPI_STATE; 
-
-#elif NRF24L01_RC 
+    // Initialize variables 
 
     nrf24l01_test_data.state = NRF24L01_TEST_DEV2_RC_STATE; 
+    
+    //==================================================
 
 #endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
 
 #endif   // NRF24L01_DEV1_CODE --> End of device 2 code 
 
-    //==================================================
-
+    // Provide an initial user prompt 
     uart_sendstring(USART2, "\r\n>>> "); 
 }
 
@@ -534,6 +580,8 @@ void nrf24l01_test_init(void)
 
 void nrf24l01_test_app(void)
 {
+    // Universal (to all nrf24l01 tests) application test code 
+
     // Check for user serial terminal input 
     if (handler_flags.usart2_flag)
     {
@@ -548,9 +596,7 @@ void nrf24l01_test_app(void)
             UART_TEST_MAX_INPUT); 
 
         // Validate the input - parse into an ID and value if valid 
-        if (nrf24l01_test_parse_cmd(nrf24l01_test_data.cmd_id, 
-                                    &nrf24l01_test_data.cmd_value, 
-                                    nrf24l01_test_data.cmd_buff))
+        if (nrf24l01_test_parse_cmd(nrf24l01_test_data.cmd_buff))
         {
             // Valid input - compare the ID to each of the available pre-defined commands 
             for (uint8_t i = CLEAR; i < NRF24L01_NUM_USER_CMDS; i++) 
@@ -578,7 +624,11 @@ void nrf24l01_test_app(void)
 
 #if NRF24L01_DEV1_CODE   // Start of device 1 code 
 
+    // Device one application test code 
+
 #if NRF24L01_HEARTBEAT 
+
+    // Device one - Heartbeat test code 
 
     // Local variables 
     static gpio_pin_state_t led_state = GPIO_LOW; 
@@ -603,8 +653,12 @@ void nrf24l01_test_app(void)
     }
 
 #elif NRF24L01_MULTI_SPI 
-    // 
+    
+    // Device one - Multiple SPI test code 
+
 #elif NRF24L01_RC 
+
+    // Device one - RC test code 
     
     // Local variables 
     static gpio_pin_state_t led_state = GPIO_LOW; 
@@ -659,8 +713,12 @@ void nrf24l01_test_app(void)
 #endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
 
 #else   // NRF24L01_DEV1_CODE --> End of device 1 code, start of device 2 code 
-    // 
+    
+    // Device two application test code 
+
 #if NRF24L01_HEARTBEAT 
+
+    // Device two - Heartbeat test code 
 
     // Local variables 
     static uint8_t timeout_count = CLEAR; 
@@ -709,14 +767,20 @@ void nrf24l01_test_app(void)
     }
 
 #elif NRF24L01_MULTI_SPI 
-    // 
+    
+    // Device two - Multiple SPI test code 
+
 #elif NRF24L01_RC 
+
+    // Device two - RC test code 
 
     // TODO filter the incoming throttle command - the thruster output is not steady 
     // most likely due to noisy signals being received. 
     
     // Local variables 
     int16_t throttle = CLEAR; 
+    static int16_t right_throttle = CLEAR; 
+    static int16_t left_throttle = CLEAR; 
 
     // Check if a payload has been received 
     if (nrf24l01_data_ready_status(NRF24L01_DP_1))
@@ -725,9 +789,7 @@ void nrf24l01_test_app(void)
         nrf24l01_receive_payload(nrf24l01_test_data.read_buff, NRF24L01_DP_1); 
 
         // Validate the payload format 
-        if (nrf24l01_test_parse_cmd(nrf24l01_test_data.cmd_id, 
-                                    &nrf24l01_test_data.cmd_value, 
-                                    &nrf24l01_test_data.read_buff[1]))
+        if (nrf24l01_test_parse_cmd(&nrf24l01_test_data.read_buff[1]))
         {
             // Check to see if the ID and value match a valid throttle command 
             if (nrf24l01_test_data.cmd_id[1] == NRF24L01_FWD_THRUST)
@@ -765,33 +827,8 @@ void nrf24l01_test_app(void)
 //=======================================================================================
 // Test functions 
 
-#if NRF24L01_DEV1_CODE   // Start of device 1 code 
-
-#if NRF24L01_HEARTBEAT 
-
-#elif NRF24L01_MULTI_SPI 
-
-#elif NRF24L01_RC 
-
-#endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
-
-#else   // NRF24L01_DEV1_CODE --> End of device 1 code, start of device 2 code 
-
-#if NRF24L01_HEARTBEAT 
-
-#elif NRF24L01_MULTI_SPI 
-
-#elif NRF24L01_RC 
-
-#endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
-
-#endif   // NRF24L01_DEV1_CODE --> End of device 2 code 
-
-
 // Parse the user command into an ID and value 
 uint8_t nrf24l01_test_parse_cmd(
-    uint8_t *command_id, 
-    uint8_t *command_value, 
     uint8_t *command_buffer)
 {
     // Local variables 
@@ -802,18 +839,14 @@ uint8_t nrf24l01_test_parse_cmd(
     uint8_t value_size = CLEAR; 
 
     // Initialize data 
-    // memset((void *)nrf24l01_test_data.cmd_id, CLEAR, sizeof(nrf24l01_test_data.cmd_id)); 
-    // nrf24l01_test_data.cmd_value = CLEAR; 
-    memset((void *)command_id, CLEAR, sizeof(command_id)); 
-    *command_value = CLEAR; 
+    memset((void *)nrf24l01_test_data.cmd_id, CLEAR, sizeof(nrf24l01_test_data.cmd_id)); 
+    nrf24l01_test_data.cmd_value = CLEAR; 
     memset((void *)cmd_value, CLEAR, sizeof(cmd_value)); 
 
     // Parse the command into an ID and value 
-    // for (uint8_t i = CLEAR; nrf24l01_test_data.cmd_buff[i] != NULL_CHAR; i++)
     for (uint8_t i = CLEAR; command_buffer[i] != NULL_CHAR; i++)
 
     {
-        // data = nrf24l01_test_data.cmd_buff[i]; 
         data = command_buffer[i]; 
 
         if (id_flag)
@@ -827,15 +860,13 @@ uint8_t nrf24l01_test_parse_cmd(
                 (data >= A_UP_CHAR && data <= Z_UP_CHAR))
             {
                 // Valid character byte seen 
-                // nrf24l01_test_data.cmd_id[i] = data; 
-                command_id[i] = data; 
+                nrf24l01_test_data.cmd_id[i] = data; 
             }
             else if (data >= ZERO_CHAR && data <= NINE_CHAR)
             {
                 // Valid digit character byte seen 
                 id_flag = CLEAR_BIT; 
-                // nrf24l01_test_data.cmd_id[i] = NULL_CHAR; 
-                command_id[i] = NULL_CHAR; 
+                nrf24l01_test_data.cmd_id[i] = NULL_CHAR; 
                 cmd_value[i-id_index] = data; 
                 value_size++; 
             }
@@ -866,8 +897,7 @@ uint8_t nrf24l01_test_parse_cmd(
     // Calculate the cmd value 
     for (uint8_t i = CLEAR; i < value_size; i++)
     {
-        // nrf24l01_test_data.cmd_value += (uint8_t)char_to_int(cmd_value[i], value_size-i-1); 
-        *command_value += (uint8_t)char_to_int(cmd_value[i], value_size-i-1); 
+        nrf24l01_test_data.cmd_value += (uint8_t)char_to_int(cmd_value[i], value_size-i-1); 
     }
 
     return TRUE; 
