@@ -773,14 +773,11 @@ void nrf24l01_test_app(void)
 #elif NRF24L01_RC 
 
     // Device two - RC test code 
-
-    // TODO filter the incoming throttle command - the thruster output is not steady 
-    // most likely due to noisy signals being received. 
     
     // Local variables 
-    int16_t throttle = CLEAR; 
     static int16_t right_throttle = CLEAR; 
     static int16_t left_throttle = CLEAR; 
+    uint8_t cmd_checksum = CLEAR; 
 
     // Check if a payload has been received 
     if (nrf24l01_data_ready_status(NRF24L01_DP_1))
@@ -791,24 +788,34 @@ void nrf24l01_test_app(void)
         // Validate the payload format 
         if (nrf24l01_test_parse_cmd(&nrf24l01_test_data.read_buff[1]))
         {
-            // Check to see if the ID and value match a valid throttle command 
-            if (nrf24l01_test_data.cmd_id[1] == NRF24L01_FWD_THRUST)
-            {
-                throttle = nrf24l01_test_data.cmd_value; 
-            }
-            else if (nrf24l01_test_data.cmd_id[1] == NRF24L01_REV_THRUST)
-            {
-                throttle = ~(nrf24l01_test_data.cmd_value) + 1; 
-            }
+            // Check that the command matches a valid throttle command. If it does then update 
+            // the thruster command. 
+            cmd_checksum = nrf24l01_test_data.cmd_id[0] + nrf24l01_test_data.cmd_id[1]; 
 
-            // 
-            if (nrf24l01_test_data.cmd_id[0] == NRF24L01_RIGHT_MOTOR)
+            switch (cmd_checksum)
             {
-                esc_readytosky_send(DEVICE_ONE, throttle); 
-            }
-            else if (nrf24l01_test_data.cmd_id[0] == NRF24L01_LEFT_MOTOR) 
-            {
-                esc_readytosky_send(DEVICE_TWO, throttle); 
+                case (NRF24L01_RIGHT_MOTOR + NRF24L01_FWD_THRUST): 
+                    right_throttle += 
+                        ((nrf24l01_test_data.cmd_value - right_throttle) >> SHIFT_3); 
+                    esc_readytosky_send(DEVICE_ONE, right_throttle); 
+                    break; 
+                case (NRF24L01_RIGHT_MOTOR + NRF24L01_REV_THRUST): 
+                    right_throttle += 
+                        (((~(nrf24l01_test_data.cmd_value) + 1) - right_throttle) >> SHIFT_3); 
+                    esc_readytosky_send(DEVICE_ONE, right_throttle); 
+                    break; 
+                case (NRF24L01_LEFT_MOTOR + NRF24L01_FWD_THRUST): 
+                    left_throttle += 
+                        ((nrf24l01_test_data.cmd_value - left_throttle) >> SHIFT_3); 
+                    esc_readytosky_send(DEVICE_TWO, left_throttle); 
+                    break; 
+                case (NRF24L01_LEFT_MOTOR + NRF24L01_REV_THRUST): 
+                    left_throttle += 
+                        (((~(nrf24l01_test_data.cmd_value) + 1) - left_throttle) >> SHIFT_3); 
+                    esc_readytosky_send(DEVICE_TWO, left_throttle); 
+                    break; 
+                default: 
+                    break; 
             }
         }
 
