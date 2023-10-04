@@ -469,8 +469,8 @@ void m8q_test_app()
      *          
      *          This code reads the devices current location and calculates the surface distance 
      *          to a target waypoint. If the distance is less than a threshold then the device is 
-     *          considered to have hit the waypoint at whcih point the next waypoint is selected 
-     *          and process repeats. The distance to the next waypoint is displayed on a screen 
+     *          considered to have hit the waypoint at which point the next waypoint is selected 
+     *          and the process repeats. The distance to the next waypoint is displayed on a screen 
      *          for user feedback. The is no indication of direction to the next waypoint other 
      *          that the current distance to it. The distance will only be updated as often as 
      *          the device sends new position data (once per second). If there is no position 
@@ -534,7 +534,7 @@ void m8q_test_app()
             }
 
             // Update GPS radius. This is the surface distance (arc distance) between 
-            // the target waypoint and the current location. The radius us expressed 
+            // the target waypoint and the current location. The radius is expressed 
             // in meters*10. 
             radius = m8q_test_gps_rad(
                 lat_current, 

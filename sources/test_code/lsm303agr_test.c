@@ -575,7 +575,7 @@ int16_t lsm303agr_test_heading(void)
     // Local variables 
     int16_t tn_heading = CLEAR; 
 
-    // Get the magnetometer and add the true North correction 
+    // Get the magnetometer heading and add the true North correction 
     tn_heading = lsm303agr_m_get_heading() + mag_tn_correction; 
 
     // Adjust the true North heading if the corrected headed exceeds heading bounds 
