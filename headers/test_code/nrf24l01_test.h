@@ -49,8 +49,10 @@
 // RC 
 #define NRF24L01_LEFT_MOTOR 0x4C         // "L" character that indicates left motor 
 #define NRF24L01_RIGHT_MOTOR 0x52        // "R" character that indicates right motor 
-#define NRF24L01_FWD_THRUST 0x50         // "P" (positive) - indicates forward thrust 
-#define NRF24L01_REV_THRUST 0x4E         // "N" (negative) - indicates reverse thrust 
+#define NRF24L01_FWD_THRUST 0x50         // "P" (plus) - indicates forward thrust 
+#define NRF24L01_REV_THRUST 0x4D         // "M" (minus) - indicates reverse thrust 
+#define NRF24L01_NEUTRAL 0x4E            // "N" (neutral) - indicates neutral gear or zero thrust 
+#define NRF24L01_NO_THRUST 0             // Force thruster output to zero 
 #define NRF24L01_TEST_ADC_NUM 2          // Number of ADCs used for throttle command 
 #define NRF24L01_RC_PERIOD 50000         // Time between throttle command sends (us) 
 

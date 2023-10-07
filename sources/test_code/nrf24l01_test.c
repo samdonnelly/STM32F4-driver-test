@@ -684,7 +684,11 @@ void nrf24l01_test_app(void)
 
         // Read the ADC input and format the value for writing to the payload 
         throttle = esc_test_adc_mapping(adc_data[thruster]); 
-        if (throttle < 0)
+        if (throttle == NRF24L01_NO_THRUST)
+        {
+            sign = NRF24L01_NEUTRAL; 
+        }
+        else if (throttle < NRF24L01_NO_THRUST)
         {
             // If the throttle is negative then change the value to positive and set the sign 
             // in the payload as negative. This helps on the receiving end. 
@@ -696,7 +700,7 @@ void nrf24l01_test_app(void)
         // payload. 
         snprintf(
             (char *)nrf24l01_test_data.write_buff, 
-            NRF24L01_TEST_MAX_INPUT, 
+            NRF24L01_MAX_PAYLOAD_LEN, 
             "%c%c%d", 
             side, sign, throttle); 
 
@@ -777,6 +781,9 @@ void nrf24l01_test_app(void)
     // Local variables 
     static int16_t right_throttle = CLEAR; 
     static int16_t left_throttle = CLEAR; 
+    static uint16_t right_thrust = CLEAR; 
+    static uint16_t left_thrust = CLEAR; 
+    uint16_t cmd_value = CLEAR; 
     uint8_t cmd_checksum = CLEAR; 
 
     // Check if a payload has been received 
@@ -792,31 +799,135 @@ void nrf24l01_test_app(void)
             // the thruster command. 
             cmd_checksum = nrf24l01_test_data.cmd_id[0] + nrf24l01_test_data.cmd_id[1]; 
 
-            switch (cmd_checksum)
+            // switch (cmd_checksum)
+            // {
+            //     case (NRF24L01_RIGHT_MOTOR + NRF24L01_FWD_THRUST): 
+            //         right_throttle += 
+            //             ((nrf24l01_test_data.cmd_value - right_throttle) >> SHIFT_3); 
+            //         esc_readytosky_send(DEVICE_ONE, right_throttle); 
+            //         break; 
+            //     case (NRF24L01_RIGHT_MOTOR + NRF24L01_REV_THRUST): 
+            //         right_throttle += 
+            //             (((~(nrf24l01_test_data.cmd_value) + 1) - right_throttle) >> SHIFT_3); 
+            //         esc_readytosky_send(DEVICE_ONE, right_throttle); 
+            //         break; 
+            //     case (NRF24L01_LEFT_MOTOR + NRF24L01_FWD_THRUST): 
+            //         left_throttle += 
+            //             ((nrf24l01_test_data.cmd_value - left_throttle) >> SHIFT_3); 
+            //         esc_readytosky_send(DEVICE_TWO, left_throttle); 
+            //         break; 
+            //     case (NRF24L01_LEFT_MOTOR + NRF24L01_REV_THRUST): 
+            //         left_throttle += 
+            //             (((~(nrf24l01_test_data.cmd_value) + 1) - left_throttle) >> SHIFT_3); 
+            //         esc_readytosky_send(DEVICE_TWO, left_throttle); 
+            //         break; 
+            //     default: 
+            //         break; 
+            // }
+
+            cmd_value = (uint16_t)nrf24l01_test_data.cmd_value; 
+
+            if (nrf24l01_test_data.cmd_id[0] == NRF24L01_RIGHT_MOTOR)
             {
-                case (NRF24L01_RIGHT_MOTOR + NRF24L01_FWD_THRUST): 
-                    right_throttle += 
-                        ((nrf24l01_test_data.cmd_value - right_throttle) >> SHIFT_3); 
-                    esc_readytosky_send(DEVICE_ONE, right_throttle); 
-                    break; 
-                case (NRF24L01_RIGHT_MOTOR + NRF24L01_REV_THRUST): 
-                    right_throttle += 
-                        (((~(nrf24l01_test_data.cmd_value) + 1) - right_throttle) >> SHIFT_3); 
-                    esc_readytosky_send(DEVICE_ONE, right_throttle); 
-                    break; 
-                case (NRF24L01_LEFT_MOTOR + NRF24L01_FWD_THRUST): 
-                    left_throttle += 
-                        ((nrf24l01_test_data.cmd_value - left_throttle) >> SHIFT_3); 
-                    esc_readytosky_send(DEVICE_TWO, left_throttle); 
-                    break; 
-                case (NRF24L01_LEFT_MOTOR + NRF24L01_REV_THRUST): 
-                    left_throttle += 
-                        (((~(nrf24l01_test_data.cmd_value) + 1) - left_throttle) >> SHIFT_3); 
-                    esc_readytosky_send(DEVICE_TWO, left_throttle); 
-                    break; 
-                default: 
-                    break; 
+                // switch (nrf24l01_test_data.cmd_id[1])
+                // {
+                //     case NRF24L01_FWD_THRUST: 
+                //         right_thrust += (cmd_value - right_thrust) >> SHIFT_3; 
+                //         right_throttle = (int16_t)right_thrust; 
+                //         break; 
+                //     case NRF24L01_REV_THRUST: 
+                //         right_thrust += (cmd_value - right_thrust) >> SHIFT_3; 
+                //         right_throttle = (int16_t)(~right_thrust + 1); 
+                //         break; 
+                //     case NRF24L01_NEUTRAL: 
+                //         if (cmd_value == NRF24L01_NO_THRUST)
+                //         {
+                //             right_thrust = NRF24L01_NO_THRUST; 
+                //             right_throttle = NRF24L01_NO_THRUST; 
+                //         }
+                //         break; 
+                //     default: 
+                //         break; 
+                // }
+
+                uart_sendstring(USART2, "\r"); 
+                uart_sendstring(USART2, (char *)nrf24l01_test_data.cmd_id); 
+                uart_sendstring(USART2, "  "); 
+                uart_send_integer(USART2, (int16_t)nrf24l01_test_data.cmd_value); 
             }
+            // else if (nrf24l01_test_data.cmd_id[0] == NRF24L01_LEFT_MOTOR)
+            // {
+            //     switch (nrf24l01_test_data.cmd_id[1])
+            //     {
+            //         case NRF24L01_FWD_THRUST: 
+            //             left_thrust += (cmd_value - left_thrust) >> SHIFT_3; 
+            //             left_throttle = (int16_t)left_thrust; 
+            //             break; 
+            //         case NRF24L01_REV_THRUST: 
+            //             left_thrust += (cmd_value - left_thrust) >> SHIFT_3; 
+            //             left_throttle = (int16_t)(~left_thrust + 1); 
+            //             break; 
+            //         case NRF24L01_NEUTRAL: 
+            //             if (cmd_value == NRF24L01_NO_THRUST)
+            //             {
+            //                 left_thrust = NRF24L01_NO_THRUST; 
+            //                 left_throttle = NRF24L01_NO_THRUST; 
+            //             }
+            //             break; 
+            //         default: 
+            //             break; 
+            //     }
+            // }
+
+            // switch (cmd_checksum)
+            // {
+            //     case (NRF24L01_RIGHT_MOTOR + NRF24L01_FWD_THRUST): 
+            //         right_thrust += (cmd_value - right_thrust) >> SHIFT_2; 
+            //         right_throttle = (int16_t)right_thrust; 
+            //         break; 
+                
+            //     case (NRF24L01_RIGHT_MOTOR + NRF24L01_REV_THRUST): 
+            //         right_thrust += (cmd_value - right_thrust) >> SHIFT_2; 
+            //         right_throttle = (int16_t)(~right_thrust + 1); 
+            //         break; 
+
+            //     case (NRF24L01_RIGHT_MOTOR + NRF24L01_NEUTRAL): 
+            //         // Check that the throttle command is also zero to help protect against 
+            //         // mangled commands. 
+            //         if (cmd_value == NRF24L01_NO_THRUST)
+            //         {
+            //             right_thrust = NRF24L01_NO_THRUST; 
+            //             right_throttle = NRF24L01_NO_THRUST; 
+            //         }
+            //         break; 
+                
+            //     case (NRF24L01_LEFT_MOTOR + NRF24L01_FWD_THRUST): 
+            //         left_thrust += (cmd_value - left_thrust) >> SHIFT_2; 
+            //         left_throttle = (int16_t)left_thrust; 
+            //         break; 
+                
+            //     case (NRF24L01_LEFT_MOTOR + NRF24L01_REV_THRUST): 
+            //         left_thrust += (cmd_value - left_thrust) >> SHIFT_2; 
+            //         left_throttle = (int16_t)(~left_thrust + 1); 
+            //         break; 
+
+            //     case (NRF24L01_LEFT_MOTOR + NRF24L01_NEUTRAL): 
+            //         // Check that the throttle command is also zero to help protect against 
+            //         // mangled commands. 
+            //         if (cmd_value == NRF24L01_NO_THRUST)
+            //         {
+            //             left_thrust = NRF24L01_NO_THRUST; 
+            //             left_throttle = NRF24L01_NO_THRUST; 
+            //         }
+            //         break; 
+                
+            //     default: 
+            //         break; 
+            // }
+
+            // // Send the throttle command to the ESCs 
+            // esc_readytosky_send(DEVICE_ONE, right_throttle); 
+            // esc_readytosky_send(DEVICE_TWO, left_throttle); 
         }
 
         memset((void *)nrf24l01_test_data.read_buff, CLEAR, 

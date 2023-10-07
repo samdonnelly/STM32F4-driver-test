@@ -486,6 +486,9 @@ void esc_readytosky_test_app(void)
 
 #if ESC_CONTROLLER_MODE 
 
+// TODO this function is referenced externally so it needs to be removed from conditional 
+//      compilation. 
+
 // ADC to ESC command mapping 
 int16_t esc_test_adc_mapping(
     uint16_t adc_val)
