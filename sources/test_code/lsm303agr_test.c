@@ -291,14 +291,14 @@ void lsm303agr_test_init(void)
     // 6. Repeat steps 4 and 5 for all directions in 45 degree increments (NE, E, SE, etc.) and 
     //    record each subsequent direction in the next 'offsets' element. 
 
-    mag_offsets[0] = -250;     // N  (0/360deg) direction heading offset (degrees * 10) 
-    mag_offsets[1] = -120;     // NE (45deg) direction heading offset (degrees * 10) 
-    mag_offsets[2] = 15;       // E  (90deg) direction heading offset (degrees * 10) 
-    mag_offsets[3] = 175;      // SE (135deg) direction heading offset (degrees * 10) 
-    mag_offsets[4] = 325;      // S  (180deg) direction heading offset (degrees * 10) 
-    mag_offsets[5] = 480;      // SW (225deg) direction heading offset (degrees * 10) 
-    mag_offsets[6] = -40;      // W  (270deg) direction heading offset (degrees * 10) 
-    mag_offsets[7] = -315;     // NW (315deg) direction heading offset (degrees * 10) 
+    mag_offsets[0] = -160;     // N  (0/360deg) direction heading offset (degrees * 10) 
+    mag_offsets[1] = 32;       // NE (45deg) direction heading offset (degrees * 10) 
+    mag_offsets[2] = 215;      // E  (90deg) direction heading offset (degrees * 10) 
+    mag_offsets[3] = 385;      // SE (135deg) direction heading offset (degrees * 10) 
+    mag_offsets[4] = 435;      // S  (180deg) direction heading offset (degrees * 10) 
+    mag_offsets[5] = 20;       // SW (225deg) direction heading offset (degrees * 10) 
+    mag_offsets[6] = -450;     // W  (270deg) direction heading offset (degrees * 10) 
+    mag_offsets[7] = -365;     // NW (315deg) direction heading offset (degrees * 10) 
 
     // Driver init 
     lsm303agr_init(

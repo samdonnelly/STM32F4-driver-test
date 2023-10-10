@@ -30,9 +30,9 @@
 // Macros 
 
 // Conditional compilation 
-#define LSM303AGR_TEST_HEADING 0          // Heading with magnetometer as a compass 
+#define LSM303AGR_TEST_HEADING 1          // Heading with magnetometer as a compass 
 #define LSM303AGR_TEST_AXIS 0             // Magnetometer axis readings 
-#define LSM303AGR_TEST_NAV 1              // Navigating with magnetometer as a compass 
+#define LSM303AGR_TEST_NAV 0              // Navigating with magnetometer as a compass 
 #define LSM303AGR_TEST_SCREEN 1           // HD44780U screen on same I2C bus as device 
 
 // Mavigation test 
