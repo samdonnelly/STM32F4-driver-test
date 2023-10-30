@@ -48,8 +48,8 @@ set(STM32CUBEMX_INCLUDE_DIRECTORIES
 
 set(PROJECT_INCLUDE_DIRECTORIES 
     ${CMAKE_CURRENT_SOURCE_DIR}/headers
-    ${CMAKE_CURRENT_SOURCE_DIR}/headers/test_code
-    ${CMAKE_CURRENT_SOURCE_DIR}/headers/config_files
+    ${CMAKE_CURRENT_SOURCE_DIR}/headers/driver_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/headers/device_config
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/headers/devices
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/headers/peripherals
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/headers/tools)
@@ -85,10 +85,10 @@ file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
 # file(GLOB_RECURSE PROJECT_SOURCES FOLLOW_SYMLINKS
     ${CMAKE_CURRENT_SOURCE_DIR}/sources/*.c
     ${CMAKE_CURRENT_SOURCE_DIR}/sources/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/sources/test_code/*.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/sources/test_code/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/sources/config_files/*.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/sources/config_files/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/sources/driver_test/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/sources/driver_test/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/sources/device_config/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/sources/device_config/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/sources/devices/*.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/sources/devices/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/sources/peripherals/*.c

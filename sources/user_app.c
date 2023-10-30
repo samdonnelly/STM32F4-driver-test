@@ -24,5 +24,4 @@
 void user_app()
 {
     // Looped code here 
-    nrf24l01_test_app(); 
 }

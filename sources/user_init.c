@@ -24,5 +24,4 @@
 void user_init()
 {
     // Setup code here 
-    nrf24l01_test_init(); 
 }

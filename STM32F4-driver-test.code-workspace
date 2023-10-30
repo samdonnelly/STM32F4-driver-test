@@ -59,7 +59,8 @@
 			"esc_readytosky_test.h": "c",
 			"dma_test.h": "c",
 			"gpio_test.h": "c",
-			"nrf24l01_test.h": "c"
+			"nrf24l01_test.h": "c",
+			"nrf24l01_driver.h": "c"
 		}
 	}
 }

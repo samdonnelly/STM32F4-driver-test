@@ -36,25 +36,24 @@
 #include "m8q_controller.h" 
 #include "mpu6050_controller.h"
 
-// Communication drivers 
-#include "i2c_comm.h"
-#include "uart_comm.h"
-#include "spi_comm.h"
-
-// Other drivers 
+// Peripheral drivers 
 #include "analog_driver.h"
 #include "dma_driver.h" 
 #include "gpio_driver.h"
 #include "interrupt_driver.h"
-#include "linked_list_driver.h"
-#include "switch_debounce.h"
+#include "i2c_comm.h"
+#include "spi_comm.h"
 #include "timers.h"
+#include "uart_comm.h"
+
+// Other drivers 
+#include "linked_list_driver.h"
+#include "stm32f411xe_custom.h"
+#include "switch_debounce.h"
+#include "tools.h"
 
 // Configuration files 
 #include "m8q_config.h"
-
-// Tools 
-#include "tools.h"
 
 // STM drivers 
 #include "fatfs.h"
