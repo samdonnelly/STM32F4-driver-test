@@ -1,12 +1,17 @@
-# STM32F4 Device Driver Test 
+# STM32F4 Test 
 
-This repo is used to test device drivers used in the STM32F4 dev board in STM32F4-driver-library.
-<br />
+This repository contains test code written for the STM32F411RE chip. It's intended to test sandbox application code as well as drivers and software tools from the <a href="https://github.com/samdonnelly/STM32F4-driver-library">STM32F4-driver-library</a>. The default branch 'template' is meant as a starting point for setting up any new project that uses the STM32F411RE. 
 
-The 'template' branch is an empty code template from which to start a new device driver test. 
-New branches should be created from here. Branches don't get merged back into 'template' once 
-the driver test is complete. <br />
+The test code is broken into the following sections: 
 
-Device drivers are located in the STM32F4-driver-library repository. This allows easy access to
-drivers by any project while keeping this repository strictly for testing. <br />
+### Device Configuration 
 
+Configuration files needed to set up devices on startup. Some devices need to be configured using specific instructions/messages and these instructions change based on the application so they're not part of the device driver. 
+
+### Driver Test 
+
+Test code for the device and peripheral drivers found in the <a href="https://github.com/samdonnelly/STM32F4-driver-library">STM32F4-driver-library</a>. This focuses on testing the functionality of the driver as opposed to using the driver in a specific application. 
+
+### Application Test 
+
+Sample application code. This code is used to implement and test functionality that is less focused on the device and peripheral drivers. Some of this functionality could include calculations, algorithms, language specific features, system architecture or methods for handling data. The drivers from the <a href="https://github.com/samdonnelly/STM32F4-driver-library">STM32F4-driver-library</a> are applied as needed. 

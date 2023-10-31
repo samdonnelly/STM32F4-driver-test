@@ -48,6 +48,7 @@ set(STM32CUBEMX_INCLUDE_DIRECTORIES
 
 set(PROJECT_INCLUDE_DIRECTORIES 
     ${CMAKE_CURRENT_SOURCE_DIR}/headers
+    ${CMAKE_CURRENT_SOURCE_DIR}/headers/app_test
     ${CMAKE_CURRENT_SOURCE_DIR}/headers/driver_test
     ${CMAKE_CURRENT_SOURCE_DIR}/headers/device_config
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/headers/devices
@@ -85,6 +86,8 @@ file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
 # file(GLOB_RECURSE PROJECT_SOURCES FOLLOW_SYMLINKS
     ${CMAKE_CURRENT_SOURCE_DIR}/sources/*.c
     ${CMAKE_CURRENT_SOURCE_DIR}/sources/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/sources/app_test/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/sources/app_test/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/sources/driver_test/*.c
     ${CMAKE_CURRENT_SOURCE_DIR}/sources/driver_test/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/sources/device_config/*.c
