@@ -28,14 +28,12 @@
 
 /**
  * @brief Analog test setup code 
- * 
  */
 void analog_test_init(void); 
 
 
 /**
  * @brief Analog test code 
- * 
  */
 void analog_test_app(void); 
 
