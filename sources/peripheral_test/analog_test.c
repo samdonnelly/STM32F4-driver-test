@@ -51,17 +51,18 @@ void analog_test_init()
     // ADC Init 
 
     // Initialize the ADC port (called once) 
-    adc_port_init(ADC1, 
-                  ADC1_COMMON, 
-                  ADC_PCLK2_4, 
-                  ADC_RES_8, 
-                  ADC_EOC_EACH, 
-                  ADC_SCAN_ENABLE, 
-                  ADC_CONT_DISABLE, 
-                  ADC_DMA_DISABLE, 
-                  ADC_DDS_DISABLE, 
-                  ADC_EOC_INT_DISABLE, 
-                  ADC_OVR_INT_DISABLE); 
+    adc_port_init(
+        ADC1, 
+        ADC1_COMMON, 
+        ADC_PCLK2_4, 
+        ADC_RES_8, 
+        ADC_EOC_EACH, 
+        ADC_SCAN_ENABLE, 
+        ADC_CONT_DISABLE, 
+        ADC_DMA_DISABLE, 
+        ADC_DDS_DISABLE, 
+        ADC_EOC_INT_DISABLE, 
+        ADC_OVR_INT_DISABLE); 
 
     // Initialize ADC pins and channels (called for each pin/channel) 
     adc_pin_init(ADC1, GPIOC, PIN_0, ADC_CHANNEL_10, ADC_SMP_15); 
