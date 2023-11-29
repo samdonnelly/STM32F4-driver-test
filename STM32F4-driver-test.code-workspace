@@ -60,7 +60,9 @@
 			"dma_test.h": "c",
 			"gpio_test.h": "c",
 			"nrf24l01_test.h": "c",
-			"nrf24l01_driver.h": "c"
+			"nrf24l01_driver.h": "c",
+			"esc_readytosky_driver.h": "c",
+			"analog_driver.h": "c"
 		}
 	}
 }
