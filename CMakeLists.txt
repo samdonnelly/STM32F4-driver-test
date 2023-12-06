@@ -51,6 +51,7 @@ set(PROJECT_INCLUDE_DIRECTORIES
     ${CMAKE_CURRENT_SOURCE_DIR}/headers/app_test
     ${CMAKE_CURRENT_SOURCE_DIR}/headers/device_config
     ${CMAKE_CURRENT_SOURCE_DIR}/headers/device_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/headers/includes
     ${CMAKE_CURRENT_SOURCE_DIR}/headers/peripheral_test
     ${CMAKE_CURRENT_SOURCE_DIR}/headers/tool_test
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/headers/devices

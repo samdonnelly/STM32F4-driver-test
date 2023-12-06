@@ -1,9 +1,9 @@
 /**
- * @file project_init.h
+ * @file project_app.h
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Project application header 
+ * @brief Project application code interface 
  * 
  * @version 0.1
  * @date 2023-07-20
@@ -22,8 +22,7 @@ extern "C" {
 //=======================================================================================
 // Includes 
 
-#include "includes_app.h"
-#include "includes_drivers.h"
+// Include files are added to project_app.cpp so main.c can be used with C++. 
 
 //=======================================================================================
 
@@ -32,9 +31,7 @@ extern "C" {
 // Functions 
 
 /**
- * @brief Project application 
- * 
- * @details 
+ * @brief Project application code - called repeatedly 
  */
 void project_app(void); 
 

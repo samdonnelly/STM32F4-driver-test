@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Includes file for the device drivers 
+ * @brief Includes for C library files 
  * 
  * @version 0.1
  * @date 2022-08-28
@@ -46,14 +46,11 @@
 #include "timers.h"
 #include "uart_comm.h"
 
-// Other drivers 
+// Tools 
 #include "linked_list_driver.h"
 #include "stm32f411xe_custom.h"
 #include "switch_debounce.h"
 #include "tools.h"
-
-// Configuration files 
-#include "m8q_config.h"
 
 // STM drivers 
 #include "fatfs.h"

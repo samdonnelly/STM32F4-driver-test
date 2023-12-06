@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Project initialization code 
+ * @brief Project initialization code implementation 
  * 
  * @version 0.1
  * @date 2023-07-20
@@ -17,16 +17,21 @@
 
 #include "project_init.h"
 
+#include "includes_app.h"
+#include "includes_cpp_app.h"
+#include "includes_drivers.h"
+#include "includes_cpp_drivers.h"
+
 //=======================================================================================
 
 
 //=======================================================================================
 // Functions 
 
-// Project initialization 
+// Project initialization code - called once 
 void project_init(void)
 {
-    // Project initialization code 
+    // Project initialization code here 
 }
 
 //=======================================================================================

@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Code that gets called once at the beginning of the program
+ * @brief User initialization code interface 
  * 
  * @version 0.1
  * @date 2022-02-12
@@ -28,8 +28,7 @@
 // Function Prototypes
 
 /**
- * @brief Function that gets called once. Initialization function calls go here.
- * 
+ * @brief User initialization code - called once 
  */
 void user_init(void);
 

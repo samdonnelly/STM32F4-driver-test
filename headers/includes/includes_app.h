@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Includes file for the application code 
+ * @brief Includes for C test code 
  * 
  * @version 0.1
  * @date 2022-02-12
@@ -18,8 +18,8 @@
 //=======================================================================================
 // Includes 
 
-// Application test code 
-#include "m8q_location_test.h" 
+// Device configuration files 
+#include "m8q_config.h"
 
 // Device test code 
 #include "esc_readytosky_test.h"

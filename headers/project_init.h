@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Project initialization header 
+ * @brief Project initialization code interface 
  * 
  * @version 0.1
  * @date 2023-07-20
@@ -22,8 +22,7 @@ extern "C" {
 //=======================================================================================
 // Includes 
 
-#include "includes_app.h"
-#include "includes_drivers.h"
+// Include files are added to project_init.cpp so main.c can be used with C++. 
 
 //=======================================================================================
 
@@ -32,9 +31,7 @@ extern "C" {
 // Functions 
 
 /**
- * @brief Project initialization 
- * 
- * @details 
+ * @brief Project initialization code - called once 
  */
 void project_init(void); 
 

@@ -1,9 +1,9 @@
 /**
- * @file project_init.cpp
+ * @file project_app.cpp
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Project initialization code 
+ * @brief Project application code implementation 
  * 
  * @version 0.1
  * @date 2023-07-20
@@ -17,16 +17,21 @@
 
 #include "project_app.h"
 
+#include "includes_app.h"
+#include "includes_cpp_app.h"
+#include "includes_drivers.h"
+#include "includes_cpp_drivers.h"
+
 //=======================================================================================
 
 
 //=======================================================================================
 // Functions 
 
-// Project application  
+// Project application code - called repeatedly 
 void project_app(void)
 {
-    // Project application code 
+    // Project application code here 
 }
 
 //=======================================================================================

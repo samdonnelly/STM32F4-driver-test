@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Code that gets called once at the beginning of the program
+ * @brief User initialization code implementation 
  * 
  * @version 0.1
  * @date 2022-02-12
@@ -20,8 +20,8 @@
 //=======================================================================================
 
 
-// User init function 
+// User initialization code - called once 
 void user_init()
 {
-    // Setup code here 
+    // User initialization code here 
 }
