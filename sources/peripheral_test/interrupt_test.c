@@ -103,18 +103,19 @@ void int_test_init()
     // ADC 
 
     // Initialize the ADC port (called once) 
+    adc1_clock_enable(RCC); 
     adc_port_init(
         ADC1, 
         ADC1_COMMON, 
         ADC_PCLK2_4, 
         ADC_RES_8, 
-        ADC_EOC_SEQ, 
-        ADC_SCAN_ENABLE, 
-        ADC_CONT_DISABLE, 
-        ADC_DMA_ENABLE, 
-        ADC_DDS_ENABLE, 
-        ADC_EOC_INT_ENABLE, 
-        ADC_OVR_INT_DISABLE); 
+        ADC_PARAM_DISABLE, 
+        ADC_PARAM_ENABLE, 
+        ADC_PARAM_DISABLE, 
+        ADC_PARAM_ENABLE, 
+        ADC_PARAM_ENABLE, 
+        ADC_PARAM_ENABLE, 
+        ADC_PARAM_DISABLE); 
 
     // Initialize ADC pins and channels (called for each pin/channel) 
     adc_pin_init(ADC1, GPIOC, PIN_0, ADC_CHANNEL_10, ADC_SMP_15); 

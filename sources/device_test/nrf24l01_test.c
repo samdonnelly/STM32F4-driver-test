@@ -391,18 +391,19 @@ void nrf24l01_test_init(void)
     // ADC setup - for user controller mode 
 
     // Initialize the ADC port (called once) 
+    adc1_clock_enable(RCC); 
     adc_port_init(
         ADC1, 
         ADC1_COMMON, 
         ADC_PCLK2_4, 
         ADC_RES_8, 
-        ADC_EOC_EACH, 
-        ADC_SCAN_ENABLE, 
-        ADC_CONT_ENABLE, 
-        ADC_DMA_ENABLE, 
-        ADC_DDS_ENABLE, 
-        ADC_EOC_INT_DISABLE, 
-        ADC_OVR_INT_DISABLE); 
+        ADC_PARAM_ENABLE, 
+        ADC_PARAM_ENABLE, 
+        ADC_PARAM_ENABLE, 
+        ADC_PARAM_ENABLE, 
+        ADC_PARAM_ENABLE, 
+        ADC_PARAM_DISABLE, 
+        ADC_PARAM_DISABLE); 
 
     // Initialize the ADC pins and channels (called for each pin/channel) 
     adc_pin_init(ADC1, GPIOA, PIN_6, ADC_CHANNEL_6, ADC_SMP_15); 
