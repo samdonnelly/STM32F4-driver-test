@@ -67,7 +67,7 @@ void m8q_location_test_app(void)
 // Global variables 
 
 // Sample waypoints 
-static m8q_test_waypoints_t waypoints[M8Q_TEST_NUM_WAYPOINTS] = 
+static gps_waypoints_t waypoints[M8Q_TEST_NUM_WAYPOINTS] = 
 {
     {50.962010, -114.065890}, 
     {50.962340, -114.065930}, 
@@ -76,7 +76,7 @@ static m8q_test_waypoints_t waypoints[M8Q_TEST_NUM_WAYPOINTS] =
 }; 
 
 // Target waypoint 
-static m8q_test_waypoints_t waypoint; 
+static gps_waypoints_t waypoint; 
 
 // Screen message buffer 
 static char screen_msg[20]; 
@@ -294,7 +294,8 @@ void m8q_test_app_copy()
             // No position lock. Display the status on the screen but do nothing else 
             // while there is no lock. 
             hd44780u_clear(); 
-            hd44780u_line_set(HD44780U_L1, "No connection", HD44780U_CURSOR_NO_OFFSET); 
+            // The below line gives a C++ string to char* warning. 
+            // hd44780u_line_set(HD44780U_L1, "No connection", HD44780U_CURSOR_NO_OFFSET); 
             hd44780u_cursor_pos(HD44780U_START_L1, HD44780U_CURSOR_NO_OFFSET);
             hd44780u_send_line(HD44780U_L1); 
         }
