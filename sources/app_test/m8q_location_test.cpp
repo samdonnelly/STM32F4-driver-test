@@ -164,7 +164,7 @@ void m8q_test_init_copy()
     // no flash to store user settings. Instead they're saved RAM which can only be 
     // powered until the onboard backup battery loses power. For this reason, settings 
     // must always be configured in setup. 
-    char m8q_config_messages[M8Q_CONFIG_MSG_NUM][M8Q_CONFIG_MSG_MAX_LEN]; 
+    char m8q_config_messages[M8Q_CONFIG_NUM_MSG_PKT_0][M8Q_CONFIG_MAX_MSG_LEN]; 
     m8q_config_copy(m8q_config_messages); 
 
     // Driver init 
@@ -173,8 +173,8 @@ void m8q_test_init_copy()
         GPIOC, 
         PIN_10, 
         PIN_11, 
-        M8Q_CONFIG_MSG_NUM, 
-        M8Q_CONFIG_MSG_MAX_LEN, 
+        M8Q_CONFIG_NUM_MSG_PKT_0, 
+        M8Q_CONFIG_MAX_MSG_LEN, 
         (uint8_t *)m8q_config_messages[0]); 
     
     // Output an initialization warning if a driver fault occurs on setup. 

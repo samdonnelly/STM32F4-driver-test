@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief SAM-M8Q GPS configuration file 
+ * @brief SAM-M8Q GPS configuration file interface 
  * 
  * @version 0.1
  * @date 2022-10-02
@@ -27,8 +27,20 @@
 //=======================================================================================
 // Macros 
 
-#define M8Q_CONFIG_MSG_NUM 12        // Number of M8Q configuration messages on startup 
-#define M8Q_CONFIG_MSG_MAX_LEN 150   // Maximum length of an M8Q configuration message 
+// Number of messages in a configuration packet 
+#define M8Q_CONFIG_NUM_MSG_PKT_0 12 
+
+// Max length of a single config message in a packet 
+#define M8Q_CONFIG_MAX_MSG_LEN 130 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Config messages 
+
+// Packet 0 
+extern const char m8q_config_pkt_0[M8Q_CONFIG_NUM_MSG_PKT_0][M8Q_CONFIG_MAX_MSG_LEN]; 
 
 //=======================================================================================
 
@@ -55,7 +67,7 @@
  * 
  * @param config_msgs 
  */
-void m8q_config_copy(char config_msgs[M8Q_CONFIG_MSG_NUM][M8Q_CONFIG_MSG_MAX_LEN]); 
+void m8q_config_copy(char config_msgs[M8Q_CONFIG_NUM_MSG_PKT_0][M8Q_CONFIG_MAX_MSG_LEN]); 
 
 //=======================================================================================
 

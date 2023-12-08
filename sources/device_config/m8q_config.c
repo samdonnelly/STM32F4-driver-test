@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief SAM-M8Q GPS configuration file 
+ * @brief SAM-M8Q GPS configuration file implementation 
  * 
  * @version 0.1
  * @date 2022-10-02
@@ -21,10 +21,10 @@
 
 
 //=======================================================================================
-// Variables 
+// Config messages 
 
 // M8Q configuration messages 
-static char* m8q_config_msgs[M8Q_CONFIG_MSG_NUM] = 
+static char* m8q_config_msgs[M8Q_CONFIG_NUM_MSG_PKT_0] = 
 {
     // Disable default NMEA messages 
     "$PUBX,40,GGA,0,0,0,0,0,0*",    // GGA disable
@@ -50,6 +50,34 @@ static char* m8q_config_msgs[M8Q_CONFIG_MSG_NUM] =
     "B5,62,06,09,0C00,00000000,FFFFFFFF,00000000*" 
 };
 
+
+// Packet 0 
+const char m8q_config_pkt_0[M8Q_CONFIG_NUM_MSG_PKT_0][M8Q_CONFIG_MAX_MSG_LEN] = 
+{
+    // Disable default NMEA messages 
+    "$PUBX,40,GGA,0,0,0,0,0,0*",    // GGA disable
+    "$PUBX,40,GLL,0,0,0,0,0,0*",    // GLL disable
+    "$PUBX,40,GSA,0,0,0,0,0,0*",    // GSA disable
+    "$PUBX,40,GSV,0,0,0,0,0,0*",    // GSV disable
+    "$PUBX,40,RMC,0,0,0,0,0,0*",    // RMC disable
+    "$PUBX,40,VTG,0,0,0,0,0,0*",    // VTG disable 
+
+    // UBX config messages  
+    "B5,62,06,01,0800,F1,00,01,00,00,00,00,00*",      // POSITION enable 
+    "B5,62,06,01,0800,F1,04,0A,00,00,00,00,00*",      // TIME enable 
+
+    // Power configuration 
+    "B5,62,06,3B,3000,02,00,00,00,60104201,E8030000,10270000,00000000,"
+    "0000,0000,0000000000000000000000000000000000000000,00000000*",
+
+    // Port configuration 
+    "B5,62,06,00,1400,01,00,0000,C0080000,80250000,0000,0000,0000,0000*",
+    "B5,62,06,00,1400,00,00,9902,84000000,00000000,0700,0300,0200,0000*", 
+
+    // Save the settings (save mask) 
+    "B5,62,06,09,0C00,00000000,FFFFFFFF,00000000*" 
+}; 
+
 //=======================================================================================
 
 
@@ -57,7 +85,7 @@ static char* m8q_config_msgs[M8Q_CONFIG_MSG_NUM] =
 // Functions 
 
 // M8Q copy config messages 
-void m8q_config_copy(char config_msgs[M8Q_CONFIG_MSG_NUM][M8Q_CONFIG_MSG_MAX_LEN])
+void m8q_config_copy(char config_msgs[M8Q_CONFIG_NUM_MSG_PKT_0][M8Q_CONFIG_MAX_MSG_LEN])
 {
     // Local variables 
     uint8_t msg_num = 0; 
@@ -65,7 +93,7 @@ void m8q_config_copy(char config_msgs[M8Q_CONFIG_MSG_NUM][M8Q_CONFIG_MSG_MAX_LEN
     char msg_byte; 
 
     // Loop through all configuration messages 
-    while (msg_num < M8Q_CONFIG_MSG_NUM)
+    while (msg_num < M8Q_CONFIG_NUM_MSG_PKT_0)
     {
         msg_byte = m8q_config_msgs[msg_num][msg_index]; 
 
