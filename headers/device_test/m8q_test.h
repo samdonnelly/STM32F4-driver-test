@@ -33,8 +33,7 @@
 // Conditional compilation 
 #define M8Q_CONTROLLER_TEST 0        // Choose between driver and controller test code 
 #define M8Q_MSG_COUNT 0              // Code that counts and prints number of incoming messages 
-#define M8Q_DATA_CHECK 0             // Code that checks the data size available 
-#define M8Q_TEST_LOCATION 1          // Code for testing positioning against waypoints 
+#define M8Q_DATA_CHECK 1             // Code that checks the data size available 
 
 // Controller testing 
 #define M8Q_NUM_USER_CMDS 17         // Number of defined user commands 
@@ -147,17 +146,6 @@ typedef struct m8q_func_ptrs_s
     m8q_getter_ptr_5 getter_5; 
 }
 m8q_func_ptrs_t; 
-
-
-/**
- * @brief Waypoint latitude and longitude 
- */
-typedef struct m8q_test_waypoints_s 
-{
-    double lat; 
-    double lon; 
-}
-m8q_test_waypoints_t; 
 
 //=======================================================================================
 

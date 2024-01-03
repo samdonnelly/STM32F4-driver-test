@@ -39,7 +39,7 @@
 //=======================================================================================
 // Config messages 
 
-// Packet 0 
+extern const char m8q_config_no_pkt[]; 
 extern const char m8q_config_pkt_0[M8Q_CONFIG_NUM_MSG_PKT_0][M8Q_CONFIG_MAX_MSG_LEN]; 
 
 //=======================================================================================

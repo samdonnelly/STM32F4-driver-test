@@ -62,7 +62,18 @@
 			"nrf24l01_test.h": "c",
 			"nrf24l01_driver.h": "c",
 			"esc_readytosky_driver.h": "c",
-			"analog_driver.h": "c"
+			"analog_driver.h": "c",
+			"bit": "c",
+			"compare": "c",
+			"cstddef": "c",
+			"list": "c",
+			"string": "c",
+			"limits": "c",
+			"memory": "c",
+			"new": "c",
+			"functional": "c",
+			"m8q_coordinates.h": "c",
+			"gps_calc.h": "c"
 		}
 	}
 }

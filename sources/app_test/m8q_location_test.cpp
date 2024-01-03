@@ -27,73 +27,26 @@
 // Includes 
 
 #include "m8q_location_test.h" 
+#include "m8q_coordinates.h"
+#include "includes_cpp_drivers.h" 
 
 //=======================================================================================
 
 
 //=======================================================================================
-// Classes 
-//=======================================================================================
-
-
-//=======================================================================================
-// Setup code 
-
-void m8q_location_test_init(void)
-{
-    // 
-}
-
-//=======================================================================================
-
-
-//=======================================================================================
-// Test code 
-
-void m8q_location_test_app(void)
-{
-    // 
-}
-
-//=======================================================================================
-
-
-
-
-//=======================================================================================
-// Old code 
-
-//==================================================
 // Global variables 
 
-// Sample waypoints 
-static gps_waypoints_t waypoints[M8Q_TEST_NUM_WAYPOINTS] = 
-{
-    {50.962010, -114.065890}, 
-    {50.962340, -114.065930}, 
-    {50.962340, -114.066260}, 
-    {50.961730, -114.066080} 
-}; 
-
 // Target waypoint 
-static gps_waypoints_t waypoint; 
+static gps_waypoints_t target_waypoint; 
 
 // Screen message buffer 
 static char screen_msg[20]; 
 
-//==================================================
+//=======================================================================================
 
 
-//==================================================
+//=======================================================================================
 // Prototypes 
-
-// Setup code 
-void m8q_test_init_copy(); 
-
-
-// Test code 
-void m8q_test_app_copy(); 
-
 
 // GPS coordinate radius check - calculate surface distance and compare to threshold 
 int16_t m8q_test_gps_rad_copy(
@@ -110,13 +63,18 @@ int16_t m8q_test_gps_heading_copy(
     double lat2, 
     double lon2); 
 
-//==================================================
+//=======================================================================================
 
 
-//==================================================
+//=======================================================================================
+// Classes 
+//=======================================================================================
+
+
+//=======================================================================================
 // Setup code 
 
-void m8q_test_init_copy()
+void m8q_location_test_init(void)
 {
     // Initialize GPIO ports 
     gpio_port_init(); 
@@ -185,15 +143,15 @@ void m8q_test_init_copy()
 
     // Delay to let everything finish setup before starting to send and receieve data 
     tim_delay_ms(TIM9, 500); 
-} 
+}
 
-//==================================================
+//=======================================================================================
 
 
-//==================================================
+//=======================================================================================
 // Test code 
 
-void m8q_test_app_copy()
+void m8q_location_test_app(void)
 {
     // Local variables 
     uint8_t run = CLEAR; 
@@ -235,8 +193,8 @@ void m8q_test_app_copy()
             if (waypoint_status)
             {
                 // Update the target waypoint 
-                waypoint.lat = waypoints[waypoint_index].lat; 
-                waypoint.lon = waypoints[waypoint_index].lon; 
+                target_waypoint.lat = waypoints_0[waypoint_index].lat; 
+                target_waypoint.lon = waypoints_0[waypoint_index].lon; 
 
                 // The status will be set again if the device hits (gets close enough to) 
                 // the current target waypoint. 
@@ -244,7 +202,7 @@ void m8q_test_app_copy()
 
                 // Adjust waypoint index. If the end of the waypoint mission is reached 
                 // then start over from the beginning. 
-                if (++waypoint_index == 4)
+                if (++waypoint_index == M8Q_TEST_NUM_WAYPOINTS)
                 {
                     waypoint_index = CLEAR; 
                 }
@@ -256,8 +214,8 @@ void m8q_test_app_copy()
             radius = m8q_test_gps_rad_copy(
                 lat_current, 
                 lon_current, 
-                waypoint.lat, 
-                waypoint.lon); 
+                target_waypoint.lat, 
+                target_waypoint.lon); 
 
             // Update the heading between the current location and the waypoint. The 
             // heading will be an angle between 0-359.9 degrees from true North in the 
@@ -266,8 +224,8 @@ void m8q_test_app_copy()
             heading = m8q_test_gps_heading_copy(
                 lat_current, 
                 lon_current, 
-                waypoint.lat, 
-                waypoint.lon); 
+                target_waypoint.lat, 
+                target_waypoint.lon); 
 
             // Display the radius to the screen. 
             snprintf(screen_msg, 20, "Radius: %um   ", radius); 
@@ -302,11 +260,11 @@ void m8q_test_app_copy()
     }
 }
 
-//==================================================
+//=======================================================================================
 
 
-//==================================================
-// Helper functions 
+//=======================================================================================
+// Helper functions - replace these with the gps_calc functions 
 
 // GPS coordinate radius check - calculate surface distance and compare to threshold 
 int16_t m8q_test_gps_rad_copy(
@@ -389,7 +347,5 @@ int16_t m8q_test_gps_heading_copy(
 
     return heading; 
 }
-
-//==================================================
 
 //=======================================================================================
