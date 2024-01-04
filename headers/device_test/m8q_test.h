@@ -32,8 +32,6 @@
 
 // Conditional compilation 
 #define M8Q_CONTROLLER_TEST 0        // Choose between driver and controller test code 
-#define M8Q_MSG_COUNT 0              // Code that counts and prints number of incoming messages 
-#define M8Q_DATA_CHECK 1             // Code that checks the data size available 
 
 // Controller testing 
 #define M8Q_NUM_USER_CMDS 17         // Number of defined user commands 
@@ -48,6 +46,20 @@
 #define M8Q_TEST_KM_TO_M 1000        // Km to m conversion 
 #define M8Q_TEST_HEADING_GAIN 0.5    // GPS heading low pass filter gain 
 #define M8Q_TEST_RADIUS_GAIN 0.5     // GPS radius low pass filter gain 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Enums 
+
+/**
+ * @brief Test number to run 
+ */
+typedef enum {
+    M8Q_TEST_0, 
+    M8Q_TEST_1 
+} m8q_test_number_t; 
 
 //=======================================================================================
 
@@ -161,8 +173,11 @@ void m8q_test_init(void);
 
 /**
  * @brief M8Q test code 
+ * 
+ * @param test_num 
  */
-void m8q_test_app(void); 
+void m8q_test_app(
+    m8q_test_number_t test_num); 
 
 
 /**

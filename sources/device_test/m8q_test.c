@@ -21,6 +21,242 @@
 
 
 //=======================================================================================
+// Notes 
+
+// The ACK status function is not explicitly tested here as it's used during init in 
+// test 1. 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Prototypes 
+
+/**
+ * @brief Test 0 
+ * 
+ * @details No config messages sent to the device. Whole message stream is read and output over 
+ *          UART (to serial terminal). A data buffer limit is set and neither TX ready or low 
+ *          power pins are used. The device is put to sleep periodically via a sent message. 
+ *          When the device is not in sleep mode, the code periodically stops reading the 
+ *          stream and lets the buffer overflow. After an overflow, the data buffer is flushed 
+ *          and reading continues. 
+ */
+void m8q_test_0(void); 
+
+
+/**
+ * @brief Test 1 
+ * 
+ * @details Config messages sent to the device and specific data getters are used to read data. 
+ *          The code will periodically put the device to sleep via the low power pin then turn 
+ *          on again and continue to read data. The read data gets output over UART (to serial 
+ *          terminal). Data availability is checked via the TX ready pin. No data buffer limit 
+ *          is set. 
+ */
+void m8q_test_1(void); 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Setup code 
+
+void m8q_test_init()
+{
+    // Initialize GPIO ports 
+    gpio_port_init(); 
+
+    // Initialize timers 
+    tim_9_to_11_counter_init(
+        TIM9, 
+        TIM_84MHZ_1US_PSC, 
+        0xFFFF,  // Max ARR value 
+        TIM_UP_INT_DISABLE); 
+    tim_enable(TIM9); 
+
+    // Initialize UART
+    uart_init(
+        USART2, 
+        GPIOA, 
+        PIN_3, 
+        PIN_2, 
+        UART_FRAC_42_9600, 
+        UART_MANT_42_9600, 
+        UART_DMA_DISABLE, 
+        UART_DMA_DISABLE); 
+
+    // Initialize I2C
+    i2c_init(
+        I2C1, 
+        PIN_9, 
+        GPIOB, 
+        PIN_8, 
+        GPIOB, 
+        I2C_MODE_SM,
+        I2C_APB1_42MHZ,
+        I2C_CCR_SM_42_100,
+        I2C_TRISE_1000_42); 
+
+    // Periodic (counter update) interrupt timer 
+    tim_9_to_11_counter_init(
+        TIM10, 
+        TIM_84MHZ_100US_PSC, 
+        0x0032,  // ARR=50, (50 counts)*(100us/count) = 5ms 
+        TIM_UP_INT_ENABLE); 
+    tim_enable(TIM10); 
+
+    // Initialize interrupt handler flags 
+    int_handler_init(); 
+
+    // Enable the interrupt handlers 
+    nvic_config(TIM1_UP_TIM10_IRQn, EXTI_PRIORITY_0); 
+
+    // User button setup. The user buttons are used to trigger data reads and 
+    // data size checks. 
+
+    // Initialize the GPIO pins for the buttons and the button debouncer 
+    gpio_pin_init(GPIOC, PIN_0, MODER_INPUT, OTYPER_PP, OSPEEDR_HIGH, PUPDR_PU); 
+    gpio_pin_init(GPIOC, PIN_1, MODER_INPUT, OTYPER_PP, OSPEEDR_HIGH, PUPDR_PU); 
+    debounce_init(GPIOX_PIN_0 | GPIOX_PIN_1 ); 
+
+    // M8Q device setup 
+
+    // Send the configuration messages to configure the device settings. The M8Q has 
+    // no flash to store user settings. Instead they're saved RAM which can only be 
+    // powered until the onboard backup battery loses power. For this reason, settings 
+    // must always be configured in setup. 
+    char m8q_config_messages[M8Q_CONFIG_NUM_MSG_PKT_0][M8Q_CONFIG_MAX_MSG_LEN]; 
+    m8q_config_copy(m8q_config_messages); 
+
+    // Driver init 
+    m8q_init(
+        I2C1, 
+        GPIOC, 
+        PIN_10, 
+        PIN_11, 
+        M8Q_CONFIG_NUM_MSG_PKT_0, 
+        M8Q_CONFIG_MAX_MSG_LEN, 
+        (uint8_t *)m8q_config_messages[0]); 
+    
+    // Output an initialization warning if a driver fault occurs on setup. 
+    if (m8q_get_status()) 
+    {
+        uart_sendstring(USART2, "M8Q init fault.\r\n"); 
+    }
+
+    // Delay to let everything finish setup before starting to send and receieve data 
+    tim_delay_ms(TIM9, 500); 
+}
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Test code 
+
+void m8q_test_app(
+    m8q_test_number_t test_num)
+{
+    // Test plan to check if data is skipped or overwritten: 
+    // - Let the module get a connection and start reporting the UTC time 
+    // - Coorelate the UTC time to local time as a reference 
+    // - Read a time stamp and make note of it 
+    // - Let the module data buffer fill up with data by checking the data size 
+    // - Read data and check the updated time 
+    // - If the time read is the most up to date then data should be getting over-
+    //   written, otherwise data should be getting blocked. 
+
+    // Answer to test question 
+    // - Data is queued up in the devices message buffer and you must read the oldest 
+    //   messages to clear the queue before you can read the newset messages. The device 
+    //   message buffer is only so bit so once it is full then data is lost. 
+
+    // Local variables 
+    static uint8_t button_block_1 = CLEAR; 
+    static uint8_t button_block_2 = CLEAR; 
+    uint16_t data_size; 
+    uint8_t current_time[10]; 
+
+    //===================================================
+    // Update the button status on periodic interrupt 
+
+    if (handler_flags.tim1_up_tim10_glbl_flag)
+    {
+        // Clear interrupt handler 
+        handler_flags.tim1_up_tim10_glbl_flag = CLEAR; 
+
+        // Update the user button status 
+        debounce((uint8_t)gpio_port_read(GPIOC)); 
+    }
+    
+    //===================================================
+
+    //===================================================
+    // Do things if the buttons are pressed 
+
+    // If button 1 is pressed then read and check the time 
+    if (debounce_pressed((uint8_t)GPIOX_PIN_0) && !button_block_1) 
+    {
+        if (m8q_get_tx_ready())
+        {
+            m8q_read(); 
+            m8q_get_time(current_time); 
+            uart_sendstring(USART2, (char *)current_time); 
+            uart_send_new_line(USART2); 
+            memset((void *)current_time, CLEAR, sizeof(current_time)); 
+        }
+
+        button_block_1 = SET_BIT; 
+    }
+    else if (debounce_released((uint8_t)GPIOX_PIN_0) && button_block_1) 
+    {
+        button_block_1 = CLEAR; 
+    }
+
+    // If button 2 is pressed then check the data size 
+    if (debounce_pressed((uint8_t)GPIOX_PIN_1) && !button_block_2) 
+    {
+        if (m8q_get_tx_ready())
+        {
+            m8q_check_data_size(&data_size); 
+            uart_send_integer(USART2, (int16_t)data_size); 
+            uart_send_new_line(USART2); 
+        }
+
+        button_block_2 = SET_BIT; 
+    }
+    else if (debounce_released((uint8_t)GPIOX_PIN_1) && button_block_2) 
+    {
+        button_block_2 = CLEAR; 
+    }
+
+    //===================================================
+}
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Test functions 
+
+// Test 0 
+void m8q_test_0(void)
+{
+    // 
+}
+
+
+// Test 1 
+void m8q_test_1(void)
+{
+    // 
+}
+
+//=======================================================================================
+
+
+//=======================================================================================
 // Controller test 
 
 #if M8Q_CONTROLLER_TEST 
@@ -239,302 +475,6 @@ void m8q_test_app()
 //==================================================
 
 #endif   // M8Q_CONTROLLER_TEST
-
-//=======================================================================================
-
-
-//=======================================================================================
-// Message count test 
-
-#if M8Q_MSG_COUNT 
-
-//==================================================
-// Setup code 
-
-void m8q_test_init()
-{
-    // Initialize GPIO ports 
-    gpio_port_init(); 
-
-    // Initialize timers 
-    tim_9_to_11_counter_init(
-        TIM9, 
-        TIM_84MHZ_1US_PSC, 
-        0xFFFF,  // Max ARR value 
-        TIM_UP_INT_DISABLE); 
-    tim_enable(TIM9); 
-
-    // Initialize UART
-    uart_init(
-        USART2, 
-        GPIOA, 
-        PIN_3, 
-        PIN_2, 
-        UART_FRAC_42_9600, 
-        UART_MANT_42_9600, 
-        UART_DMA_DISABLE, 
-        UART_DMA_DISABLE); 
-
-    // Initialize I2C
-    i2c_init(
-        I2C1, 
-        PIN_9, 
-        GPIOB, 
-        PIN_8, 
-        GPIOB, 
-        I2C_MODE_SM,
-        I2C_APB1_42MHZ,
-        I2C_CCR_SM_42_100,
-        I2C_TRISE_1000_42); 
-
-    // M8Q device setup 
-
-    // Send the configuration messages to configure the device settings. The M8Q has 
-    // no flash to store user settings. Instead they're saved RAM which can only be 
-    // powered until the onboard backup battery loses power. For this reason, settings 
-    // must always be configured in setup. 
-    char m8q_config_messages[M8Q_CONFIG_NUM_MSG_PKT_0][M8Q_CONFIG_MAX_MSG_LEN]; 
-    m8q_config_copy(m8q_config_messages); 
-
-    // Driver init 
-    m8q_init(
-        I2C1, 
-        GPIOC, 
-        PIN_10, 
-        PIN_11, 
-        M8Q_CONFIG_NUM_MSG_PKT_0, 
-        M8Q_CONFIG_MAX_MSG_LEN, 
-        (uint8_t *)m8q_config_messages[0]); 
-    
-    // Output an initialization warning if a driver fault occurs on setup. 
-    if (m8q_get_status()) 
-    {
-        uart_sendstring(USART2, "M8Q init fault.\r\n"); 
-    }
-
-    // Delay to let everything finish setup before starting to send and receieve data 
-    tim_delay_ms(TIM9, 500); 
-}
-
-//==================================================
-
-
-//==================================================
-// Test code 
-
-void m8q_test_app()
-{
-    // Local variables 
-    uint8_t count = CLEAR; 
-
-    while (TRUE)
-    {
-        if (m8q_get_tx_ready())
-        {
-            m8q_read(); 
-            count++; 
-        }
-        else
-        {
-            if (count)
-            {
-                uart_send_integer(USART2, (int16_t)count); 
-                uart_send_new_line(USART2); 
-            }
-            break; 
-        }
-    }
-}
-
-//==================================================
-
-#endif   // M8Q_MSG_COUNT 
-
-//=======================================================================================
-
-
-//=======================================================================================
-// Data check test 
-
-#if M8Q_DATA_CHECK 
-
-//==================================================
-// Setup code 
-
-void m8q_test_init()
-{
-    // Initialize GPIO ports 
-    gpio_port_init(); 
-
-    // Initialize timers 
-    tim_9_to_11_counter_init(
-        TIM9, 
-        TIM_84MHZ_1US_PSC, 
-        0xFFFF,  // Max ARR value 
-        TIM_UP_INT_DISABLE); 
-    tim_enable(TIM9); 
-
-    // Initialize UART
-    uart_init(
-        USART2, 
-        GPIOA, 
-        PIN_3, 
-        PIN_2, 
-        UART_FRAC_42_9600, 
-        UART_MANT_42_9600, 
-        UART_DMA_DISABLE, 
-        UART_DMA_DISABLE); 
-
-    // Initialize I2C
-    i2c_init(
-        I2C1, 
-        PIN_9, 
-        GPIOB, 
-        PIN_8, 
-        GPIOB, 
-        I2C_MODE_SM,
-        I2C_APB1_42MHZ,
-        I2C_CCR_SM_42_100,
-        I2C_TRISE_1000_42); 
-
-    // Periodic (counter update) interrupt timer 
-    tim_9_to_11_counter_init(
-        TIM10, 
-        TIM_84MHZ_100US_PSC, 
-        0x0032,  // ARR=50, (50 counts)*(100us/count) = 5ms 
-        TIM_UP_INT_ENABLE); 
-    tim_enable(TIM10); 
-
-    // Initialize interrupt handler flags 
-    int_handler_init(); 
-
-    // Enable the interrupt handlers 
-    nvic_config(TIM1_UP_TIM10_IRQn, EXTI_PRIORITY_0); 
-
-    // User button setup. The user buttons are used to trigger data reads and 
-    // data size checks. 
-
-    // Initialize the GPIO pins for the buttons and the button debouncer 
-    gpio_pin_init(GPIOC, PIN_0, MODER_INPUT, OTYPER_PP, OSPEEDR_HIGH, PUPDR_PU); 
-    gpio_pin_init(GPIOC, PIN_1, MODER_INPUT, OTYPER_PP, OSPEEDR_HIGH, PUPDR_PU); 
-    debounce_init(GPIOX_PIN_0 | GPIOX_PIN_1 ); 
-
-    // M8Q device setup 
-
-    // Send the configuration messages to configure the device settings. The M8Q has 
-    // no flash to store user settings. Instead they're saved RAM which can only be 
-    // powered until the onboard backup battery loses power. For this reason, settings 
-    // must always be configured in setup. 
-    char m8q_config_messages[M8Q_CONFIG_NUM_MSG_PKT_0][M8Q_CONFIG_MAX_MSG_LEN]; 
-    m8q_config_copy(m8q_config_messages); 
-
-    // Driver init 
-    m8q_init(
-        I2C1, 
-        GPIOC, 
-        PIN_10, 
-        PIN_11, 
-        M8Q_CONFIG_NUM_MSG_PKT_0, 
-        M8Q_CONFIG_MAX_MSG_LEN, 
-        (uint8_t *)m8q_config_messages[0]); 
-    
-    // Output an initialization warning if a driver fault occurs on setup. 
-    if (m8q_get_status()) 
-    {
-        uart_sendstring(USART2, "M8Q init fault.\r\n"); 
-    }
-
-    // Delay to let everything finish setup before starting to send and receieve data 
-    tim_delay_ms(TIM9, 500); 
-}
-
-//==================================================
-
-
-//==================================================
-// Test code 
-
-void m8q_test_app()
-{
-    // Test plan to check if data is skipped or overwritten: 
-    // - Let the module get a connection and start reporting the UTC time 
-    // - Coorelate the UTC time to local time as a reference 
-    // - Read a time stamp and make note of it 
-    // - Let the module data buffer fill up with data by checking the data size 
-    // - Read data and check the updated time 
-    // - If the time read is the most up to date then data should be getting over-
-    //   written, otherwise data should be getting blocked. 
-
-    // Answer to test question 
-    // - Data is queued up in the devices message buffer and you must read the oldest 
-    //   messages to clear the queue before you can read the newset messages. The device 
-    //   message buffer is only so bit so once it is full then data is lost. 
-
-    // Local variables 
-    static uint8_t button_block_1 = CLEAR; 
-    static uint8_t button_block_2 = CLEAR; 
-    uint16_t data_size; 
-    uint8_t current_time[10]; 
-
-    //===================================================
-    // Update the button status on periodic interrupt 
-
-    if (handler_flags.tim1_up_tim10_glbl_flag)
-    {
-        // Clear interrupt handler 
-        handler_flags.tim1_up_tim10_glbl_flag = CLEAR; 
-
-        // Update the user button status 
-        debounce((uint8_t)gpio_port_read(GPIOC)); 
-    }
-    
-    //===================================================
-
-    //===================================================
-    // Do things if the buttons are pressed 
-
-    // If button 1 is pressed then read and check the time 
-    if (debounce_pressed((uint8_t)GPIOX_PIN_0) && !button_block_1) 
-    {
-        if (m8q_get_tx_ready())
-        {
-            m8q_read(); 
-            m8q_get_time(current_time); 
-            uart_sendstring(USART2, (char *)current_time); 
-            uart_send_new_line(USART2); 
-            memset((void *)current_time, CLEAR, sizeof(current_time)); 
-        }
-
-        button_block_1 = SET_BIT; 
-    }
-    else if (debounce_released((uint8_t)GPIOX_PIN_0) && button_block_1) 
-    {
-        button_block_1 = CLEAR; 
-    }
-
-    // If button 2 is pressed then check the data size 
-    if (debounce_pressed((uint8_t)GPIOX_PIN_1) && !button_block_2) 
-    {
-        if (m8q_get_tx_ready())
-        {
-            m8q_check_data_size(&data_size); 
-            uart_send_integer(USART2, (int16_t)data_size); 
-            uart_send_new_line(USART2); 
-        }
-
-        button_block_2 = SET_BIT; 
-    }
-    else if (debounce_released((uint8_t)GPIOX_PIN_1) && button_block_2) 
-    {
-        button_block_2 = CLEAR; 
-    }
-
-    //===================================================
-}
-
-//==================================================
-
-#endif   // M8Q_DATA_CHECK 
 
 //=======================================================================================
 
