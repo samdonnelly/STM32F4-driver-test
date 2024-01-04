@@ -51,20 +51,6 @@
 
 
 //=======================================================================================
-// Enums 
-
-/**
- * @brief Test number to run 
- */
-typedef enum {
-    M8Q_TEST_0, 
-    M8Q_TEST_1 
-} m8q_test_number_t; 
-
-//=======================================================================================
-
-
-//=======================================================================================
 // Function pointers 
 
 /**
@@ -163,22 +149,54 @@ m8q_func_ptrs_t;
 
 
 //=======================================================================================
-// Function prototypes 
+// Setup code 
 
 /**
- * @brief M8Q setup code 
+ * @brief Setup code for Test 0 
  */
-void m8q_test_init(void); 
+void m8q_test_0_init(void); 
 
 
 /**
- * @brief M8Q test code 
+ * @brief Setup code for Test 1 
+ */
+void m8q_test_1_init(void); 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Test code 
+
+/**
+ * @brief Test 0 code 
  * 
- * @param test_num 
+ * @details No config messages sent to the device. Whole message stream is read and output over 
+ *          UART (to serial terminal). A data buffer limit is set and neither TX ready or low 
+ *          power pins are used. The device is put to sleep periodically via a sent message. 
+ *          When the device is not in sleep mode, the code periodically stops reading the 
+ *          stream and lets the buffer overflow. After an overflow, the data buffer is flushed 
+ *          and reading continues. 
  */
-void m8q_test_app(
-    m8q_test_number_t test_num); 
+void m8q_test_0(void); 
 
+
+/**
+ * @brief Test 1 code 
+ * 
+ * @details Config messages sent to the device and specific data getters are used to read data. 
+ *          The code will periodically put the device to sleep via the low power pin then turn 
+ *          on again and continue to read data. The read data gets output over UART (to serial 
+ *          terminal). Data availability is checked via the TX ready pin. No data buffer limit 
+ *          is set. 
+ */
+void m8q_test_1(void); 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Test functions 
 
 /**
  * @brief GPS coordinate radius check 

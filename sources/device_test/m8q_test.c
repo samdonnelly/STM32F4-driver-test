@@ -26,6 +26,54 @@
 // The ACK status function is not explicitly tested here as it's used during init in 
 // test 1. 
 
+// The M8Q has no flash to store user settings. Instead they're saved in RAM which can 
+// only be powered until the onboard backup battery loses power. For this reason, settings 
+// must always be configured in setup. 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Macros 
+
+// Test 0 
+#define M8Q_TEST_0_DATA_BUFF_LIM 400 
+#define M8Q_TEST_0_READ_COUNT_LIM 90 
+#define M8Q_TEST_0_OVERFLOW_COUNT_LO 40 
+#define M8Q_TEST_0_OVERFLOW_COUNT_HI 70 
+
+// Test 1 
+#define M8Q_TEST_1_DATA_BUFF_LIM 0 
+#define M8Q_TEST_1_COO_STR_LEN 25 
+#define M8Q_TEST_1_READ_COUNT_LIM 60 
+#define M8Q_TEST_1_LP_COUNT_LIM 90 
+#define M8Q_TEST_1_NUM_PARAMS 12 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Global variables 
+
+// 
+typedef struct m8q_test_data_s 
+{
+    // Test 0 device data 
+    uint8_t data_stream[M8Q_TEST_0_DATA_BUFF_LIM]; 
+
+    // Test 1 device data 
+    double latitude, longitude; 
+    uint8_t lat_str[BYTE_11], lon_str[BYTE_12], utc_time[BYTE_10], utc_date[BYTE_7]; 
+    uint8_t NS, EW, navstat_lock; 
+    uint16_t navstat; 
+
+    // 
+    uint8_t schedule_counter; 
+}
+m8q_test_data_t; 
+
+static m8q_test_data_t test_data; 
+
 //=======================================================================================
 
 
@@ -33,28 +81,15 @@
 // Prototypes 
 
 /**
- * @brief Test 0 
- * 
- * @details No config messages sent to the device. Whole message stream is read and output over 
- *          UART (to serial terminal). A data buffer limit is set and neither TX ready or low 
- *          power pins are used. The device is put to sleep periodically via a sent message. 
- *          When the device is not in sleep mode, the code periodically stops reading the 
- *          stream and lets the buffer overflow. After an overflow, the data buffer is flushed 
- *          and reading continues. 
+ * @brief Common/shared setup code 
  */
-void m8q_test_0(void); 
+void m8q_test_general_init(void); 
 
 
 /**
- * @brief Test 1 
- * 
- * @details Config messages sent to the device and specific data getters are used to read data. 
- *          The code will periodically put the device to sleep via the low power pin then turn 
- *          on again and continue to read data. The read data gets output over UART (to serial 
- *          terminal). Data availability is checked via the TX ready pin. No data buffer limit 
- *          is set. 
+ * @brief Common/shared test code 
  */
-void m8q_test_1(void); 
+void m8q_test_general(void); 
 
 //=======================================================================================
 
@@ -62,20 +97,80 @@ void m8q_test_1(void);
 //=======================================================================================
 // Setup code 
 
-void m8q_test_init()
+// Setup for Test 0 
+void m8q_test_0_init(void)
+{
+    m8q_test_general_init(); 
+
+    // M8Q device setup 
+    M8Q_STATUS init_check = m8q_init_dev(
+        I2C1, 
+        m8q_config_no_pkt, 
+        CLEAR, 
+        CLEAR, 
+        M8Q_TEST_0_DATA_BUFF_LIM); 
+    
+    // Check if there was a problem during device initialization. If so, output the fault 
+    // to the serial terminal and halt to program. 
+    if (init_check)
+    {
+        uart_sendstring(USART2, "\r\nDevice init status: "); 
+        uart_send_integer(USART2, (int16_t)init_check); 
+
+        while (TRUE); 
+    }
+}
+
+
+// Setup for Test 1 
+void m8q_test_1_init(void)
+{
+    m8q_test_general_init(); 
+
+    // M8Q device setup 
+    M8Q_STATUS init_check = m8q_init_dev(
+        I2C1, 
+        &m8q_config_pkt_0[0][0], 
+        M8Q_CONFIG_NUM_MSG_PKT_0, 
+        M8Q_CONFIG_MAX_MSG_LEN, 
+        M8Q_TEST_1_DATA_BUFF_LIM); 
+
+    // Set up low power and TX ready pins 
+    M8Q_STATUS low_pwr_init_check = m8q_pwr_pin_init_dev(GPIOC, PIN_10); 
+    M8Q_STATUS txr_init_check = m8q_txr_pin_init_dev(GPIOC, PIN_11); 
+
+    // Check if there was a problem during device initialization. If so, output the faults 
+    // to the serial terminal and halt to program. 
+    if (init_check || low_pwr_init_check || txr_init_check)
+    {
+        uart_sendstring(USART2, "\r\nDevice init status: "); 
+        uart_send_integer(USART2, (int16_t)init_check); 
+        uart_sendstring(USART2, "\r\nLow power pin init status: "); 
+        uart_send_integer(USART2, (int16_t)low_pwr_init_check); 
+        uart_sendstring(USART2, "\r\nTX Ready pin init status: "); 
+        uart_send_integer(USART2, (int16_t)txr_init_check); 
+
+        while (TRUE); 
+    }
+}
+
+
+// Common/shared setup code 
+void m8q_test_general_init(void)
 {
     // Initialize GPIO ports 
     gpio_port_init(); 
 
-    // Initialize timers 
+    // Periodic (counter update) interrupt timer (for event timing) 
     tim_9_to_11_counter_init(
-        TIM9, 
-        TIM_84MHZ_1US_PSC, 
-        0xFFFF,  // Max ARR value 
-        TIM_UP_INT_DISABLE); 
-    tim_enable(TIM9); 
+        TIM10, 
+        TIM_84MHZ_100US_PSC, 
+        // 0x0032,  // ARR=50, (50 counts)*(100us/count) = 5ms 
+        0x1388,  // ARR=5000, (50 counts)*(100us/count) = 5000ms = 0.5s 
+        TIM_UP_INT_ENABLE); 
+    tim_enable(TIM10); 
 
-    // Initialize UART
+    // Initialize UART (serial terminal output) 
     uart_init(
         USART2, 
         GPIOA, 
@@ -86,7 +181,7 @@ void m8q_test_init()
         UART_DMA_DISABLE, 
         UART_DMA_DISABLE); 
 
-    // Initialize I2C
+    // Initialize I2C (to communicate with device) 
     i2c_init(
         I2C1, 
         PIN_9, 
@@ -98,55 +193,35 @@ void m8q_test_init()
         I2C_CCR_SM_42_100,
         I2C_TRISE_1000_42); 
 
-    // Periodic (counter update) interrupt timer 
-    tim_9_to_11_counter_init(
-        TIM10, 
-        TIM_84MHZ_100US_PSC, 
-        0x0032,  // ARR=50, (50 counts)*(100us/count) = 5ms 
-        TIM_UP_INT_ENABLE); 
-    tim_enable(TIM10); 
-
-    // Initialize interrupt handler flags 
+    // Initialize interrupt handler flags and enable the periodic timer interrupt handler 
     int_handler_init(); 
-
-    // Enable the interrupt handlers 
     nvic_config(TIM1_UP_TIM10_IRQn, EXTI_PRIORITY_0); 
 
-    // User button setup. The user buttons are used to trigger data reads and 
-    // data size checks. 
+    // Initialize variables 
+    memset((void *)&test_data, CLEAR, sizeof(test_data)); 
 
-    // Initialize the GPIO pins for the buttons and the button debouncer 
-    gpio_pin_init(GPIOC, PIN_0, MODER_INPUT, OTYPER_PP, OSPEEDR_HIGH, PUPDR_PU); 
-    gpio_pin_init(GPIOC, PIN_1, MODER_INPUT, OTYPER_PP, OSPEEDR_HIGH, PUPDR_PU); 
-    debounce_init(GPIOX_PIN_0 | GPIOX_PIN_1 ); 
+    //==================================================
+    // To be assessed 
 
-    // M8Q device setup 
+    // Initialize timers 
+    // tim_9_to_11_counter_init(
+    //     TIM9, 
+    //     TIM_84MHZ_1US_PSC, 
+    //     0xFFFF,  // Max ARR value 
+    //     TIM_UP_INT_DISABLE); 
+    // tim_enable(TIM9); 
 
-    // Send the configuration messages to configure the device settings. The M8Q has 
-    // no flash to store user settings. Instead they're saved RAM which can only be 
-    // powered until the onboard backup battery loses power. For this reason, settings 
-    // must always be configured in setup. 
-    char m8q_config_messages[M8Q_CONFIG_NUM_MSG_PKT_0][M8Q_CONFIG_MAX_MSG_LEN]; 
-    m8q_config_copy(m8q_config_messages); 
+    // // User button setup. The user buttons are used to trigger data reads and 
+    // // data size checks. 
+    // // Initialize the GPIO pins for the buttons and the button debouncer 
+    // gpio_pin_init(GPIOC, PIN_0, MODER_INPUT, OTYPER_PP, OSPEEDR_HIGH, PUPDR_PU); 
+    // gpio_pin_init(GPIOC, PIN_1, MODER_INPUT, OTYPER_PP, OSPEEDR_HIGH, PUPDR_PU); 
+    // debounce_init(GPIOX_PIN_0 | GPIOX_PIN_1 ); 
 
-    // Driver init 
-    m8q_init(
-        I2C1, 
-        GPIOC, 
-        PIN_10, 
-        PIN_11, 
-        M8Q_CONFIG_NUM_MSG_PKT_0, 
-        M8Q_CONFIG_MAX_MSG_LEN, 
-        (uint8_t *)m8q_config_messages[0]); 
+    // // Delay to let everything finish setup before starting to send and receieve data 
+    // tim_delay_ms(TIM9, 500); 
     
-    // Output an initialization warning if a driver fault occurs on setup. 
-    if (m8q_get_status()) 
-    {
-        uart_sendstring(USART2, "M8Q init fault.\r\n"); 
-    }
-
-    // Delay to let everything finish setup before starting to send and receieve data 
-    tim_delay_ms(TIM9, 500); 
+    //==================================================
 }
 
 //=======================================================================================
@@ -155,9 +230,61 @@ void m8q_test_init()
 //=======================================================================================
 // Test code 
 
-void m8q_test_app(
-    m8q_test_number_t test_num)
+// Test 0 code 
+void m8q_test_0(void)
 {
+    // Local variables 
+    M8Q_STATUS driver_status; 
+
+    m8q_test_general(); 
+
+    if (test_data.schedule_counter < M8Q_TEST_0_READ_COUNT_LIM)
+    {
+        if ((test_data.schedule_counter < M8Q_TEST_0_OVERFLOW_COUNT_LO) || 
+            (test_data.schedule_counter > M8Q_TEST_0_OVERFLOW_COUNT_HI))
+        {
+            driver_status = m8q_read_ds_dev(test_data.data_stream, M8Q_TEST_0_DATA_BUFF_LIM); 
+
+            switch (driver_status)
+            {
+                case M8Q_OK: 
+                    // Output the data stream 
+                    uart_send_new_line(USART2); 
+                    uart_sendstring(USART2, (char *)test_data.data_stream); 
+                    break; 
+
+                case M8Q_NO_DATA_AVAILABLE: 
+                    // Do nothing 
+                    break; 
+
+                case M8Q_DATA_BUFF_OVERFLOW: 
+                    // Indicate an overflow (data stream larger than max allowed buffer size) 
+                    uart_sendstring(USART2, "\r\nBuffer overflow. Stream cleared.\r\n"); 
+                    break; 
+
+                default:   // Everything else 
+                    // Output the fault status 
+                    uart_sendstring(USART2, "\r\nDriver fault: "); 
+                    uart_send_integer(USART2, (int16_t)driver_status); 
+                    uart_send_new_line(USART2); 
+                    break; 
+            }
+        }
+        else if (test_data.schedule_counter == M8Q_TEST_0_OVERFLOW_COUNT_LO)
+        {
+            uart_sendstring(USART2, "\r\nRead pause.\r\n"); 
+        }
+    }
+    // else if (test_data.schedule_counter < 20)
+    // {
+    //     // Send a message to enter low power mode 
+    // }
+    else 
+    {
+        test_data.schedule_counter = CLEAR; 
+    }
+
+#if 0 
     // Test plan to check if data is skipped or overwritten: 
     // - Let the module get a connection and start reporting the UTC time 
     // - Coorelate the UTC time to local time as a reference 
@@ -232,25 +359,106 @@ void m8q_test_app(
     }
 
     //===================================================
-}
-
-//=======================================================================================
-
-
-//=======================================================================================
-// Test functions 
-
-// Test 0 
-void m8q_test_0(void)
-{
-    // 
+#endif 
 }
 
 
-// Test 1 
+// Test 1 code 
 void m8q_test_1(void)
 {
-    // 
+    // Local variables 
+    char latitude_str[M8Q_TEST_1_COO_STR_LEN], longitude_str[M8Q_TEST_1_COO_STR_LEN]; 
+    M8Q_STATUS driver_status; 
+    GPIO_STATE lp_pin_state = gpio_read(GPIOC, (SET_BIT << PIN_10)); 
+
+    m8q_test_general(); 
+
+    if (test_data.schedule_counter < M8Q_TEST_1_READ_COUNT_LIM)
+    {
+        m8q_clear_low_pwr_dev(); 
+
+        if (m8q_get_tx_ready_dev())
+        {
+            driver_status = m8q_read_data_dev(); 
+
+            if (!driver_status)
+            {
+                test_data.latitude = m8q_get_position_lat_dev(); 
+                m8q_get_position_lat_str_dev(test_data.lat_str, BYTE_11); 
+                test_data.NS = m8q_get_position_NS_dev(); 
+                test_data.longitude = m8q_get_position_lon_dev(); 
+                m8q_get_position_lon_str_dev(test_data.lon_str, BYTE_12); 
+                test_data.EW = m8q_get_position_EW_dev(); 
+                test_data.navstat = m8q_get_position_navstat_dev(); 
+                test_data.navstat_lock = m8q_get_position_navstat_lock_dev(); 
+                m8q_get_time_utc_time_dev(test_data.utc_time, BYTE_10); 
+                m8q_get_time_utc_date_dev(test_data.utc_date, BYTE_7); 
+
+                // Go to the top of the output block in the serial terminal 
+                for (uint8_t i = CLEAR; i < M8Q_TEST_1_NUM_PARAMS; i++)
+                {
+                    uart_sendstring(USART2, "\033[1A"); 
+                }
+
+                sprintf(latitude_str, "Latitude: %lf", test_data.latitude); 
+                uart_sendstring(USART2, latitude_str); 
+                uart_sendstring(USART2, "\r\nLatitude string: "); 
+                uart_sendstring(USART2, (char *)test_data.lat_str); 
+                uart_sendstring(USART2, "\r\nNS: "); 
+                uart_send_integer(USART2, (int16_t)test_data.NS); 
+                sprintf(longitude_str, "\r\nLongitude: %lf", test_data.longitude); 
+                uart_sendstring(USART2, longitude_str); 
+                uart_sendstring(USART2, "\r\nLongitude string: "); 
+                uart_sendstring(USART2, (char *)test_data.lon_str); 
+                uart_sendstring(USART2, "\r\nEW: "); 
+                uart_send_integer(USART2, (int16_t)test_data.EW); 
+                uart_sendstring(USART2, "\r\nNAVSTAT: "); 
+                uart_send_integer(USART2, (int16_t)test_data.navstat); 
+                uart_sendstring(USART2, "\r\nNAVSTAT lock: "); 
+                uart_send_integer(USART2, (int16_t)test_data.navstat_lock); 
+                uart_sendstring(USART2, "\r\nUTC time: "); 
+                uart_sendstring(USART2, (char *)test_data.utc_time); 
+                uart_sendstring(USART2, "\r\nUTC date: "); 
+                uart_sendstring(USART2, (char *)test_data.utc_date); 
+                uart_sendstring(USART2, "\r\nLP state: "); 
+                uart_sendstring(USART2, (int16_t)lp_pin_state); 
+                uart_sendstring(USART2, "\r\nDriver status: "); 
+                uart_send_integer(USART2, (int16_t)driver_status); 
+                uart_send_new_line(USART2); 
+            }
+            else 
+            {
+                uart_sendstring(USART2, "\033[1A"); 
+                uart_sendstring(USART2, "\rDriver status: "); 
+                uart_send_integer(USART2, (int16_t)driver_status); 
+                uart_send_new_line(USART2); 
+            }
+        }
+    }
+    else if (test_data.schedule_counter < M8Q_TEST_1_LP_COUNT_LIM)
+    {
+        m8q_set_low_pwr_dev(); 
+
+        uart_sendstring(USART2, "\033[1A\033[1A"); 
+        uart_sendstring(USART2, "\rLP state: "); 
+        uart_send_integer(USART2, (int16_t)lp_pin_state); 
+        uart_sendstring(USART2, "\r\n\n"); 
+    }
+    else 
+    {
+        test_data.schedule_counter = CLEAR; 
+    }
+}
+
+
+// Common/shared test code 
+void m8q_test_general(void)
+{
+    if (handler_flags.tim1_up_tim10_glbl_flag)
+    {
+        handler_flags.tim1_up_tim10_glbl_flag = CLEAR; 
+        test_data.schedule_counter++; 
+    }
 }
 
 //=======================================================================================
