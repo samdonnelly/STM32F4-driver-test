@@ -32,6 +32,7 @@
 
 // Conditional compilation 
 #define M8Q_CONTROLLER_TEST 0        // Choose between driver and controller test code 
+#define M8Q_TEST_SCREEN_ON_BUS 1     // HD44780U screen on I2C bus 
 
 // Controller testing 
 #define M8Q_NUM_USER_CMDS 17         // Number of defined user commands 

@@ -37,7 +37,7 @@
 // Macros 
 
 // Test 0 
-#define M8Q_TEST_0_DATA_BUFF_LIM 400 
+#define M8Q_TEST_0_DATA_BUFF_LIM 300 
 #define M8Q_TEST_0_READ_COUNT_LIM 90 
 #define M8Q_TEST_0_OVERFLOW_COUNT_LO 40 
 #define M8Q_TEST_0_OVERFLOW_COUNT_HI 70 
@@ -69,6 +69,7 @@ typedef struct m8q_test_data_s
 
     // 
     uint8_t schedule_counter; 
+    uint8_t attempt_flag; 
 }
 m8q_test_data_t; 
 
@@ -197,6 +198,21 @@ void m8q_test_general_init(void)
     int_handler_init(); 
     nvic_config(TIM1_UP_TIM10_IRQn, EXTI_PRIORITY_0); 
 
+    // Screen initialization 
+#if M8Q_TEST_SCREEN_ON_BUS 
+    tim_9_to_11_counter_init(
+        TIM9, 
+        TIM_84MHZ_1US_PSC, 
+        0xFFFF,  // Max ARR value 
+        TIM_UP_INT_DISABLE); 
+    tim_enable(TIM9); 
+
+    hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH); 
+    hd44780u_clear(); 
+    hd44780u_display_off(); 
+    hd44780u_backlight_off(); 
+#endif   // M8Q_TEST_SCREEN_ON_BUS 
+
     // Initialize variables 
     memset((void *)&test_data, CLEAR, sizeof(test_data)); 
 
@@ -238,50 +254,58 @@ void m8q_test_0(void)
 
     m8q_test_general(); 
 
-    if (test_data.schedule_counter < M8Q_TEST_0_READ_COUNT_LIM)
+    if (test_data.attempt_flag)
     {
-        if ((test_data.schedule_counter < M8Q_TEST_0_OVERFLOW_COUNT_LO) || 
-            (test_data.schedule_counter > M8Q_TEST_0_OVERFLOW_COUNT_HI))
+        test_data.attempt_flag = CLEAR_BIT; 
+        
+        if (test_data.schedule_counter < M8Q_TEST_0_READ_COUNT_LIM)
         {
-            driver_status = m8q_read_ds_dev(test_data.data_stream, M8Q_TEST_0_DATA_BUFF_LIM); 
-
-            switch (driver_status)
+            if ((test_data.schedule_counter < M8Q_TEST_0_OVERFLOW_COUNT_LO) || 
+                (test_data.schedule_counter > M8Q_TEST_0_OVERFLOW_COUNT_HI))
             {
-                case M8Q_OK: 
-                    // Output the data stream 
-                    uart_send_new_line(USART2); 
-                    uart_sendstring(USART2, (char *)test_data.data_stream); 
-                    break; 
+                uart_sendstring(USART2, "\nyo"); 
 
-                case M8Q_NO_DATA_AVAILABLE: 
-                    // Do nothing 
-                    break; 
+                driver_status = m8q_read_ds_dev(test_data.data_stream, M8Q_TEST_0_DATA_BUFF_LIM); 
 
-                case M8Q_DATA_BUFF_OVERFLOW: 
-                    // Indicate an overflow (data stream larger than max allowed buffer size) 
-                    uart_sendstring(USART2, "\r\nBuffer overflow. Stream cleared.\r\n"); 
-                    break; 
+                switch (driver_status)
+                {
+                    case M8Q_OK: 
+                        // Output the data stream 
+                        uart_send_new_line(USART2); 
+                        uart_sendstring(USART2, (char *)test_data.data_stream); 
+                        break; 
 
-                default:   // Everything else 
-                    // Output the fault status 
-                    uart_sendstring(USART2, "\r\nDriver fault: "); 
-                    uart_send_integer(USART2, (int16_t)driver_status); 
-                    uart_send_new_line(USART2); 
-                    break; 
+                    case M8Q_NO_DATA_AVAILABLE: 
+                        // Do nothing 
+                        break; 
+
+                    case M8Q_DATA_BUFF_OVERFLOW: 
+                        // Indicate an overflow (data stream larger than max allowed buffer size) 
+                        uart_sendstring(USART2, "\r\nBuffer overflow. Stream cleared.\r\n"); 
+                        break; 
+
+                    default:   // Everything else 
+                        // Output the fault status 
+                        uart_sendstring(USART2, "\r\nDriver fault: "); 
+                        uart_send_integer(USART2, (int16_t)driver_status); 
+                        uart_send_new_line(USART2); 
+                        break; 
+                }
+            }
+            else if (test_data.schedule_counter == M8Q_TEST_0_OVERFLOW_COUNT_LO)
+            {
+                uart_sendstring(USART2, "\r\nRead pause.\r\n"); 
             }
         }
-        else if (test_data.schedule_counter == M8Q_TEST_0_OVERFLOW_COUNT_LO)
+        // else if (test_data.schedule_counter < 20)
+        // {
+        //     // Send a message to enter low power mode 
+        // }
+        else 
         {
-            uart_sendstring(USART2, "\r\nRead pause.\r\n"); 
+            uart_sendstring(USART2, "\nmama"); 
+            test_data.schedule_counter = CLEAR; 
         }
-    }
-    // else if (test_data.schedule_counter < 20)
-    // {
-    //     // Send a message to enter low power mode 
-    // }
-    else 
-    {
-        test_data.schedule_counter = CLEAR; 
     }
 
 #if 0 
@@ -421,7 +445,7 @@ void m8q_test_1(void)
                 uart_sendstring(USART2, "\r\nUTC date: "); 
                 uart_sendstring(USART2, (char *)test_data.utc_date); 
                 uart_sendstring(USART2, "\r\nLP state: "); 
-                uart_sendstring(USART2, (int16_t)lp_pin_state); 
+                uart_send_integer(USART2, (int16_t)lp_pin_state); 
                 uart_sendstring(USART2, "\r\nDriver status: "); 
                 uart_send_integer(USART2, (int16_t)driver_status); 
                 uart_send_new_line(USART2); 
@@ -458,6 +482,7 @@ void m8q_test_general(void)
     {
         handler_flags.tim1_up_tim10_glbl_flag = CLEAR; 
         test_data.schedule_counter++; 
+        test_data.attempt_flag = SET_BIT; 
     }
 }
 
