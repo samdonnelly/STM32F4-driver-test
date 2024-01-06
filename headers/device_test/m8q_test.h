@@ -172,12 +172,23 @@ void m8q_test_1_init(void);
 /**
  * @brief Test 0 code 
  * 
- * @details No config messages sent to the device. Whole message stream is read and output over 
- *          UART (to serial terminal). A data buffer limit is set and neither TX ready or low 
- *          power pins are used. The device is put to sleep periodically via a sent message. 
- *          When the device is not in sleep mode, the code periodically stops reading the 
- *          stream and lets the buffer overflow. After an overflow, the data buffer is flushed 
- *          and reading continues. 
+ * @details No config messages are sent to the device during setup so the device operates 
+ *          in its default configuration (assuming no configurations saved in RAM). The 
+ *          whole message stream is read and output over UART (to serial terminal). a 
+ *          data buffer limit is set and neither TX ready or low power pins are used. 
+ *          While the device is active, the code periodically stops reading the stream 
+ *          and lets the buffer overflow. After an overflow, the data buffer is flushed 
+ *          and reading continues. Periodically the device is put into and taken out of 
+ *          low power mode via a sent messge. 
+ *          
+ *          Note that during periods where the device is not in low power mode but not 
+ *          actively reading data ("read pause"), the data size is read to keep the I2C 
+ *          port of the device active. If this is not done the device will asssume the 
+ *          host/master is no longer using this interface and it will stop scheduling 
+ *          data packets to the port. By keeping the port active, the data stream will 
+ *          accumulate past the max data buffer size and a data stream flush (buffer 
+ *          overflow) will be triggers. In other words, this is all done to demonstrate 
+ *          how the dirver works. 
  */
 void m8q_test_0(void); 
 

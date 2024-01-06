@@ -37,10 +37,11 @@
 // Macros 
 
 // Test 0 
-#define M8Q_TEST_0_DATA_BUFF_LIM 300 
+#define M8Q_TEST_0_DATA_BUFF_LIM 400 
 #define M8Q_TEST_0_READ_COUNT_LIM 90 
 #define M8Q_TEST_0_OVERFLOW_COUNT_LO 40 
 #define M8Q_TEST_0_OVERFLOW_COUNT_HI 70 
+#define M8Q_TEST_0_LP_COUNT_LIM 120 
 
 // Test 1 
 #define M8Q_TEST_1_DATA_BUFF_LIM 0 
@@ -53,9 +54,24 @@
 
 
 //=======================================================================================
+// Enums 
+
+/**
+ * @brief M8Q test state number 
+ */
+typedef enum {
+    M8Q_TEST_STATE_0, 
+    M8Q_TEST_STATE_1, 
+    M8Q_TEST_STATE_2 
+} m8q_test_state_t; 
+
+//=======================================================================================
+
+
+//=======================================================================================
 // Global variables 
 
-// 
+// Test code data record 
 typedef struct m8q_test_data_s 
 {
     // Test 0 device data 
@@ -67,7 +83,7 @@ typedef struct m8q_test_data_s
     uint8_t NS, EW, navstat_lock; 
     uint16_t navstat; 
 
-    // 
+    // Task scheduling 
     uint8_t schedule_counter; 
     uint8_t attempt_flag; 
 }
@@ -91,6 +107,17 @@ void m8q_test_general_init(void);
  * @brief Common/shared test code 
  */
 void m8q_test_general(void); 
+
+
+/**
+ * @brief Output the driver data from test 1 
+ * 
+ * @param driver_status 
+ * @param output_state 
+ */
+void m8q_test_1_print(
+    M8Q_STATUS driver_status, 
+    m8q_test_state_t output_state); 
 
 //=======================================================================================
 
@@ -166,7 +193,6 @@ void m8q_test_general_init(void)
     tim_9_to_11_counter_init(
         TIM10, 
         TIM_84MHZ_100US_PSC, 
-        // 0x0032,  // ARR=50, (50 counts)*(100us/count) = 5ms 
         0x1388,  // ARR=5000, (50 counts)*(100us/count) = 5000ms = 0.5s 
         TIM_UP_INT_ENABLE); 
     tim_enable(TIM10); 
@@ -215,29 +241,6 @@ void m8q_test_general_init(void)
 
     // Initialize variables 
     memset((void *)&test_data, CLEAR, sizeof(test_data)); 
-
-    //==================================================
-    // To be assessed 
-
-    // Initialize timers 
-    // tim_9_to_11_counter_init(
-    //     TIM9, 
-    //     TIM_84MHZ_1US_PSC, 
-    //     0xFFFF,  // Max ARR value 
-    //     TIM_UP_INT_DISABLE); 
-    // tim_enable(TIM9); 
-
-    // // User button setup. The user buttons are used to trigger data reads and 
-    // // data size checks. 
-    // // Initialize the GPIO pins for the buttons and the button debouncer 
-    // gpio_pin_init(GPIOC, PIN_0, MODER_INPUT, OTYPER_PP, OSPEEDR_HIGH, PUPDR_PU); 
-    // gpio_pin_init(GPIOC, PIN_1, MODER_INPUT, OTYPER_PP, OSPEEDR_HIGH, PUPDR_PU); 
-    // debounce_init(GPIOX_PIN_0 | GPIOX_PIN_1 ); 
-
-    // // Delay to let everything finish setup before starting to send and receieve data 
-    // tim_delay_ms(TIM9, 500); 
-    
-    //==================================================
 }
 
 //=======================================================================================
@@ -251,20 +254,22 @@ void m8q_test_0(void)
 {
     // Local variables 
     M8Q_STATUS driver_status; 
+    uint16_t data_size = CLEAR; 
 
     m8q_test_general(); 
 
+    // Only interact with the device once per periodic interrupt. 
     if (test_data.attempt_flag)
     {
         test_data.attempt_flag = CLEAR_BIT; 
         
+        // Periodically change between active and low power modes. 
         if (test_data.schedule_counter < M8Q_TEST_0_READ_COUNT_LIM)
         {
+            // Within a certain range stop reading data to trigger a buffer overflow. 
             if ((test_data.schedule_counter < M8Q_TEST_0_OVERFLOW_COUNT_LO) || 
                 (test_data.schedule_counter > M8Q_TEST_0_OVERFLOW_COUNT_HI))
             {
-                uart_sendstring(USART2, "\nyo"); 
-
                 driver_status = m8q_read_ds_dev(test_data.data_stream, M8Q_TEST_0_DATA_BUFF_LIM); 
 
                 switch (driver_status)
@@ -296,94 +301,23 @@ void m8q_test_0(void)
             {
                 uart_sendstring(USART2, "\r\nRead pause.\r\n"); 
             }
+            else 
+            {
+                // Read the data size to keep the device I2C port active. 
+                m8q_read_ds_size_dev(&data_size); 
+            }
         }
-        // else if (test_data.schedule_counter < 20)
-        // {
-        //     // Send a message to enter low power mode 
-        // }
+        else if (test_data.schedule_counter < M8Q_TEST_0_LP_COUNT_LIM)
+        {
+            // TODO Send a message to enter low power mode 
+        }
         else 
         {
-            uart_sendstring(USART2, "\nmama"); 
+            // Send a message to exit low power mode 
+
             test_data.schedule_counter = CLEAR; 
         }
     }
-
-#if 0 
-    // Test plan to check if data is skipped or overwritten: 
-    // - Let the module get a connection and start reporting the UTC time 
-    // - Coorelate the UTC time to local time as a reference 
-    // - Read a time stamp and make note of it 
-    // - Let the module data buffer fill up with data by checking the data size 
-    // - Read data and check the updated time 
-    // - If the time read is the most up to date then data should be getting over-
-    //   written, otherwise data should be getting blocked. 
-
-    // Answer to test question 
-    // - Data is queued up in the devices message buffer and you must read the oldest 
-    //   messages to clear the queue before you can read the newset messages. The device 
-    //   message buffer is only so bit so once it is full then data is lost. 
-
-    // Local variables 
-    static uint8_t button_block_1 = CLEAR; 
-    static uint8_t button_block_2 = CLEAR; 
-    uint16_t data_size; 
-    uint8_t current_time[10]; 
-
-    //===================================================
-    // Update the button status on periodic interrupt 
-
-    if (handler_flags.tim1_up_tim10_glbl_flag)
-    {
-        // Clear interrupt handler 
-        handler_flags.tim1_up_tim10_glbl_flag = CLEAR; 
-
-        // Update the user button status 
-        debounce((uint8_t)gpio_port_read(GPIOC)); 
-    }
-    
-    //===================================================
-
-    //===================================================
-    // Do things if the buttons are pressed 
-
-    // If button 1 is pressed then read and check the time 
-    if (debounce_pressed((uint8_t)GPIOX_PIN_0) && !button_block_1) 
-    {
-        if (m8q_get_tx_ready())
-        {
-            m8q_read(); 
-            m8q_get_time(current_time); 
-            uart_sendstring(USART2, (char *)current_time); 
-            uart_send_new_line(USART2); 
-            memset((void *)current_time, CLEAR, sizeof(current_time)); 
-        }
-
-        button_block_1 = SET_BIT; 
-    }
-    else if (debounce_released((uint8_t)GPIOX_PIN_0) && button_block_1) 
-    {
-        button_block_1 = CLEAR; 
-    }
-
-    // If button 2 is pressed then check the data size 
-    if (debounce_pressed((uint8_t)GPIOX_PIN_1) && !button_block_2) 
-    {
-        if (m8q_get_tx_ready())
-        {
-            m8q_check_data_size(&data_size); 
-            uart_send_integer(USART2, (int16_t)data_size); 
-            uart_send_new_line(USART2); 
-        }
-
-        button_block_2 = SET_BIT; 
-    }
-    else if (debounce_released((uint8_t)GPIOX_PIN_1) && button_block_2) 
-    {
-        button_block_2 = CLEAR; 
-    }
-
-    //===================================================
-#endif 
 }
 
 
@@ -391,86 +325,55 @@ void m8q_test_0(void)
 void m8q_test_1(void)
 {
     // Local variables 
-    char latitude_str[M8Q_TEST_1_COO_STR_LEN], longitude_str[M8Q_TEST_1_COO_STR_LEN]; 
-    M8Q_STATUS driver_status; 
-    GPIO_STATE lp_pin_state = gpio_read(GPIOC, (SET_BIT << PIN_10)); 
+    M8Q_STATUS driver_status = M8Q_OK; 
 
     m8q_test_general(); 
 
-    if (test_data.schedule_counter < M8Q_TEST_1_READ_COUNT_LIM)
+    // Only interact with the device once per periodic interrupt. 
+    if (test_data.attempt_flag)
     {
-        m8q_clear_low_pwr_dev(); 
+        test_data.attempt_flag = CLEAR_BIT; 
 
-        if (m8q_get_tx_ready_dev())
+        // Periodically change between active and low power modes. 
+        if (test_data.schedule_counter < M8Q_TEST_1_READ_COUNT_LIM)
         {
-            driver_status = m8q_read_data_dev(); 
-
-            if (!driver_status)
+            // Only read and output data when there is data available 
+            if (m8q_get_tx_ready_dev())
             {
-                test_data.latitude = m8q_get_position_lat_dev(); 
-                m8q_get_position_lat_str_dev(test_data.lat_str, BYTE_11); 
-                test_data.NS = m8q_get_position_NS_dev(); 
-                test_data.longitude = m8q_get_position_lon_dev(); 
-                m8q_get_position_lon_str_dev(test_data.lon_str, BYTE_12); 
-                test_data.EW = m8q_get_position_EW_dev(); 
-                test_data.navstat = m8q_get_position_navstat_dev(); 
-                test_data.navstat_lock = m8q_get_position_navstat_lock_dev(); 
-                m8q_get_time_utc_time_dev(test_data.utc_time, BYTE_10); 
-                m8q_get_time_utc_date_dev(test_data.utc_date, BYTE_7); 
+                driver_status = m8q_read_data_dev(); 
 
-                // Go to the top of the output block in the serial terminal 
-                for (uint8_t i = CLEAR; i < M8Q_TEST_1_NUM_PARAMS; i++)
+                if (!driver_status)
                 {
-                    uart_sendstring(USART2, "\033[1A"); 
+                    // Output the driver test data 
+                    m8q_test_1_print(driver_status, M8Q_TEST_STATE_0); 
                 }
-
-                sprintf(latitude_str, "Latitude: %lf", test_data.latitude); 
-                uart_sendstring(USART2, latitude_str); 
-                uart_sendstring(USART2, "\r\nLatitude string: "); 
-                uart_sendstring(USART2, (char *)test_data.lat_str); 
-                uart_sendstring(USART2, "\r\nNS: "); 
-                uart_send_integer(USART2, (int16_t)test_data.NS); 
-                sprintf(longitude_str, "\r\nLongitude: %lf", test_data.longitude); 
-                uart_sendstring(USART2, longitude_str); 
-                uart_sendstring(USART2, "\r\nLongitude string: "); 
-                uart_sendstring(USART2, (char *)test_data.lon_str); 
-                uart_sendstring(USART2, "\r\nEW: "); 
-                uart_send_integer(USART2, (int16_t)test_data.EW); 
-                uart_sendstring(USART2, "\r\nNAVSTAT: "); 
-                uart_send_integer(USART2, (int16_t)test_data.navstat); 
-                uart_sendstring(USART2, "\r\nNAVSTAT lock: "); 
-                uart_send_integer(USART2, (int16_t)test_data.navstat_lock); 
-                uart_sendstring(USART2, "\r\nUTC time: "); 
-                uart_sendstring(USART2, (char *)test_data.utc_time); 
-                uart_sendstring(USART2, "\r\nUTC date: "); 
-                uart_sendstring(USART2, (char *)test_data.utc_date); 
-                uart_sendstring(USART2, "\r\nLP state: "); 
-                uart_send_integer(USART2, (int16_t)lp_pin_state); 
-                uart_sendstring(USART2, "\r\nDriver status: "); 
-                uart_send_integer(USART2, (int16_t)driver_status); 
-                uart_send_new_line(USART2); 
-            }
-            else 
-            {
-                uart_sendstring(USART2, "\033[1A"); 
-                uart_sendstring(USART2, "\rDriver status: "); 
-                uart_send_integer(USART2, (int16_t)driver_status); 
-                uart_send_new_line(USART2); 
+                else 
+                {
+                    // Output the driver status 
+                    m8q_test_1_print(driver_status, M8Q_TEST_STATE_1); 
+                }
             }
         }
-    }
-    else if (test_data.schedule_counter < M8Q_TEST_1_LP_COUNT_LIM)
-    {
-        m8q_set_low_pwr_dev(); 
+        else if (test_data.schedule_counter < M8Q_TEST_1_LP_COUNT_LIM)
+        {
+            m8q_set_low_pwr_dev(); 
 
-        uart_sendstring(USART2, "\033[1A\033[1A"); 
-        uart_sendstring(USART2, "\rLP state: "); 
-        uart_send_integer(USART2, (int16_t)lp_pin_state); 
-        uart_sendstring(USART2, "\r\n\n"); 
-    }
-    else 
-    {
-        test_data.schedule_counter = CLEAR; 
+            // Output the low power status 
+            m8q_test_1_print(driver_status, M8Q_TEST_STATE_2); 
+        }
+        else if (test_data.schedule_counter == M8Q_TEST_1_LP_COUNT_LIM)
+        {
+            m8q_clear_low_pwr_dev(); 
+        }
+        else if (test_data.schedule_counter < 95)
+        {
+            // TODO figure this out 
+            m8q_read_ds_dev(test_data.data_stream, BYTE_1); 
+        }
+        else 
+        {
+            test_data.schedule_counter = CLEAR; 
+        }
     }
 }
 
@@ -713,7 +616,102 @@ void m8q_test_app()
 
 
 //=======================================================================================
-// Test functions - replace these with the gps_calc functions 
+// Test functions 
+
+// Output the driver data from test 1 
+void m8q_test_1_print(
+    M8Q_STATUS driver_status, 
+    m8q_test_state_t output_state)
+{
+    // Local variables 
+    char latitude_str[M8Q_TEST_1_COO_STR_LEN], longitude_str[M8Q_TEST_1_COO_STR_LEN]; 
+    GPIO_STATE lp_pin_state = GPIO_HIGH - gpio_read(GPIOC, (SET_BIT << PIN_10)); 
+    int16_t lat_int, lon_int; 
+    int32_t lat_frac, lon_frac; 
+
+    switch (output_state)
+    {
+        case M8Q_TEST_STATE_0: 
+            // Get all the driver data 
+            test_data.latitude = m8q_get_position_lat_dev(); 
+            m8q_get_position_lat_str_dev(test_data.lat_str, BYTE_11); 
+            test_data.NS = m8q_get_position_NS_dev(); 
+            test_data.longitude = m8q_get_position_lon_dev(); 
+            m8q_get_position_lon_str_dev(test_data.lon_str, BYTE_12); 
+            test_data.EW = m8q_get_position_EW_dev(); 
+            test_data.navstat = m8q_get_position_navstat_dev(); 
+            test_data.navstat_lock = m8q_get_position_navstat_lock_dev(); 
+            m8q_get_time_utc_time_dev(test_data.utc_time, BYTE_10); 
+            m8q_get_time_utc_date_dev(test_data.utc_date, BYTE_7); 
+
+            // Format the latitude and longitude so it can be output 
+            lat_int = (int16_t)test_data.latitude; 
+            lat_frac = (int32_t)(SCALE_1E6*(test_data.latitude - (double)lat_int)); 
+            if (lat_frac < 0) lat_frac = -lat_frac; 
+
+            lon_int = (int16_t)test_data.longitude; 
+            lon_frac = (int32_t)(SCALE_1E6*(test_data.longitude - (double)lon_int)); 
+            if (lon_frac < 0) lon_frac = -lon_frac; 
+
+            // Go to the top of the output block in the serial terminal 
+            for (uint8_t i = CLEAR; i < M8Q_TEST_1_NUM_PARAMS; i++)
+            {
+                uart_sendstring(USART2, "\033[1A"); 
+            }
+
+            // Output all the data to the serial terminal for viewing 
+            sprintf(latitude_str, "Latitude: %d.%ld", lat_int, lat_frac); 
+            uart_sendstring(USART2, latitude_str); 
+            uart_sendstring(USART2, "\r\nLatitude string: "); 
+            uart_sendstring(USART2, (char *)test_data.lat_str); 
+            uart_sendstring(USART2, "\r\nNS: "); 
+            uart_send_integer(USART2, (int16_t)test_data.NS); 
+            sprintf(longitude_str, "\r\nLongitude: %d.%ld", lon_int, lon_frac); 
+            uart_sendstring(USART2, longitude_str); 
+            uart_sendstring(USART2, "\r\nLongitude string: "); 
+            uart_sendstring(USART2, (char *)test_data.lon_str); 
+            uart_sendstring(USART2, "\r\nEW: "); 
+            uart_send_integer(USART2, (int16_t)test_data.EW); 
+            uart_sendstring(USART2, "\r\nNAVSTAT: "); 
+            uart_send_integer(USART2, (int16_t)test_data.navstat); 
+            uart_sendstring(USART2, "\r\nNAVSTAT lock: "); 
+            uart_send_integer(USART2, (int16_t)test_data.navstat_lock); 
+            uart_sendstring(USART2, "\r\nUTC time: "); 
+            uart_sendstring(USART2, (char *)test_data.utc_time); 
+            uart_sendstring(USART2, "\r\nUTC date: "); 
+            uart_sendstring(USART2, (char *)test_data.utc_date); 
+            uart_sendstring(USART2, "\r\nLP state: "); 
+            uart_send_integer(USART2, (int16_t)lp_pin_state); 
+            uart_sendstring(USART2, "\r\nDriver status: "); 
+            uart_send_integer(USART2, (int16_t)driver_status); 
+            uart_send_new_line(USART2); 
+
+            break; 
+
+        case M8Q_TEST_STATE_1: 
+            uart_sendstring(USART2, "\033[1A"); 
+            uart_sendstring(USART2, "\rDriver status: "); 
+            uart_send_integer(USART2, (int16_t)driver_status); 
+            uart_send_new_line(USART2); 
+
+            break; 
+
+        case M8Q_TEST_STATE_2: 
+            uart_sendstring(USART2, "\033[1A\033[1A"); 
+            uart_sendstring(USART2, "\rLP state: "); 
+            uart_send_integer(USART2, (int16_t)lp_pin_state); 
+            uart_sendstring(USART2, "\r\n\n"); 
+
+            break; 
+
+        default: 
+            break; 
+    }
+
+}
+
+
+// replace these with the gps_calc functions 
 
 // GPS coordinate radius check - calculate surface distance and compare to threshold 
 int16_t m8q_test_gps_rad(
