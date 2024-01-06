@@ -120,8 +120,12 @@ void nrf24l01_test_invalid_input(void);
 // Address sent by the PTX and address accepted by the PRX 
 static uint8_t pipe_addr_buff[NRF24l01_ADDR_WIDTH] = {0xB3, 0xB4, 0xB5, 0xB6, 0x05}; 
 
+#if NRF24L01_RC 
+
 // ADC storage 
 static uint16_t adc_data[NRF24L01_TEST_ADC_NUM];  // Location for the DMA to store ADC values 
+
+#endif   // NRF24L01_RC 
 
 //==================================================
 
