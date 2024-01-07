@@ -365,13 +365,14 @@ void m8q_test_1(void)
         {
             m8q_clear_low_pwr_dev(); 
         }
-        else if (test_data.schedule_counter < 95)
+        // else if (test_data.schedule_counter < 95)
+        // {
+        //     m8q_read_ds_dev(test_data.data_stream, BYTE_1); 
+        // }
+        else 
         {
             // TODO figure this out 
             m8q_read_ds_dev(test_data.data_stream, BYTE_1); 
-        }
-        else 
-        {
             test_data.schedule_counter = CLEAR; 
         }
     }
