@@ -163,6 +163,12 @@ void m8q_test_0_init(void);
  */
 void m8q_test_1_init(void); 
 
+
+/**
+ * @brief Setup code for Test 2 
+ */
+void m8q_test_2_init(void); 
+
 //=======================================================================================
 
 
@@ -203,6 +209,14 @@ void m8q_test_0(void);
  *          is set. 
  */
 void m8q_test_1(void); 
+
+
+/**
+ * @brief Test 2 code 
+ * 
+ * @details M8Q controller test 
+ */
+void m8q_test_2(void); 
 
 //=======================================================================================
 

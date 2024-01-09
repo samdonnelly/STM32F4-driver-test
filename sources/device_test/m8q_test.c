@@ -125,7 +125,7 @@ void m8q_test_1_print(
 //=======================================================================================
 // Setup code 
 
-// Setup for Test 0 
+// Setup code for Test 0 
 void m8q_test_0_init(void)
 {
     m8q_test_general_init(); 
@@ -150,7 +150,7 @@ void m8q_test_0_init(void)
 }
 
 
-// Setup for Test 1 
+// Setup code for Test 1 
 void m8q_test_1_init(void)
 {
     m8q_test_general_init(); 
@@ -180,6 +180,13 @@ void m8q_test_1_init(void)
 
         while (TRUE); 
     }
+}
+
+
+// Setup code for Test 2 
+void m8q_test_2_init(void)
+{
+    m8q_test_general_init(); 
 }
 
 
@@ -375,6 +382,23 @@ void m8q_test_1(void)
             m8q_read_ds_dev(test_data.data_stream, BYTE_1); 
             test_data.schedule_counter = CLEAR; 
         }
+    }
+}
+
+
+// Test 2 code 
+void m8q_test_2(void)
+{
+    // Local variables 
+
+    m8q_test_general(); 
+
+    // Only interact with the device once per periodic interrupt. 
+    if (test_data.attempt_flag)
+    {
+        test_data.attempt_flag = CLEAR_BIT; 
+
+        // 
     }
 }
 
