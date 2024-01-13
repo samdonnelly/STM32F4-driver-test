@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief SAM-M8Q test code 
+ * @brief SAM-M8Q driver and controller hardware test code implementation 
  * 
  * @version 0.1
  * @date 2022-08-28
@@ -41,7 +41,6 @@
 #define M8Q_TEST_0_READ_COUNT_LIM 90 
 #define M8Q_TEST_0_OVERFLOW_COUNT_LO 40 
 #define M8Q_TEST_0_OVERFLOW_COUNT_HI 70 
-#define M8Q_TEST_0_LP_COUNT_LIM 120 
 
 // Test 1 
 #define M8Q_TEST_1_DATA_BUFF_LIM 0 
@@ -49,6 +48,12 @@
 #define M8Q_TEST_1_READ_COUNT_LIM 60 
 #define M8Q_TEST_1_LP_COUNT_LIM 90 
 #define M8Q_TEST_1_NUM_PARAMS 12 
+
+// Test 2 
+#define M8Q_TEST_2_IDLE_COUNT 30 
+#define M8Q_TEST_2_READ_COUNT 60 
+#define M8Q_TEST_2_LP_EN_COUNT 90 
+#define M8Q_TEST_2_LP_EX_COUNT 120 
 
 //=======================================================================================
 
@@ -104,6 +109,12 @@ void m8q_test_general_init(void);
 
 
 /**
+ * @brief Setup code for tests that use the driver config as well as LP and TX pins S
+ */
+void m8q_test_config_init(void); 
+
+
+/**
  * @brief Common/shared test code 
  */
 void m8q_test_general(void); 
@@ -118,6 +129,12 @@ void m8q_test_general(void);
 void m8q_test_1_print(
     M8Q_STATUS driver_status, 
     m8q_test_state_t output_state); 
+
+
+/**
+ * @brief Output the driver and controller data from test 2 
+ */
+void m8q_test_2_print(); 
 
 //=======================================================================================
 
@@ -154,32 +171,7 @@ void m8q_test_0_init(void)
 void m8q_test_1_init(void)
 {
     m8q_test_general_init(); 
-
-    // M8Q device setup 
-    M8Q_STATUS init_check = m8q_init_dev(
-        I2C1, 
-        &m8q_config_pkt_0[0][0], 
-        M8Q_CONFIG_NUM_MSG_PKT_0, 
-        M8Q_CONFIG_MAX_MSG_LEN, 
-        M8Q_TEST_1_DATA_BUFF_LIM); 
-
-    // Set up low power and TX ready pins 
-    M8Q_STATUS low_pwr_init_check = m8q_pwr_pin_init_dev(GPIOC, PIN_10); 
-    M8Q_STATUS txr_init_check = m8q_txr_pin_init_dev(GPIOC, PIN_11); 
-
-    // Check if there was a problem during device initialization. If so, output the faults 
-    // to the serial terminal and halt to program. 
-    if (init_check || low_pwr_init_check || txr_init_check)
-    {
-        uart_sendstring(USART2, "\r\nDevice init status: "); 
-        uart_send_integer(USART2, (int16_t)init_check); 
-        uart_sendstring(USART2, "\r\nLow power pin init status: "); 
-        uart_send_integer(USART2, (int16_t)low_pwr_init_check); 
-        uart_sendstring(USART2, "\r\nTX Ready pin init status: "); 
-        uart_send_integer(USART2, (int16_t)txr_init_check); 
-
-        while (TRUE); 
-    }
+    m8q_test_config_init(); 
 }
 
 
@@ -187,6 +179,8 @@ void m8q_test_1_init(void)
 void m8q_test_2_init(void)
 {
     m8q_test_general_init(); 
+    m8q_test_config_init(); 
+    m8q_controller_init(TIM9); 
 }
 
 
@@ -195,6 +189,14 @@ void m8q_test_general_init(void)
 {
     // Initialize GPIO ports 
     gpio_port_init(); 
+
+    // General purpose timer 
+    tim_9_to_11_counter_init(
+        TIM9, 
+        TIM_84MHZ_1US_PSC, 
+        0xFFFF,  // Max ARR value 
+        TIM_UP_INT_DISABLE); 
+    tim_enable(TIM9); 
 
     // Periodic (counter update) interrupt timer (for event timing) 
     tim_9_to_11_counter_init(
@@ -233,13 +235,6 @@ void m8q_test_general_init(void)
 
     // Screen initialization 
 #if M8Q_TEST_SCREEN_ON_BUS 
-    tim_9_to_11_counter_init(
-        TIM9, 
-        TIM_84MHZ_1US_PSC, 
-        0xFFFF,  // Max ARR value 
-        TIM_UP_INT_DISABLE); 
-    tim_enable(TIM9); 
-
     hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH); 
     hd44780u_clear(); 
     hd44780u_display_off(); 
@@ -250,13 +245,44 @@ void m8q_test_general_init(void)
     memset((void *)&test_data, CLEAR, sizeof(test_data)); 
 }
 
+
+// Setup code for tests that use the driver config as well as LP and TX pins 
+void m8q_test_config_init(void)
+{
+    // M8Q device setup 
+    M8Q_STATUS init_check = m8q_init_dev(
+        I2C1, 
+        &m8q_config_pkt_0[0][0], 
+        M8Q_CONFIG_NUM_MSG_PKT_0, 
+        M8Q_CONFIG_MAX_MSG_LEN, 
+        M8Q_TEST_1_DATA_BUFF_LIM); 
+
+    // Set up low power and TX ready pins 
+    M8Q_STATUS low_pwr_init_check = m8q_pwr_pin_init_dev(GPIOC, PIN_10); 
+    M8Q_STATUS txr_init_check = m8q_txr_pin_init_dev(GPIOC, PIN_11); 
+
+    // Check if there was a problem during device initialization. If so, output the faults 
+    // to the serial terminal and halt to program. 
+    if (init_check || low_pwr_init_check || txr_init_check)
+    {
+        uart_sendstring(USART2, "\r\nDevice init status: "); 
+        uart_send_integer(USART2, (int16_t)init_check); 
+        uart_sendstring(USART2, "\r\nLow power pin init status: "); 
+        uart_send_integer(USART2, (int16_t)low_pwr_init_check); 
+        uart_sendstring(USART2, "\r\nTX Ready pin init status: "); 
+        uart_send_integer(USART2, (int16_t)txr_init_check); 
+
+        while (TRUE); 
+    }
+}
+
 //=======================================================================================
 
 
 //=======================================================================================
 // Test code 
 
-// Test 0 code 
+// Test 0 code - default config, read raw data stream, don't use additional pins 
 void m8q_test_0(void)
 {
     // Local variables 
@@ -314,21 +340,15 @@ void m8q_test_0(void)
                 m8q_read_ds_size_dev(&data_size); 
             }
         }
-        else if (test_data.schedule_counter < M8Q_TEST_0_LP_COUNT_LIM)
-        {
-            // TODO Send a message to enter low power mode 
-        }
         else 
         {
-            // Send a message to exit low power mode 
-
             test_data.schedule_counter = CLEAR; 
         }
     }
 }
 
 
-// Test 1 code 
+// Test 1 code - device configured, driver data record messages used, additional pins used 
 void m8q_test_1(void)
 {
     // Local variables 
@@ -372,13 +392,8 @@ void m8q_test_1(void)
         {
             m8q_clear_low_pwr_dev(); 
         }
-        // else if (test_data.schedule_counter < 95)
-        // {
-        //     m8q_read_ds_dev(test_data.data_stream, BYTE_1); 
-        // }
         else 
         {
-            // TODO figure this out 
             m8q_read_ds_dev(test_data.data_stream, BYTE_1); 
             test_data.schedule_counter = CLEAR; 
         }
@@ -386,19 +401,54 @@ void m8q_test_1(void)
 }
 
 
-// Test 2 code 
+// Test 2 code - device configured, device controller used 
 void m8q_test_2(void)
 {
-    // Local variables 
-
     m8q_test_general(); 
+    m8q_controller(); 
 
     // Only interact with the device once per periodic interrupt. 
     if (test_data.attempt_flag)
     {
         test_data.attempt_flag = CLEAR_BIT; 
 
-        // 
+        // If in the fault state then reset 
+        if (m8q_get_state() == M8Q_FAULT_STATE)
+        {
+            m8q_set_reset_flag(); 
+            test_data.schedule_counter = CLEAR; 
+        }
+
+        // Cycle between read, idle and low power states 
+        switch (test_data.schedule_counter)
+        {
+            // If at time 1 then go to idle state 
+            case M8Q_TEST_2_IDLE_COUNT: 
+                m8q_set_idle_flag(); 
+                break; 
+
+            // If at time 2 then go back to read state 
+            case M8Q_TEST_2_READ_COUNT: 
+                m8q_set_read_flag(); 
+                break; 
+
+            // Go to the low power state 
+            case M8Q_TEST_2_LP_EN_COUNT: 
+                m8q_set_low_pwr_flag(); 
+                break; 
+
+            // Exit the low power state back to the read state 
+            case M8Q_TEST_2_LP_EX_COUNT: 
+                m8q_clear_low_pwr_flag(); 
+                test_data.schedule_counter = CLEAR; 
+                break; 
+
+            default: 
+                break; 
+        }
+
+        // Output the test information and data to the serial terminal 
+        m8q_test_2_print(); 
     }
 }
 
@@ -413,229 +463,6 @@ void m8q_test_general(void)
         test_data.attempt_flag = SET_BIT; 
     }
 }
-
-//=======================================================================================
-
-
-//=======================================================================================
-// Controller test 
-
-#if M8Q_CONTROLLER_TEST 
-
-//==================================================
-// Global variables 
-
-// User command table 
-static state_request_t m8q_state_cmds[M8Q_NUM_USER_CMDS] = 
-{
-    // Controller functions 
-    {"rr_set",     SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, SMT_ARG_BUFF_POS_0}, 
-    {"rr_clear",   SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, SMT_ARG_BUFF_POS_0}, 
-    {"read_set",   SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, SMT_ARG_BUFF_POS_0}, 
-    {"read_clear", SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, SMT_ARG_BUFF_POS_0}, 
-    {"lp_set",     SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, SMT_ARG_BUFF_POS_0}, 
-    {"lp_clear",   SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, SMT_ARG_BUFF_POS_0}, 
-    {"reset",      SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, SMT_ARG_BUFF_POS_0}, 
-    {"state",      SMT_ARGS_0, SMT_STATE_FUNC_PTR_2, SMT_ARG_BUFF_POS_0}, 
-    {"fault",      SMT_ARGS_0, SMT_STATE_FUNC_PTR_3, SMT_ARG_BUFF_POS_0}, 
-    // Driver functions 
-    {"navstat",    SMT_ARGS_0, SMT_STATE_FUNC_PTR_3, SMT_ARG_BUFF_POS_0}, 
-    {"lat",        SMT_ARGS_0, SMT_STATE_FUNC_PTR_4, SMT_ARG_BUFF_POS_0}, 
-    {"long",       SMT_ARGS_0, SMT_STATE_FUNC_PTR_4, SMT_ARG_BUFF_POS_0}, 
-    {"NS",         SMT_ARGS_0, SMT_STATE_FUNC_PTR_5, SMT_ARG_BUFF_POS_0}, 
-    {"EW",         SMT_ARGS_0, SMT_STATE_FUNC_PTR_5, SMT_ARG_BUFF_POS_0}, 
-    {"time",       SMT_ARGS_0, SMT_STATE_FUNC_PTR_6, SMT_ARG_BUFF_POS_0}, 
-    {"date",       SMT_ARGS_0, SMT_STATE_FUNC_PTR_6, SMT_ARG_BUFF_POS_0}, 
-    // Execute command 
-    {"execute", 0, 0, 0} 
-}; 
-
-
-// Function pointer table 
-static m8q_func_ptrs_t m8q_state_func[M8Q_NUM_USER_CMDS] = 
-{
-    // Controller functions 
-    {&m8q_set_read_ready, NULL, NULL, NULL, NULL, NULL}, 
-    {&m8q_clear_read_ready, NULL, NULL, NULL, NULL, NULL}, 
-    {&m8q_set_read_flag, NULL, NULL, NULL, NULL, NULL}, 
-    {&m8q_clear_read_flag, NULL, NULL, NULL, NULL, NULL}, 
-    {&m8q_set_low_pwr_flag, NULL, NULL, NULL, NULL, NULL}, 
-    {&m8q_clear_low_pwr_flag, NULL, NULL, NULL, NULL, NULL}, 
-    {&m8q_set_reset_flag, NULL, NULL, NULL, NULL, NULL}, 
-    {NULL, &m8q_get_state, NULL, NULL, NULL, NULL}, 
-    {NULL, NULL, &m8q_get_fault_code, NULL, NULL, NULL}, 
-    // Driver functions 
-    {NULL, NULL, &m8q_get_navstat, NULL, NULL, NULL}, 
-    {NULL, NULL, NULL, &m8q_get_lat_str, NULL, NULL}, 
-    {NULL, NULL, NULL, &m8q_get_long_str, NULL, NULL}, 
-    {NULL, NULL, NULL, NULL, &m8q_get_NS, NULL}, 
-    {NULL, NULL, NULL, NULL, &m8q_get_EW, NULL}, 
-    {NULL, NULL, NULL, NULL, NULL, &m8q_get_time}, 
-    {NULL, NULL, NULL, NULL, NULL, &m8q_get_date}, 
-    // Execute command 
-    {NULL, NULL, NULL, NULL, NULL, NULL} 
-}; 
-
-//==================================================
-
-
-//==================================================
-// Setup code 
-
-void m8q_test_init()
-{
-    // Initialize GPIO ports 
-    gpio_port_init(); 
-
-    // Initialize timers 
-    tim_9_to_11_counter_init(
-        TIM9, 
-        TIM_84MHZ_1US_PSC, 
-        0xFFFF,  // Max ARR value 
-        TIM_UP_INT_DISABLE); 
-    tim_enable(TIM9); 
-
-    // Initialize UART
-    uart_init(
-        USART2, 
-        GPIOA, 
-        PIN_3, 
-        PIN_2, 
-        UART_FRAC_42_9600, 
-        UART_MANT_42_9600, 
-        UART_DMA_DISABLE, 
-        UART_DMA_DISABLE); 
-
-    // Initialize I2C
-    i2c_init(
-        I2C1, 
-        PIN_9, 
-        GPIOB, 
-        PIN_8, 
-        GPIOB, 
-        I2C_MODE_SM,
-        I2C_APB1_42MHZ,
-        I2C_CCR_SM_42_100,
-        I2C_TRISE_1000_42); 
-
-    // Initialize the device controller 
-    m8q_controller_init(TIM9); 
-
-    // Initialize the state machine test code 
-    state_machine_init(M8Q_NUM_USER_CMDS); 
-
-    // Delay to let everything finish setup before starting to send and receieve data 
-    tim_delay_ms(TIM9, 500); 
-}
-
-//==================================================
-
-
-//==================================================
-// Test code 
-
-void m8q_test_app()
-{
-    // Local variables 
-
-    // General purpose arguments array 
-    static char user_args[M8Q_MAX_SETTER_ARGS][STATE_USER_TEST_INPUT]; 
-
-    // Control flags 
-    uint8_t arg_convert = CLEAR; 
-    uint32_t set_get_status = CLEAR; 
-    uint8_t cmd_index = CLEAR; 
-
-    // Data buffers 
-    uint16_t navstat = CLEAR; 
-    uint8_t deg_min[6]; 
-    uint8_t min_frac[6]; 
-    uint8_t utc[9]; 
-
-    // Determine what to do from user input 
-    state_machine_test(
-        m8q_state_cmds, 
-        user_args[0], 
-        &cmd_index, 
-        &arg_convert, 
-        &set_get_status); 
-
-    // Check if there are any setters or getters requested 
-    if (set_get_status)
-    {
-        for (uint8_t i = 0; i < (M8Q_NUM_USER_CMDS-1); i++)
-        {
-            if ((set_get_status >> i) & SET_BIT)
-            {
-                switch (m8q_state_cmds[i].func_ptr_index)
-                {
-                    case SMT_STATE_FUNC_PTR_1: 
-                        (m8q_state_func[i].setter_1)(); 
-                        break; 
-
-                    case SMT_STATE_FUNC_PTR_2: 
-                        uart_send_new_line(USART2); 
-                        uart_send_integer(USART2, (int16_t)(m8q_state_func[i].getter_1)()); 
-                        uart_send_new_line(USART2); 
-                        break; 
-
-                    case SMT_STATE_FUNC_PTR_3: 
-                        uart_send_new_line(USART2); 
-
-                        if (i == 9)  // NAVSTAT index 
-                        {
-                            navstat = (m8q_state_func[i].getter_2)(); 
-                            uart_sendchar(USART2, (uint8_t)(navstat >> SHIFT_8)); 
-                            uart_sendchar(USART2, (uint8_t)(navstat)); 
-                        }
-                        else
-                        {
-                            uart_send_integer(USART2, (int16_t)(m8q_state_func[i].getter_2)()); 
-                        }
-
-                        uart_send_new_line(USART2); 
-                        
-                        break; 
-
-                    case SMT_STATE_FUNC_PTR_4: 
-                        (m8q_state_func[i].getter_3)(deg_min, min_frac); 
-                        uart_send_new_line(USART2); 
-                        uart_sendstring(USART2, "deg_min: "); 
-                        uart_sendstring(USART2, (char *)deg_min); 
-                        uart_send_new_line(USART2); 
-                        uart_sendstring(USART2, "min_frac: "); 
-                        uart_sendstring(USART2, (char *)min_frac); 
-                        uart_send_new_line(USART2); 
-                        break; 
-
-                    case SMT_STATE_FUNC_PTR_5: 
-                        uart_send_new_line(USART2); 
-                        uart_sendchar(USART2, (m8q_state_func[i].getter_4)()); 
-                        uart_send_new_line(USART2); 
-                        break; 
-
-                    case SMT_STATE_FUNC_PTR_6: 
-                        memset((void *)utc, CLEAR, sizeof(utc)); 
-                        (m8q_state_func[i].getter_5)(utc); 
-                        uart_send_new_line(USART2); 
-                        uart_sendstring(USART2, (char *)utc); 
-                        uart_send_new_line(USART2); 
-                        break; 
-
-                    default: 
-                        break; 
-                }
-            }
-        }
-    }
-
-    // Call the device controller 
-    m8q_controller(); 
-}
-
-//==================================================
-
-#endif   // M8Q_CONTROLLER_TEST
 
 //=======================================================================================
 
@@ -733,6 +560,46 @@ void m8q_test_1_print(
             break; 
     }
 
+}
+
+
+// Output the driver and controller data from test 2 
+void m8q_test_2_print(void)
+{
+    char latitude_str[M8Q_TEST_1_COO_STR_LEN], longitude_str[M8Q_TEST_1_COO_STR_LEN]; 
+    int16_t lat_int, lon_int; 
+    int32_t lat_frac, lon_frac; 
+
+    // Get and format the coordinates 
+    test_data.latitude = m8q_get_position_lat_dev(); 
+    test_data.longitude = m8q_get_position_lon_dev(); 
+
+    lat_int = (int16_t)test_data.latitude; 
+    lat_frac = (int32_t)(SCALE_1E6*(test_data.latitude - (double)lat_int)); 
+    if (lat_frac < 0) lat_frac = -lat_frac; 
+
+    lon_int = (int16_t)test_data.longitude; 
+    lon_frac = (int32_t)(SCALE_1E6*(test_data.longitude - (double)lon_int)); 
+    if (lon_frac < 0) lon_frac = -lon_frac; 
+
+    // Go to the top of the output block in the serial terminal 
+    for (uint8_t i = CLEAR; i < 6; i++)
+    {
+        uart_sendstring(USART2, "\033[1A"); 
+    }
+
+    // Output all the data to the serial terminal for viewing 
+    uart_sendstring(USART2, "\r\nState: "); 
+    uart_send_integer(USART2, (int16_t)m8q_get_state()); 
+    uart_sendstring(USART2, "\r\nLP flag: "); 
+    uart_send_integer(USART2, (int16_t)m8q_get_lp_flag()); 
+    sprintf(latitude_str, "\r\nLatitude: %d.%ld", lat_int, lat_frac); 
+    uart_sendstring(USART2, latitude_str); 
+    sprintf(longitude_str, "\r\nLongitude: %d.%ld", lon_int, lon_frac); 
+    uart_sendstring(USART2, longitude_str); 
+    uart_sendstring(USART2, "\r\nFault code = "); 
+    uart_send_integer(USART2, (int16_t)m8q_get_fault_code()); 
+    uart_send_new_line(USART2); 
 }
 
 
