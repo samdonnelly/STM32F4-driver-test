@@ -16,6 +16,7 @@
 // Includes 
 
 #include "m8q_test.h"
+#include "m8q_config.h"
 
 //=======================================================================================
 
@@ -109,7 +110,7 @@ void m8q_test_general_init(void);
 
 
 /**
- * @brief Setup code for tests that use the driver config as well as LP and TX pins S
+ * @brief Setup code for tests that use the driver config as well as LP and TX pins 
  */
 void m8q_test_config_init(void); 
 
@@ -121,10 +122,10 @@ void m8q_test_general(void);
 
 
 /**
- * @brief Output the driver data from test 1 
+ * @brief Output driver data from test 1 
  * 
- * @param driver_status 
- * @param output_state 
+ * @param driver_status : driver function status 
+ * @param output_state : test state that determines which output to use 
  */
 void m8q_test_1_print(
     M8Q_STATUS driver_status, 
@@ -132,7 +133,7 @@ void m8q_test_1_print(
 
 
 /**
- * @brief Output the driver and controller data from test 2 
+ * @brief Output driver and controller data from test 2 
  */
 void m8q_test_2_print(); 
 
@@ -148,7 +149,7 @@ void m8q_test_0_init(void)
     m8q_test_general_init(); 
 
     // M8Q device setup 
-    M8Q_STATUS init_check = m8q_init_dev(
+    M8Q_STATUS init_check = m8q_init(
         I2C1, 
         m8q_config_no_pkt, 
         CLEAR, 
@@ -250,16 +251,16 @@ void m8q_test_general_init(void)
 void m8q_test_config_init(void)
 {
     // M8Q device setup 
-    M8Q_STATUS init_check = m8q_init_dev(
+    M8Q_STATUS init_check = m8q_init(
         I2C1, 
         &m8q_config_pkt_0[0][0], 
         M8Q_CONFIG_NUM_MSG_PKT_0, 
-        M8Q_CONFIG_MAX_MSG_LEN, 
+        M8Q_CONFIG_MAX_LEN_PKT_0, 
         M8Q_TEST_1_DATA_BUFF_LIM); 
 
     // Set up low power and TX ready pins 
-    M8Q_STATUS low_pwr_init_check = m8q_pwr_pin_init_dev(GPIOC, PIN_10); 
-    M8Q_STATUS txr_init_check = m8q_txr_pin_init_dev(GPIOC, PIN_11); 
+    M8Q_STATUS low_pwr_init_check = m8q_pwr_pin_init(GPIOC, PIN_10); 
+    M8Q_STATUS txr_init_check = m8q_txr_pin_init(GPIOC, PIN_11); 
 
     // Check if there was a problem during device initialization. If so, output the faults 
     // to the serial terminal and halt to program. 
@@ -303,7 +304,7 @@ void m8q_test_0(void)
             if ((test_data.schedule_counter < M8Q_TEST_0_OVERFLOW_COUNT_LO) || 
                 (test_data.schedule_counter > M8Q_TEST_0_OVERFLOW_COUNT_HI))
             {
-                driver_status = m8q_read_ds_dev(test_data.data_stream, M8Q_TEST_0_DATA_BUFF_LIM); 
+                driver_status = m8q_read_ds(test_data.data_stream, M8Q_TEST_0_DATA_BUFF_LIM); 
 
                 switch (driver_status)
                 {
@@ -337,7 +338,7 @@ void m8q_test_0(void)
             else 
             {
                 // Read the data size to keep the device I2C port active. 
-                m8q_read_ds_size_dev(&data_size); 
+                m8q_read_ds_size(&data_size); 
             }
         }
         else 
@@ -365,9 +366,9 @@ void m8q_test_1(void)
         if (test_data.schedule_counter < M8Q_TEST_1_READ_COUNT_LIM)
         {
             // Only read and output data when there is data available 
-            if (m8q_get_tx_ready_dev())
+            if (m8q_get_tx_ready())
             {
-                driver_status = m8q_read_data_dev(); 
+                driver_status = m8q_read_data(); 
 
                 if (!driver_status)
                 {
@@ -383,18 +384,18 @@ void m8q_test_1(void)
         }
         else if (test_data.schedule_counter < M8Q_TEST_1_LP_COUNT_LIM)
         {
-            m8q_set_low_pwr_dev(); 
+            m8q_set_low_pwr(); 
 
             // Output the low power status 
             m8q_test_1_print(driver_status, M8Q_TEST_STATE_2); 
         }
         else if (test_data.schedule_counter == M8Q_TEST_1_LP_COUNT_LIM)
         {
-            m8q_clear_low_pwr_dev(); 
+            m8q_clear_low_pwr(); 
         }
         else 
         {
-            m8q_read_ds_dev(test_data.data_stream, BYTE_1); 
+            m8q_read_ds(test_data.data_stream, BYTE_1); 
             test_data.schedule_counter = CLEAR; 
         }
     }
@@ -485,16 +486,16 @@ void m8q_test_1_print(
     {
         case M8Q_TEST_STATE_0: 
             // Get all the driver data 
-            test_data.latitude = m8q_get_position_lat_dev(); 
-            m8q_get_position_lat_str_dev(test_data.lat_str, BYTE_11); 
-            test_data.NS = m8q_get_position_NS_dev(); 
-            test_data.longitude = m8q_get_position_lon_dev(); 
-            m8q_get_position_lon_str_dev(test_data.lon_str, BYTE_12); 
-            test_data.EW = m8q_get_position_EW_dev(); 
-            test_data.navstat = m8q_get_position_navstat_dev(); 
-            test_data.navstat_lock = m8q_get_position_navstat_lock_dev(); 
-            m8q_get_time_utc_time_dev(test_data.utc_time, BYTE_10); 
-            m8q_get_time_utc_date_dev(test_data.utc_date, BYTE_7); 
+            test_data.latitude = m8q_get_position_lat(); 
+            m8q_get_position_lat_str(test_data.lat_str, BYTE_11); 
+            test_data.NS = m8q_get_position_NS(); 
+            test_data.longitude = m8q_get_position_lon(); 
+            m8q_get_position_lon_str(test_data.lon_str, BYTE_12); 
+            test_data.EW = m8q_get_position_EW(); 
+            test_data.navstat = m8q_get_position_navstat(); 
+            test_data.navstat_lock = m8q_get_position_navstat_lock(); 
+            m8q_get_time_utc_time(test_data.utc_time, BYTE_10); 
+            m8q_get_time_utc_date(test_data.utc_date, BYTE_7); 
 
             // Format the latitude and longitude so it can be output 
             lat_int = (int16_t)test_data.latitude; 
@@ -571,8 +572,8 @@ void m8q_test_2_print(void)
     int32_t lat_frac, lon_frac; 
 
     // Get and format the coordinates 
-    test_data.latitude = m8q_get_position_lat_dev(); 
-    test_data.longitude = m8q_get_position_lon_dev(); 
+    test_data.latitude = m8q_get_position_lat(); 
+    test_data.longitude = m8q_get_position_lon(); 
 
     lat_int = (int16_t)test_data.latitude; 
     lat_frac = (int32_t)(SCALE_1E6*(test_data.latitude - (double)lat_int)); 
@@ -600,91 +601,6 @@ void m8q_test_2_print(void)
     uart_sendstring(USART2, "\r\nFault code = "); 
     uart_send_integer(USART2, (int16_t)m8q_get_fault_code()); 
     uart_send_new_line(USART2); 
-}
-
-
-// replace these with the gps_calc functions 
-
-// GPS coordinate radius check - calculate surface distance and compare to threshold 
-int16_t m8q_test_gps_rad(
-    double lat1, 
-    double lon1, 
-    double lat2, 
-    double lon2)
-{
-    // Local variables 
-    int16_t gps_rad = CLEAR; 
-    static double surf_dist = CLEAR; 
-    double eq1, eq2, eq3, eq4, eq5; 
-    double deg_to_rad = M8Q_TEST_PI_RAD/M8Q_TEST_180_DEG; 
-    double pi_over_2 = M8Q_TEST_PI_RAD/2.0; 
-    double earth_rad = M8Q_TEST_EARTH_RAD; 
-    double km_to_m = M8Q_TEST_KM_TO_M; 
-
-    // Convert coordinates to radians 
-    lat1 *= deg_to_rad; 
-    lon1 *= deg_to_rad; 
-    lat2 *= deg_to_rad; 
-    lon2 *= deg_to_rad; 
-
-    eq1 = cos(pi_over_2 - lat2)*sin(lon2 - lon1); 
-    eq2 = cos(pi_over_2 - lat1)*sin(pi_over_2 - lat2); 
-    eq3 = sin(pi_over_2 - lat1)*cos(pi_over_2 - lat2)*cos(lon2 - lon1); 
-    eq4 = sin(pi_over_2 - lat1)*sin(pi_over_2 - lat2); 
-    eq5 = cos(pi_over_2 - lat1)*cos(pi_over_2 - lat2)*cos(lon2 - lon1); 
-
-    // atan2 is used because it produces an angle between +/-180 (pi). The central angle 
-    // should always be positive and never greater than 180. 
-    // Calculate the radius using a low pass filter to smooth the data. 
-    surf_dist += ((atan2(sqrt((eq2 - eq3)*(eq2 - eq3) + (eq1*eq1)), (eq4 + eq5)) * 
-                 earth_rad*km_to_m) - surf_dist)*M8Q_TEST_RADIUS_GAIN; 
-    gps_rad = (int16_t)(surf_dist*M8Q_TEST_CALC_SCALE); 
-
-    return gps_rad; 
-}
-
-
-// GPS heading calculation 
-int16_t m8q_test_gps_heading(
-    double lat1, 
-    double lon1, 
-    double lat2, 
-    double lon2)
-{
-    // Local variables 
-    int16_t heading = CLEAR; 
-    static double heading_temp = CLEAR; 
-    double num, den; 
-    double deg_to_rad = M8Q_TEST_PI_RAD/M8Q_TEST_180_DEG; 
-
-    // Convert coordinates to radians 
-    lat1 *= deg_to_rad; 
-    lon1 *= deg_to_rad; 
-    lat2 *= deg_to_rad; 
-    lon2 *= deg_to_rad; 
-
-    // Calculate the numerator and denominator of the atan calculation 
-    num = cos(lat2)*sin(lon2-lon1); 
-    den = cos(lat1)*sin(lat2) - sin(lat1)*cos(lat2)*cos(lon2-lon1); 
-
-    // Calculate the heading between coordinates. 
-    // A low pass filter is used to smooth the data. 
-    heading_temp += (atan(num/den) - heading_temp)*M8Q_TEST_HEADING_GAIN; 
-
-    // Convert heading to degrees 
-    heading = (int16_t)(heading_temp*M8Q_TEST_CALC_SCALE/deg_to_rad); 
-
-    // Correct the calculated heading if needed 
-    if (den < 0)
-    {
-        heading += LSM303AGR_M_HEAD_DIFF; 
-    }
-    else if (num < 0)
-    {
-        heading += LSM303AGR_M_HEAD_MAX; 
-    }
-
-    return heading; 
 }
 
 //=======================================================================================

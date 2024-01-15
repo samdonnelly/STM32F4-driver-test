@@ -73,7 +73,8 @@
 			"new": "c",
 			"functional": "c",
 			"m8q_coordinates.h": "c",
-			"gps_calc.h": "c"
+			"gps_calc.h": "c",
+			"m8q_config_test.h": "c"
 		}
 	}
 }

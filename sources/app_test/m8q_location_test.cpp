@@ -27,8 +27,25 @@
 // Includes 
 
 #include "m8q_location_test.h" 
+#include "m8q_config.h"
 #include "m8q_coordinates.h"
 #include "includes_cpp_drivers.h" 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Macros 
+
+// Location testing 
+#define M8Q_TEST_NUM_WAYPOINTS 4     // Number of waypoints for location testing 
+#define M8Q_TEST_CALC_SCALE 10       // Scalar for calculated data 
+#define M8Q_TEST_PI_RAD 3.14159      // PI 
+#define M8Q_TEST_180_DEG 180         // 180 degrees 
+#define M8Q_TEST_EARTH_RAD 6371      // Earch average radius (km) 
+#define M8Q_TEST_KM_TO_M 1000        // Km to m conversion 
+#define M8Q_TEST_HEADING_GAIN 0.5    // GPS heading low pass filter gain 
+#define M8Q_TEST_RADIUS_GAIN 0.5     // GPS radius low pass filter gain 
 
 //=======================================================================================
 
@@ -48,20 +65,20 @@ static char screen_msg[20];
 //=======================================================================================
 // Prototypes 
 
-// GPS coordinate radius check - calculate surface distance and compare to threshold 
-int16_t m8q_test_gps_rad_copy(
-    double lat1, 
-    double lon1, 
-    double lat2, 
-    double lon2); 
+// // GPS coordinate radius check - calculate surface distance and compare to threshold 
+// int16_t m8q_test_gps_rad_copy(
+//     double lat1, 
+//     double lon1, 
+//     double lat2, 
+//     double lon2); 
 
 
-// GPS heading calculation 
-int16_t m8q_test_gps_heading_copy(
-    double lat1, 
-    double lon1, 
-    double lat2, 
-    double lon2); 
+// // GPS heading calculation 
+// int16_t m8q_test_gps_heading_copy(
+//     double lat1, 
+//     double lon1, 
+//     double lat2, 
+//     double lon2); 
 
 //=======================================================================================
 
@@ -117,28 +134,29 @@ void m8q_location_test_init(void)
     hd44780u_clear(); 
 
     // M8Q device setup 
-
-    // Send the configuration messages to configure the device settings. The M8Q has 
-    // no flash to store user settings. Instead they're saved RAM which can only be 
-    // powered until the onboard backup battery loses power. For this reason, settings 
-    // must always be configured in setup. 
-    char m8q_config_messages[M8Q_CONFIG_NUM_MSG_PKT_0][M8Q_CONFIG_MAX_MSG_LEN]; 
-    m8q_config_copy(m8q_config_messages); 
-
-    // Driver init 
-    m8q_init(
+    M8Q_STATUS init_check = m8q_init(
         I2C1, 
-        GPIOC, 
-        PIN_10, 
-        PIN_11, 
+        &m8q_config_pkt_0[0][0], 
         M8Q_CONFIG_NUM_MSG_PKT_0, 
-        M8Q_CONFIG_MAX_MSG_LEN, 
-        (uint8_t *)m8q_config_messages[0]); 
-    
-    // Output an initialization warning if a driver fault occurs on setup. 
-    if (m8q_get_status()) 
+        M8Q_CONFIG_MAX_LEN_PKT_0, 
+        0); 
+
+    // Set up low power and TX ready pins 
+    M8Q_STATUS low_pwr_init_check = m8q_pwr_pin_init(GPIOC, PIN_10); 
+    M8Q_STATUS txr_init_check = m8q_txr_pin_init(GPIOC, PIN_11); 
+
+    // Check if there was a problem during device initialization. If so, output the faults 
+    // to the serial terminal and halt to program. 
+    if (init_check || low_pwr_init_check || txr_init_check)
     {
-        uart_sendstring(USART2, "M8Q init fault.\r\n"); 
+        uart_sendstring(USART2, "\r\nDevice init status: "); 
+        uart_send_integer(USART2, (int16_t)init_check); 
+        uart_sendstring(USART2, "\r\nLow power pin init status: "); 
+        uart_send_integer(USART2, (int16_t)low_pwr_init_check); 
+        uart_sendstring(USART2, "\r\nTX Ready pin init status: "); 
+        uart_send_integer(USART2, (int16_t)txr_init_check); 
+
+        while (TRUE); 
     }
 
     // Delay to let everything finish setup before starting to send and receieve data 
@@ -167,7 +185,7 @@ void m8q_location_test_app(void)
     // triggers the rest of the test code. 
     while (m8q_get_tx_ready())
     {
-        m8q_read(); 
+        m8q_read_data(); 
         run++; 
     }
 
@@ -178,14 +196,14 @@ void m8q_location_test_app(void)
         // Check the position lock status. Relative position to waypoints can only be 
         // determined with a position lock so this is a requirement before doing 
         // any calculation. 
-        if (m8q_get_navstat() == M8Q_NAVSTAT_G3)
+        if (m8q_get_position_navstat() == M8Q_NAVSTAT_G3)
         {
             // Position found. Proceed to determine the distance between the 
             // devices current location and the next waypoint. 
 
             // Get the updated location 
-            lat_current = m8q_get_lat(); 
-            lon_current = m8q_get_long(); 
+            lat_current = m8q_get_position_lat(); 
+            lon_current = m8q_get_position_lon(); 
 
             // If the device is close enough to a waypoint then the next waypoint in the 
             // mission is selected. 'waypoint_status' indicates when it's time to read 
@@ -211,7 +229,7 @@ void m8q_location_test_app(void)
             // Update GPS radius. This is the surface distance (arc distance) between 
             // the target waypoint and the current location. The radius is expressed 
             // in meters*10. 
-            radius = m8q_test_gps_rad_copy(
+            radius = m8q_test_gps_rad(
                 lat_current, 
                 lon_current, 
                 target_waypoint.lat, 
@@ -221,7 +239,7 @@ void m8q_location_test_app(void)
             // heading will be an angle between 0-359.9 degrees from true North in the 
             // clockwise direction between the devices current location and the 
             // waypoint location. The heading is expressed as degrees*10. 
-            heading = m8q_test_gps_heading_copy(
+            heading = m8q_test_gps_heading(
                 lat_current, 
                 lon_current, 
                 target_waypoint.lat, 
@@ -266,8 +284,96 @@ void m8q_location_test_app(void)
 //=======================================================================================
 // Helper functions - replace these with the gps_calc functions 
 
+// // GPS coordinate radius check - calculate surface distance and compare to threshold 
+// int16_t m8q_test_gps_rad_copy(
+//     double lat1, 
+//     double lon1, 
+//     double lat2, 
+//     double lon2)
+// {
+//     // Local variables 
+//     int16_t gps_rad = CLEAR; 
+//     static double surf_dist = CLEAR; 
+//     double eq1, eq2, eq3, eq4, eq5; 
+//     double deg_to_rad = 3.14159/180; 
+//     double pi_over_2 = 3.14159/2.0; 
+//     double earth_rad = 6371; 
+//     double km_to_m = 1000; 
+
+//     // Convert coordinates to radians 
+//     lat1 *= deg_to_rad; 
+//     lon1 *= deg_to_rad; 
+//     lat2 *= deg_to_rad; 
+//     lon2 *= deg_to_rad; 
+
+//     eq1 = cos(pi_over_2 - lat2)*sin(lon2 - lon1); 
+//     eq2 = cos(pi_over_2 - lat1)*sin(pi_over_2 - lat2); 
+//     eq3 = sin(pi_over_2 - lat1)*cos(pi_over_2 - lat2)*cos(lon2 - lon1); 
+//     eq4 = sin(pi_over_2 - lat1)*sin(pi_over_2 - lat2); 
+//     eq5 = cos(pi_over_2 - lat1)*cos(pi_over_2 - lat2)*cos(lon2 - lon1); 
+
+//     // atan2 is used because it produces an angle between +/-180 (pi). The central angle 
+//     // should always be positive and never greater than 180. 
+//     // Calculate the radius using a low pass filter to smooth the data. 
+//     surf_dist += ((atan2(sqrt((eq2 - eq3)*(eq2 - eq3) + (eq1*eq1)), (eq4 + eq5)) * 
+//                  earth_rad*km_to_m) - surf_dist)*0.5; 
+//     gps_rad = (int16_t)(surf_dist*10); 
+
+//     return gps_rad; 
+// }
+
+
+// // GPS heading calculation 
+// int16_t m8q_test_gps_heading_copy(
+//     double lat1, 
+//     double lon1, 
+//     double lat2, 
+//     double lon2)
+// {
+//     // Local variables 
+//     int16_t heading = CLEAR; 
+//     static double heading_temp = CLEAR; 
+//     double num, den; 
+//     double deg_to_rad = 3.14159/180; 
+
+//     // Convert coordinates to radians 
+//     lat1 *= deg_to_rad; 
+//     lon1 *= deg_to_rad; 
+//     lat2 *= deg_to_rad; 
+//     lon2 *= deg_to_rad; 
+
+//     // Calculate the numerator and denominator of the atan calculation 
+//     num = cos(lat2)*sin(lon2-lon1); 
+//     den = cos(lat1)*sin(lat2) - sin(lat1)*cos(lat2)*cos(lon2-lon1); 
+
+//     // Calculate the heading between coordinates. 
+//     // A low pass filter is used to smooth the data. 
+//     heading_temp += (atan(num/den) - heading_temp)*0.5; 
+
+//     // Convert heading to degrees 
+//     heading = (int16_t)(heading_temp*10/deg_to_rad); 
+
+//     // Correct the calculated heading if needed 
+//     if (den < 0)
+//     {
+//         heading += LSM303AGR_M_HEAD_DIFF; 
+//     }
+//     else if (num < 0)
+//     {
+//         heading += LSM303AGR_M_HEAD_MAX; 
+//     }
+
+//     return heading; 
+// }
+
+//=======================================================================================
+
+
+//=======================================================================================
+// 
+
 // GPS coordinate radius check - calculate surface distance and compare to threshold 
-int16_t m8q_test_gps_rad_copy(
+int16_t m8q_test_gps_rad(
     double lat1, 
     double lon1, 
     double lat2, 
@@ -277,10 +383,10 @@ int16_t m8q_test_gps_rad_copy(
     int16_t gps_rad = CLEAR; 
     static double surf_dist = CLEAR; 
     double eq1, eq2, eq3, eq4, eq5; 
-    double deg_to_rad = 3.14159/180; 
-    double pi_over_2 = 3.14159/2.0; 
-    double earth_rad = 6371; 
-    double km_to_m = 1000; 
+    double deg_to_rad = M8Q_TEST_PI_RAD/M8Q_TEST_180_DEG; 
+    double pi_over_2 = M8Q_TEST_PI_RAD/2.0; 
+    double earth_rad = M8Q_TEST_EARTH_RAD; 
+    double km_to_m = M8Q_TEST_KM_TO_M; 
 
     // Convert coordinates to radians 
     lat1 *= deg_to_rad; 
@@ -298,15 +404,15 @@ int16_t m8q_test_gps_rad_copy(
     // should always be positive and never greater than 180. 
     // Calculate the radius using a low pass filter to smooth the data. 
     surf_dist += ((atan2(sqrt((eq2 - eq3)*(eq2 - eq3) + (eq1*eq1)), (eq4 + eq5)) * 
-                 earth_rad*km_to_m) - surf_dist)*0.5; 
-    gps_rad = (int16_t)(surf_dist*10); 
+                 earth_rad*km_to_m) - surf_dist)*M8Q_TEST_RADIUS_GAIN; 
+    gps_rad = (int16_t)(surf_dist*M8Q_TEST_CALC_SCALE); 
 
     return gps_rad; 
 }
 
 
 // GPS heading calculation 
-int16_t m8q_test_gps_heading_copy(
+int16_t m8q_test_gps_heading(
     double lat1, 
     double lon1, 
     double lat2, 
@@ -316,7 +422,7 @@ int16_t m8q_test_gps_heading_copy(
     int16_t heading = CLEAR; 
     static double heading_temp = CLEAR; 
     double num, den; 
-    double deg_to_rad = 3.14159/180; 
+    double deg_to_rad = M8Q_TEST_PI_RAD/M8Q_TEST_180_DEG; 
 
     // Convert coordinates to radians 
     lat1 *= deg_to_rad; 
@@ -330,10 +436,10 @@ int16_t m8q_test_gps_heading_copy(
 
     // Calculate the heading between coordinates. 
     // A low pass filter is used to smooth the data. 
-    heading_temp += (atan(num/den) - heading_temp)*0.5; 
+    heading_temp += (atan(num/den) - heading_temp)*M8Q_TEST_HEADING_GAIN; 
 
     // Convert heading to degrees 
-    heading = (int16_t)(heading_temp*10/deg_to_rad); 
+    heading = (int16_t)(heading_temp*M8Q_TEST_CALC_SCALE/deg_to_rad); 
 
     // Correct the calculated heading if needed 
     if (den < 0)

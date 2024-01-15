@@ -222,18 +222,16 @@ void lsm303agr_test_init(void)
 #if LSM303AGR_TEST_NAV 
 
     // M8Q device setup 
-    char m8q_config_messages[M8Q_CONFIG_MSG_NUM][M8Q_CONFIG_MSG_MAX_LEN]; 
-    m8q_config_copy(m8q_config_messages); 
-
-    // Driver init 
     m8q_init(
         I2C1, 
-        GPIOC, 
-        PIN_10, 
-        PIN_11, 
-        M8Q_CONFIG_MSG_NUM, 
-        M8Q_CONFIG_MSG_MAX_LEN, 
-        (uint8_t *)m8q_config_messages[0]); 
+        &m8q_config_pkt_0[0][0], 
+        M8Q_CONFIG_NUM_MSG_PKT_0, 
+        M8Q_CONFIG_MAX_LEN_PKT_0, 
+        0); 
+
+    // Set up low power and TX ready pins 
+    m8q_pwr_pin_init(GPIOC, PIN_10); 
+    m8q_txr_pin_init(GPIOC, PIN_11); 
 
     // PWM init 
 

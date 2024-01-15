@@ -4,6 +4,9 @@
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
  * @brief SAM-M8Q GPS coordinates file interface 
+ *        
+ *        Note: the implementation of this header is not tracked because coordinates 
+ *              are use case specific. 
  * 
  * @version 0.1
  * @date 2024-01-03

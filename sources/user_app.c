@@ -24,6 +24,4 @@
 void user_app()
 {
     // User application code here 
-
-    m8q_test_1(); 
 }

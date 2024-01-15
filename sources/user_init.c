@@ -24,6 +24,4 @@
 void user_init()
 {
     // User initialization code here 
-
-    m8q_test_1_init(); 
 }

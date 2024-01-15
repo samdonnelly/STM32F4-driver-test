@@ -18,9 +18,6 @@
 //=======================================================================================
 // Includes 
 
-// Device configuration files 
-#include "m8q_config.h"
-
 // Device test code 
 #include "esc_readytosky_test.h"
 #include "hc05_test.h"
