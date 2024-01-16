@@ -17,6 +17,7 @@
 
 #include "m8q_test.h"
 #include "m8q_config.h"
+#include "int_handlers.h"
 
 //=======================================================================================
 
@@ -24,8 +25,8 @@
 //=======================================================================================
 // Notes 
 
-// The ACK status function is not explicitly tested here as it's used during init in 
-// test 1. 
+// The ACK status function in the M8Q driver is not explicitly tested here as it's used 
+// during initialization in tests 1 and 2. 
 
 // The M8Q has no flash to store user settings. Instead they're saved in RAM which can 
 // only be powered until the onboard backup battery loses power. For this reason, settings 
