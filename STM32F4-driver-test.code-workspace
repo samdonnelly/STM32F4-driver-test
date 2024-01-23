@@ -75,7 +75,8 @@
 			"m8q_coordinates.h": "c",
 			"gps_calc.h": "c",
 			"m8q_config_test.h": "c",
-			"m8q_controller.h": "c"
+			"m8q_controller.h": "c",
+			"includes_cpp_drivers.h": "c"
 		}
 	}
 }

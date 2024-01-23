@@ -20,9 +20,6 @@
 
 #include "includes_drivers.h"
 
-// Test code 
-#include "m8q_test.h"            // Included for coordinate calculation functions 
-
 //=======================================================================================
 
 
@@ -32,19 +29,7 @@
 // Conditional compilation 
 #define LSM303AGR_TEST_HEADING 1          // Heading with magnetometer as a compass 
 #define LSM303AGR_TEST_AXIS 0             // Magnetometer axis readings 
-#define LSM303AGR_TEST_NAV 0              // Navigating with magnetometer as a compass 
-#define LSM303AGR_TEST_SCREEN 1           // HD44780U screen on same I2C bus as device 
-
-// Mavigation test 
-#define LSM303AGR_TEST_NUM_DIRS 8         // Number of directions of heading offset calcs 
-#define LSM303AGR_TEST_NUM_WAYPOINTS 5    // Number of waypoints for location testing 
-#define LSM303AGR_TEST_M_READ_INT 100000  // Magnetometer read interval (us) 
-#define LSM303AGR_TEST_GPS_RAD 50         // GPS radius threshold (m*10) 
-#define LSM303AGR_TEST_KP 17              // Proportional control constant 
-#define LSM303AGR_TEST_KI 0               // Integral control constant 
-#define LSM303AGR_TEST_KD 0               // Derivative control constant 
-#define LSM303AGR_TEST_PWM_N 30000        // ESC/motor neutral PWM count 
-#define LSM303AGR_TEST_PWM_BASE 3000      // ESC/motor base speed PWM count 
+#define LSM303AGR_TEST_SCREEN_ON_BUS 1    // HD44780U screen on same I2C bus as device 
 
 //=======================================================================================
 

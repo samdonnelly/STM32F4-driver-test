@@ -23,7 +23,7 @@ extern "C" {
 // Includes 
 
 // Application test code 
-#include "m8q_location_test.h" 
+#include "gps_nav_test.h" 
 
 //=======================================================================================
 

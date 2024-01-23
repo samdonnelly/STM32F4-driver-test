@@ -28,134 +28,20 @@
 
 
 //=======================================================================================
+// Macros 
+
+#define LSM303AGR_TEST_NUM_DIRS 8         // Number of directions of heading offset calcs 
+
+//=======================================================================================
+
+
+//=======================================================================================
 // Function prototypes 
-
-/**
- * @brief Get the true North heading 
- * 
- * @details Reads the heading from the magnetometer and adds the true North heading offset 
- *          stored in 'mag_tn_correction' (global variable below). After the offset is 
- *          added the heading is checked to see if it is outside the acceptable heading 
- *          range (0-359.9 degrees) and if it is then it's corrected to be withing range 
- *          (ex. 365 degrees gets corrected to 5 degrees which is the same thing). 
- * 
- * @return int16_t : True North heading 
- */
-int16_t lsm303agr_test_heading(void); 
-
-
-/**
- * @brief Heading error - done every heading update (~10Hz) 
- * 
- * @details 
- * 
- * @param heading_desired 
- * @param heading_current 
- * @return int16_t 
- */
-int16_t lsm303agr_test_heading_error(
-    int16_t heading_desired, 
-    int16_t heading_current); 
-
-
-/**
- * @brief Motor controller 
- * 
- * @details 
- * 
- * @param error 
- * @return int16_t 
- */
-int16_t lsm303agr_test_pid(
-    int16_t error); 
-
 //=======================================================================================
 
 
 //=======================================================================================
 // Global variables 
-
-// Magnetometer directional offsets to correct for heading errors 
-static int16_t mag_offsets[LSM303AGR_TEST_NUM_DIRS]; 
-
-#if LSM303AGR_TEST_AXIS 
-
-static int16_t mx_data; 
-static int16_t my_data; 
-static int16_t mz_data; 
-
-#endif   // LSM303AGR_TEST_AXIS 
-
-
-#if LSM303AGR_TEST_NAV 
-
-// True North correction 
-// This is used to correct the calculated heading to point true North. True North and 
-// Magnetic North are offset and the heading difference between them will change 
-// depending on where you are on Earth. GPS gets position based on true North so in 
-// order to compare GPS heading with magnetometer heading, the magnetic North heading 
-// must be compensated. 
-// To obtain this value, a smart phone was used to find the difference between true and 
-// magnetic North. 
-// If this device was used over a large geographic area then it would be necessary to 
-// update this correction factor dynamically. However, this device (as of now) is used 
-// for relatively localized applications which means it works to have it set manually 
-// by the user. This parameters is ideally stored by an application program somehow 
-// (such as an SD card) so it can be read and overwritten as needed as opposed to 
-// having it hard coded (like it is here). 
-// The correction implemented in this code does not account for extreme cases such as 
-// navigation in between teu and magnetic North locations. 
-static const int16_t mag_tn_correction = 130;   // 13 degrees 
-
-// Sample waypoints 
-static m8q_test_waypoints_t waypoints[LSM303AGR_TEST_NUM_WAYPOINTS] = 
-{
-    {50.961980, -114.065980}, 
-    {50.962400, -114.065990}, 
-    {50.962180, -114.066330}, 
-    {50.961760, -114.065950}, 
-    {50.961920, -114.066250} 
-}; 
-
-// Navigation test data record 
-typedef struct lsm303agr_test_nav_s 
-{
-    // Target waypoint 
-    m8q_test_waypoints_t waypoint; 
-
-    // Screen message buffer 
-    char screen_msg[HD44780U_LINE_LEN]; 
-
-    // Timing information 
-    TIM_TypeDef *timer_nonblocking;        // Timer used for non-blocking delays 
-    tim_compare_t delay_timer;             // Delay timing info 
-
-    // Calculation info 
-    int16_t heading_error; 
-    int16_t gps_heading; 
-    int16_t mag_heading; 
-    uint8_t waypoint_index; 
-    uint8_t waypoint_status; 
-
-    // PID controller 
-    int16_t kp;                            // Proportional control constant 
-    int16_t ki;                            // Integral control constant 
-    int16_t kd;                            // Derivative control constant 
-    int16_t err_sum;                       // Sum of errors - for integral 
-    int16_t err_prev;                      // Previous error - for derivative 
-
-    // PWM output 
-    int16_t pid_out;                       // PID controller output 
-    uint16_t m1_pwm_cnt;                   // Motor 1 PWM counter transition 
-    uint16_t m2_pwm_cnt;                   // Motor 2 PWM counter transition 
-}
-lsm303agr_test_nav_t; 
-
-// Data record instance 
-static lsm303agr_test_nav_t lsm303agr_test_nav; 
-
-#endif   // LSM303AGR_TEST_NAV 
-
 //=======================================================================================
 
 
@@ -208,58 +94,16 @@ void lsm303agr_test_init(void)
     //===================================================
     // Conditional setup 
     
-#if LSM303AGR_TEST_SCREEN 
+#if LSM303AGR_TEST_SCREEN_ON_BUS 
     // HD44780U screen driver setup. Used to provide user feedback. Note that is the 
     // screen is on the same I2C bus as the M8Q then the screen must be setup first 
     // to prevent the screen interfering  with the bus. 
     hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH); 
     hd44780u_clear(); 
-#if !LSM303AGR_TEST_NAV 
     hd44780u_backlight_off(); 
-#endif   // !LSM303AGR_TEST_NAV 
-#endif   // LSM303AGR_TEST_SCREEN 
-
-#if LSM303AGR_TEST_NAV 
-
-    // M8Q device setup 
-    m8q_init(
-        I2C1, 
-        &m8q_config_pkt_0[0][0], 
-        M8Q_CONFIG_NUM_MSG_PKT_0, 
-        M8Q_CONFIG_MAX_LEN_PKT_0, 
-        0); 
-
-    // Set up low power and TX ready pins 
-    m8q_pwr_pin_init(GPIOC, PIN_10); 
-    m8q_txr_pin_init(GPIOC, PIN_11); 
-
-    // PWM init 
-
-    // Navigation data record initialization 
-    memset((void *)lsm303agr_test_nav.screen_msg, CLEAR, sizeof(lsm303agr_test_nav.screen_msg)); 
-    lsm303agr_test_nav.timer_nonblocking = TIM9; 
-    lsm303agr_test_nav.delay_timer.clk_freq = 
-        tim_get_pclk_freq(lsm303agr_test_nav.timer_nonblocking); 
-    lsm303agr_test_nav.delay_timer.time_cnt_total = CLEAR; 
-    lsm303agr_test_nav.delay_timer.time_cnt = CLEAR; 
-    lsm303agr_test_nav.delay_timer.time_start = SET_BIT; 
-    lsm303agr_test_nav.heading_error = CLEAR; 
-    lsm303agr_test_nav.gps_heading = CLEAR; 
-    lsm303agr_test_nav.mag_heading = CLEAR; 
-    lsm303agr_test_nav.waypoint_index = CLEAR; 
-    lsm303agr_test_nav.waypoint_status = SET_BIT; 
-    lsm303agr_test_nav.kp = LSM303AGR_TEST_KP; 
-    lsm303agr_test_nav.ki = LSM303AGR_TEST_KI; 
-    lsm303agr_test_nav.kd = LSM303AGR_TEST_KD; 
-    lsm303agr_test_nav.err_sum = CLEAR; 
-    lsm303agr_test_nav.err_prev = CLEAR; 
-    lsm303agr_test_nav.pid_out = CLEAR; 
-    lsm303agr_test_nav.m1_pwm_cnt = LSM303AGR_TEST_PWM_N + LSM303AGR_TEST_PWM_BASE; 
-    lsm303agr_test_nav.m2_pwm_cnt = LSM303AGR_TEST_PWM_N - LSM303AGR_TEST_PWM_BASE; 
+#endif   // LSM303AGR_TEST_SCREEN_ON_BUS 
 
     //===================================================
-
-#endif   // LSM303AGR_TEST_NAV 
 
     //==================================================
     // LSM303AGR init 
@@ -289,14 +133,18 @@ void lsm303agr_test_init(void)
     // 6. Repeat steps 4 and 5 for all directions in 45 degree increments (NE, E, SE, etc.) and 
     //    record each subsequent direction in the next 'offsets' element. 
 
-    mag_offsets[0] = -160;     // N  (0/360deg) direction heading offset (degrees * 10) 
-    mag_offsets[1] = 32;       // NE (45deg) direction heading offset (degrees * 10) 
-    mag_offsets[2] = 215;      // E  (90deg) direction heading offset (degrees * 10) 
-    mag_offsets[3] = 385;      // SE (135deg) direction heading offset (degrees * 10) 
-    mag_offsets[4] = 435;      // S  (180deg) direction heading offset (degrees * 10) 
-    mag_offsets[5] = 20;       // SW (225deg) direction heading offset (degrees * 10) 
-    mag_offsets[6] = -450;     // W  (270deg) direction heading offset (degrees * 10) 
-    mag_offsets[7] = -365;     // NW (315deg) direction heading offset (degrees * 10) 
+    // Magnetometer directional offsets to correct for heading errors (units: degrees * 10) 
+    int16_t mag_offsets[LSM303AGR_TEST_NUM_DIRS] = 
+    {
+        -160,     // N  (0/360deg) direction heading offset 
+        32,       // NE (45deg) direction heading offset 
+        215,      // E  (90deg) direction heading offset 
+        385,      // SE (135deg) direction heading offset 
+        435,      // S  (180deg) direction heading offset 
+        20,       // SW (225deg) direction heading offset 
+        -450,     // W  (270deg) direction heading offset 
+        -365      // NW (315deg) direction heading offset 
+    }; 
 
     // Driver init 
     lsm303agr_init(
@@ -358,205 +206,6 @@ void lsm303agr_test_app(void)
     // Go to a the start of the line in the terminal 
     uart_sendstring(USART2, "\r"); 
 #endif   // LSM303AGR_TEST_HEADING 
-
-#if LSM303AGR_TEST_NAV 
-
-    // Local variables 
-    uint8_t run = CLEAR; 
-    uint16_t navstat = CLEAR; 
-    int16_t radius = CLEAR; 
-    double lat_current = CLEAR; 
-    double lon_current = CLEAR; 
-
-    // Read magnetometer heading at an interval 
-    // Wait for a short period of time before leaving the init state 
-    if (tim_compare(lsm303agr_test_nav.timer_nonblocking, 
-                    lsm303agr_test_nav.delay_timer.clk_freq, 
-                    LSM303AGR_TEST_M_READ_INT, // (us) 
-                    &lsm303agr_test_nav.delay_timer.time_cnt_total, 
-                    &lsm303agr_test_nav.delay_timer.time_cnt, 
-                    &lsm303agr_test_nav.delay_timer.time_start))
-    {
-        // Update the magnetometer data 
-        lsm303agr_m_read(); 
-
-        // Get the true North heading from the magnetometer 
-        lsm303agr_test_nav.mag_heading = lsm303agr_test_heading(); 
-        
-        // Use the GPS heading and the magnetometer heading to get a heading error 
-        lsm303agr_test_nav.heading_error = 
-            lsm303agr_test_heading_error(lsm303agr_test_nav.gps_heading, 
-                                         lsm303agr_test_nav.mag_heading); 
-
-        // Calculate the motor PWM output 
-        lsm303agr_test_nav.pid_out = 
-            (lsm303agr_test_pid(lsm303agr_test_nav.heading_error) >> SHIFT_5); 
-        lsm303agr_test_nav.m1_pwm_cnt = 
-            LSM303AGR_TEST_PWM_N + LSM303AGR_TEST_PWM_BASE + lsm303agr_test_nav.pid_out; 
-        lsm303agr_test_nav.m2_pwm_cnt = 
-            LSM303AGR_TEST_PWM_N - LSM303AGR_TEST_PWM_BASE + lsm303agr_test_nav.pid_out; 
-    }
-
-    // Once there is data available on the device, read all messages. The device will 
-    // update once per second. If there is data then the 'run' flag is set which 
-    // triggers the rest of the test code. 
-    while (m8q_get_tx_ready())
-    {
-        m8q_read(); 
-        run++; 
-    }
-
-    // If the run flag is not zero then that means new data has been read from the 
-    // device and the rest of the test code can be executed. 
-    if (run)
-    {
-        // Check the position lock status. Relative position to waypoints can only be 
-        // determined with a position lock so this is a requirement before doing 
-        // any calculation. 
-        navstat = m8q_get_navstat(); 
-        if ((navstat == M8Q_NAVSTAT_G3) || (navstat == M8Q_NAVSTAT_G2))
-        {
-            // Position found. Proceed to determine the distance between the 
-            // devices current location and the next waypoint. 
-
-            // Get the updated location 
-            lat_current = m8q_get_lat(); 
-            lon_current = m8q_get_long(); 
-
-            // If the device is close enough to a waypoint then the next waypoint in the 
-            // mission is selected. 'waypoint_status' indicates when it's time to read 
-            // the next waypoint. 
-            if (lsm303agr_test_nav.waypoint_status)
-            {
-                // Update the target waypoint 
-                lsm303agr_test_nav.waypoint.lat = 
-                    waypoints[lsm303agr_test_nav.waypoint_index].lat; 
-                lsm303agr_test_nav.waypoint.lon = 
-                    waypoints[lsm303agr_test_nav.waypoint_index].lon; 
-
-                // The status will be set again if the device hits (gets close enough to) 
-                // the current target waypoint. 
-                lsm303agr_test_nav.waypoint_status = CLEAR; 
-
-                // Adjust waypoint index. If the end of the waypoint mission is reached 
-                // then start over from the beginning. 
-                if (++lsm303agr_test_nav.waypoint_index == LSM303AGR_TEST_NUM_WAYPOINTS)
-                {
-                    lsm303agr_test_nav.waypoint_index = CLEAR; 
-                }
-            }
-
-            // Update GPS radius. This is the surface distance (arc distance) between 
-            // the target waypoint and the current location. The radius us expressed 
-            // in meters*10. 
-            radius = m8q_test_gps_rad(
-                lat_current, 
-                lon_current, 
-                lsm303agr_test_nav.waypoint.lat, 
-                lsm303agr_test_nav.waypoint.lon); 
-
-            // Update the heading between the current location and the waypoint. The 
-            // heading will be an angle between 0-359.9 degrees from true North in the 
-            // clockwise direction between the devices current location and the 
-            // waypoint location. The heading is expressed as degrees*10. 
-            lsm303agr_test_nav.gps_heading = m8q_test_gps_heading(
-                lat_current, 
-                lon_current, 
-                lsm303agr_test_nav.waypoint.lat, 
-                lsm303agr_test_nav.waypoint.lon); 
-
-            // Display the navigation info to the screen 
-            snprintf(
-                lsm303agr_test_nav.screen_msg, 
-                HD44780U_LINE_LEN, 
-                "RAD: %um   ", 
-                radius); 
-            hd44780u_line_set(
-                HD44780U_L1, 
-                lsm303agr_test_nav.screen_msg, 
-                HD44780U_CURSOR_NO_OFFSET); 
-
-            snprintf(
-                lsm303agr_test_nav.screen_msg, 
-                HD44780U_LINE_LEN, 
-                "ERR: %ddeg    ", 
-                lsm303agr_test_nav.heading_error); 
-            hd44780u_line_set(
-                HD44780U_L2, 
-                lsm303agr_test_nav.screen_msg, 
-                HD44780U_CURSOR_NO_OFFSET); 
-
-            // snprintf(
-            //     lsm303agr_test_nav.screen_msg, 
-            //     HD44780U_LINE_LEN, 
-            //     "GPS: %udeg    ", 
-            //     lsm303agr_test_nav.gps_heading); 
-            // hd44780u_line_set(
-            //     HD44780U_L3, 
-            //     lsm303agr_test_nav.screen_msg, 
-            //     HD44780U_CURSOR_NO_OFFSET); 
-
-            // snprintf(
-            //     lsm303agr_test_nav.screen_msg, 
-            //     HD44780U_LINE_LEN, 
-            //     "MAG: %udeg    ", 
-            //     lsm303agr_test_nav.mag_heading); 
-            // hd44780u_line_set(
-            //     HD44780U_L4, 
-            //     lsm303agr_test_nav.screen_msg, 
-            //     HD44780U_CURSOR_NO_OFFSET); 
-            
-            snprintf(
-                lsm303agr_test_nav.screen_msg, 
-                HD44780U_LINE_LEN, 
-                "M1:  %u", 
-                lsm303agr_test_nav.m1_pwm_cnt); 
-            hd44780u_line_set(
-                HD44780U_L3, 
-                lsm303agr_test_nav.screen_msg, 
-                HD44780U_CURSOR_NO_OFFSET); 
-
-            snprintf(
-                lsm303agr_test_nav.screen_msg, 
-                HD44780U_LINE_LEN, 
-                "M2:  %u", 
-                lsm303agr_test_nav.m2_pwm_cnt); 
-            hd44780u_line_set(
-                HD44780U_L4, 
-                lsm303agr_test_nav.screen_msg, 
-                HD44780U_CURSOR_NO_OFFSET); 
-            
-            hd44780u_cursor_pos(HD44780U_START_L1, HD44780U_CURSOR_NO_OFFSET);
-            hd44780u_send_line(HD44780U_L1); 
-            hd44780u_cursor_pos(HD44780U_START_L2, HD44780U_CURSOR_NO_OFFSET);
-            hd44780u_send_line(HD44780U_L2); 
-            hd44780u_cursor_pos(HD44780U_START_L3, HD44780U_CURSOR_NO_OFFSET);
-            hd44780u_send_line(HD44780U_L3); 
-            hd44780u_cursor_pos(HD44780U_START_L4, HD44780U_CURSOR_NO_OFFSET);
-            hd44780u_send_line(HD44780U_L4); 
-
-            // Check the radius against a threshold. If the radius is less than the 
-            // threshold then the waypoint is considered to be hit and the 
-            // 'waypoint_status' can be set to indicate that the next waypoint should 
-            // be used. The radius and threshold are expressed in meters * 10. 
-            if (radius < LSM303AGR_TEST_GPS_RAD)
-            {
-                // Indicate that a new waypoint needs to be read 
-                lsm303agr_test_nav.waypoint_status = SET_BIT; 
-            }
-        }
-        else 
-        {
-            // No position lock. Display the status on the screen but do nothing else 
-            // while there is no lock. 
-            hd44780u_clear(); 
-            hd44780u_line_set(HD44780U_L1, "No connection", HD44780U_CURSOR_NO_OFFSET); 
-            hd44780u_cursor_pos(HD44780U_START_L1, HD44780U_CURSOR_NO_OFFSET);
-            hd44780u_send_line(HD44780U_L1); 
-        }
-    }
-
-#endif   // LSM303AGR_TEST_NAV 
 }
 
 //=======================================================================================
@@ -564,118 +213,4 @@ void lsm303agr_test_app(void)
 
 //=======================================================================================
 // Test functions 
-
-#if LSM303AGR_TEST_NAV 
-
-// Get the true North heading 
-int16_t lsm303agr_test_heading(void)
-{
-    // Local variables 
-    int16_t tn_heading = CLEAR; 
-
-    // Get the magnetometer heading and add the true North correction 
-    tn_heading = lsm303agr_m_get_heading() + mag_tn_correction; 
-
-    // Adjust the true North heading if the corrected headed exceeds heading bounds 
-    if (mag_tn_correction >= 0)
-    {
-        if (tn_heading >= LSM303AGR_M_HEAD_MAX)
-        {
-            tn_heading -= LSM303AGR_M_HEAD_MAX; 
-        }
-    }
-    else 
-    {
-        if (tn_heading < 0)
-        {
-            tn_heading += LSM303AGR_M_HEAD_MAX; 
-        }
-    }
-
-    return tn_heading; 
-}
-
-#endif   // LSM303AGR_TEST_NAV 
-
-
-// Heading error 
-int16_t lsm303agr_test_heading_error(
-    int16_t heading_desired, 
-    int16_t heading_current)
-{
-    // Local variables 
-    int16_t heading_error = CLEAR; 
-
-    // Calculate the heading error 
-    heading_error = heading_desired - heading_current; 
-
-    // Correct the error for when the heading crosses the 0/360 degree boundary 
-    if (heading_error > LSM303AGR_M_HEAD_DIFF)
-    {
-        heading_error -= LSM303AGR_M_HEAD_MAX; 
-    }
-    else if (heading_error < -LSM303AGR_M_HEAD_DIFF)
-    {
-        heading_error += LSM303AGR_M_HEAD_MAX; 
-    }
-
-    return heading_error; 
-}
-
-
-#if LSM303AGR_TEST_NAV 
-
-// Motor controller - called after every heading update 
-int16_t lsm303agr_test_pid(
-    int16_t error)
-{
-    // Local variables 
-    int16_t proportional = CLEAR; 
-    int16_t integral = CLEAR; 
-    int16_t derivative = CLEAR; 
-
-    //==================================================
-    // Proportional 
-
-    // Calculate the proportional portion 
-    proportional = LSM303AGR_TEST_KP*error; 
-    
-    //==================================================
-
-    //==================================================
-    // Integral 
-
-    // Integrate the error 
-    lsm303agr_test_nav.err_sum += error; 
-
-    // Cap the error if it is too large 
-    if (lsm303agr_test_nav.err_sum > 1800)
-    {
-        lsm303agr_test_nav.err_sum = 1800; 
-    }
-    else if (lsm303agr_test_nav.err_sum < -1800)
-    {
-        lsm303agr_test_nav.err_sum = -1800; 
-    }
-
-    // Calculate the integral portion 
-    integral = lsm303agr_test_nav.err_sum * LSM303AGR_TEST_KI; 
-    
-    //==================================================
-
-    //==================================================
-    // Derivative 
-
-    // Calculate the derivative portion 
-    derivative = LSM303AGR_TEST_KP*(error - lsm303agr_test_nav.err_prev); 
-    lsm303agr_test_nav.err_prev = error; 
-    
-    //==================================================
-
-    // PID output 
-    return proportional + integral + derivative; 
-}
-
-#endif   // LSM303AGR_TEST_NAV 
-
 //=======================================================================================
