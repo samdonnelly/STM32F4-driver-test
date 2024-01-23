@@ -22,6 +22,6 @@ build/
 # Test files 
 
 # M8Q test coordinates - Use-case specific so made as a local file 
-sources/device_config/m8q_coordinates.cpp 
+sources/test_data/gps_coordinates.cpp 
 
 #========================================================================================

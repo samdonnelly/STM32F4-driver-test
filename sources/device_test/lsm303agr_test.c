@@ -16,21 +16,24 @@
 // Includes 
 
 #include "lsm303agr_test.h" 
+#include "lsm303agr_config.h" 
 
-//=======================================================================================
-
-
-//=======================================================================================
-// TODO 
-// - Test magnetometer heading with low power, idle (mode), different ODR, LFP enabled, 
-//   and offset cancellation 
 //=======================================================================================
 
 
 //=======================================================================================
 // Macros 
+//=======================================================================================
 
-#define LSM303AGR_TEST_NUM_DIRS 8         // Number of directions of heading offset calcs 
+
+//=======================================================================================
+// Global variables 
+
+#if LSM303AGR_TEST_AXIS 
+static int16_t mx_data; 
+static int16_t my_data; 
+static int16_t mz_data; 
+#endif   // LSM303AGR_TEST_AXIS 
 
 //=======================================================================================
 
@@ -41,17 +44,10 @@
 
 
 //=======================================================================================
-// Global variables 
-//=======================================================================================
-
-
-//=======================================================================================
 // Setup code
 
 void lsm303agr_test_init(void)
 {
-    // Setup code for the LSM303AGR here 
-
     //===================================================
     // Standard setup 
 
@@ -133,23 +129,10 @@ void lsm303agr_test_init(void)
     // 6. Repeat steps 4 and 5 for all directions in 45 degree increments (NE, E, SE, etc.) and 
     //    record each subsequent direction in the next 'offsets' element. 
 
-    // Magnetometer directional offsets to correct for heading errors (units: degrees * 10) 
-    int16_t mag_offsets[LSM303AGR_TEST_NUM_DIRS] = 
-    {
-        -160,     // N  (0/360deg) direction heading offset 
-        32,       // NE (45deg) direction heading offset 
-        215,      // E  (90deg) direction heading offset 
-        385,      // SE (135deg) direction heading offset 
-        435,      // S  (180deg) direction heading offset 
-        20,       // SW (225deg) direction heading offset 
-        -450,     // W  (270deg) direction heading offset 
-        -365      // NW (315deg) direction heading offset 
-    }; 
-
     // Driver init 
     lsm303agr_init(
         I2C1, 
-        mag_offsets, 
+        lsm303agr_config_dir_offsets, 
         LSM303AGR_M_ODR_10, 
         LSM303AGR_M_MODE_CONT, 
         LSM303AGR_CFG_DISABLE, 

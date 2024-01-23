@@ -27,8 +27,9 @@
 // Includes 
 
 #include "gps_nav_test.h" 
-#include "m8q_config.h"
-#include "m8q_coordinates.h"
+#include "m8q_config.h" 
+#include "lsm303agr_config.h" 
+#include "gps_coordinates.h" 
 #include "includes_cpp_drivers.h" 
 
 //=======================================================================================
@@ -55,7 +56,6 @@
 #define GPS_NAV_TEST_HEADING_GAIN 0.5   // GPS heading low pass filter gain 
 #define GPS_NAV_TEST_RADIUS_GAIN 0.5    // GPS radius low pass filter gain 
 #define GPS_NAV_TEST_NUM_DIRS 8         // Number of directions of heading offset calcs 
-#define GPS_NAV_TEST_NUM_WAYPOINTS 5    // Number of waypoints for location testing 
 #define GPS_NAV_TEST_M_READ_INT 100000  // Magnetometer read interval (us) 
 #define GPS_NAV_TEST_GPS_RAD 50         // GPS radius threshold (m*10) 
 #define GPS_NAV_TEST_KP 17              // Proportional control constant 
@@ -76,10 +76,6 @@ static gps_waypoints_t target_waypoint;
 // Screen message buffer 
 static char screen_msg[20]; 
 
-static int16_t mx_data; 
-static int16_t my_data; 
-static int16_t mz_data; 
-
 
 // True North correction 
 // This is used to correct the calculated heading to point true North. True North and 
@@ -99,18 +95,9 @@ static int16_t mz_data;
 // navigation in between teu and magnetic North locations. 
 static const int16_t mag_tn_correction = 130;   // 13 degrees 
 
-// Sample waypoints 
-static gps_waypoints_t waypoints[GPS_NAV_TEST_NUM_WAYPOINTS] = 
-{
-    {50.961980, -114.065980}, 
-    {50.962400, -114.065990}, 
-    {50.962180, -114.066330}, 
-    {50.961760, -114.065950}, 
-    {50.961920, -114.066250} 
-}; 
 
 // Navigation test data record 
-typedef struct lsm303agr_test_nav_s 
+typedef struct gps_nav_test_nav_s 
 {
     // Target waypoint 
     gps_waypoints_t waypoint; 
@@ -141,10 +128,13 @@ typedef struct lsm303agr_test_nav_s
     uint16_t m1_pwm_cnt;                   // Motor 1 PWM counter transition 
     uint16_t m2_pwm_cnt;                   // Motor 2 PWM counter transition 
 }
-lsm303agr_test_nav_t; 
+gps_nav_test_nav_t; 
 
 // Data record instance 
-static lsm303agr_test_nav_t lsm303agr_test_nav; 
+static gps_nav_test_nav_t gps_nav_test_nav; 
+
+
+// TODO class instances 
 
 //=======================================================================================
 
@@ -250,6 +240,10 @@ int16_t gps_nav_test_pid_temp(
 
 //=======================================================================================
 // Classes 
+
+// Create a class to hold test data and within the class either inherit or make an 
+// instance of the calculation classes from the library 
+
 //=======================================================================================
 
 
@@ -258,8 +252,6 @@ int16_t gps_nav_test_pid_temp(
 
 void gps_nav_test_init(void)
 {
-    // TODO where do you put instances of classes? 
-    
     //==================================================
     // General setup 
 
@@ -348,27 +340,12 @@ void gps_nav_test_init(void)
     //==================================================
 
     //==================================================
-    // LSM303AGR Magnetometer (compasss) setup 
-
-    // Directional offsets to correct for heading errors in the device (units: degrees*10). 
-    // See driver test code for setup of these values. 
-    // TODO consider making this part of a config file 
-    int16_t mag_offsets[GPS_NAV_TEST_NUM_DIRS] = 
-    {
-        -160,   // N  (0/360deg) 
-        32,     // NE (45deg) 
-        215,    // E  (90deg) 
-        385,    // SE (135deg) 
-        435,    // S  (180deg) 
-        20,     // SW (225deg) 
-        -450,   // W  (270deg) 
-        -365    // NW (315deg) 
-    }; 
+    // LSM303AGR Magnetometer (compasss) setup  
 
     // Driver setup 
     lsm303agr_init(
         I2C1, 
-        mag_offsets, 
+        lsm303agr_config_dir_offsets, 
         LSM303AGR_M_ODR_10, 
         LSM303AGR_M_MODE_CONT, 
         LSM303AGR_CFG_DISABLE, 
@@ -453,26 +430,26 @@ void gps_nav_test_init_temp(void)
     }
 
     // // Navigation data record initialization 
-    // memset((void *)lsm303agr_test_nav.screen_msg, CLEAR, sizeof(lsm303agr_test_nav.screen_msg)); 
-    // lsm303agr_test_nav.timer_nonblocking = TIM9; 
-    // lsm303agr_test_nav.delay_timer.clk_freq = 
-    //     tim_get_pclk_freq(lsm303agr_test_nav.timer_nonblocking); 
-    // lsm303agr_test_nav.delay_timer.time_cnt_total = CLEAR; 
-    // lsm303agr_test_nav.delay_timer.time_cnt = CLEAR; 
-    // lsm303agr_test_nav.delay_timer.time_start = SET_BIT; 
-    // lsm303agr_test_nav.heading_error = CLEAR; 
-    // lsm303agr_test_nav.gps_heading = CLEAR; 
-    // lsm303agr_test_nav.mag_heading = CLEAR; 
-    // lsm303agr_test_nav.waypoint_index = CLEAR; 
-    // lsm303agr_test_nav.waypoint_status = SET_BIT; 
-    // lsm303agr_test_nav.kp = GPS_NAV_TEST_KP; 
-    // lsm303agr_test_nav.ki = GPS_NAV_TEST_KI; 
-    // lsm303agr_test_nav.kd = GPS_NAV_TEST_KD; 
-    // lsm303agr_test_nav.err_sum = CLEAR; 
-    // lsm303agr_test_nav.err_prev = CLEAR; 
-    // lsm303agr_test_nav.pid_out = CLEAR; 
-    // lsm303agr_test_nav.m1_pwm_cnt = GPS_NAV_TEST_PWM_N + GPS_NAV_TEST_PWM_BASE; 
-    // lsm303agr_test_nav.m2_pwm_cnt = GPS_NAV_TEST_PWM_N - GPS_NAV_TEST_PWM_BASE; 
+    // memset((void *)gps_nav_test_nav.screen_msg, CLEAR, sizeof(gps_nav_test_nav.screen_msg)); 
+    // gps_nav_test_nav.timer_nonblocking = TIM9; 
+    // gps_nav_test_nav.delay_timer.clk_freq = 
+    //     tim_get_pclk_freq(gps_nav_test_nav.timer_nonblocking); 
+    // gps_nav_test_nav.delay_timer.time_cnt_total = CLEAR; 
+    // gps_nav_test_nav.delay_timer.time_cnt = CLEAR; 
+    // gps_nav_test_nav.delay_timer.time_start = SET_BIT; 
+    // gps_nav_test_nav.heading_error = CLEAR; 
+    // gps_nav_test_nav.gps_heading = CLEAR; 
+    // gps_nav_test_nav.mag_heading = CLEAR; 
+    // gps_nav_test_nav.waypoint_index = CLEAR; 
+    // gps_nav_test_nav.waypoint_status = SET_BIT; 
+    // gps_nav_test_nav.kp = GPS_NAV_TEST_KP; 
+    // gps_nav_test_nav.ki = GPS_NAV_TEST_KI; 
+    // gps_nav_test_nav.kd = GPS_NAV_TEST_KD; 
+    // gps_nav_test_nav.err_sum = CLEAR; 
+    // gps_nav_test_nav.err_prev = CLEAR; 
+    // gps_nav_test_nav.pid_out = CLEAR; 
+    // gps_nav_test_nav.m1_pwm_cnt = GPS_NAV_TEST_PWM_N + GPS_NAV_TEST_PWM_BASE; 
+    // gps_nav_test_nav.m2_pwm_cnt = GPS_NAV_TEST_PWM_N - GPS_NAV_TEST_PWM_BASE; 
 
     // // LSM303AGR init 
     // mag_offsets[0] = -160;     // N  (0/360deg) direction heading offset (degrees * 10) 
@@ -527,31 +504,31 @@ void gps_nav_test_app_temp(void)
 
     // // Read magnetometer heading at an interval 
     // // Wait for a short period of time before leaving the init state 
-    // if (tim_compare(lsm303agr_test_nav.timer_nonblocking, 
-    //                 lsm303agr_test_nav.delay_timer.clk_freq, 
+    // if (tim_compare(gps_nav_test_nav.timer_nonblocking, 
+    //                 gps_nav_test_nav.delay_timer.clk_freq, 
     //                 GPS_NAV_TEST_M_READ_INT, // (us) 
-    //                 &lsm303agr_test_nav.delay_timer.time_cnt_total, 
-    //                 &lsm303agr_test_nav.delay_timer.time_cnt, 
-    //                 &lsm303agr_test_nav.delay_timer.time_start))
+    //                 &gps_nav_test_nav.delay_timer.time_cnt_total, 
+    //                 &gps_nav_test_nav.delay_timer.time_cnt, 
+    //                 &gps_nav_test_nav.delay_timer.time_start))
     // {
     //     // Update the magnetometer data 
     //     lsm303agr_m_read(); 
 
     //     // Get the true North heading from the magnetometer 
-    //     lsm303agr_test_nav.mag_heading = gps_nav_test_heading_temp(); 
+    //     gps_nav_test_nav.mag_heading = gps_nav_test_heading_temp(); 
         
     //     // Use the GPS heading and the magnetometer heading to get a heading error 
-    //     lsm303agr_test_nav.heading_error = 
-    //         gps_nav_test_heading_error_temp(lsm303agr_test_nav.gps_heading, 
-    //                                      lsm303agr_test_nav.mag_heading); 
+    //     gps_nav_test_nav.heading_error = 
+    //         gps_nav_test_heading_error_temp(gps_nav_test_nav.gps_heading, 
+    //                                      gps_nav_test_nav.mag_heading); 
 
     //     // Calculate the motor PWM output 
-    //     lsm303agr_test_nav.pid_out = 
-    //         (gps_nav_test_pid_temp(lsm303agr_test_nav.heading_error) >> SHIFT_5); 
-    //     lsm303agr_test_nav.m1_pwm_cnt = 
-    //         GPS_NAV_TEST_PWM_N + GPS_NAV_TEST_PWM_BASE + lsm303agr_test_nav.pid_out; 
-    //     lsm303agr_test_nav.m2_pwm_cnt = 
-    //         GPS_NAV_TEST_PWM_N - GPS_NAV_TEST_PWM_BASE + lsm303agr_test_nav.pid_out; 
+    //     gps_nav_test_nav.pid_out = 
+    //         (gps_nav_test_pid_temp(gps_nav_test_nav.heading_error) >> SHIFT_5); 
+    //     gps_nav_test_nav.m1_pwm_cnt = 
+    //         GPS_NAV_TEST_PWM_N + GPS_NAV_TEST_PWM_BASE + gps_nav_test_nav.pid_out; 
+    //     gps_nav_test_nav.m2_pwm_cnt = 
+    //         GPS_NAV_TEST_PWM_N - GPS_NAV_TEST_PWM_BASE + gps_nav_test_nav.pid_out; 
     // }
 
     // Once there is data available on the device, read all messages. The device will 
@@ -597,28 +574,28 @@ void gps_nav_test_app_temp(void)
 
                 // Adjust waypoint index. If the end of the waypoint mission is reached 
                 // then start over from the beginning. 
-                if (++waypoint_index == GPS_NAV_TEST_NUM_WAYPOINTS)
+                if (++waypoint_index == M8Q_NUM_WAYPOINTS_0)
                 {
                     waypoint_index = CLEAR; 
                 }
             }
-            // if (lsm303agr_test_nav.waypoint_status)
+            // if (gps_nav_test_nav.waypoint_status)
             // {
             //     // Update the target waypoint 
-            //     lsm303agr_test_nav.waypoint.lat = 
-            //         waypoints[lsm303agr_test_nav.waypoint_index].lat; 
-            //     lsm303agr_test_nav.waypoint.lon = 
-            //         waypoints[lsm303agr_test_nav.waypoint_index].lon; 
+            //     gps_nav_test_nav.waypoint.lat = 
+            //         waypoints[gps_nav_test_nav.waypoint_index].lat; 
+            //     gps_nav_test_nav.waypoint.lon = 
+            //         waypoints[gps_nav_test_nav.waypoint_index].lon; 
 
             //     // The status will be set again if the device hits (gets close enough to) 
             //     // the current target waypoint. 
-            //     lsm303agr_test_nav.waypoint_status = CLEAR; 
+            //     gps_nav_test_nav.waypoint_status = CLEAR; 
 
             //     // Adjust waypoint index. If the end of the waypoint mission is reached 
             //     // then start over from the beginning. 
-            //     if (++lsm303agr_test_nav.waypoint_index == GPS_NAV_NUM_WAYPOINTS)
+            //     if (++gps_nav_test_nav.waypoint_index == GPS_NAV_NUM_WAYPOINTS)
             //     {
-            //         lsm303agr_test_nav.waypoint_index = CLEAR; 
+            //         gps_nav_test_nav.waypoint_index = CLEAR; 
             //     }
             // }
             
@@ -638,8 +615,8 @@ void gps_nav_test_app_temp(void)
             // radius = lsm303agr_test_gps_rad(
             //     lat_current, 
             //     lon_current, 
-            //     lsm303agr_test_nav.waypoint.lat, 
-            //     lsm303agr_test_nav.waypoint.lon); 
+            //     gps_nav_test_nav.waypoint.lat, 
+            //     gps_nav_test_nav.waypoint.lon); 
 
             // Update the heading between the current location and the waypoint. The 
             // heading will be an angle between 0-359.9 degrees from true North in the 
@@ -650,11 +627,11 @@ void gps_nav_test_app_temp(void)
                 lon_current, 
                 target_waypoint.lat, 
                 target_waypoint.lon); 
-            // lsm303agr_test_nav.gps_heading = lsm303agr_test_gps_heading(
+            // gps_nav_test_nav.gps_heading = lsm303agr_test_gps_heading(
             //     lat_current, 
             //     lon_current, 
-            //     lsm303agr_test_nav.waypoint.lat, 
-            //     lsm303agr_test_nav.waypoint.lon); 
+            //     gps_nav_test_nav.waypoint.lat, 
+            //     gps_nav_test_nav.waypoint.lon); 
             
             //==================================================
 
@@ -672,63 +649,63 @@ void gps_nav_test_app_temp(void)
 
             // 
             // snprintf(
-            //     lsm303agr_test_nav.screen_msg, 
+            //     gps_nav_test_nav.screen_msg, 
             //     HD44780U_LINE_LEN, 
             //     "RAD: %um   ", 
             //     radius); 
             // hd44780u_line_set(
             //     HD44780U_L1, 
-            //     lsm303agr_test_nav.screen_msg, 
+            //     gps_nav_test_nav.screen_msg, 
             //     HD44780U_CURSOR_NO_OFFSET); 
 
             // snprintf(
-            //     lsm303agr_test_nav.screen_msg, 
+            //     gps_nav_test_nav.screen_msg, 
             //     HD44780U_LINE_LEN, 
             //     "ERR: %ddeg    ", 
-            //     lsm303agr_test_nav.heading_error); 
+            //     gps_nav_test_nav.heading_error); 
             // hd44780u_line_set(
             //     HD44780U_L2, 
-            //     lsm303agr_test_nav.screen_msg, 
+            //     gps_nav_test_nav.screen_msg, 
             //     HD44780U_CURSOR_NO_OFFSET); 
 
             // // snprintf(
-            // //     lsm303agr_test_nav.screen_msg, 
+            // //     gps_nav_test_nav.screen_msg, 
             // //     HD44780U_LINE_LEN, 
             // //     "GPS: %udeg    ", 
-            // //     lsm303agr_test_nav.gps_heading); 
+            // //     gps_nav_test_nav.gps_heading); 
             // // hd44780u_line_set(
             // //     HD44780U_L3, 
-            // //     lsm303agr_test_nav.screen_msg, 
+            // //     gps_nav_test_nav.screen_msg, 
             // //     HD44780U_CURSOR_NO_OFFSET); 
 
             // // snprintf(
-            // //     lsm303agr_test_nav.screen_msg, 
+            // //     gps_nav_test_nav.screen_msg, 
             // //     HD44780U_LINE_LEN, 
             // //     "MAG: %udeg    ", 
-            // //     lsm303agr_test_nav.mag_heading); 
+            // //     gps_nav_test_nav.mag_heading); 
             // // hd44780u_line_set(
             // //     HD44780U_L4, 
-            // //     lsm303agr_test_nav.screen_msg, 
+            // //     gps_nav_test_nav.screen_msg, 
             // //     HD44780U_CURSOR_NO_OFFSET); 
             
             // snprintf(
-            //     lsm303agr_test_nav.screen_msg, 
+            //     gps_nav_test_nav.screen_msg, 
             //     HD44780U_LINE_LEN, 
             //     "M1:  %u", 
-            //     lsm303agr_test_nav.m1_pwm_cnt); 
+            //     gps_nav_test_nav.m1_pwm_cnt); 
             // hd44780u_line_set(
             //     HD44780U_L3, 
-            //     lsm303agr_test_nav.screen_msg, 
+            //     gps_nav_test_nav.screen_msg, 
             //     HD44780U_CURSOR_NO_OFFSET); 
 
             // snprintf(
-            //     lsm303agr_test_nav.screen_msg, 
+            //     gps_nav_test_nav.screen_msg, 
             //     HD44780U_LINE_LEN, 
             //     "M2:  %u", 
-            //     lsm303agr_test_nav.m2_pwm_cnt); 
+            //     gps_nav_test_nav.m2_pwm_cnt); 
             // hd44780u_line_set(
             //     HD44780U_L4, 
-            //     lsm303agr_test_nav.screen_msg, 
+            //     gps_nav_test_nav.screen_msg, 
             //     HD44780U_CURSOR_NO_OFFSET); 
             
             // hd44780u_cursor_pos(HD44780U_START_L1, HD44780U_CURSOR_NO_OFFSET);
@@ -750,7 +727,7 @@ void gps_nav_test_app_temp(void)
             {
                 // Indicate that a new waypoint needs to be read 
                 waypoint_status = SET_BIT; 
-                // lsm303agr_test_nav.waypoint_status = SET_BIT; 
+                // gps_nav_test_nav.waypoint_status = SET_BIT; 
             }
         }
         else 
@@ -930,20 +907,20 @@ int16_t gps_nav_test_pid_temp(
     // Integral 
 
     // Integrate the error 
-    lsm303agr_test_nav.err_sum += error; 
+    gps_nav_test_nav.err_sum += error; 
 
     // Cap the error if it is too large 
-    if (lsm303agr_test_nav.err_sum > 1800)
+    if (gps_nav_test_nav.err_sum > 1800)
     {
-        lsm303agr_test_nav.err_sum = 1800; 
+        gps_nav_test_nav.err_sum = 1800; 
     }
-    else if (lsm303agr_test_nav.err_sum < -1800)
+    else if (gps_nav_test_nav.err_sum < -1800)
     {
-        lsm303agr_test_nav.err_sum = -1800; 
+        gps_nav_test_nav.err_sum = -1800; 
     }
 
     // Calculate the integral portion 
-    integral = lsm303agr_test_nav.err_sum * GPS_NAV_TEST_KI; 
+    integral = gps_nav_test_nav.err_sum * GPS_NAV_TEST_KI; 
     
     //==================================================
 
@@ -951,8 +928,8 @@ int16_t gps_nav_test_pid_temp(
     // Derivative 
 
     // Calculate the derivative portion 
-    derivative = GPS_NAV_TEST_KP*(error - lsm303agr_test_nav.err_prev); 
-    lsm303agr_test_nav.err_prev = error; 
+    derivative = GPS_NAV_TEST_KP*(error - gps_nav_test_nav.err_prev); 
+    gps_nav_test_nav.err_prev = error; 
     
     //==================================================
 
