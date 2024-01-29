@@ -37,204 +37,6 @@
 
 //=======================================================================================
 // Macros 
-
-// Location testing 
-#define GPS_NAV_TEST_CALC_SCALE 10       // Scalar for calculated data 
-#define GPS_NAV_TEST_PI_RAD 3.14159      // PI 
-#define GPS_NAV_TEST_180_DEG 180         // 180 degrees 
-#define GPS_NAV_TEST_EARTH_RAD 6371      // Earch average radius (km) 
-#define GPS_NAV_TEST_KM_TO_M 1000        // Km to m conversion 
-#define GPS_NAV_TEST_HEADING_GAIN 0.5    // GPS heading low pass filter gain 
-#define GPS_NAV_TEST_RADIUS_GAIN 0.5     // GPS radius low pass filter gain 
-
-// Navigation test 
-#define GPS_NAV_TEST_CALC_SCALE 10      // Scalar for calculated data 
-#define GPS_NAV_TEST_PI_RAD 3.14159     // PI 
-#define GPS_NAV_TEST_180_DEG 180        // 180 degrees 
-#define GPS_NAV_TEST_EARTH_RAD 6371     // Earch average radius (km) 
-#define GPS_NAV_TEST_KM_TO_M 1000       // Km to m conversion 
-#define GPS_NAV_TEST_HEADING_GAIN 0.5   // GPS heading low pass filter gain 
-#define GPS_NAV_TEST_RADIUS_GAIN 0.5    // GPS radius low pass filter gain 
-#define GPS_NAV_TEST_NUM_DIRS 8         // Number of directions of heading offset calcs 
-#define GPS_NAV_TEST_M_READ_INT 100000  // Magnetometer read interval (us) 
-#define GPS_NAV_TEST_GPS_RAD 50         // GPS radius threshold (m*10) 
-#define GPS_NAV_TEST_KP 17              // Proportional control constant 
-#define GPS_NAV_TEST_KI 0               // Integral control constant 
-#define GPS_NAV_TEST_KD 0               // Derivative control constant 
-#define GPS_NAV_TEST_PWM_N 30000        // ESC/motor neutral PWM count 
-#define GPS_NAV_TEST_PWM_BASE 3000      // ESC/motor base speed PWM count 
-
-//=======================================================================================
-
-
-//=======================================================================================
-// Global variables 
-
-// Target waypoint 
-static gps_waypoints_t target_waypoint; 
-
-// Screen message buffer 
-static char screen_msg[20]; 
-
-
-// True North correction 
-// This is used to correct the calculated heading to point true North. True North and 
-// Magnetic North are offset and the heading difference between them will change 
-// depending on where you are on Earth. GPS gets position based on true North so in 
-// order to compare GPS heading with magnetometer heading, the magnetic North heading 
-// must be compensated. 
-// To obtain this value, a smart phone was used to find the difference between true and 
-// magnetic North. 
-// If this device was used over a large geographic area then it would be necessary to 
-// update this correction factor dynamically. However, this device (as of now) is used 
-// for relatively localized applications which means it works to have it set manually 
-// by the user. This parameters is ideally stored by an application program somehow 
-// (such as an SD card) so it can be read and overwritten as needed as opposed to 
-// having it hard coded (like it is here). 
-// The correction implemented in this code does not account for extreme cases such as 
-// navigation in between teu and magnetic North locations. 
-static const int16_t mag_tn_correction = 130;   // 13 degrees 
-
-
-// Navigation test data record 
-typedef struct gps_nav_test_nav_s 
-{
-    // Target waypoint 
-    gps_waypoints_t waypoint; 
-
-    // Screen message buffer 
-    char screen_msg[HD44780U_LINE_LEN]; 
-
-    // Timing information 
-    TIM_TypeDef *timer_nonblocking;        // Timer used for non-blocking delays 
-    tim_compare_t delay_timer;             // Delay timing info 
-
-    // Calculation info 
-    int16_t heading_error; 
-    int16_t gps_heading; 
-    int16_t mag_heading; 
-    uint8_t waypoint_index; 
-    uint8_t waypoint_status; 
-
-    // PID controller 
-    int16_t kp;                            // Proportional control constant 
-    int16_t ki;                            // Integral control constant 
-    int16_t kd;                            // Derivative control constant 
-    int16_t err_sum;                       // Sum of errors - for integral 
-    int16_t err_prev;                      // Previous error - for derivative 
-
-    // PWM output 
-    int16_t pid_out;                       // PID controller output 
-    uint16_t m1_pwm_cnt;                   // Motor 1 PWM counter transition 
-    uint16_t m2_pwm_cnt;                   // Motor 2 PWM counter transition 
-}
-gps_nav_test_nav_t; 
-
-// Data record instance 
-static gps_nav_test_nav_t gps_nav_test_nav; 
-
-
-// TODO class instances 
-
-//=======================================================================================
-
-
-//=======================================================================================
-// Prototypes 
-
-/**
- * @brief M8Q location test setup code 
- */
-void gps_nav_test_init_temp(void); 
-
-
-/**
- * @brief M8Q location test code 
- */
-void gps_nav_test_app_temp(void); 
-
-
-/**
- * @brief Get the true North heading 
- * 
- * @details Reads the heading from the magnetometer and adds the true North heading offset 
- *          stored in 'mag_tn_correction' (global variable below). After the offset is 
- *          added the heading is checked to see if it is outside the acceptable heading 
- *          range (0-359.9 degrees) and if it is then it's corrected to be withing range 
- *          (ex. 365 degrees gets corrected to 5 degrees which is the same thing). 
- * 
- * @return int16_t : True North heading 
- */
-int16_t gps_nav_test_heading_temp(void); 
-
-
-/**
- * @brief Heading error - done every heading update (~10Hz) 
- * 
- * @details 
- * 
- * @param heading_desired 
- * @param heading_current 
- * @return int16_t 
- */
-int16_t gps_nav_test_heading_error_temp(
-    int16_t heading_desired, 
-    int16_t heading_current); 
-
-
-/**
- * @brief GPS coordinate radius check 
- * 
- * @details Calculates the surface distance between the devices current location and the 
- *          target waypoint. The distance is returned in meters*10 (meters = radius/10). 
- *          The central angle between the devices location and the waypoint is found and
- *          used along with the average Earth radius to calculate the surface distance. 
- * 
- * @param lat1 : current device latitude 
- * @param lon1 : current device longitude 
- * @param lat2 : target waypoint latitude 
- * @param lon2 : target waypoint longitude 
- * @return int16_t : scaled surface distance between location and waypoint 
- */
-int16_t gps_nav_test_gps_rad_temp(
-    double lat1, 
-    double lon1, 
-    double lat2, 
-    double lon2); 
-
-
-/**
- * @brief GPS heading calculation 
- * 
- * @details Calculates the heading between the current device location and the target 
- *          waypoint. The heading is an angle between 0-359.9 degrees from true North in 
- *          the clockwise direction. The return value is the heading expressed in 
- *          degrees*10. 
- * 
- * @param lat1 : current device latitude 
- * @param lon1 : current device longitude 
- * @param lat2 : target waypoint latitude 
- * @param lon2 : target waypoint longitude 
- * @return int16_t : scaled 0-360 degree true North heading 
- */
-int16_t gps_nav_test_gps_heading_temp(
-    double lat1, 
-    double lon1, 
-    double lat2, 
-    double lon2); 
-
-
-/**
- * @brief Motor controller 
- * 
- * @details 
- * 
- * @param error 
- * @return int16_t 
- */
-int16_t gps_nav_test_pid_temp(
-    int16_t error); 
-
 //=======================================================================================
 
 
@@ -244,6 +46,24 @@ int16_t gps_nav_test_pid_temp(
 // Create a class to hold test data and within the class either inherit or make an 
 // instance of the calculation classes from the library 
 
+class nav_test : public nav_calculations 
+{
+    // 
+}; 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Global variables 
+
+// TODO class instances 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Prototypes 
 //=======================================================================================
 
 
@@ -356,6 +176,237 @@ void gps_nav_test_init(void)
     //==================================================
 }
 
+//=======================================================================================
+
+
+//=======================================================================================
+// Test code 
+
+void gps_nav_test_app(void)
+{
+    // 
+}
+
+//=======================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//=======================================================================================
+// Old code 
+
+//==================================================
+// Macros 
+
+// Location testing 
+#define GPS_NAV_TEST_CALC_SCALE 10       // Scalar for calculated data 
+#define GPS_NAV_TEST_PI_RAD 3.14159      // PI 
+#define GPS_NAV_TEST_180_DEG 180         // 180 degrees 
+#define GPS_NAV_TEST_EARTH_RAD 6371      // Earch average radius (km) 
+#define GPS_NAV_TEST_KM_TO_M 1000        // Km to m conversion 
+#define GPS_NAV_TEST_HEADING_GAIN 0.5    // GPS heading low pass filter gain 
+#define GPS_NAV_TEST_RADIUS_GAIN 0.5     // GPS radius low pass filter gain 
+
+// Navigation test 
+#define GPS_NAV_TEST_CALC_SCALE 10      // Scalar for calculated data 
+#define GPS_NAV_TEST_PI_RAD 3.14159     // PI 
+#define GPS_NAV_TEST_180_DEG 180        // 180 degrees 
+#define GPS_NAV_TEST_EARTH_RAD 6371     // Earch average radius (km) 
+#define GPS_NAV_TEST_KM_TO_M 1000       // Km to m conversion 
+#define GPS_NAV_TEST_HEADING_GAIN 0.5   // GPS heading low pass filter gain 
+#define GPS_NAV_TEST_RADIUS_GAIN 0.5    // GPS radius low pass filter gain 
+#define GPS_NAV_TEST_NUM_DIRS 8         // Number of directions of heading offset calcs 
+#define GPS_NAV_TEST_M_READ_INT 100000  // Magnetometer read interval (us) 
+#define GPS_NAV_TEST_GPS_RAD 50         // GPS radius threshold (m*10) 
+#define GPS_NAV_TEST_KP 17              // Proportional control constant 
+#define GPS_NAV_TEST_KI 0               // Integral control constant 
+#define GPS_NAV_TEST_KD 0               // Derivative control constant 
+#define GPS_NAV_TEST_PWM_N 30000        // ESC/motor neutral PWM count 
+#define GPS_NAV_TEST_PWM_BASE 3000      // ESC/motor base speed PWM count 
+
+//==================================================
+
+
+//==================================================
+// Variables 
+
+// Target waypoint 
+static gps_waypoints_t target_waypoint; 
+
+// Screen message buffer 
+static char screen_msg[20]; 
+
+
+// True North correction 
+// This is used to correct the calculated heading to point true North. True North and 
+// Magnetic North are offset and the heading difference between them will change 
+// depending on where you are on Earth. GPS gets position based on true North so in 
+// order to compare GPS heading with magnetometer heading, the magnetic North heading 
+// must be compensated. 
+// To obtain this value, a smart phone was used to find the difference between true and 
+// magnetic North. 
+// If this device was used over a large geographic area then it would be necessary to 
+// update this correction factor dynamically. However, this device (as of now) is used 
+// for relatively localized applications which means it works to have it set manually 
+// by the user. This parameters is ideally stored by an application program somehow 
+// (such as an SD card) so it can be read and overwritten as needed as opposed to 
+// having it hard coded (like it is here). 
+// The correction implemented in this code does not account for extreme cases such as 
+// navigation in between teu and magnetic North locations. 
+static const int16_t mag_tn_correction = 130;   // 13 degrees 
+
+
+// Navigation test data record 
+typedef struct gps_nav_test_nav_s 
+{
+    // Target waypoint 
+    gps_waypoints_t waypoint; 
+
+    // Screen message buffer 
+    char screen_msg[HD44780U_LINE_LEN]; 
+
+    // Timing information 
+    TIM_TypeDef *timer_nonblocking;        // Timer used for non-blocking delays 
+    tim_compare_t delay_timer;             // Delay timing info 
+
+    // Calculation info 
+    int16_t heading_error; 
+    int16_t gps_heading; 
+    int16_t mag_heading; 
+    uint8_t waypoint_index; 
+    uint8_t waypoint_status; 
+
+    // PID controller 
+    int16_t kp;                            // Proportional control constant 
+    int16_t ki;                            // Integral control constant 
+    int16_t kd;                            // Derivative control constant 
+    int16_t err_sum;                       // Sum of errors - for integral 
+    int16_t err_prev;                      // Previous error - for derivative 
+
+    // PWM output 
+    int16_t pid_out;                       // PID controller output 
+    uint16_t m1_pwm_cnt;                   // Motor 1 PWM counter transition 
+    uint16_t m2_pwm_cnt;                   // Motor 2 PWM counter transition 
+}
+gps_nav_test_nav_t; 
+
+// Data record instance 
+static gps_nav_test_nav_t gps_nav_test_nav; 
+
+//==================================================
+
+
+//==================================================
+// Prototypes 
+
+/**
+ * @brief M8Q location test setup code 
+ */
+void gps_nav_test_init_temp(void); 
+
+
+/**
+ * @brief M8Q location test code 
+ */
+void gps_nav_test_app_temp(void); 
+
+
+/**
+ * @brief Get the true North heading 
+ * 
+ * @details Reads the heading from the magnetometer and adds the true North heading offset 
+ *          stored in 'mag_tn_correction' (global variable below). After the offset is 
+ *          added the heading is checked to see if it is outside the acceptable heading 
+ *          range (0-359.9 degrees) and if it is then it's corrected to be withing range 
+ *          (ex. 365 degrees gets corrected to 5 degrees which is the same thing). 
+ * 
+ * @return int16_t : True North heading 
+ */
+int16_t gps_nav_test_heading_temp(void); 
+
+
+/**
+ * @brief Heading error - done every heading update (~10Hz) 
+ * 
+ * @details 
+ * 
+ * @param heading_desired 
+ * @param heading_current 
+ * @return int16_t 
+ */
+int16_t gps_nav_test_heading_error_temp(
+    int16_t heading_desired, 
+    int16_t heading_current); 
+
+
+/**
+ * @brief GPS coordinate radius check 
+ * 
+ * @details Calculates the surface distance between the devices current location and the 
+ *          target waypoint. The distance is returned in meters*10 (meters = radius/10). 
+ *          The central angle between the devices location and the waypoint is found and
+ *          used along with the average Earth radius to calculate the surface distance. 
+ * 
+ * @param lat1 : current device latitude 
+ * @param lon1 : current device longitude 
+ * @param lat2 : target waypoint latitude 
+ * @param lon2 : target waypoint longitude 
+ * @return int16_t : scaled surface distance between location and waypoint 
+ */
+int16_t gps_nav_test_gps_rad_temp(
+    double lat1, 
+    double lon1, 
+    double lat2, 
+    double lon2); 
+
+
+/**
+ * @brief GPS heading calculation 
+ * 
+ * @details Calculates the heading between the current device location and the target 
+ *          waypoint. The heading is an angle between 0-359.9 degrees from true North in 
+ *          the clockwise direction. The return value is the heading expressed in 
+ *          degrees*10. 
+ * 
+ * @param lat1 : current device latitude 
+ * @param lon1 : current device longitude 
+ * @param lat2 : target waypoint latitude 
+ * @param lon2 : target waypoint longitude 
+ * @return int16_t : scaled 0-360 degree true North heading 
+ */
+int16_t gps_nav_test_gps_heading_temp(
+    double lat1, 
+    double lon1, 
+    double lat2, 
+    double lon2); 
+
+
+/**
+ * @brief Motor controller 
+ * 
+ * @details 
+ * 
+ * @param error 
+ * @return int16_t 
+ */
+int16_t gps_nav_test_pid_temp(
+    int16_t error); 
+
+//==================================================
+
+
+//==================================================
+// Setup 
 
 // Old code 
 void gps_nav_test_init_temp(void)
@@ -473,19 +524,12 @@ void gps_nav_test_init_temp(void)
     //     LSM303AGR_CFG_DISABLE); 
 }
 
-//=======================================================================================
+//==================================================
 
 
-//=======================================================================================
+//==================================================
 // Test code 
 
-void gps_nav_test_app(void)
-{
-    // 
-}
-
-
-// Old code 
 void gps_nav_test_app_temp(void)
 {
     // Local variables 
@@ -743,10 +787,10 @@ void gps_nav_test_app_temp(void)
     }
 }
 
-//=======================================================================================
+//==================================================
 
 
-//=======================================================================================
+//==================================================
 // Test functions 
 
 // Get the true North heading 
@@ -936,5 +980,7 @@ int16_t gps_nav_test_pid_temp(
     // PID output 
     return proportional + integral + derivative; 
 }
+
+//==================================================
 
 //=======================================================================================
