@@ -37,28 +37,67 @@
 
 //=======================================================================================
 // Macros 
+
+#define SAMPLE_INTERVAL 100000   // Interval between data reads/checks (us) 
+#define GPS_SAMPLE_COUNTER 10    // Number of intervals to elapse before checking the GPS 
+#define COORDINATE_RADIUS 100    // Threshold distance to target (meters*10) 
+
 //=======================================================================================
 
 
 //=======================================================================================
 // Classes 
 
-// Create a class to hold test data and within the class either inherit or make an 
-// instance of the calculation classes from the library 
-
-class nav_test : public nav_calculations 
+class gps_nav_test : public nav_calculations 
 {
-    // 
+private:   // Private variables 
+
+    // GPS 
+    gps_waypoints_t current; 
+    gps_waypoints_t target; 
+    uint8_t waypoint_index; 
+    int32_t radius; 
+    
+    // Heading 
+    int16_t coordinate_heading; 
+    int16_t compass_heading; 
+    int16_t error_heading; 
+
+    // Timer information 
+    TIM_TypeDef *timer_nonblocking;        // Timer used for non-blocking delays 
+    tim_compare_t data_timer;              // Data sampling delay timing info 
+    uint8_t timer_counter; 
+
+public:   // Setup and teardown 
+    
+    // Constructor 
+    gps_nav_test(); 
+
+    // Destructor 
+    ~gps_nav_test(); 
+
+public:   // Navigation 
+
+    // Perform GPS navigation 
+    void gps_navigation(void); 
+
+private: 
+    
+    // Determine the needed heading 
+    void nav_heading(void); 
+
+    // Evaluate the location 
+    void nav_location(void); 
 }; 
+
+
+static gps_nav_test gps_nav; 
 
 //=======================================================================================
 
 
 //=======================================================================================
 // Global variables 
-
-// TODO class instances 
-
 //=======================================================================================
 
 
@@ -184,7 +223,96 @@ void gps_nav_test_init(void)
 
 void gps_nav_test_app(void)
 {
-    // 
+    m8q_controller(); 
+    gps_nav.gps_navigation(); 
+}
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Test functions 
+    
+// Constructor 
+gps_nav_test::gps_nav_test() {}
+
+
+// Destructor 
+gps_nav_test::~gps_nav_test() {}
+
+
+// Perform GPS navigation 
+void gps_nav_test::gps_navigation(void)
+{
+    // Update the heading at an interval 
+    if (tim_compare(timer_nonblocking, 
+                    data_timer.clk_freq, 
+                    SAMPLE_INTERVAL, // 0.1s 
+                    &data_timer.time_cnt_total, 
+                    &data_timer.time_cnt, 
+                    &data_timer.time_start))
+    {
+        // Update the heading 
+        nav_heading(); 
+
+        // Update the GPS information 
+        if (timer_counter++ >= GPS_SAMPLE_COUNTER)
+        {
+            timer_counter = CLEAR; 
+            nav_location(); 
+        }
+    }
+}
+
+
+// Determine the needed heading 
+void gps_nav_test::nav_heading(void)
+{
+    // Update the compass heading, determine the true north heading and find the 
+    // error between the current (compass) and desired (GPS) headings. 
+    lsm303agr_m_read(); 
+    compass_heading = true_north_heading(lsm303agr_m_get_heading()); 
+    error_heading = heading_error(compass_heading, coordinate_heading); 
+}
+
+
+// Evaluate the location 
+void gps_nav_test::nav_location(void)
+{
+    gps_waypoints_t device_coordinates; 
+
+    if (m8q_get_position_navstat_lock())
+    {
+        // Get the updated location by reading the GPS device coordinates then filtering 
+        // the result. 
+        device_coordinates.lat = m8q_get_position_lat(); 
+        device_coordinates.lon = m8q_get_position_lon(); 
+        coordinate_filter(device_coordinates, current); 
+
+        // Calculate the distance to the target location and the heading needed to get 
+        // there. 
+        radius = gps_radius(current, target); 
+        coordinate_heading = gps_heading(current, target); 
+
+        // Check if the distance to the target is within the threshold. If so, the 
+        // target is considered "hit" and we can move to the next target. 
+        if (radius < COORDINATE_RADIUS)
+        {
+            // Update the target waypoint 
+            target.lat = waypoints_0[waypoint_index].lat; 
+            target.lon = waypoints_0[waypoint_index].lon; 
+
+            // Adjust waypoint index 
+            if (++waypoint_index == NUM_GPS_WAYPOINTS_0)
+            {
+                waypoint_index = CLEAR; 
+            }
+        }
+    }
+    else 
+    {
+        // No position lock. 
+    }
 }
 
 //=======================================================================================
@@ -547,7 +675,6 @@ void gps_nav_test_app_temp(void)
     // double lon_current = CLEAR; 
 
     // // Read magnetometer heading at an interval 
-    // // Wait for a short period of time before leaving the init state 
     // if (tim_compare(gps_nav_test_nav.timer_nonblocking, 
     //                 gps_nav_test_nav.delay_timer.clk_freq, 
     //                 GPS_NAV_TEST_M_READ_INT, // (us) 
@@ -618,7 +745,7 @@ void gps_nav_test_app_temp(void)
 
                 // Adjust waypoint index. If the end of the waypoint mission is reached 
                 // then start over from the beginning. 
-                if (++waypoint_index == M8Q_NUM_WAYPOINTS_0)
+                if (++waypoint_index == NUM_GPS_WAYPOINTS_0)
                 {
                     waypoint_index = CLEAR; 
                 }
