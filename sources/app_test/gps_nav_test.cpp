@@ -210,6 +210,7 @@ void gps_nav_test_init(void)
     // screen from interfering with the bus. 
     hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH); 
     hd44780u_clear(); 
+    hd44780u_display_off(); 
     hd44780u_backlight_off(); 
 #endif   // GPS_NAV_TEST_SCREEN_ON_BUS 
     
