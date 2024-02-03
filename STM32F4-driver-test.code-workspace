@@ -76,7 +76,8 @@
 			"gps_calc.h": "c",
 			"m8q_config_test.h": "c",
 			"m8q_controller.h": "c",
-			"includes_cpp_drivers.h": "c"
+			"includes_cpp_drivers.h": "c",
+			"lsm303agr_config.h": "c"
 		}
 	}
 }
