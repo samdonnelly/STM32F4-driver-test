@@ -29,9 +29,12 @@
 
 
 //=======================================================================================
-// Config messages 
+// Magnetometer offsets 
 
-// Magnetometer directional offsets to correct for heading errors (units: degrees*10) 
+// Zero offsets used for calibrating the device 
+extern const int16_t lsm303agr_calibrate_offsets[LSM303AGR_M_NUM_DIR]; 
+
+// Directional offsets to correct for heading errors (units: degrees*10) 
 extern const int16_t lsm303agr_config_dir_offsets[LSM303AGR_M_NUM_DIR]; 
 
 //=======================================================================================
