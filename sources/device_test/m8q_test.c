@@ -204,7 +204,7 @@ void m8q_test_general_init(void)
     tim_9_to_11_counter_init(
         TIM10, 
         TIM_84MHZ_100US_PSC, 
-        0x1388,  // ARR=5000, (50 counts)*(100us/count) = 5000ms = 0.5s 
+        0x1388,  // ARR=5000, (5000 counts)*(100 us/count) = 500ms = 0.5s 
         TIM_UP_INT_ENABLE); 
     tim_enable(TIM10); 
 

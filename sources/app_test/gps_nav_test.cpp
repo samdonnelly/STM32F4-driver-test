@@ -254,9 +254,10 @@ void gps_nav_test_init(void)
     // LSM303AGR Magnetometer (compasss) setup  
 
     // Driver setup 
-    lsm303agr_init(
+    lsm303agr_m_init(
         I2C1, 
-        lsm303agr_config_dir_offsets, 
+        lsm303agr_config_dir_offsets_0, 
+        0.2, 
         LSM303AGR_M_ODR_10, 
         LSM303AGR_M_MODE_CONT, 
         LSM303AGR_CFG_DISABLE, 
@@ -316,7 +317,7 @@ void gps_nav_test::nav_heading(void)
     // Update the compass heading, determine the true north heading and find the 
     // error between the current (compass) and desired (GPS) headings. Heading error 
     // is determined here and not with each location update so it's updated faster. 
-    lsm303agr_m_read(); 
+    lsm303agr_m_update(); 
     compass_heading = true_north_heading(lsm303agr_m_get_heading()); 
     error_heading = heading_error(compass_heading, coordinate_heading); 
 }

@@ -27,7 +27,7 @@
 const int16_t lsm303agr_calibrate_offsets[LSM303AGR_M_NUM_DIR] = { 0, 0, 0, 0, 0, 0, 0, 0}; 
 
 // Directional offsets to correct for heading errors (units: degrees*10) 
-const int16_t lsm303agr_config_dir_offsets[LSM303AGR_M_NUM_DIR] = 
+const int16_t lsm303agr_config_dir_offsets_0[LSM303AGR_M_NUM_DIR] = 
 {
     -160,     // N  (0/360deg) 
     32,       // NE (45deg) 
@@ -37,6 +37,18 @@ const int16_t lsm303agr_config_dir_offsets[LSM303AGR_M_NUM_DIR] =
     20,       // SW (225deg) 
     -450,     // W  (270deg) 
     -365      // NW (315deg) 
+}; 
+
+const int16_t lsm303agr_config_dir_offsets_1[LSM303AGR_M_NUM_DIR] = 
+{
+    -180,     // N  (0/360deg) 
+    -35,      // NE (45deg) 
+    120,      // E  (90deg) 
+    270,      // SE (135deg) 
+    270,      // S  (180deg) 
+    350,      // SW (225deg) 
+    -110,     // W  (270deg) 
+    -310      // NW (315deg) 
 }; 
 
 //=======================================================================================
