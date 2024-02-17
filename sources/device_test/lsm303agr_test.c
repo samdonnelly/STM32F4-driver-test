@@ -54,6 +54,7 @@ typedef struct lsm303agr_test_data_s
 }
 lsm303agr_test_data_t; 
 
+
 static lsm303agr_test_data_t test_data; 
 
 //=======================================================================================
