@@ -40,12 +40,18 @@
 //=======================================================================================
 // Macros 
 
-#define SAMPLE_INTERVAL 100000   // Interval between data reads/checks (us) 
-#define GPS_SAMPLE_COUNTER 10    // Number of intervals to elapse before checking the GPS 
-#define COORDINATE_RADIUS 100    // Threshold distance to target (meters*10) 
-#define OUTPUT_LENGTH 70         // Max data string output length 
-#define LPF_GAIN 0.5             // Coordinate low pass filter gain 
-#define TN_OFFSET 130            // Offset between magnetic and true north 
+// Configuration 
+#define COORDINATE_LPF_GAIN 0.5   // Coordinate low pass filter gain 
+#define HEADING_LPF_GAIN 0.2      // Heading low pass filter gain 
+#define TN_OFFSET 130             // Offset between magnetic and true north 
+#define COORDINATE_RADIUS 100     // Threshold distance to target (meters*10) 
+
+// Timing 
+#define SAMPLE_INTERVAL 100000    // Interval between data reads/checks (us) 
+#define GPS_SAMPLE_COUNTER 10     // Number of intervals to elapse before checking the GPS 
+
+// Data output 
+#define OUTPUT_LENGTH 70          // Max data string output length 
 
 //=======================================================================================
 
@@ -73,6 +79,10 @@ private:   // Private variables
     TIM_TypeDef *timer_nonblocking;    // Timer used for non-blocking delays 
     tim_compare_t data_timer;          // Data sampling delay timing info 
     uint8_t timer_counter;             // GPS data update counter/timer 
+
+    // Status 
+    M8Q_STATUS m8q_status; 
+    LSM303AGR_STATUS lsm303agr_status; 
 
 public:   // Setup and teardown 
     
@@ -148,11 +158,29 @@ private:   // Private members
      * @brief Output the navigation results 
      */
     void nav_info_output(void); 
+
+    /**
+     * @brief Check for device driver faults 
+     */
+    void nav_status_check(void); 
 }; 
 
 
 // GPS navigation instance 
-static gps_nav_test gps_nav(TIM9, LPF_GAIN, TN_OFFSET); 
+static gps_nav_test gps_nav(TIM9, COORDINATE_LPF_GAIN, TN_OFFSET); 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Prototypes 
+
+// M8Q initialization 
+void gps_nav_test_m8q_init(void); 
+
+
+// LSM303AGR initialization 
+void gps_nav_test_lsm303agr_init(void); 
 
 //=======================================================================================
 
@@ -162,9 +190,6 @@ static gps_nav_test gps_nav(TIM9, LPF_GAIN, TN_OFFSET);
 
 void gps_nav_test_init(void)
 {
-    //==================================================
-    // General setup 
-
     // Initialize GPIO ports 
     gpio_port_init(); 
 
@@ -198,29 +223,31 @@ void gps_nav_test_init(void)
         I2C_APB1_42MHZ,
         I2C_CCR_SM_42_100,
         I2C_TRISE_1000_42);
-    
-    //==================================================
 
-    //==================================================
-    // Conditional setup 
-
+    // HD44780U screen initialization 
 #if GPS_NAV_TEST_SCREEN_ON_BUS 
-    // HD44780U screen driver setup. If the screen is on the same I2C bus as other 
-    // devices used in this test then the screen must be setup first to prevent the 
-    // screen from interfering with the bus. 
+    // If the HD44780U screen is on the same I2C bus as the LSM303AGR then the screen 
+    // must be set up first to prevent it from interfering with the bus. 
     hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH); 
     hd44780u_clear(); 
     hd44780u_display_off(); 
     hd44780u_backlight_off(); 
 #endif   // GPS_NAV_TEST_SCREEN_ON_BUS 
-    
-    //==================================================
 
-    //==================================================
-    // M8Q GPS setup 
+    // M8Q setup 
+    gps_nav_test_m8q_init(); 
 
-    // Driver setup 
-    M8Q_STATUS init_check = m8q_init(
+    // LSM303AGR magnetometer setup  
+    gps_nav_test_lsm303agr_init(); 
+
+}
+
+
+// M8Q initialization 
+void gps_nav_test_m8q_init(void)
+{
+    // M8Q driver setup 
+    M8Q_STATUS m8q_init_check = m8q_init(
         I2C1, 
         &m8q_config_pkt_0[0][0], 
         M8Q_CONFIG_NUM_MSG_PKT_0, 
@@ -233,39 +260,44 @@ void gps_nav_test_init(void)
 
     // Check if there was a problem during device initialization. If so, output the faults 
     // to the serial terminal and halt to program. 
-    if (init_check || low_pwr_init_check || txr_init_check)
+    if (m8q_init_check || low_pwr_init_check || txr_init_check)
     {
-        uart_sendstring(USART2, "\r\nDevice init status: "); 
-        uart_send_integer(USART2, (int16_t)init_check); 
-        uart_sendstring(USART2, "\r\nLow power pin init status: "); 
+        uart_sendstring(USART2, "\r\nM8Q init status: "); 
+        uart_send_integer(USART2, (int16_t)m8q_init_check); 
+        uart_sendstring(USART2, "\r\nM8Q low power pin init status: "); 
         uart_send_integer(USART2, (int16_t)low_pwr_init_check); 
-        uart_sendstring(USART2, "\r\nTX Ready pin init status: "); 
+        uart_sendstring(USART2, "\r\nM8Q TX ready pin init status: "); 
         uart_send_integer(USART2, (int16_t)txr_init_check); 
 
         while (TRUE); 
     }
 
-    // Controller setup 
+    // M8Q controller setup 
     m8q_controller_init(TIM9); 
-    
-    //==================================================
+}
 
-    //==================================================
-    // LSM303AGR Magnetometer (compasss) setup  
 
-    // Driver setup 
-    lsm303agr_m_init(
+// LSM303AGR initialization 
+void gps_nav_test_lsm303agr_init(void)
+{
+    // LSM303AGR magnetometer driver setup  
+    LSM303AGR_STATUS lsm303agr_init_check = lsm303agr_m_init(
         I2C1, 
         lsm303agr_config_dir_offsets_0, 
-        0.2, 
+        HEADING_LPF_GAIN, 
         LSM303AGR_M_ODR_10, 
         LSM303AGR_M_MODE_CONT, 
         LSM303AGR_CFG_DISABLE, 
         LSM303AGR_CFG_DISABLE, 
         LSM303AGR_CFG_DISABLE, 
         LSM303AGR_CFG_DISABLE); 
-    
-    //==================================================
+
+    if (lsm303agr_init_check)
+    {
+        uart_sendstring(USART2, "\r\nLSM303AGR init status: "); 
+        uart_send_integer(USART2, (int16_t)lsm303agr_init_check); 
+        while (TRUE); 
+    }
 }
 
 //=======================================================================================
@@ -307,6 +339,9 @@ void gps_nav_test::gps_navigation(void)
             nav_location(); 
             nav_info_output(); 
         }
+
+        // Check driver status 
+        nav_status_check(); 
     }
 }
 
@@ -317,7 +352,7 @@ void gps_nav_test::nav_heading(void)
     // Update the compass heading, determine the true north heading and find the 
     // error between the current (compass) and desired (GPS) headings. Heading error 
     // is determined here and not with each location update so it's updated faster. 
-    lsm303agr_m_update(); 
+    lsm303agr_status = lsm303agr_m_update(); 
     compass_heading = true_north_heading(lsm303agr_m_get_heading()); 
     error_heading = heading_error(compass_heading, coordinate_heading); 
 }
@@ -381,6 +416,21 @@ void gps_nav_test::nav_info_output(void)
     // Overwrite the old navigation data 
     uart_sendstring(USART2, "\033[1A\033[1A\033[1A"); 
     uart_sendstring(USART2, output_buff); 
+}
+
+
+// Check for device driver faults 
+void gps_nav_test::nav_status_check(void)
+{
+    if ((m8q_get_state() == M8Q_FAULT_STATE) || lsm303agr_status)
+    {
+        uart_send_new_line(USART2); 
+        uart_sendstring(USART2, "\r\nM8Q state: "); 
+        uart_send_integer(USART2, (int16_t)m8q_get_state()); 
+        uart_sendstring(USART2, "\r\nLSM303AGR status: "); 
+        uart_send_integer(USART2, (int16_t)lsm303agr_status); 
+        while (TRUE); 
+    }
 }
 
 //=======================================================================================
