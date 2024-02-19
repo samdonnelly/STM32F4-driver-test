@@ -33,7 +33,7 @@ void project_app(void)
 {
     // Project application code here 
 
-    gps_nav_test_app(); 
+    // gps_nav_test_app(); 
 }
 
 //=======================================================================================
