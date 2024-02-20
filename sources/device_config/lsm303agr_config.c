@@ -41,14 +41,6 @@ const int16_t lsm303agr_config_dir_offsets_0[LSM303AGR_M_NUM_DIR] =
 
 const int16_t lsm303agr_config_dir_offsets_1[LSM303AGR_M_NUM_DIR] = 
 {
-    // -180,     // N  (0/360deg) 
-    // -35,      // NE (45deg) 
-    // 120,      // E  (90deg) 
-    // 270,      // SE (135deg) 
-    // 270,      // S  (180deg) 
-    // 350,      // SW (225deg) 
-    // -110,     // W  (270deg) 
-    // -310      // NW (315deg) 
     -180,     // N  (0/360deg) 
     20,       // NE (45deg) 
     190,      // E  (90deg) 

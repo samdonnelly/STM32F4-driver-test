@@ -5,16 +5,18 @@
  * 
  * @brief GPS navigation testing interface 
  * 
- * @details The purpose of this code is to test the devices position against predefined 
- *          waypoints. This code reads the devices current location and calculates the 
- *          surface distance to a target waypoint. If the distance is less than a threshold 
- *          then the device is considered to have hit the waypoint at which point the next 
- *          waypoint is selected and the process repeats. The distance to the next waypoint 
- *          is displayed on a screen for user feedback. The is no indication of direction 
- *          to the next waypoint other that the current distance to it. The distance will 
- *          only be updated as often as the device sends new position data (once per second). 
- *          If there is no position lock by the device then the code will wait until there 
- *          is a lock before doing an waypoint calculations.
+ * @details The purpose of this code is to test navigation between predefined waypoints 
+ *          using a compass (magnetometer) and a GNSS module. Once the GNSS device has a 
+ *          position lock, the code reads the current location and compares it against 
+ *          the first target location/waypoint by finding the distance and initial heading 
+ *          between the two points. The compass heading is read which is then compared 
+ *          to the heading between the two GNSS locations to find a heading error. The 
+ *          heading error will indicate how much and in what direction the compass needs 
+ *          to turn to be pointing at the target. The distance will indicate how close 
+ *          the GNSS device is to the target. Using this, the target location can be 
+ *          navigated to. Once the GNSS device has come within a certain radius of the 
+ *          target, then the target will update to the next predefined waypoint. This 
+ *          information will be output to a serial terminal for the user to see. 
  * 
  * @version 0.1
  * @date 2023-11-29

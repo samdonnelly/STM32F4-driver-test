@@ -6,15 +6,15 @@
  * @brief GPS navigation testing implementation 
  * 
  * @details The purpose of this code is to test navigation between predefined waypoints 
- *          using a compass (magnetometer) and a GPS. Once the GPS device has a position 
- *          lock, the code reads the current location and compares it against the first 
- *          target location/waypoint by finding the distance and initial heading 
+ *          using a compass (magnetometer) and a GNSS module. Once the GNSS device has a 
+ *          position lock, the code reads the current location and compares it against 
+ *          the first target location/waypoint by finding the distance and initial heading 
  *          between the two points. The compass heading is read which is then compared 
- *          to the heading between the two GPS locations to find a heading error. The 
+ *          to the heading between the two GNSS locations to find a heading error. The 
  *          heading error will indicate how much and in what direction the compass needs 
  *          to turn to be pointing at the target. The distance will indicate how close 
- *          the GPS device is to the target. Using this, the target location can be 
- *          navigated to. Once the GPS device has come within a certain radius of the 
+ *          the GNSS device is to the target. Using this, the target location can be 
+ *          navigated to. Once the GNSS device has come within a certain radius of the 
  *          target, then the target will update to the next predefined waypoint. This 
  *          information will be output to a serial terminal for the user to see. 
  * 
@@ -43,12 +43,12 @@
 // Configuration 
 #define COORDINATE_LPF_GAIN 0.5   // Coordinate low pass filter gain 
 #define HEADING_LPF_GAIN 0.2      // Heading low pass filter gain 
-#define TN_OFFSET 130             // Offset between magnetic and true north 
+#define TN_OFFSET 130             // Offset between magnetic and true north (degrees*10) 
 #define COORDINATE_RADIUS 100     // Threshold distance to target (meters*10) 
 
 // Timing 
 #define SAMPLE_INTERVAL 100000    // Interval between data reads/checks (us) 
-#define GPS_SAMPLE_COUNTER 10     // Number of intervals to elapse before checking the GPS 
+#define GNSS_SAMPLE_COUNTER 10    // Number of intervals to elapse before checking the GPS 
 
 // Data output 
 #define OUTPUT_LENGTH 70          // Max data string output length 
@@ -63,7 +63,7 @@ class gps_nav_test : public nav_calculations
 {
 private:   // Private variables 
 
-    // GPS 
+    // GNSS 
     gps_waypoints_t current;           // Current location coordinates 
     gps_waypoints_t target;            // Desired waypoint coordinates 
     uint8_t waypoint_index;            // Index of target waypoints 
@@ -77,6 +77,7 @@ private:   // Private variables
 
     // Timer information 
     TIM_TypeDef *timer_nonblocking;    // Timer used for non-blocking delays 
+    tim_compare_t data_timer;          // Data sampling delay timing info 
     uint8_t timer_counter;             // GPS data update counter/timer 
 
     // Status 
@@ -84,34 +85,28 @@ private:   // Private variables
     LSM303AGR_STATUS lsm303agr_status; 
 
 public:   // Setup and teardown 
-    tim_compare_t data_timer;          // Data sampling delay timing info 
     
     // Constructor 
     gps_nav_test(
         TIM_TypeDef *timer, 
         double coordinate_filter_gain, 
         int16_t tn_offset) 
-        : radius(COORDINATE_RADIUS), 
+        : waypoint_index(CLEAR), 
+          radius(COORDINATE_RADIUS), 
           navstat(CLEAR), 
           coordinate_heading(CLEAR), 
           compass_heading(CLEAR), 
           error_heading(CLEAR), 
-        //   timer_nonblocking(timer), 
-          timer_counter(CLEAR) 
+          timer_nonblocking(timer), 
+          timer_counter(CLEAR), 
+          m8q_status(M8Q_OK), 
+          lsm303agr_status(LSM303AGR_OK) 
     {
-        // GPS 
-        waypoint_index = CLEAR; 
+        // GNSS 
         current.lat = CLEAR; 
         current.lon = CLEAR; 
         target.lat = waypoints_0[waypoint_index].lat; 
         target.lon = waypoints_0[waypoint_index].lon; 
-
-        // Timer info 
-        timer_nonblocking = timer; 
-        // data_timer.clk_freq = tim_get_pclk_freq(timer); 
-        data_timer.time_cnt_total = CLEAR; 
-        data_timer.time_cnt = CLEAR; 
-        data_timer.time_start = SET_BIT; 
 
         // Navigation calculations 
         set_coordinate_lpf_gain(coordinate_filter_gain); 
@@ -131,6 +126,16 @@ public:   // Navigation
      *          navigate between GPS waypoints. 
      */
     void gps_navigation(void); 
+
+
+    /**
+     * @brief Configure the non-blocking timing information 
+     * 
+     * @details The non-blocking timer frequency can only be read after the timer has been 
+     *          set up. That means this function must be called independently and setup 
+     *          can't be handled in the constructor. 
+     */
+    void non_blocking_timer_config(void); 
 
 private:   // Private members 
     
@@ -241,7 +246,8 @@ void gps_nav_test_init(void)
     // LSM303AGR magnetometer setup  
     gps_nav_test_lsm303agr_init(); 
 
-    gps_nav.data_timer.clk_freq = tim_get_pclk_freq(TIM9); 
+    // Configure the non-blocking timer 
+    gps_nav.non_blocking_timer_config(); 
 }
 
 
@@ -302,6 +308,16 @@ void gps_nav_test_lsm303agr_init(void)
     }
 }
 
+
+// Configure the non-blocking timing information 
+void gps_nav_test::non_blocking_timer_config(void)
+{
+    data_timer.clk_freq = tim_get_pclk_freq(timer_nonblocking); 
+    data_timer.time_cnt_total = CLEAR; 
+    data_timer.time_cnt = CLEAR; 
+    data_timer.time_start = SET_BIT; 
+}
+
 //=======================================================================================
 
 
@@ -335,7 +351,7 @@ void gps_nav_test::gps_navigation(void)
         nav_heading(); 
 
         // Update the GPS information and user navigation info 
-        if (timer_counter++ >= GPS_SAMPLE_COUNTER)
+        if (timer_counter++ >= GNSS_SAMPLE_COUNTER)
         {
             timer_counter = CLEAR; 
             nav_location(); 

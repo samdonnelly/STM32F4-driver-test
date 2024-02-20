@@ -63,11 +63,17 @@ static lsm303agr_test_data_t test_data;
 //=======================================================================================
 // Prototypes 
 
-// Sets the offset data to be used during setup 
+/**
+ * @brief Sets the offset data to be used during setup 
+ * 
+ * @return const int16_t* : pointer to lsm303agr heading offsets 
+ */
 const int16_t* lsm303agr_test_offset_select(void); 
 
 
-// Outputs the driver status and stops program execution 
+/**
+ * @brief Outputs the driver status and stops program execution 
+ */
 void lasm303agr_test_fault_state(void); 
 
 //=======================================================================================
