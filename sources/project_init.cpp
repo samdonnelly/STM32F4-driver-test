@@ -33,7 +33,7 @@ void project_init(void)
 {
     // Project initialization code here 
 
-    // gps_nav_test_init(); 
+    gps_nav_test_init(); 
 }
 
 //=======================================================================================

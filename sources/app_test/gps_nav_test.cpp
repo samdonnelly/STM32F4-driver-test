@@ -77,7 +77,6 @@ private:   // Private variables
 
     // Timer information 
     TIM_TypeDef *timer_nonblocking;    // Timer used for non-blocking delays 
-    tim_compare_t data_timer;          // Data sampling delay timing info 
     uint8_t timer_counter;             // GPS data update counter/timer 
 
     // Status 
@@ -85,6 +84,7 @@ private:   // Private variables
     LSM303AGR_STATUS lsm303agr_status; 
 
 public:   // Setup and teardown 
+    tim_compare_t data_timer;          // Data sampling delay timing info 
     
     // Constructor 
     gps_nav_test(
@@ -96,7 +96,7 @@ public:   // Setup and teardown
           coordinate_heading(CLEAR), 
           compass_heading(CLEAR), 
           error_heading(CLEAR), 
-          timer_nonblocking(timer), 
+        //   timer_nonblocking(timer), 
           timer_counter(CLEAR) 
     {
         // GPS 
@@ -107,7 +107,8 @@ public:   // Setup and teardown
         target.lon = waypoints_0[waypoint_index].lon; 
 
         // Timer info 
-        data_timer.clk_freq = tim_get_pclk_freq(timer); 
+        timer_nonblocking = timer; 
+        // data_timer.clk_freq = tim_get_pclk_freq(timer); 
         data_timer.time_cnt_total = CLEAR; 
         data_timer.time_cnt = CLEAR; 
         data_timer.time_start = SET_BIT; 
@@ -240,6 +241,7 @@ void gps_nav_test_init(void)
     // LSM303AGR magnetometer setup  
     gps_nav_test_lsm303agr_init(); 
 
+    gps_nav.data_timer.clk_freq = tim_get_pclk_freq(TIM9); 
 }
 
 
