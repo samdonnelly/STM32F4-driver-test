@@ -25,5 +25,5 @@ void user_app()
 {
     // User application code here 
 
-    // lsm303agr_test_app(); 
+    freertos_test_app(); 
 }
