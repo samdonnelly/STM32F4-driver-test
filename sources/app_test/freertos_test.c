@@ -20,16 +20,63 @@
 
 #include "freertos_test.h" 
 
+#include "cmsis_os2.h"
+
 //=======================================================================================
 
 
 //=======================================================================================
 // Macros 
+
+#define BLINK_STACK_SIZE 128 
+#define WORD_SIZE 4 
+
 //=======================================================================================
 
 
 //=======================================================================================
 // Variables 
+
+//==================================================
+// Task definitions 
+
+// blink01 
+osThreadId_t blink01Handle;
+const osThreadAttr_t blink01_attributes = 
+{
+    .name = "blink01",
+    .stack_size = BLINK_STACK_SIZE * WORD_SIZE,
+    .priority = (osPriority_t) osPriorityNormal,
+};
+
+// blink02 
+osThreadId_t blink02Handle;
+const osThreadAttr_t blink02_attributes = 
+{
+    .name = "blink02",
+    .stack_size = BLINK_STACK_SIZE * WORD_SIZE,
+    .priority = (osPriority_t) osPriorityBelowNormal,
+};
+
+//==================================================
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Prototypes 
+
+//==================================================
+// Tasks 
+
+// Blink 01 
+void StartBlink01(void *argument); 
+
+// Blink 02 
+void StartBlink02(void *argument); 
+
+//==================================================
+
 //=======================================================================================
 
 
@@ -38,7 +85,17 @@
 
 void freertos_test_init()
 {
-    // 
+    // Initialize a timer and interrupt to increment uwTick 
+    // In the sample code: 
+    //   - interrupt from TIM11 --> TIM1_TRG_COM_TIM11_IRQHandler --> HAL_TIM_IRQHandler 
+    //     --> HAL_TIM_PeriodElapsedCallback --> HAL_IncTick 
+
+    // Init scheduler 
+    osKernelInitialize();
+
+    // Create the thread(s) 
+    blink01Handle = osThreadNew(StartBlink01, NULL, &blink01_attributes);
+    blink02Handle = osThreadNew(StartBlink02, NULL, &blink02_attributes);
 } 
 
 //=======================================================================================
@@ -49,7 +106,8 @@ void freertos_test_init()
 
 void freertos_test_app()
 {
-    // 
+    // Start scheduler 
+    osKernelStart();
 }
 
 //=======================================================================================
@@ -57,4 +115,37 @@ void freertos_test_app()
 
 //=======================================================================================
 // Test functions 
+
+//==================================================
+// Tasks 
+
+/**
+ * @brief Function implementing the blink01 thread 
+ * 
+ * @param argument 
+ */
+void StartBlink01(void *argument)
+{
+    for(;;)
+    {
+        osDelay(1);
+    }
+}
+
+
+/**
+ * @brief Function implementing the blink02 thread 
+ * 
+ * @param argument 
+ */
+void StartBlink02(void *argument)
+{
+    for(;;)
+    {
+        osDelay(1);
+    }
+}
+
+//==================================================
+
 //=======================================================================================
