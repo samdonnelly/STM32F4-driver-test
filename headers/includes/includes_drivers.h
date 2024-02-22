@@ -43,7 +43,7 @@
 #include "interrupt_driver.h"
 #include "i2c_comm.h"
 #include "spi_comm.h"
-#include "timers.h"
+#include "timers_driver.h"
 #include "uart_comm.h"
 
 // Tools 

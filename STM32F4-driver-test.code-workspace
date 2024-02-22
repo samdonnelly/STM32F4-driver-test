@@ -19,7 +19,7 @@
 			"hw125_driver.h": "c",
 			"stdio.h": "c",
 			"hc05_driver.h": "c",
-			"timers.h": "c",
+			"timers_drivers.h": "c",
 			"analog_test.h": "c",
 			"includes_app.h": "c",
 			"gpio_driver.h": "c",
@@ -77,7 +77,10 @@
 			"m8q_config_test.h": "c",
 			"m8q_controller.h": "c",
 			"includes_cpp_drivers.h": "c",
-			"lsm303agr_config.h": "c"
+			"lsm303agr_config.h": "c",
+			"freertos.h": "c",
+			"timers_driver.h": "c",
+			"timers.h": "c"
 		}
 	}
 }
