@@ -48,6 +48,8 @@ extern "C" {
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
 
+#define FREERTOS_ENABLE 1 
+
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/

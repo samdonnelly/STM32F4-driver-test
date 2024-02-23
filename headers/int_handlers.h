@@ -62,7 +62,7 @@ typedef struct int_handle_flags_s
     // Timer interrupt flags 
     uint8_t tim1_brk_tim9_glbl_flag  : 1;          // TIM1 break + TIM9 global 
     uint8_t tim1_up_tim10_glbl_flag  : 1;          // TIM1 update + TIM10 global 
-    uint8_t tim1_trg_tim11_glbl_flag : 1;          // TIM1 trigger, communication and global 
+    uint8_t tim1_trg_tim11_glbl_flag : 1;          // TIM1 trigger + TIM11 global 
     uint8_t tim1_cc_flag             : 1;          // TIM1 capture compare 
     uint8_t tim2_glbl_flag           : 1;          // TIM2 global 
     uint8_t tim3_glbl_flag           : 1;          // TIM3 global 

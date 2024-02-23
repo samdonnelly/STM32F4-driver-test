@@ -16,6 +16,15 @@
  */
 
 //=======================================================================================
+// Notes 
+// - "osDelay" allows the scheduler to run other tasks while we wait. 
+// - Adding "osThreadTerminate()" after the forever loop in the tasks is a good idea in 
+//   case the task loop accidentally exits. This function will terminate and clean up the 
+//   thread. 
+//=======================================================================================
+
+
+//=======================================================================================
 // Includes 
 
 #include "freertos_test.h" 
@@ -60,6 +69,9 @@ const osThreadAttr_t blink02_attributes =
 
 //==================================================
 
+// Board LED state - tasks will fight over the LED state 
+static gpio_pin_state_t led_state = GPIO_LOW; 
+
 //=======================================================================================
 
 
@@ -85,17 +97,24 @@ void StartBlink02(void *argument);
 
 void freertos_test_init()
 {
+    // Initialize GPIO ports 
+    gpio_port_init(); 
+
+    // Initialize board LED (on when logic low) 
+    gpio_pin_init(GPIOA, PIN_5, MODER_GPO, OTYPER_PP, OSPEEDR_HIGH, PUPDR_NO); 
+    gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
+
     // Initialize a timer and interrupt to increment uwTick 
     // In the sample code: 
     //   - interrupt from TIM11 --> TIM1_TRG_COM_TIM11_IRQHandler --> HAL_TIM_IRQHandler 
     //     --> HAL_TIM_PeriodElapsedCallback --> HAL_IncTick 
 
     // Init scheduler 
-    osKernelInitialize();
+    osKernelInitialize(); 
 
     // Create the thread(s) 
-    blink01Handle = osThreadNew(StartBlink01, NULL, &blink01_attributes);
-    blink02Handle = osThreadNew(StartBlink02, NULL, &blink02_attributes);
+    blink01Handle = osThreadNew(StartBlink01, NULL, &blink01_attributes); 
+    blink02Handle = osThreadNew(StartBlink02, NULL, &blink02_attributes); 
 } 
 
 //=======================================================================================
@@ -107,7 +126,7 @@ void freertos_test_init()
 void freertos_test_app()
 {
     // Start scheduler 
-    osKernelStart();
+    osKernelStart(); 
 }
 
 //=======================================================================================
@@ -128,8 +147,12 @@ void StartBlink01(void *argument)
 {
     for(;;)
     {
-        osDelay(1);
+        led_state = GPIO_HIGH - led_state; 
+        gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
+        osDelay(500);   // (ms) 
     }
+
+    osThreadTerminate(NULL); 
 }
 
 
@@ -142,8 +165,12 @@ void StartBlink02(void *argument)
 {
     for(;;)
     {
-        osDelay(1);
+        led_state = GPIO_HIGH - led_state; 
+        gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
+        osDelay(600);   // (ms) 
     }
+
+    osThreadTerminate(NULL); 
 }
 
 //==================================================
