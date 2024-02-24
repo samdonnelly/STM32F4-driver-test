@@ -145,7 +145,7 @@ void freertos_test_app()
  */
 void StartBlink01(void *argument)
 {
-    for(;;)
+    while (1)
     {
         led_state = GPIO_HIGH - led_state; 
         gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
@@ -163,7 +163,7 @@ void StartBlink01(void *argument)
  */
 void StartBlink02(void *argument)
 {
-    for(;;)
+    while (1)
     {
         led_state = GPIO_HIGH - led_state; 
         gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
