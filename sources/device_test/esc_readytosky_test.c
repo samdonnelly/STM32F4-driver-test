@@ -155,7 +155,7 @@ void esc_readytosky_test_init(void)
     esc_readytosky_init(
         DEVICE_ONE, 
         TIM3, 
-        TIM_CHANNEL_4, 
+        TIMER_CH4, 
         GPIOB, 
         PIN_1, 
         TIM_84MHZ_1US_PSC, 
@@ -168,7 +168,7 @@ void esc_readytosky_test_init(void)
     esc_readytosky_init(
         DEVICE_TWO, 
         TIM3, 
-        TIM_CHANNEL_3, 
+        TIMER_CH3, 
         GPIOB, 
         PIN_0, 
         TIM_84MHZ_1US_PSC, 
@@ -274,7 +274,7 @@ void esc_readytosky_test_init(void)
     // PWM output timer 
     tim_2_to_5_output_init(
         TIM3, 
-        TIM_CHANNEL_4, 
+        TIMER_CH4, 
         GPIOB, 
         PIN_1, 
         TIM_DIR_UP, 
@@ -287,7 +287,7 @@ void esc_readytosky_test_init(void)
         TIM_UP_DMA_DISABLE); 
 
     // Set the initial PWM value 
-    tim_ccr(TIM3, ESC_NEUTRAL_TIME, TIM_CHANNEL_4); 
+    tim_ccr(TIM3, ESC_NEUTRAL_TIME, TIMER_CH4); 
 
     tim_enable(TIM3); 
     
@@ -302,7 +302,7 @@ void esc_readytosky_test_init(void)
     esc_readytosky_init(
         DEVICE_ONE, 
         TIM3, 
-        TIM_CHANNEL_4, 
+        TIMER_CH4, 
         GPIOB, 
         PIN_1, 
         TIM_84MHZ_1US_PSC, 
@@ -315,7 +315,7 @@ void esc_readytosky_test_init(void)
     esc_readytosky_init(
         DEVICE_TWO, 
         TIM3, 
-        TIM_CHANNEL_3, 
+        TIMER_CH3, 
         GPIOB, 
         PIN_0, 
         TIM_84MHZ_1US_PSC, 
@@ -419,7 +419,7 @@ void esc_readytosky_test_app(void)
         }
 
         // Update the PWM value 
-        tim_ccr(TIM3, (uint32_t)pwm_input, TIM_CHANNEL_4); 
+        tim_ccr(TIM3, (uint32_t)pwm_input, TIMER_CH4); 
     }
     else 
     {

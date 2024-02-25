@@ -21,6 +21,8 @@
 #include "includes_app.h"
 #include "includes_drivers.h"
 
+// #include "main.h"
+
 //=======================================================================================
 
 
@@ -471,23 +473,25 @@ void TIM1_BRK_TIM9_IRQHandler(void);
 void TIM1_UP_TIM10_IRQHandler(void); 
 
 
-/**
- * @brief Timer 1 trigger and communication + timer 11 global interrupt handler 
- * 
- * @details Interrupt handler for both TIM1 tigger and TIM11 global. 
- *          
- *          This handler can be called from TIM1 trigger events such as counter start, stop, 
- *          or initialization, or count by internal/external trigger. 
- *          
- *          TIM11 is a general purpose timer and can be set to trigger interrupts for counter 
- *          updates (overflow, initialization), input capture or output compare. 
- *          
- *          This handler sets tim1_trg_tim11_glbl_flag and clears the update interrupt flag 
- *          for the timers so the handler can be exited. 
- * 
- * @see tim_uif_clear
- */
-void TIM1_TRG_COM_TIM11_IRQHandler(void); 
+// #if !FREERTOS_ENABLE 
+// /**
+//  * @brief Timer 1 trigger and communication + timer 11 global interrupt handler 
+//  * 
+//  * @details Interrupt handler for both TIM1 tigger and TIM11 global. 
+//  *          
+//  *          This handler can be called from TIM1 trigger events such as counter start, stop, 
+//  *          or initialization, or count by internal/external trigger. 
+//  *          
+//  *          TIM11 is a general purpose timer and can be set to trigger interrupts for counter 
+//  *          updates (overflow, initialization), input capture or output compare. 
+//  *          
+//  *          This handler sets tim1_trg_tim11_glbl_flag and clears the update interrupt flag 
+//  *          for the timers so the handler can be exited. 
+//  * 
+//  * @see tim_uif_clear
+//  */
+// void TIM1_TRG_COM_TIM11_IRQHandler(void); 
+// #endif   // !FREERTOS_ENABLE 
 
 
 /**

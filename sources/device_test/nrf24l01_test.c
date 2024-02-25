@@ -563,7 +563,7 @@ void nrf24l01_test_init(void)
     esc_readytosky_init(
         DEVICE_ONE, 
         TIM3, 
-        TIM_CHANNEL_4, 
+        TIMER_CH4, 
         GPIOB, 
         PIN_1, 
         TIM_84MHZ_1US_PSC, 
@@ -574,7 +574,7 @@ void nrf24l01_test_init(void)
     esc_readytosky_init(
         DEVICE_TWO, 
         TIM3, 
-        TIM_CHANNEL_3, 
+        TIMER_CH3, 
         GPIOB, 
         PIN_0, 
         TIM_84MHZ_1US_PSC, 

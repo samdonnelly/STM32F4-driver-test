@@ -29,6 +29,8 @@
 
 #include "freertos_test.h" 
 
+#include "FreeRTOS.h"
+#include "task.h"
 #include "cmsis_os2.h"
 
 //=======================================================================================
@@ -109,7 +111,7 @@ void freertos_test_init()
     //   - interrupt from TIM11 --> TIM1_TRG_COM_TIM11_IRQHandler --> HAL_TIM_IRQHandler 
     //     --> HAL_TIM_PeriodElapsedCallback --> HAL_IncTick 
 
-    // Init scheduler 
+    // Initialize FreeRTOS scheduler 
     osKernelInitialize(); 
 
     // Create the thread(s) 

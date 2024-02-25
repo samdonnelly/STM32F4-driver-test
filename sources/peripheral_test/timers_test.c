@@ -88,7 +88,7 @@ void timers_test_init()
     // PWM output timer 
     tim_2_to_5_output_init(
         TIM3, 
-        TIM_CHANNEL_1, 
+        TIMER_CH1, 
         GPIOC, 
         PIN_6, 
         TIM_DIR_UP, 
@@ -165,7 +165,7 @@ void timers_test_init()
     ws2812_init(
         DEVICE_ONE, 
         TIM3, 
-        TIM_CHANNEL_1, 
+        TIMER_CH1, 
         GPIOC, 
         PIN_6); 
 
@@ -277,7 +277,7 @@ void timers_test_app()
 #if TIM_PWM_OUTPUT   // PWM output test 
 
         // Set PWM output and calculate a new value 
-        tim_ccr(TIM3, pwm, TIM_CHANNEL_1); 
+        tim_ccr(TIM3, pwm, TIMER_CH1); 
 
         if (pwm_dir)  // Counting up 
         {

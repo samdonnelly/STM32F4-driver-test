@@ -80,7 +80,10 @@
 			"lsm303agr_config.h": "c",
 			"freertos.h": "c",
 			"timers_driver.h": "c",
-			"timers.h": "c"
+			"timers.h": "c",
+			"task.h": "c",
+			"stm32f4xx_hal_conf.h": "c",
+			"stm32f4xx_hal_tim.h": "c"
 		}
 	}
 }

@@ -79,7 +79,7 @@ void ws2812_test_init()
     ws2812_init(
         DEVICE_ONE, 
         TIM3, 
-        TIM_CHANNEL_1, 
+        TIMER_CH1, 
         GPIOC, 
         PIN_6); 
 
@@ -89,7 +89,7 @@ void ws2812_test_init()
     ws2812_init(
         DEVICE_TWO, 
         TIM3, 
-        TIM_CHANNEL_2, 
+        TIMER_CH2, 
         GPIOC, 
         PIN_7); 
 
