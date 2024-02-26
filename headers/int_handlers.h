@@ -20,8 +20,7 @@
 
 #include "includes_app.h"
 #include "includes_drivers.h"
-
-// #include "main.h"
+#include "system_settings.h"
 
 //=======================================================================================
 
@@ -473,25 +472,25 @@ void TIM1_BRK_TIM9_IRQHandler(void);
 void TIM1_UP_TIM10_IRQHandler(void); 
 
 
-// #if !FREERTOS_ENABLE 
-// /**
-//  * @brief Timer 1 trigger and communication + timer 11 global interrupt handler 
-//  * 
-//  * @details Interrupt handler for both TIM1 tigger and TIM11 global. 
-//  *          
-//  *          This handler can be called from TIM1 trigger events such as counter start, stop, 
-//  *          or initialization, or count by internal/external trigger. 
-//  *          
-//  *          TIM11 is a general purpose timer and can be set to trigger interrupts for counter 
-//  *          updates (overflow, initialization), input capture or output compare. 
-//  *          
-//  *          This handler sets tim1_trg_tim11_glbl_flag and clears the update interrupt flag 
-//  *          for the timers so the handler can be exited. 
-//  * 
-//  * @see tim_uif_clear
-//  */
-// void TIM1_TRG_COM_TIM11_IRQHandler(void); 
-// #endif   // !FREERTOS_ENABLE 
+#if !FREERTOS_ENABLE 
+/**
+ * @brief Timer 1 trigger and communication + timer 11 global interrupt handler 
+ * 
+ * @details Interrupt handler for both TIM1 tigger and TIM11 global. 
+ *          
+ *          This handler can be called from TIM1 trigger events such as counter start, stop, 
+ *          or initialization, or count by internal/external trigger. 
+ *          
+ *          TIM11 is a general purpose timer and can be set to trigger interrupts for counter 
+ *          updates (overflow, initialization), input capture or output compare. 
+ *          
+ *          This handler sets tim1_trg_tim11_glbl_flag and clears the update interrupt flag 
+ *          for the timers so the handler can be exited. 
+ * 
+ * @see tim_uif_clear
+ */
+void TIM1_TRG_COM_TIM11_IRQHandler(void); 
+#endif   // !FREERTOS_ENABLE 
 
 
 /**
@@ -591,7 +590,7 @@ void ADC_IRQHandler(void);
 /**
  * @brief USART1 interrupt handler 
  * 
- * @details 
+ * @details Interrupt handler for USART1. This handler sets usart1_flag. 
  */
 void USART1_IRQHandler(void); 
 
@@ -599,7 +598,7 @@ void USART1_IRQHandler(void);
 /**
  * @brief USART2 interrupt handler 
  * 
- * @details 
+ * @details Interrupt handler for USART2. This handler sets usart2_flag. 
  */
 void USART2_IRQHandler(void); 
 
@@ -607,7 +606,7 @@ void USART2_IRQHandler(void);
 /**
  * @brief USART6 interrupt handler 
  * 
- * @details 
+ * @details Interrupt handler for USART6. This handler sets usart6_flag. 
  */
 void USART6_IRQHandler(void); 
 

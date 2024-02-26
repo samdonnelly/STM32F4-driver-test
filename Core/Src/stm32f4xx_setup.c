@@ -16,26 +16,27 @@
 // Includes 
 
 #include "stm32f4xx_setup.h"
-
+#include "system_settings.h"
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_tim.h"
 
-#include "main.h"
-
 //=======================================================================================
 
-#if FREERTOS_ENABLE 
 
 //=======================================================================================
 // Global variables 
 
-TIM_HandleTypeDef htim11;
+#if FREERTOS_ENABLE 
+TIM_HandleTypeDef htim11; 
+#endif   // FREERTOS_ENABLE 
 
 //=======================================================================================
 
 
 //=======================================================================================
 // Timer functions 
+
+#if FREERTOS_ENABLE 
 
 // HAL time base based on the hardware TIM. 
 
@@ -133,6 +134,6 @@ void HAL_ResumeTick(void)
     __HAL_TIM_ENABLE_IT(&htim11, TIM_IT_UPDATE);
 }
 
-//=======================================================================================
-
 #endif   // FREERTOS_ENABLE 
+
+//=======================================================================================

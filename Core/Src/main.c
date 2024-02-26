@@ -15,8 +15,8 @@
 //=======================================================================================
 // Includes 
 
-// Core and library 
-#include "main.h"
+// Library 
+#include "stm32f4xx_hal.h"
 #include "fatfs.h"
 
 // Application 
@@ -24,6 +24,24 @@
 #include "user_app.h"
 #include "project_init.h"
 #include "project_app.h"
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Macros 
+
+// Ports and pins 
+#define B1_Pin GPIO_PIN_13
+#define B1_GPIO_Port GPIOC
+#define LD2_Pin GPIO_PIN_5
+#define LD2_GPIO_Port GPIOA
+#define TMS_Pin GPIO_PIN_13
+#define TMS_GPIO_Port GPIOA
+#define TCK_Pin GPIO_PIN_14
+#define TCK_GPIO_Port GPIOA
+#define SWO_Pin GPIO_PIN_3
+#define SWO_GPIO_Port GPIOB
 
 //=======================================================================================
 
@@ -41,6 +59,12 @@ void SystemClock_Config(void);
  * @brief GPIO Initialization Function 
  */
 static void MX_GPIO_Init(void); 
+
+
+/**
+ * @brief This function is executed in case of error occurrence 
+ */
+void Error_Handler(void);
 
 //=======================================================================================
 

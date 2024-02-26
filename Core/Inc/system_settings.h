@@ -1,23 +1,19 @@
 /**
- * @file main.h
+ * @file system_settings.h
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Header for main.c file 
+ * @brief System configuration settings 
  * 
  * @version 0.1
- * @date 2024-02-23
+ * @date 2024-02-25
  * 
  * @copyright Copyright (c) 2024
  * 
  */
 
-#ifndef __MAIN_H_
-#define __MAIN_H_
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifndef _SYSTEM_SETTINGS_H_ 
+#define _SYSTEM_SETTINGS_H_ 
 
 //=======================================================================================
 // Includes 
@@ -26,15 +22,10 @@ extern "C" {
 
 //=======================================================================================
 // Macros 
+
+// Conditional compilation 
+#define FREERTOS_ENABLE 1 
+
 //=======================================================================================
 
-
-//=======================================================================================
-// Prototypes 
-//=======================================================================================
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif   // __MAIN_H_ 
+#endif   // _SYSTEM_SETTINGS_H_ 

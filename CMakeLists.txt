@@ -76,7 +76,7 @@ file(GLOB_RECURSE STM32CUBEMX_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Middlewares/Third_Party/FreeRTOS/Source/*.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/*.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/*.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_5.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/*.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c

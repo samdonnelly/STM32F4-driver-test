@@ -83,7 +83,9 @@
 			"timers.h": "c",
 			"task.h": "c",
 			"stm32f4xx_hal_conf.h": "c",
-			"stm32f4xx_hal_tim.h": "c"
+			"stm32f4xx_hal_tim.h": "c",
+			"stm32f4xx.h": "c",
+			"freertos_test.h": "c"
 		}
 	}
 }

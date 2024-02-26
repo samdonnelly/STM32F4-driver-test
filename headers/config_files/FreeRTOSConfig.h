@@ -1,51 +1,38 @@
-/* USER CODE BEGIN Header */
-/*
- * FreeRTOS Kernel V10.3.1
- * Portion Copyright (C) 2017 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
- * Portion Copyright (C) 2019 StMicroelectronics, Inc.  All Rights Reserved.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- * the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- *
- * http://www.FreeRTOS.org
- * http://aws.amazon.com/freertos
- *
- * 1 tab == 4 spaces!
+/**
+ * @file FreeRTOSConfig.h
+ * 
+ * @author Sam Donnelly (samueldonnelly11@gmail.com)
+ * 
+ * @brief FreeRTOS configuration 
+ * 
+ * @details FreeRTOS Kernel V10.3.1 
+ *          http://www.FreeRTOS.org 
+ *          http://aws.amazon.com/freertos 
+ * 
+ * @version 0.1
+ * @date 2024-02-25
+ * 
+ * @copyright Copyright (c) 2024
+ * 
  */
-/* USER CODE END Header */
 
-#ifndef FREERTOS_CONFIG_H
-#define FREERTOS_CONFIG_H
+#ifndef _FREERTOS_CONFIG_H_
+#define _FREERTOS_CONFIG_H_
 
-/*-----------------------------------------------------------
- * Application specific definitions.
- *
- * These definitions should be adjusted for your particular hardware and
- * application requirements.
- *
- * These parameters and more are described within the 'configuration' section of the
- * FreeRTOS API documentation available on the FreeRTOS.org web site.
- *
- * See http://www.freertos.org/a00110.html
- *----------------------------------------------------------*/
+//=======================================================================================
+// Includes 
+//=======================================================================================
 
-/* USER CODE BEGIN Includes */
-/* Section where include file can be added */
-/* USER CODE END Includes */
+//=======================================================================================
+// Application specific definitions 
+
+// These definitions should be adjusted for your particular hardware and
+// application requirements.
+//
+// These parameters and more are described within the 'configuration' section of the
+// FreeRTOS API documentation available on the FreeRTOS.org web site.
+//
+// See http://www.freertos.org/a00110.html
 
 /* Ensure definitions are only used by the compiler, and not by the assembler. */
 #if defined(__ICCARM__) || defined(__CC_ARM) || defined(__GNUC__)
@@ -158,7 +145,7 @@ header file. */
 standard names. */
 #define vPortSVCHandler     SVC_Handler
 #define xPortPendSVHandler  PendSV_Handler
-#define xPortSysTickHandler SysTick_Handler
+// #define xPortSysTickHandler SysTick_Handler
 
 /* IMPORTANT: After 10.3.1 update, Systick_Handler comes from NVIC (if SYS timebase = systick), otherwise from cmsis_os2.c */
 
@@ -168,4 +155,6 @@ standard names. */
 /* Section where parameter definitions can be added (for instance, to override default ones in FreeRTOS.h) */
 /* USER CODE END Defines */
 
-#endif /* FREERTOS_CONFIG_H */
+//=======================================================================================
+
+#endif   // _FREERTOS_CONFIG_H_ 

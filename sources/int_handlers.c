@@ -295,15 +295,15 @@ void TIM1_UP_TIM10_IRQHandler(void)
 }
 
 
-// #if !FREERTOS_ENABLE 
-// // Timer 1 trigger and communication + timer 11 global 
-// void TIM1_TRG_COM_TIM11_IRQHandler(void)
-// {
-//     handler_flags.tim1_trg_tim11_glbl_flag = SET_BIT; 
-//     tim_uif_clear(TIM1); 
-//     tim_uif_clear(TIM11); 
-// }
-// #endif   // !FREERTOS_ENABLE 
+#if !FREERTOS_ENABLE 
+// Timer 1 trigger and communication + timer 11 global 
+void TIM1_TRG_COM_TIM11_IRQHandler(void)
+{
+    handler_flags.tim1_trg_tim11_glbl_flag = SET_BIT; 
+    tim_uif_clear(TIM1); 
+    tim_uif_clear(TIM11); 
+}
+#endif   // !FREERTOS_ENABLE 
 
 
 // Timer 1 capture compare 
