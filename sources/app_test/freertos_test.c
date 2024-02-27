@@ -21,6 +21,11 @@
 // - Adding "osThreadTerminate()" after the forever loop in the tasks is a good idea in 
 //   case the task loop accidentally exits. This function will terminate and clean up the 
 //   thread. 
+// - When FreeRTOS is used, SysTick is left to FreeRTOS and HAL has a new timer assigned 
+//   to it. If, for example, TIM11 is used for the HAL time base then the time base 
+//   counter (uwTick) is incremented through the following chain of events: 
+//   - interrupt from TIM11 --> TIM1_TRG_COM_TIM11_IRQHandler --> HAL_TIM_IRQHandler 
+//     --> HAL_TIM_PeriodElapsedCallback --> HAL_IncTick 
 //=======================================================================================
 
 
@@ -91,6 +96,15 @@ void StartBlink02(void *argument);
 
 //==================================================
 
+
+//==================================================
+// Helper functions 
+
+// LED toggle for blink example 
+void blink_led_toggle(uint32_t ms); 
+
+//==================================================
+
 //=======================================================================================
 
 
@@ -105,11 +119,6 @@ void freertos_test_init()
     // Initialize board LED (on when logic low) 
     gpio_pin_init(GPIOA, PIN_5, MODER_GPO, OTYPER_PP, OSPEEDR_HIGH, PUPDR_NO); 
     gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
-
-    // Initialize a timer and interrupt to increment uwTick 
-    // In the sample code: 
-    //   - interrupt from TIM11 --> TIM1_TRG_COM_TIM11_IRQHandler --> HAL_TIM_IRQHandler 
-    //     --> HAL_TIM_PeriodElapsedCallback --> HAL_IncTick 
 
     // Initialize FreeRTOS scheduler 
     osKernelInitialize(); 
@@ -127,7 +136,9 @@ void freertos_test_init()
 
 void freertos_test_app()
 {
-    // Start scheduler 
+    // Start scheduler. From this point on, execution is handled by the scheduler and 
+    // only code within the tasks below is run, meaning the code does not pass through 
+    // the main while(1) loop anymore. 
     osKernelStart(); 
 }
 
@@ -149,9 +160,7 @@ void StartBlink01(void *argument)
 {
     while (1)
     {
-        led_state = GPIO_HIGH - led_state; 
-        gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
-        osDelay(500);   // (ms) 
+        blink_led_toggle(500); 
     }
 
     osThreadTerminate(NULL); 
@@ -166,13 +175,25 @@ void StartBlink01(void *argument)
 void StartBlink02(void *argument)
 {
     while (1)
-    {
-        led_state = GPIO_HIGH - led_state; 
-        gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
-        osDelay(600);   // (ms) 
+    { 
+        blink_led_toggle(600); 
     }
 
     osThreadTerminate(NULL); 
+}
+
+//==================================================
+
+
+//==================================================
+// Helper functions 
+
+// LED toggle for blink example 
+void blink_led_toggle(uint32_t ms)
+{
+    led_state = GPIO_HIGH - led_state; 
+    gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
+    osDelay(ms);   // milliseconds 
 }
 
 //==================================================

@@ -84,11 +84,13 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
     htim11.Init.CounterMode = TIM_COUNTERMODE_UP;
     htim11.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
 
-    status = HAL_TIM_Base_Init(&htim11);
+    status = HAL_TIM_Base_Init(&htim11); 
+
     if (status == HAL_OK)
     {
         // Start the TIM time Base generation in interrupt mode 
-        status = HAL_TIM_Base_Start_IT(&htim11);
+        status = HAL_TIM_Base_Start_IT(&htim11); 
+        
         if (status == HAL_OK)
         {
             // Enable the TIM11 global Interrupt 
@@ -132,6 +134,25 @@ void HAL_ResumeTick(void)
 {
     // Enable TIM11 Update interrupt 
     __HAL_TIM_ENABLE_IT(&htim11, TIM_IT_UPDATE);
+}
+
+
+/**
+ * @brief Period elapsed callback in non blocking mode 
+ * 
+ * @details This function is called by HAL_TIM_IRQHandler which is called by the TIM11 
+ *          interrupt handler. It makes a direct call to HAL_IncTick() to increment a 
+ *          global variable "uwTick" used as application time base. 
+ * 
+ * @param  htim : TIM handle
+ * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+    if (htim->Instance == TIM11) 
+    {
+        HAL_IncTick();
+    }
 }
 
 #endif   // FREERTOS_ENABLE 

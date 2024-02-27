@@ -85,7 +85,9 @@
 			"stm32f4xx_hal_conf.h": "c",
 			"stm32f4xx_hal_tim.h": "c",
 			"stm32f4xx.h": "c",
-			"freertos_test.h": "c"
+			"freertos_test.h": "c",
+			"freertos_os2.h": "c",
+			"freertos_mpool.h": "c"
 		}
 	}
 }
