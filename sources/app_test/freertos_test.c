@@ -44,8 +44,13 @@
 //=======================================================================================
 // Macros 
 
+// Memory 
 #define BLINK_STACK_SIZE 128 
 #define WORD_SIZE 4 
+
+// Timing (ms) 
+#define BLINK_DELAY_1 500 
+#define BLINK_DELAY_2 600 
 
 //=======================================================================================
 
@@ -88,11 +93,20 @@ static gpio_pin_state_t led_state = GPIO_LOW;
 //==================================================
 // Tasks 
 
-// Blink 01 
-void StartBlink01(void *argument); 
+/**
+ * @brief Blink01 thread function 
+ * 
+ * @param argument : NULL 
+ */
+void TaskBlink01(void *argument); 
 
-// Blink 02 
-void StartBlink02(void *argument); 
+
+/**
+ * @brief Blink02 thread function 
+ * 
+ * @param argument : NULL 
+ */
+void TaskBlink02(void *argument); 
 
 //==================================================
 
@@ -100,7 +114,11 @@ void StartBlink02(void *argument);
 //==================================================
 // Helper functions 
 
-// LED toggle for blink example 
+/**
+ * @brief LED toggle for blink example 
+ * 
+ * @param ms : delay between LED toggling (ms) 
+ */
 void blink_led_toggle(uint32_t ms); 
 
 //==================================================
@@ -124,8 +142,8 @@ void freertos_test_init()
     osKernelInitialize(); 
 
     // Create the thread(s) 
-    blink01Handle = osThreadNew(StartBlink01, NULL, &blink01_attributes); 
-    blink02Handle = osThreadNew(StartBlink02, NULL, &blink02_attributes); 
+    blink01Handle = osThreadNew(TaskBlink01, NULL, &blink01_attributes); 
+    blink02Handle = osThreadNew(TaskBlink02, NULL, &blink02_attributes); 
 } 
 
 //=======================================================================================
@@ -146,46 +164,35 @@ void freertos_test_app()
 
 
 //=======================================================================================
-// Test functions 
-
-//==================================================
 // Tasks 
 
-/**
- * @brief Function implementing the blink01 thread 
- * 
- * @param argument 
- */
-void StartBlink01(void *argument)
+// Blink01 thread function 
+void TaskBlink01(void *argument)
 {
     while (1)
     {
-        blink_led_toggle(500); 
+        blink_led_toggle(BLINK_DELAY_1); 
     }
 
     osThreadTerminate(NULL); 
 }
 
 
-/**
- * @brief Function implementing the blink02 thread 
- * 
- * @param argument 
- */
-void StartBlink02(void *argument)
+// Blink02 thread function 
+void TaskBlink02(void *argument)
 {
     while (1)
     { 
-        blink_led_toggle(600); 
+        blink_led_toggle(BLINK_DELAY_2); 
     }
 
     osThreadTerminate(NULL); 
 }
 
-//==================================================
+//=======================================================================================
 
 
-//==================================================
+//=======================================================================================
 // Helper functions 
 
 // LED toggle for blink example 
@@ -195,7 +202,5 @@ void blink_led_toggle(uint32_t ms)
     gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
     osDelay(ms);   // milliseconds 
 }
-
-//==================================================
 
 //=======================================================================================

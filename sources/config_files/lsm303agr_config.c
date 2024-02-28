@@ -26,7 +26,9 @@
 // Zero offsets used for calibrating the device 
 const int16_t lsm303agr_calibrate_offsets[LSM303AGR_M_NUM_DIR] = { 0, 0, 0, 0, 0, 0, 0, 0}; 
 
+//==================================================
 // Directional offsets to correct for heading errors (units: degrees*10) 
+
 const int16_t lsm303agr_config_dir_offsets_0[LSM303AGR_M_NUM_DIR] = 
 {
     -160,     // N  (0/360deg) 
@@ -50,5 +52,7 @@ const int16_t lsm303agr_config_dir_offsets_1[LSM303AGR_M_NUM_DIR] =
     -450,     // W  (270deg) 
     -405      // NW (315deg) 
 }; 
+
+//==================================================
 
 //=======================================================================================
