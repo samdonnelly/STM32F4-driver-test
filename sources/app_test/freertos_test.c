@@ -26,6 +26,15 @@
 //   counter (uwTick) is incremented through the following chain of events: 
 //   - interrupt from TIM11 --> TIM1_TRG_COM_TIM11_IRQHandler --> HAL_TIM_IRQHandler 
 //     --> HAL_TIM_PeriodElapsedCallback --> HAL_IncTick 
+// - A tick timer is one of the hardware timers allocated to interrupt the processor at a 
+//   specific interval, or "time slice". This time slice is known as a tick. By default, 
+//   FreeRTOS sets the tick period to 1ms. The operating system must run at each time 
+//   slice to identify which task to schedule next which could be a new task or the same 
+//   task. 
+// - vTaskDelay (called by osDelay) expects the number of ticks to delay, not the number 
+//   of milliseconds. 
+// - The minimum stack size is the size needed to run an empty task and handle scheduler 
+//   overhead. 
 //=======================================================================================
 
 
@@ -45,10 +54,9 @@
 // Macros 
 
 // Memory 
-#define BLINK_STACK_SIZE 128 
-#define WORD_SIZE 4 
+#define BLINK_STACK_SIZE configMINIMAL_STACK_SIZE * 4 
 
-// Timing (ms) 
+// Timing (number of ticks - default tick period is 1ms) 
 #define BLINK_DELAY_1 500 
 #define BLINK_DELAY_2 600 
 
@@ -65,9 +73,9 @@
 osThreadId_t blink01Handle;
 const osThreadAttr_t blink01_attributes = 
 {
-    .name = "blink01",
-    .stack_size = BLINK_STACK_SIZE * WORD_SIZE,
-    .priority = (osPriority_t) osPriorityNormal,
+    .name = "blink01", 
+    .stack_size = BLINK_STACK_SIZE, 
+    .priority = (osPriority_t) osPriorityNormal, 
 };
 
 // blink02 
@@ -75,7 +83,7 @@ osThreadId_t blink02Handle;
 const osThreadAttr_t blink02_attributes = 
 {
     .name = "blink02",
-    .stack_size = BLINK_STACK_SIZE * WORD_SIZE,
+    .stack_size = BLINK_STACK_SIZE,
     .priority = (osPriority_t) osPriorityBelowNormal,
 };
 
@@ -117,9 +125,9 @@ void TaskBlink02(void *argument);
 /**
  * @brief LED toggle for blink example 
  * 
- * @param ms : delay between LED toggling (ms) 
+ * @param ticks : delay between LED toggling (ticks). See notes for info on ticks. 
  */
-void blink_led_toggle(uint32_t ms); 
+void blink_led_toggle(uint32_t ticks); 
 
 //==================================================
 
@@ -196,11 +204,11 @@ void TaskBlink02(void *argument)
 // Helper functions 
 
 // LED toggle for blink example 
-void blink_led_toggle(uint32_t ms)
+void blink_led_toggle(uint32_t ticks)
 {
     led_state = GPIO_HIGH - led_state; 
     gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
-    osDelay(ms);   // milliseconds 
+    osDelay(ticks);   // Delays the specified number of ticks 
 }
 
 //=======================================================================================
