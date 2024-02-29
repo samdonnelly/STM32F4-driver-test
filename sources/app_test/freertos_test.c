@@ -35,6 +35,22 @@
 //   of milliseconds. 
 // - The minimum stack size is the size needed to run an empty task and handle scheduler 
 //   overhead. 
+// - The application/loop function below can be set up as it's own task to do other 
+//   jobs such as controlling other tasks. This way you can still kind of have a main 
+//   loop. Just have to be mindful of the priority given to it. 
+// - Make sure vTaskDelete is not called on a NULL pointed task handle. 
+//=======================================================================================
+
+
+//=======================================================================================
+// Tests to add 
+// 1. Two tasks, both print messages to serial terminal but messages are different and 
+//    get written at different intervals. The second task has a higher priority than the 
+//    first task. Use a slower baud rate to better see the contect switching. There will 
+//    be a third task which is the main loop that will periodically suspend task 2. 
+// 2. Two tasks to control the blinking rate of an LED. One task will listen for input 
+//    on the serial terminal. When the user enters a number, the delay time on the 
+//    blinking LED will be updated to that time. 
 //=======================================================================================
 
 
