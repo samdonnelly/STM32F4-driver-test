@@ -39,6 +39,10 @@
 //   jobs such as controlling other tasks. This way you can still kind of have a main 
 //   loop. Just have to be mindful of the priority given to it. 
 // - Make sure vTaskDelete is not called on a NULL pointed task handle. 
+// - The function uxTaskGetStackHighWaterMark will return the number of words that are 
+//   left in the tasks stack. 
+// - The function xPortGetFreeHeapSize will return the total amount of heap memory in 
+//   bytes that's available. 
 //=======================================================================================
 
 
@@ -48,9 +52,16 @@
 //    get written at different intervals. The second task has a higher priority than the 
 //    first task. Use a slower baud rate to better see the contect switching. There will 
 //    be a third task which is the main loop that will periodically suspend task 2. 
+// 
 // 2. Two tasks to control the blinking rate of an LED. One task will listen for input 
 //    on the serial terminal. When the user enters a number, the delay time on the 
 //    blinking LED will be updated to that time. 
+// 
+// 3. Two tasks that mimic a serial echo program. One task listens for input from the 
+//    serial monitor. Once it sees a new line character it stores all input up to that 
+//    point in newly allocated heap memory then notifies the second task of a new 
+//    message. Task 2 waits for notice from task 1 then prints the new message (that's 
+//    stored in heap memeory) to the serial monitor and frees the memory. 
 //=======================================================================================
 
 
@@ -58,6 +69,7 @@
 // Includes 
 
 #include "freertos_test.h" 
+#include "includes_drivers.h" 
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -69,6 +81,17 @@
 //=======================================================================================
 // Macros 
 
+// Conditional compilation 
+#define PERIODIC_BLINK_TEST 1 
+#define MANUAL_BLINK_TEST 0 
+#define TASK_CONTROL_TEST 0 
+
+// Memory 
+#define MAIN_LOOP_STACK_SIZE configMINIMAL_STACK_SIZE * 4 
+
+//==================================================
+// Periodic Blink Test 
+
 // Memory 
 #define BLINK_STACK_SIZE configMINIMAL_STACK_SIZE * 4 
 
@@ -76,37 +99,58 @@
 #define BLINK_DELAY_1 500 
 #define BLINK_DELAY_2 600 
 
+//==================================================
+
+//==================================================
+// Manual Blink Test 
+//==================================================
+
+//==================================================
+// Task Control Test 
+//==================================================
+
 //=======================================================================================
 
 
 //=======================================================================================
 // Variables 
 
-//==================================================
-// Task definitions 
+// Task definition: main loop 
+osThreadId_t mainLoopHandle; 
+const osThreadAttr_t main_loop_attributes = 
+{
+    .name = "main_loop", 
+    .stack_size = MAIN_LOOP_STACK_SIZE, 
+    .priority = (osPriority_t) osPriorityLow   // Above Idle but below everything else 
+}; 
 
-// blink01 
+
+#if PERIODIC_BLINK_TEST 
+
+// Task definition: blink01 
 osThreadId_t blink01Handle;
 const osThreadAttr_t blink01_attributes = 
 {
     .name = "blink01", 
     .stack_size = BLINK_STACK_SIZE, 
-    .priority = (osPriority_t) osPriorityNormal, 
+    .priority = (osPriority_t) osPriorityNormal 
 };
 
-// blink02 
+// Task definition: blink02 
 osThreadId_t blink02Handle;
 const osThreadAttr_t blink02_attributes = 
 {
     .name = "blink02",
     .stack_size = BLINK_STACK_SIZE,
-    .priority = (osPriority_t) osPriorityBelowNormal,
+    .priority = (osPriority_t) osPriorityBelowNormal 
 };
-
-//==================================================
 
 // Board LED state - tasks will fight over the LED state 
 static gpio_pin_state_t led_state = GPIO_LOW; 
+
+#elif MANUAL_BLINK_TEST 
+#elif TASK_CONTROL_TEST 
+#endif 
 
 //=======================================================================================
 
@@ -114,11 +158,18 @@ static gpio_pin_state_t led_state = GPIO_LOW;
 //=======================================================================================
 // Prototypes 
 
-//==================================================
-// Tasks 
+/**
+ * @brief Task function: main loop 
+ * 
+ * @param argument : NULL 
+ */
+void TaskLoop(void *argument); 
+
+
+#if PERIODIC_BLINK_TEST 
 
 /**
- * @brief Blink01 thread function 
+ * @brief Task function: blink01 
  * 
  * @param argument : NULL 
  */
@@ -126,26 +177,23 @@ void TaskBlink01(void *argument);
 
 
 /**
- * @brief Blink02 thread function 
+ * @brief Task function: blink02 
  * 
  * @param argument : NULL 
  */
 void TaskBlink02(void *argument); 
 
-//==================================================
-
-
-//==================================================
-// Helper functions 
 
 /**
- * @brief LED toggle for blink example 
+ * @brief LED toggle 
  * 
  * @param ticks : delay between LED toggling (ticks). See notes for info on ticks. 
  */
 void blink_led_toggle(uint32_t ticks); 
 
-//==================================================
+#elif MANUAL_BLINK_TEST 
+#elif TASK_CONTROL_TEST 
+#endif
 
 //=======================================================================================
 
@@ -153,8 +201,16 @@ void blink_led_toggle(uint32_t ticks);
 //=======================================================================================
 // Setup code
 
-void freertos_test_init()
+void freertos_test_init(void)
 {
+    // Initialize FreeRTOS scheduler 
+    osKernelInitialize(); 
+
+    // Create the main loop thread 
+    mainLoopHandle = osThreadNew(TaskLoop, NULL, &main_loop_attributes); 
+
+#if PERIODIC_BLINK_TEST 
+
     // Initialize GPIO ports 
     gpio_port_init(); 
 
@@ -162,12 +218,13 @@ void freertos_test_init()
     gpio_pin_init(GPIOA, PIN_5, MODER_GPO, OTYPER_PP, OSPEEDR_HIGH, PUPDR_NO); 
     gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
 
-    // Initialize FreeRTOS scheduler 
-    osKernelInitialize(); 
-
     // Create the thread(s) 
     blink01Handle = osThreadNew(TaskBlink01, NULL, &blink01_attributes); 
     blink02Handle = osThreadNew(TaskBlink02, NULL, &blink02_attributes); 
+    
+#elif MANUAL_BLINK_TEST 
+#elif TASK_CONTROL_TEST 
+#endif
 } 
 
 //=======================================================================================
@@ -176,21 +233,36 @@ void freertos_test_init()
 //=======================================================================================
 // Test code 
 
-void freertos_test_app()
+void freertos_test_app(void)
 {
     // Start scheduler. From this point on, execution is handled by the scheduler and 
-    // only code within the tasks below is run, meaning the code does not pass through 
-    // the main while(1) loop anymore. 
+    // only code within the tasks is run, meaning the code does not pass through the main 
+    // while(1) loop anymore. 
     osKernelStart(); 
+}
+
+
+// Task function: main loop 
+void TaskLoop(void *argument)
+{
+#if PERIODIC_BLINK_TEST 
+
+    // Do nothing 
+
+#elif MANUAL_BLINK_TEST 
+#elif TASK_CONTROL_TEST 
+#endif
 }
 
 //=======================================================================================
 
 
 //=======================================================================================
-// Tasks 
+// Test functions 
 
-// Blink01 thread function 
+#if PERIODIC_BLINK_TEST 
+
+// Task function: blink01 
 void TaskBlink01(void *argument)
 {
     while (1)
@@ -202,7 +274,7 @@ void TaskBlink01(void *argument)
 }
 
 
-// Blink02 thread function 
+// Task function: blink02 
 void TaskBlink02(void *argument)
 {
     while (1)
@@ -213,18 +285,17 @@ void TaskBlink02(void *argument)
     osThreadTerminate(NULL); 
 }
 
-//=======================================================================================
 
-
-//=======================================================================================
-// Helper functions 
-
-// LED toggle for blink example 
+// LED toggle 
 void blink_led_toggle(uint32_t ticks)
 {
     led_state = GPIO_HIGH - led_state; 
     gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
     osDelay(ticks);   // Delays the specified number of ticks 
 }
+
+#elif MANUAL_BLINK_TEST 
+#elif TASK_CONTROL_TEST 
+#endif
 
 //=======================================================================================
