@@ -43,6 +43,8 @@
 //   left in the tasks stack. 
 // - The function xPortGetFreeHeapSize will return the total amount of heap memory in 
 //   bytes that's available. 
+// - As long as you use the built-in kernal functions then writing to a queue is atomic 
+//   meaning another task cannot interrupt it during the writing process. 
 //=======================================================================================
 
 
@@ -62,6 +64,24 @@
 //    point in newly allocated heap memory then notifies the second task of a new 
 //    message. Task 2 waits for notice from task 1 then prints the new message (that's 
 //    stored in heap memeory) to the serial monitor and frees the memory. 
+// 
+// 4. Two tasks and two queues. Task A should print any new messages from queue 2 to the 
+//    serial terminal, read serial input from the user, echo input back to the serial 
+//    terminal and send values to queue 1 where values come from a user input that reads 
+//    "delay <value>". Task B should update a delay variable with values from queue 1, 
+//    blink the board LED with the delay value, and send a string to queue 2 every 100 
+//    LED blinks along with a counter to indicate the number of times it's blinked 100 
+//    times. 
+// 
+// 5. Two tasks that access the same function and therefore the same global variable. The 
+//    function increments the global variable. There is a mutex in the function that 
+//    prevents either task from running while the other is incrementing the cariable. 
+// 
+// 6. Seven tasks, 5 of which are producers that add values to a circular buffer (shared 
+//    resource) and 2 tasks which are consumers that read from the buffer. The producer 
+//    tasks write their task number to the buffer 3 times. Semaphores and mutexes are 
+//    used to to protect the shared circular buffer. The consumer tasks print out 
+//    anything read from the buffer to the serial terminal. 
 //=======================================================================================
 
 
