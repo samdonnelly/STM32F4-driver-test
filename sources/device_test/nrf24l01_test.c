@@ -16,9 +16,13 @@
 // Includes 
 
 #include "nrf24l01_test.h" 
+#include "nrf24l01_config.h" 
 
 //=======================================================================================
 
+
+//=======================================================================================
+// Tests 
 
 // Heartbeat 
 // - Device 1 (master) sends a 'ping' to device 2 (slave) periodically 
@@ -38,6 +42,8 @@
 // - Device 1 (master) sends throttle command to device 2 (slave) 
 // - Device 2 reads throttle command 
 // - Throttle command goes to the ESC driver 
+
+//=======================================================================================
 
 
 //=======================================================================================
@@ -116,9 +122,6 @@ void nrf24l01_test_invalid_input(void);
 
 //==================================================
 // Data 
-
-// Address sent by the PTX and address accepted by the PRX 
-static uint8_t pipe_addr_buff[NRF24l01_ADDR_WIDTH] = {0xB3, 0xB4, 0xB5, 0xB6, 0x05}; 
 
 #if NRF24L01_RC 
 
@@ -353,7 +356,7 @@ void nrf24l01_test_init(void)
     // Initialize the device driver 
 
     // Configure the PTX settings depending on the devices role/purpose 
-    nrf24l01_ptx_config(pipe_addr_buff); 
+    nrf24l01_ptx_config(nrf24l01_pipe_addr); 
 
     //==================================================
 

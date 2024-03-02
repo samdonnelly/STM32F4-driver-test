@@ -24,6 +24,4 @@
 void user_app()
 {
     // User application code here 
-
-    freertos_test_app(); 
 }

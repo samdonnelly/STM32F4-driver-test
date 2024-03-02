@@ -3,10 +3,11 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief FreeRTOS setup and test interface 
+ * @brief FreeRTOS practice interface 
  * 
- * @details Basic applications of FreeRTOS features are written in this test to show its 
- *          capabilities. 
+ * @details The examples/tests implemented here are from the "Introduction to RTOS" video 
+ *          playlist by DigiKey: 
+ *          https://www.youtube.com/playlist?list=PLEBQazB0HUyQ4hAPU1cJED6t3DU0h34bz 
  * 
  * @version 0.1
  * @date 2024-02-20
@@ -17,6 +18,10 @@
 
 #ifndef _FREERTOS_TEST_H_ 
 #define _FREERTOS_TEST_H_ 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 //=======================================================================================
 // Includes 
@@ -38,5 +43,9 @@ void freertos_test_init(void);
 void freertos_test_app(void); 
 
 //=======================================================================================
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif   // _FREERTOS_TEST_H_

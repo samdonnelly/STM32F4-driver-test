@@ -1,39 +1,34 @@
 /**
- * @file project_app.cpp
+ * @file nrf24l01_config.h
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Project application code implementation 
+ * @brief nRF24L01 RF module configuration file interface 
  * 
  * @version 0.1
- * @date 2023-07-20
+ * @date 2024-03-01
  * 
- * @copyright Copyright (c) 2023
+ * @copyright Copyright (c) 2024
  * 
  */
+
+#ifndef _NRF24L01_CONFIG_H_ 
+#define _NRF24L01_CONFIG_H_ 
 
 //=======================================================================================
 // Includes 
 
-#include "project_app.h"
-
-#include "includes_app.h"
-#include "includes_cpp_app.h"
-#include "includes_drivers.h"
-#include "includes_cpp_drivers.h"
+#include "nrf24l01_driver.h" 
 
 //=======================================================================================
 
 
 //=======================================================================================
-// Functions 
+// RF pipe addresses 
 
-// Project application code - called repeatedly 
-void project_app(void)
-{
-    // Project application code here 
-
-    freertos_test_app(); 
-}
+// Address sent by the PTX and address accepted by the PRX 
+extern const uint8_t nrf24l01_pipe_addr[NRF24l01_ADDR_WIDTH]; 
 
 //=======================================================================================
+
+#endif   // _NRF24L01_CONFIG_H_ 

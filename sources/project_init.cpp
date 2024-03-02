@@ -32,6 +32,8 @@
 void project_init(void)
 {
     // Project initialization code here 
+
+    freertos_test_init(); 
 }
 
 //=======================================================================================

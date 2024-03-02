@@ -24,6 +24,4 @@
 void user_init()
 {
     // User initialization code here 
-
-    freertos_test_init(); 
 }

@@ -3,10 +3,11 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief FreeRTOS setup and test implementation 
+ * @brief FreeRTOS practice implementation 
  * 
- * @details Basic applications of FreeRTOS features are written in this test to show its 
- *          capabilities. 
+ * @details The examples/tests implemented here are from the "Introduction to RTOS" video 
+ *          playlist by DigiKey: 
+ *          https://www.youtube.com/playlist?list=PLEBQazB0HUyQ4hAPU1cJED6t3DU0h34bz 
  * 
  * @version 0.1
  * @date 2024-02-20
@@ -82,6 +83,27 @@
 //    tasks write their task number to the buffer 3 times. Semaphores and mutexes are 
 //    used to to protect the shared circular buffer. The consumer tasks print out 
 //    anything read from the buffer to the serial terminal. 
+// 
+// 7. Enter characters in the serial terminal. When the code sees characters being 
+//    entered it will turn the board LED on. The board LED will only turn off after there 
+//    has been no serial terminal input for a period of time (say 5 seconds). Use 
+//    software timers to accomplish the task. 
+//    - Note: the xTimerStart function will restart a counter if it's called before the 
+//            timer expires. 
+// 
+// 8. Use a hardware timer (ISR) to sample ADC 10 times per second. The values get placed 
+//    in a double or circular buffer. Once 10 samples have been collected, the ISR should 
+//    wake up task A which computes the average of the 10 samples. A double or circular 
+//    buffer is recommended so data can be read/used at the same time new data gets 
+//    written using the ISR. The average should a be floating point value stored in a 
+//    global variable. Assume this global variable cannot be written to or read from in 
+//    a single CPU cycle (critical section). Task B will output to the serial terminal 
+//    the global variable value is "avg" is entered by the user, otherwise the input is 
+//    exhoed back. 
+// 
+// 10. Deadlock test. 
+// 
+// 11. Priority inversion test. 
 //=======================================================================================
 
 
@@ -105,12 +127,22 @@
 #define PERIODIC_BLINK_TEST 1 
 #define MANUAL_BLINK_TEST 0 
 #define TASK_CONTROL_TEST 0 
+#define _TEST0 0 
+#define _TEST1 0 
+#define _TEST2 0 
+#define _TEST3 0 
+#define _TEST4 0 
+#define _TEST5 0 
+#define _TEST6 0 
 
 // Memory 
 #define MAIN_LOOP_STACK_SIZE configMINIMAL_STACK_SIZE * 4 
 
 //==================================================
 // Periodic Blink Test 
+// There are two tasks that both toggle the board LED but at different rates. While not 
+// toggling the LED state, each task is put into the blocking state. The main loop task 
+// does nothing here. 
 
 // Memory 
 #define BLINK_STACK_SIZE configMINIMAL_STACK_SIZE * 4 
@@ -265,13 +297,16 @@ void freertos_test_app(void)
 // Task function: main loop 
 void TaskLoop(void *argument)
 {
+    while (1)
+    {
 #if PERIODIC_BLINK_TEST 
-
     // Do nothing 
-
 #elif MANUAL_BLINK_TEST 
 #elif TASK_CONTROL_TEST 
 #endif
+    }
+
+    osThreadTerminate(NULL); 
 }
 
 //=======================================================================================
