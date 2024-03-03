@@ -51,15 +51,6 @@
 
 //=======================================================================================
 // Tests to add 
-// 1. Two tasks, both print messages to serial terminal but messages are different and 
-//    get written at different intervals. The second task has a higher priority than the 
-//    first task. Use a slower baud rate to better see the contect switching. There will 
-//    be a third task which is the main loop that will periodically suspend task 2. 
-// 
-// 2. Two tasks to control the blinking rate of an LED. One task will listen for input 
-//    on the serial terminal. When the user enters a number, the delay time on the 
-//    blinking LED will be updated to that time. 
-// 
 // 3. Two tasks that mimic a serial echo program. One task listens for input from the 
 //    serial monitor. Once it sees a new line character it stores all input up to that 
 //    point in newly allocated heap memory then notifies the second task of a new 
@@ -124,9 +115,9 @@
 // Macros 
 
 // Conditional compilation 
-#define PERIODIC_BLINK_TEST 1 
+#define PERIODIC_BLINK_TEST 0 
 #define MANUAL_BLINK_TEST 0 
-#define TASK_CONTROL_TEST 0 
+#define TASK_CONTROL_TEST 1 
 #define _TEST0 0 
 #define _TEST1 0 
 #define _TEST2 0 
@@ -155,10 +146,27 @@
 
 //==================================================
 // Manual Blink Test 
+// Two tasks to control the blinking rate of an LED. One task will listen for input 
+// on the serial terminal. When the user enters a number, the delay time on the 
+// blinking LED will be updated to that time. 
 //==================================================
 
 //==================================================
-// Task Control Test 
+// Task Control (TC) Test 
+// Two tasks, both print messages to serial terminal but messages are different and 
+// get written at different intervals. The second task has a higher priority than the 
+// first task. Use a slower baud rate to better see the contect switching. There will 
+// be a third task which is the main loop that will periodically suspend task 2. 
+
+// Memory 
+#define TC_STACK_SIZE configMINIMAL_STACK_SIZE * 8 
+
+// Timing (number of ticks) 
+#define TC_DELAY_1 2000   // Ticks 
+#define TC_DELAY_2 1000   // Ticks 
+#define TC_DELAY_3 100    // Ticks 
+#define TC_DELAY_4 5000   // (ms) 
+
 //==================================================
 
 //=======================================================================================
@@ -180,7 +188,7 @@ const osThreadAttr_t main_loop_attributes =
 #if PERIODIC_BLINK_TEST 
 
 // Task definition: blink01 
-osThreadId_t blink01Handle;
+osThreadId_t blink01Handle; 
 const osThreadAttr_t blink01_attributes = 
 {
     .name = "blink01", 
@@ -189,7 +197,7 @@ const osThreadAttr_t blink01_attributes =
 };
 
 // Task definition: blink02 
-osThreadId_t blink02Handle;
+osThreadId_t blink02Handle; 
 const osThreadAttr_t blink02_attributes = 
 {
     .name = "blink02",
@@ -202,6 +210,28 @@ static gpio_pin_state_t led_state = GPIO_LOW;
 
 #elif MANUAL_BLINK_TEST 
 #elif TASK_CONTROL_TEST 
+
+// Task definition: msg01 
+osThreadId_t msg01Handle = NULL; 
+const osThreadAttr_t msg01_attributes = 
+{
+    .name = "msg01", 
+    .stack_size = TC_STACK_SIZE, 
+    .priority = (osPriority_t) osPriorityBelowNormal 
+};
+
+// Task definition: msg02 
+osThreadId_t msg02Handle = NULL; 
+const osThreadAttr_t msg02_attributes = 
+{
+    .name = "msg02",
+    .stack_size = TC_STACK_SIZE,
+    .priority = (osPriority_t) osPriorityNormal 
+};
+
+// Strings 
+const char msg[] = "Barkadeer brig Arr booty rum"; 
+
 #endif 
 
 //=======================================================================================
@@ -245,6 +275,22 @@ void blink_led_toggle(uint32_t ticks);
 
 #elif MANUAL_BLINK_TEST 
 #elif TASK_CONTROL_TEST 
+
+/**
+ * @brief Task function: msg01 
+ * 
+ * @param argument : NULL 
+ */
+void TaskMsg01(void *argument); 
+
+
+/**
+ * @brief Task function: msg02 
+ * 
+ * @param argument : NULL 
+ */
+void TaskMsg02(void *argument); 
+
 #endif
 
 //=======================================================================================
@@ -255,6 +301,17 @@ void blink_led_toggle(uint32_t ticks);
 
 void freertos_test_init(void)
 {
+    // Initialize GPIO ports 
+    gpio_port_init(); 
+
+    // General purpose timer 
+    tim_9_to_11_counter_init(
+        TIM9, 
+        TIM_84MHZ_1US_PSC, 
+        0xFFFF,  // Max ARR value 
+        TIM_UP_INT_DISABLE); 
+    tim_enable(TIM9); 
+
     // Initialize FreeRTOS scheduler 
     osKernelInitialize(); 
 
@@ -262,9 +319,6 @@ void freertos_test_init(void)
     mainLoopHandle = osThreadNew(TaskLoop, NULL, &main_loop_attributes); 
 
 #if PERIODIC_BLINK_TEST 
-
-    // Initialize GPIO ports 
-    gpio_port_init(); 
 
     // Initialize board LED (on when logic low) 
     gpio_pin_init(GPIOA, PIN_5, MODER_GPO, OTYPER_PP, OSPEEDR_HIGH, PUPDR_NO); 
@@ -276,6 +330,25 @@ void freertos_test_init(void)
     
 #elif MANUAL_BLINK_TEST 
 #elif TASK_CONTROL_TEST 
+
+    // Initialize UART (serial terminal output) 
+    uart_init(
+        USART2, 
+        GPIOA, 
+        PIN_3, 
+        PIN_2, 
+        UART_FRAC_42_1200, 
+        UART_MANT_42_1200, 
+        UART_DMA_DISABLE, 
+        UART_DMA_DISABLE); 
+
+    // Create the thread(s) 
+    msg01Handle = osThreadNew(TaskMsg01, NULL, &msg01_attributes); 
+    msg02Handle = osThreadNew(TaskMsg02, NULL, &msg02_attributes); 
+
+    // Delay to allow for time to connect to the serial terminal 
+    tim_delay_ms(TIM9, TC_DELAY_4); 
+    
 #endif
 } 
 
@@ -300,9 +373,27 @@ void TaskLoop(void *argument)
     while (1)
     {
 #if PERIODIC_BLINK_TEST 
-    // Do nothing 
+        // Do nothing 
 #elif MANUAL_BLINK_TEST 
+        // 
 #elif TASK_CONTROL_TEST 
+
+        // Suspend the higher priority task for some intervals 
+        for (uint8_t i = CLEAR; i < 3; i++)
+        {
+            osThreadSuspend(msg02Handle); 
+            osDelay(TC_DELAY_1); 
+            osThreadResume(msg02Handle); 
+            osDelay(TC_DELAY_1); 
+        }
+        
+        // Delete the lower priority task 
+        if (msg01Handle != NULL)
+        {
+            osThreadTerminate(msg01Handle); 
+            msg01Handle = NULL; 
+        }
+
 #endif
     }
 
@@ -351,6 +442,35 @@ void blink_led_toggle(uint32_t ticks)
 
 #elif MANUAL_BLINK_TEST 
 #elif TASK_CONTROL_TEST 
+
+// Task function: msg01 
+void TaskMsg01(void *argument)
+{
+    // Print the string to the terminal one character at a time. 
+    while(1)
+    {
+        uart_send_new_line(USART2); 
+        uart_sendstring(USART2, msg); 
+        uart_send_new_line(USART2); 
+        osDelay(TC_DELAY_2); 
+    }
+
+    osThreadTerminate(NULL); 
+}
+
+
+// Task function: msg02 
+void TaskMsg02(void *argument)
+{
+    while(1)
+    {
+        uart_sendchar(USART2, AST_CHAR); 
+        osDelay(TC_DELAY_3); 
+    }
+
+    osThreadTerminate(NULL); 
+}
+
 #endif
 
 //=======================================================================================
