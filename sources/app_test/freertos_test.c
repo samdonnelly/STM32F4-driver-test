@@ -17,46 +17,7 @@
  */
 
 //=======================================================================================
-// Notes 
-// - "osDelay" allows the scheduler to run other tasks while we wait. 
-// - Adding "osThreadTerminate()" after the forever loop in the tasks is a good idea in 
-//   case the task loop accidentally exits. This function will terminate and clean up the 
-//   thread. 
-// - When FreeRTOS is used, SysTick is left to FreeRTOS and HAL has a new timer assigned 
-//   to it. If, for example, TIM11 is used for the HAL time base then the time base 
-//   counter (uwTick) is incremented through the following chain of events: 
-//   - interrupt from TIM11 --> TIM1_TRG_COM_TIM11_IRQHandler --> HAL_TIM_IRQHandler 
-//     --> HAL_TIM_PeriodElapsedCallback --> HAL_IncTick 
-// - A tick timer is one of the hardware timers allocated to interrupt the processor at a 
-//   specific interval, or "time slice". This time slice is known as a tick. By default, 
-//   FreeRTOS sets the tick period to 1ms. The operating system must run at each time 
-//   slice to identify which task to schedule next which could be a new task or the same 
-//   task. 
-// - vTaskDelay (called by osDelay) expects the number of ticks to delay, not the number 
-//   of milliseconds. 
-// - The minimum stack size is the size needed to run an empty task and handle scheduler 
-//   overhead. 
-// - The application/loop function below can be set up as it's own task to do other 
-//   jobs such as controlling other tasks. This way you can still kind of have a main 
-//   loop. Just have to be mindful of the priority given to it. 
-// - Make sure vTaskDelete is not called on a NULL pointed task handle. 
-// - The function uxTaskGetStackHighWaterMark will return the number of words that are 
-//   left in the tasks stack. 
-// - The function xPortGetFreeHeapSize will return the total amount of heap memory in 
-//   bytes that's available. 
-// - As long as you use the built-in kernal functions then writing to a queue is atomic 
-//   meaning another task cannot interrupt it during the writing process. 
-//=======================================================================================
-
-
-//=======================================================================================
 // Tests to add 
-// 3. Two tasks that mimic a serial echo program. One task listens for input from the 
-//    serial monitor. Once it sees a new line character it stores all input up to that 
-//    point in newly allocated heap memory then notifies the second task of a new 
-//    message. Task 2 waits for notice from task 1 then prints the new message (that's 
-//    stored in heap memeory) to the serial monitor and frees the memory. 
-// 
 // 4. Two tasks and two queues. Task A should print any new messages from queue 2 to the 
 //    serial terminal, read serial input from the user, echo input back to the serial 
 //    terminal and send values to queue 1 where values come from a user input that reads 
@@ -103,6 +64,7 @@
 
 #include "freertos_test.h" 
 #include "includes_drivers.h" 
+#include "int_handlers.h" 
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -115,57 +77,92 @@
 // Macros 
 
 // Conditional compilation 
-#define PERIODIC_BLINK_TEST 0 
+#define PERIODIC_BLINK_TEST 0   // Highest priority 
 #define MANUAL_BLINK_TEST 0 
-#define TASK_CONTROL_TEST 1 
-#define _TEST0 0 
+#define TASK_CONTROL_TEST 0 
+#define TERMINAL_ECHO_TEST 1 
 #define _TEST1 0 
 #define _TEST2 0 
 #define _TEST3 0 
 #define _TEST4 0 
 #define _TEST5 0 
-#define _TEST6 0 
+#define _TEST6 0   // Lowest priority 
 
 // Memory 
-#define MAIN_LOOP_STACK_SIZE configMINIMAL_STACK_SIZE * 4 
+#define MAIN_LOOP_STACK_SIZE configMINIMAL_STACK_SIZE * 8 
+
+// Data 
+#define SERIAL_INPUT_MAX_LEN 30 
 
 //==================================================
-// Periodic Blink Test 
+// Periodic Blink (PB) Test 
+
 // There are two tasks that both toggle the board LED but at different rates. While not 
 // toggling the LED state, each task is put into the blocking state. The main loop task 
 // does nothing here. 
 
 // Memory 
-#define BLINK_STACK_SIZE configMINIMAL_STACK_SIZE * 4 
+#define PB_STACK_SIZE configMINIMAL_STACK_SIZE * 4 
 
 // Timing (number of ticks - default tick period is 1ms) 
-#define BLINK_DELAY_1 500 
-#define BLINK_DELAY_2 600 
+#define PB_DELAY_1 500 
+#define PB_DELAY_2 600 
 
 //==================================================
 
 //==================================================
-// Manual Blink Test 
-// Two tasks to control the blinking rate of an LED. One task will listen for input 
-// on the serial terminal. When the user enters a number, the delay time on the 
-// blinking LED will be updated to that time. 
+// Manual Blink (MB) Test 
+
+// There are two tasks used to control the blinking rate of an LED. The main loop task 
+// will listen for user input on the serial terminal which indicates the blinking rate 
+// of the LED (in ticks). If there is input then it will be read and converted to a 
+// number and used to update the blink rate. The other task will toggle the LED state 
+// at the rate set by the user input. 
+
+// Memory 
+#define MB_STACK_SIZE configMINIMAL_STACK_SIZE * 4 
+
+// Data 
+#define MB_MIN_LED_RATE 50 
+
 //==================================================
 
 //==================================================
 // Task Control (TC) Test 
-// Two tasks, both print messages to serial terminal but messages are different and 
-// get written at different intervals. The second task has a higher priority than the 
-// first task. Use a slower baud rate to better see the contect switching. There will 
-// be a third task which is the main loop that will periodically suspend task 2. 
+
+// There are two tasks that both print to the serial terminal. The first task is of a 
+// lower priority and prints an arbitrary string at every 1 second. The second task is 
+// of a higher priority and prints an asterisks every 100 ms. The main loop task controls 
+// both of these tasks by first periodically suspending task 2, then after this is done 
+// a few times task 1 is deleted so that only task 2 remains running. The messages should 
+// be printed at a slow baud rate to better observe the preemptive nature of the RTOS. 
 
 // Memory 
-#define TC_STACK_SIZE configMINIMAL_STACK_SIZE * 8 
+#define TC_STACK_SIZE configMINIMAL_STACK_SIZE * 4 
 
 // Timing (number of ticks) 
 #define TC_DELAY_1 2000   // Ticks 
 #define TC_DELAY_2 1000   // Ticks 
 #define TC_DELAY_3 100    // Ticks 
 #define TC_DELAY_4 5000   // (ms) 
+
+//==================================================
+
+//==================================================
+// Terminal Echo (TE) Test 
+
+// This test uses two tasks to mimic a serial echo program. One task listens and records 
+// input from the serial terminal. Once the end of the input is seen (new line or 
+// carriage return), all the input up to that point gets stored in allocated heap memory 
+// and informs the second task that there is new data. The second task prints the input 
+// message back to there terminal when it becomes available and frees the memory used to 
+// store the message. 
+
+// Memory 
+#define TE_STACK_SIZE configMINIMAL_STACK_SIZE * 4 
+
+// Data 
+#define MEM_STR_MAX_LEN 100 
 
 //==================================================
 
@@ -184,6 +181,10 @@ const osThreadAttr_t main_loop_attributes =
     .priority = (osPriority_t) osPriorityLow   // Above Idle but below everything else 
 }; 
 
+// Serial terminal data 
+static uint8_t uart_dma_buff[SERIAL_INPUT_MAX_LEN];   // Circular buffer 
+static uint8_t buff_index = CLEAR;                    // Circular buffer index 
+static uint8_t user_in_buff[SERIAL_INPUT_MAX_LEN];    // Stores latest user input 
 
 #if PERIODIC_BLINK_TEST 
 
@@ -192,7 +193,7 @@ osThreadId_t blink01Handle;
 const osThreadAttr_t blink01_attributes = 
 {
     .name = "blink01", 
-    .stack_size = BLINK_STACK_SIZE, 
+    .stack_size = PB_STACK_SIZE, 
     .priority = (osPriority_t) osPriorityNormal 
 };
 
@@ -201,7 +202,7 @@ osThreadId_t blink02Handle;
 const osThreadAttr_t blink02_attributes = 
 {
     .name = "blink02",
-    .stack_size = BLINK_STACK_SIZE,
+    .stack_size = PB_STACK_SIZE,
     .priority = (osPriority_t) osPriorityBelowNormal 
 };
 
@@ -209,6 +210,19 @@ const osThreadAttr_t blink02_attributes =
 static gpio_pin_state_t led_state = GPIO_LOW; 
 
 #elif MANUAL_BLINK_TEST 
+
+// Task definition: MB01 
+osThreadId_t MB01Handle; 
+const osThreadAttr_t MB01_attributes = 
+{
+    .name = "MB01", 
+    .stack_size = MB_STACK_SIZE, 
+    .priority = (osPriority_t) osPriorityNormal 
+};
+
+// Board LED blink rate 
+static uint32_t mb_ticks = MB_MIN_LED_RATE; 
+
 #elif TASK_CONTROL_TEST 
 
 // Task definition: msg01 
@@ -232,6 +246,20 @@ const osThreadAttr_t msg02_attributes =
 // Strings 
 const char msg[] = "Barkadeer brig Arr booty rum"; 
 
+#elif TERMINAL_ECHO_TEST 
+
+// Task definition: TE01 
+osThreadId_t TE01Handle; 
+const osThreadAttr_t TE01_attributes = 
+{
+    .name = "TE01", 
+    .stack_size = TE_STACK_SIZE, 
+    .priority = (osPriority_t) osPriorityNormal 
+};
+
+// Pointer used to locate heap allocated memory 
+static char *user_msg = NULL; 
+
 #endif 
 
 //=======================================================================================
@@ -246,7 +274,6 @@ const char msg[] = "Barkadeer brig Arr booty rum";
  * @param argument : NULL 
  */
 void TaskLoop(void *argument); 
-
 
 #if PERIODIC_BLINK_TEST 
 
@@ -274,6 +301,14 @@ void TaskBlink02(void *argument);
 void blink_led_toggle(uint32_t ticks); 
 
 #elif MANUAL_BLINK_TEST 
+
+/**
+ * @brief Task function: MB01 
+ * 
+ * @param argument : NULL 
+ */
+void TaskMB01(void *argument); 
+
 #elif TASK_CONTROL_TEST 
 
 /**
@@ -291,6 +326,15 @@ void TaskMsg01(void *argument);
  */
 void TaskMsg02(void *argument); 
 
+#elif TERMINAL_ECHO_TEST 
+
+/**
+ * @brief Task function: TE01 
+ * 
+ * @param argument : NULL 
+ */
+void TaskTE01(void *argument); 
+
 #endif
 
 //=======================================================================================
@@ -301,6 +345,9 @@ void TaskMsg02(void *argument);
 
 void freertos_test_init(void)
 {
+    //==================================================
+    // General setup 
+
     // Initialize GPIO ports 
     gpio_port_init(); 
 
@@ -312,16 +359,71 @@ void freertos_test_init(void)
         TIM_UP_INT_DISABLE); 
     tim_enable(TIM9); 
 
+    // Initialize board LED (on when logic low) 
+    gpio_pin_init(GPIOA, PIN_5, MODER_GPO, OTYPER_PP, OSPEEDR_HIGH, PUPDR_NO); 
+
+    // Initialize UART 
+    uart_init(
+        USART2, 
+        GPIOA, 
+        PIN_3, 
+        PIN_2, 
+        UART_FRAC_42_9600, 
+        UART_MANT_42_9600, 
+        UART_DMA_DISABLE, 
+        UART_DMA_ENABLE);   // RX DMA enabled for serial terminal reading 
+    
+    // Enable IDLE line interrupts for reading serial terminal input with DMA 
+    uart_interrupt_init(
+        USART2, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_ENABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE); 
+
+    // Initialize the DMA stream 
+    dma_stream_init(
+        DMA1, 
+        DMA1_Stream5, 
+        DMA_CHNL_4, 
+        DMA_DIR_PM, 
+        DMA_CM_ENABLE,
+        DMA_PRIOR_VHI, 
+        DMA_ADDR_INCREMENT,   // Increment the buffer pointer to fill the buffer 
+        DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
+        DMA_DATA_SIZE_BYTE, 
+        DMA_DATA_SIZE_BYTE); 
+
+    // Configure and enable the DMA stream 
+    dma_stream_config(
+        DMA1_Stream5, 
+        (uint32_t)(&USART2->DR), 
+        (uint32_t)uart_dma_buff, 
+        (uint16_t)SERIAL_INPUT_MAX_LEN); 
+    dma_stream_enable(DMA1_Stream5); 
+
+    // Initialize interrupt handler flags and enable the interrupt handler 
+    int_handler_init(); 
+    nvic_config(USART2_IRQn, EXTI_PRIORITY_0); 
+
     // Initialize FreeRTOS scheduler 
     osKernelInitialize(); 
 
     // Create the main loop thread 
     mainLoopHandle = osThreadNew(TaskLoop, NULL, &main_loop_attributes); 
 
+    // Initialize data 
+    memset((void *)uart_dma_buff, CLEAR, sizeof(uart_dma_buff)); 
+    memset((void *)user_in_buff, CLEAR, sizeof(user_in_buff)); 
+
+    //==================================================
+
 #if PERIODIC_BLINK_TEST 
 
-    // Initialize board LED (on when logic low) 
-    gpio_pin_init(GPIOA, PIN_5, MODER_GPO, OTYPER_PP, OSPEEDR_HIGH, PUPDR_NO); 
+    // Turn the board LED off 
     gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
 
     // Create the thread(s) 
@@ -329,9 +431,15 @@ void freertos_test_init(void)
     blink02Handle = osThreadNew(TaskBlink02, NULL, &blink02_attributes); 
     
 #elif MANUAL_BLINK_TEST 
+
+    // Create the thread(s) 
+    MB01Handle = osThreadNew(TaskMB01, NULL, &MB01_attributes); 
+
+    uart_sendstring(USART2, "\r\n>>> "); 
+
 #elif TASK_CONTROL_TEST 
 
-    // Initialize UART (serial terminal output) 
+    // Reinitialize UART (serial terminal output) for a slower baud rate 
     uart_init(
         USART2, 
         GPIOA, 
@@ -346,8 +454,16 @@ void freertos_test_init(void)
     msg01Handle = osThreadNew(TaskMsg01, NULL, &msg01_attributes); 
     msg02Handle = osThreadNew(TaskMsg02, NULL, &msg02_attributes); 
 
-    // Delay to allow for time to connect to the serial terminal 
+    // Blocking delay to provide time for the user to connect to the serial terminal 
     tim_delay_ms(TIM9, TC_DELAY_4); 
+
+#elif TERMINAL_ECHO_TEST 
+
+    // Create the thread(s) 
+    TE01Handle = osThreadNew(TaskTE01, NULL, &TE01_attributes); 
+    osThreadSuspend(TE01Handle);   // Suspend to prevent running right away 
+
+    uart_sendstring(USART2, "\r\n>>> "); 
     
 #endif
 } 
@@ -375,7 +491,27 @@ void TaskLoop(void *argument)
 #if PERIODIC_BLINK_TEST 
         // Do nothing 
 #elif MANUAL_BLINK_TEST 
-        // 
+
+        // This interrupt flag will be set when an idle line is detected on UART RX after 
+        // receiving new data. 
+        if (handler_flags.usart2_flag)
+        {
+            handler_flags.usart2_flag = CLEAR; 
+
+            // Get the user input and update the LED blink rate 
+            cb_parse(uart_dma_buff, user_in_buff, &buff_index, SERIAL_INPUT_MAX_LEN); 
+            mb_ticks = (uint32_t)strtol((char *)user_in_buff, NULL, 10); 
+
+            // Make sure rate can't go below a certain threshold to prevent this task 
+            // from never running. 
+            if (mb_ticks < MB_MIN_LED_RATE)
+            {
+                mb_ticks = MB_MIN_LED_RATE; 
+            }
+
+            uart_sendstring(USART2, "\r\n>>> "); 
+        }
+        
 #elif TASK_CONTROL_TEST 
 
         // Suspend the higher priority task for some intervals 
@@ -392,6 +528,50 @@ void TaskLoop(void *argument)
         {
             osThreadTerminate(msg01Handle); 
             msg01Handle = NULL; 
+        }
+
+#elif TERMINAL_ECHO_TEST 
+
+        // This interrupt flag will be set when an idle line is detected on UART RX after 
+        // receiving new data. 
+        if (handler_flags.usart2_flag)
+        {
+            handler_flags.usart2_flag = CLEAR; 
+
+            uint8_t user_in_buff_local[SERIAL_INPUT_MAX_LEN]; 
+            uint32_t input_len; 
+            uint8_t mem_info[MEM_STR_MAX_LEN]; 
+
+            // Get the user input from the circular buffer 
+            cb_parse(uart_dma_buff, user_in_buff_local, &buff_index, SERIAL_INPUT_MAX_LEN); 
+
+            snprintf(
+                (char *)mem_info, 
+                MEM_STR_MAX_LEN, 
+                "Free task stack (words): %lu\r\nFree heap before malloc (bytes): %lu\r\n", 
+                (uint32_t)uxTaskGetStackHighWaterMark(NULL), 
+                (uint32_t)xPortGetFreeHeapSize()); 
+            uart_sendstring(USART2, (char *)mem_info); 
+
+            // Store the input in heap memory. 'input_len' is made one longer than strlen 
+            // provides so that the null termination of 'user_in_buff_local' will be 
+            // copied to the heap and print properly to the serial terminal. 
+            input_len = (uint32_t)strlen((char *)user_in_buff_local) + 1; 
+            user_msg = (char *)pvPortMalloc(input_len); 
+
+            if (user_msg != NULL)
+            {
+                memcpy((void *)user_msg, (void *)user_in_buff_local, input_len); 
+            }
+
+            snprintf(
+                (char *)mem_info, 
+                MEM_STR_MAX_LEN, 
+                "Free heap after malloc (bytes): %lu\r\n", 
+                (uint32_t)xPortGetFreeHeapSize()); 
+            uart_sendstring(USART2, (char *)mem_info); 
+
+            osThreadResume(TE01Handle); 
         }
 
 #endif
@@ -413,7 +593,7 @@ void TaskBlink01(void *argument)
 {
     while (1)
     {
-        blink_led_toggle(BLINK_DELAY_1); 
+        blink_led_toggle(PB_DELAY_1); 
     }
 
     osThreadTerminate(NULL); 
@@ -425,7 +605,7 @@ void TaskBlink02(void *argument)
 {
     while (1)
     { 
-        blink_led_toggle(BLINK_DELAY_2); 
+        blink_led_toggle(PB_DELAY_2); 
     }
 
     osThreadTerminate(NULL); 
@@ -441,13 +621,30 @@ void blink_led_toggle(uint32_t ticks)
 }
 
 #elif MANUAL_BLINK_TEST 
+
+// Task function: MB01 
+void TaskMB01(void *argument)
+{
+    // Board LED state 
+    gpio_pin_state_t led_state = GPIO_LOW; 
+
+    while (1)
+    {
+        led_state = GPIO_HIGH - led_state; 
+        gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
+        osDelay(mb_ticks); 
+    }
+
+    osThreadTerminate(NULL); 
+}
+
 #elif TASK_CONTROL_TEST 
 
 // Task function: msg01 
 void TaskMsg01(void *argument)
 {
     // Print the string to the terminal one character at a time. 
-    while(1)
+    while (1)
     {
         uart_send_new_line(USART2); 
         uart_sendstring(USART2, msg); 
@@ -462,10 +659,31 @@ void TaskMsg01(void *argument)
 // Task function: msg02 
 void TaskMsg02(void *argument)
 {
-    while(1)
+    while (1)
     {
         uart_sendchar(USART2, AST_CHAR); 
         osDelay(TC_DELAY_3); 
+    }
+
+    osThreadTerminate(NULL); 
+}
+
+#elif TERMINAL_ECHO_TEST 
+
+// Task function: TE01 
+void TaskTE01(void *argument)
+{
+    while (1)
+    {
+        // Echo the user input back to the serial terminal 
+        uart_sendstring(USART2, "Echo: "); 
+        uart_sendstring(USART2, user_msg); 
+        uart_sendstring(USART2, "\r\n\n>>> "); 
+
+        // Free the heap memory and suspend the task 
+        vPortFree(user_msg); 
+        user_msg = NULL; 
+        osThreadSuspend(TE01Handle); 
     }
 
     osThreadTerminate(NULL); 

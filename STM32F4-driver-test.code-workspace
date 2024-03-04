@@ -87,7 +87,8 @@
 			"stm32f4xx.h": "c",
 			"freertos_test.h": "c",
 			"freertos_os2.h": "c",
-			"freertos_mpool.h": "c"
+			"freertos_mpool.h": "c",
+			"uart_test.h": "c"
 		}
 	}
 }
