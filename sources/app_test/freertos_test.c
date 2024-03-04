@@ -17,49 +17,6 @@
  */
 
 //=======================================================================================
-// Tests to add 
-// 4. Two tasks and two queues. Task A should print any new messages from queue 2 to the 
-//    serial terminal, read serial input from the user, echo input back to the serial 
-//    terminal and send values to queue 1 where values come from a user input that reads 
-//    "delay <value>". Task B should update a delay variable with values from queue 1, 
-//    blink the board LED with the delay value, and send a string to queue 2 every 100 
-//    LED blinks along with a counter to indicate the number of times it's blinked 100 
-//    times. 
-// 
-// 5. Two tasks that access the same function and therefore the same global variable. The 
-//    function increments the global variable. There is a mutex in the function that 
-//    prevents either task from running while the other is incrementing the cariable. 
-// 
-// 6. Seven tasks, 5 of which are producers that add values to a circular buffer (shared 
-//    resource) and 2 tasks which are consumers that read from the buffer. The producer 
-//    tasks write their task number to the buffer 3 times. Semaphores and mutexes are 
-//    used to to protect the shared circular buffer. The consumer tasks print out 
-//    anything read from the buffer to the serial terminal. 
-// 
-// 7. Enter characters in the serial terminal. When the code sees characters being 
-//    entered it will turn the board LED on. The board LED will only turn off after there 
-//    has been no serial terminal input for a period of time (say 5 seconds). Use 
-//    software timers to accomplish the task. 
-//    - Note: the xTimerStart function will restart a counter if it's called before the 
-//            timer expires. 
-// 
-// 8. Use a hardware timer (ISR) to sample ADC 10 times per second. The values get placed 
-//    in a double or circular buffer. Once 10 samples have been collected, the ISR should 
-//    wake up task A which computes the average of the 10 samples. A double or circular 
-//    buffer is recommended so data can be read/used at the same time new data gets 
-//    written using the ISR. The average should a be floating point value stored in a 
-//    global variable. Assume this global variable cannot be written to or read from in 
-//    a single CPU cycle (critical section). Task B will output to the serial terminal 
-//    the global variable value is "avg" is entered by the user, otherwise the input is 
-//    exhoed back. 
-// 
-// 10. Deadlock test. 
-// 
-// 11. Priority inversion test. 
-//=======================================================================================
-
-
-//=======================================================================================
 // Includes 
 
 #include "freertos_test.h" 
@@ -69,6 +26,8 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "cmsis_os2.h"
+#include "queue.h" 
+#include "semphr.h" 
 
 //=======================================================================================
 
@@ -77,16 +36,17 @@
 // Macros 
 
 // Conditional compilation 
-#define PERIODIC_BLINK_TEST 0   // Highest priority 
+#define PERIODIC_BLINK_TEST 0        // Highest priority 
 #define MANUAL_BLINK_TEST 0 
-#define TASK_CONTROL_TEST 0 
-#define TERMINAL_ECHO_TEST 1 
-#define _TEST1 0 
-#define _TEST2 0 
-#define _TEST3 0 
-#define _TEST4 0 
-#define _TEST5 0 
-#define _TEST6 0   // Lowest priority 
+#define TASK_SCHEDULING_TEST 0 
+#define MEMORY_MANAGEMENT_TEST 0 
+#define QUEUE_TEST 0 
+#define MUTEX_TEST 1 
+#define SEMAPHORE_TEST 0 
+#define SOFTWARE_TIMER_TEST 0 
+#define HARDWARE_INTERRUPT_TEST 0 
+#define DEADLOCK_STARVATION_TEST 0 
+#define PRIORITY_INVERSION_TEST 0    // Lowest priority 
 
 // Memory 
 #define MAIN_LOOP_STACK_SIZE configMINIMAL_STACK_SIZE * 8 
@@ -128,7 +88,7 @@
 //==================================================
 
 //==================================================
-// Task Control (TC) Test 
+// Task Scheduling (TS) Test 
 
 // There are two tasks that both print to the serial terminal. The first task is of a 
 // lower priority and prints an arbitrary string at every 1 second. The second task is 
@@ -138,18 +98,18 @@
 // be printed at a slow baud rate to better observe the preemptive nature of the RTOS. 
 
 // Memory 
-#define TC_STACK_SIZE configMINIMAL_STACK_SIZE * 4 
+#define TS_STACK_SIZE configMINIMAL_STACK_SIZE * 4 
 
-// Timing (number of ticks) 
-#define TC_DELAY_1 2000   // Ticks 
-#define TC_DELAY_2 1000   // Ticks 
-#define TC_DELAY_3 100    // Ticks 
-#define TC_DELAY_4 5000   // (ms) 
-
-//==================================================
+// Timing 
+#define TS_DELAY_1 2000   // Ticks 
+#define TS_DELAY_2 1000   // Ticks 
+#define TS_DELAY_3 100    // Ticks 
+#define TS_DELAY_4 5000   // (ms) 
 
 //==================================================
-// Terminal Echo (TE) Test 
+
+//==================================================
+// Memory Management (MM) Test 
 
 // This test uses two tasks to mimic a serial echo program. One task listens and records 
 // input from the serial terminal. Once the end of the input is seen (new line or 
@@ -159,10 +119,96 @@
 // store the message. 
 
 // Memory 
-#define TE_STACK_SIZE configMINIMAL_STACK_SIZE * 4 
+#define MM_STACK_SIZE configMINIMAL_STACK_SIZE * 4 
 
 // Data 
-#define MEM_STR_MAX_LEN 100 
+#define MM_STR_MAX_LEN 100 
+
+//==================================================
+
+//==================================================
+// Queue Test 
+
+// This test has two tasks and two queues. Task A will read serial terminal input from 
+// the user and echo it back to the terminal, print new messages from queue 2 and if 
+// "delay <value>" is input by the user then send <value> to queue 1. Task B will 
+// update a variable with any new values from queue 1, use the value of this variable 
+// to control the blink rate/delay of the board LED, and send the number of times the 
+// LED has blinked 100 times to queue 2. 
+
+// Memory 
+#define QUEUE_STACK_SIZE configMINIMAL_STACK_SIZE * 4 
+
+// Data 
+#define QUEUE_MIN_LED_RATE 50 
+
+//==================================================
+
+//==================================================
+// Mutex Test 
+
+// There are two tasks that both increment the same counter using the same function call. 
+// There is a mutex that prevents the other task from running while the current task 
+// increments the counter. 
+
+// Memory 
+#define MUTEX_STACK_SIZE configMINIMAL_STACK_SIZE * 4 
+
+// Timing 
+#define MUTEX_DELAY_1 1000   // Ticks 
+#define MUTEX_DELAY_2 1500   // Ticks 
+
+//==================================================
+
+//==================================================
+// Semaphore Test 
+
+// Seven tasks, 5 of which are producers that add values to a circular buffer (shared 
+// resource) and 2 tasks which are consumers that read from the buffer. The producer 
+// tasks write their task number to the buffer 3 times. Semaphores and mutexes are 
+// used to to protect the shared circular buffer. The consumer tasks print out 
+// anything read from the buffer to the serial terminal. 
+
+//==================================================
+
+//==================================================
+// Software Timer Test 
+
+// Enter characters in the serial terminal. When the code sees characters being 
+// entered it will turn the board LED on. The board LED will only turn off after there 
+// has been no serial terminal input for a period of time (say 5 seconds). Use 
+// software timers to accomplish the task. 
+// - Note: the xTimerStart function will restart a counter if it's called before the 
+//         timer expires. 
+
+//==================================================
+
+//==================================================
+// Hardware Interrupts Test 
+
+// Use a hardware timer (ISR) to sample ADC 10 times per second. The values get placed 
+// in a double or circular buffer. Once 10 samples have been collected, the ISR should 
+// wake up task A which computes the average of the 10 samples. A double or circular 
+// buffer is recommended so data can be read/used at the same time new data gets 
+// written using the ISR. The average should a be floating point value stored in a 
+// global variable. Assume this global variable cannot be written to or read from in 
+// a single CPU cycle (critical section). Task B will output to the serial terminal 
+// the global variable value is "avg" is entered by the user, otherwise the input is 
+// exhoed back. 
+
+//==================================================
+
+//==================================================
+// Deadlock and Starvation Test 
+
+// 
+
+//==================================================
+
+//==================================================
+// Priority Inversion Test 
+
+// 
 
 //==================================================
 
@@ -183,7 +229,7 @@ const osThreadAttr_t main_loop_attributes =
 
 // Serial terminal data 
 static uint8_t uart_dma_buff[SERIAL_INPUT_MAX_LEN];   // Circular buffer 
-static uint8_t buff_index = CLEAR;                    // Circular buffer index 
+static uint8_t buff_index;                            // Circular buffer index 
 static uint8_t user_in_buff[SERIAL_INPUT_MAX_LEN];    // Stores latest user input 
 
 #if PERIODIC_BLINK_TEST 
@@ -223,14 +269,14 @@ const osThreadAttr_t MB01_attributes =
 // Board LED blink rate 
 static uint32_t mb_ticks = MB_MIN_LED_RATE; 
 
-#elif TASK_CONTROL_TEST 
+#elif TASK_SCHEDULING_TEST 
 
 // Task definition: msg01 
 osThreadId_t msg01Handle = NULL; 
 const osThreadAttr_t msg01_attributes = 
 {
     .name = "msg01", 
-    .stack_size = TC_STACK_SIZE, 
+    .stack_size = TS_STACK_SIZE, 
     .priority = (osPriority_t) osPriorityBelowNormal 
 };
 
@@ -239,26 +285,74 @@ osThreadId_t msg02Handle = NULL;
 const osThreadAttr_t msg02_attributes = 
 {
     .name = "msg02",
-    .stack_size = TC_STACK_SIZE,
+    .stack_size = TS_STACK_SIZE,
     .priority = (osPriority_t) osPriorityNormal 
 };
 
 // Strings 
 const char msg[] = "Barkadeer brig Arr booty rum"; 
 
-#elif TERMINAL_ECHO_TEST 
+#elif MEMORY_MANAGEMENT_TEST 
 
-// Task definition: TE01 
-osThreadId_t TE01Handle; 
-const osThreadAttr_t TE01_attributes = 
+// Task definition: MM01 
+osThreadId_t MM01Handle; 
+const osThreadAttr_t MM01_attributes = 
 {
-    .name = "TE01", 
-    .stack_size = TE_STACK_SIZE, 
+    .name = "MM01", 
+    .stack_size = MM_STACK_SIZE, 
     .priority = (osPriority_t) osPriorityNormal 
 };
 
 // Pointer used to locate heap allocated memory 
 static char *user_msg = NULL; 
+
+#elif QUEUE_TEST 
+
+// Task definition: queue01 
+osThreadId_t queue01Handle; 
+const osThreadAttr_t queue01_attributes = 
+{
+    .name = "queue01", 
+    .stack_size = QUEUE_STACK_SIZE, 
+    .priority = (osPriority_t) osPriorityNormal 
+};
+
+// Queue info 
+static const uint8_t msg_queue_len = 5; 
+static QueueHandle_t msg_queue_0; 
+static QueueHandle_t msg_queue_1; 
+
+#elif MUTEX_TEST 
+
+// Task definition: increment01 
+osThreadId_t increment01Handle; 
+const osThreadAttr_t increment01_attributes = 
+{
+    .name = "increment01", 
+    .stack_size = MUTEX_STACK_SIZE, 
+    .priority = (osPriority_t) osPriorityNormal 
+};
+
+// Task definition: increment02 
+osThreadId_t increment02Handle; 
+const osThreadAttr_t increment02_attributes = 
+{
+    .name = "increment02",
+    .stack_size = MUTEX_STACK_SIZE,
+    .priority = (osPriority_t) osPriorityBelowNormal 
+};
+
+// Shared task counter 
+static uint16_t counter_shared = CLEAR; 
+
+// Mutex 
+static SemaphoreHandle_t mutex; 
+
+#elif SEMAPHORE_TEST 
+#elif SOFTWARE_TIMER_TEST 
+#elif HARDWARE_INTERRUPT_TEST 
+#elif DEADLOCK_STARVATION_TEST 
+#elif PRIORITY_INVERSION_TEST 
 
 #endif 
 
@@ -309,7 +403,7 @@ void blink_led_toggle(uint32_t ticks);
  */
 void TaskMB01(void *argument); 
 
-#elif TASK_CONTROL_TEST 
+#elif TASK_SCHEDULING_TEST 
 
 /**
  * @brief Task function: msg01 
@@ -326,14 +420,54 @@ void TaskMsg01(void *argument);
  */
 void TaskMsg02(void *argument); 
 
-#elif TERMINAL_ECHO_TEST 
+#elif MEMORY_MANAGEMENT_TEST 
 
 /**
- * @brief Task function: TE01 
+ * @brief Task function: MM01 
  * 
  * @param argument : NULL 
  */
-void TaskTE01(void *argument); 
+void TaskMM01(void *argument); 
+
+#elif QUEUE_TEST 
+
+/**
+ * @brief Task function: queue01 
+ * 
+ * @param argument : NULL 
+ */
+void TaskQueue01(void *argument); 
+
+#elif MUTEX_TEST 
+
+/**
+ * @brief Task function: increment01 
+ * 
+ * @param argument : NULL 
+ */
+void TaskInc01(void *argument); 
+
+
+/**
+ * @brief Task function: increment02 
+ * 
+ * @param argument : NULL 
+ */
+void TaskInc02(void *argument); 
+
+
+/**
+ * @brief Increment counter 
+ * 
+ * @param delay : task delay time (ticks) 
+ */
+void increment_counter(uint16_t delay); 
+
+#elif SEMAPHORE_TEST 
+#elif SOFTWARE_TIMER_TEST 
+#elif HARDWARE_INTERRUPT_TEST 
+#elif DEADLOCK_STARVATION_TEST 
+#elif PRIORITY_INVERSION_TEST 
 
 #endif
 
@@ -417,6 +551,7 @@ void freertos_test_init(void)
 
     // Initialize data 
     memset((void *)uart_dma_buff, CLEAR, sizeof(uart_dma_buff)); 
+    memset((void *)&buff_index, CLEAR, sizeof(buff_index)); 
     memset((void *)user_in_buff, CLEAR, sizeof(user_in_buff)); 
 
     //==================================================
@@ -437,7 +572,7 @@ void freertos_test_init(void)
 
     uart_sendstring(USART2, "\r\n>>> "); 
 
-#elif TASK_CONTROL_TEST 
+#elif TASK_SCHEDULING_TEST 
 
     // Reinitialize UART (serial terminal output) for a slower baud rate 
     uart_init(
@@ -455,15 +590,41 @@ void freertos_test_init(void)
     msg02Handle = osThreadNew(TaskMsg02, NULL, &msg02_attributes); 
 
     // Blocking delay to provide time for the user to connect to the serial terminal 
-    tim_delay_ms(TIM9, TC_DELAY_4); 
+    tim_delay_ms(TIM9, TS_DELAY_4); 
 
-#elif TERMINAL_ECHO_TEST 
+#elif MEMORY_MANAGEMENT_TEST 
 
     // Create the thread(s) 
-    TE01Handle = osThreadNew(TaskTE01, NULL, &TE01_attributes); 
-    osThreadSuspend(TE01Handle);   // Suspend to prevent running right away 
+    MM01Handle = osThreadNew(TaskMM01, NULL, &MM01_attributes); 
+    osThreadSuspend(MM01Handle);   // Suspend to prevent running right away 
 
     uart_sendstring(USART2, "\r\n>>> "); 
+
+#elif QUEUE_TEST 
+
+    // Create the thread(s) 
+    queue01Handle = osThreadNew(TaskQueue01, NULL, &queue01_attributes); 
+
+    // Create queue handle(s) 
+    msg_queue_0 = xQueueCreate(msg_queue_len, sizeof(uint32_t)); 
+    msg_queue_1 = xQueueCreate(msg_queue_len, sizeof(uint32_t)); 
+
+    uart_sendstring(USART2, "\r\n>>> "); 
+
+#elif MUTEX_TEST 
+
+    // Create the thread(s) 
+    increment01Handle = osThreadNew(TaskInc01, NULL, &increment01_attributes); 
+    increment02Handle = osThreadNew(TaskInc02, NULL, &increment02_attributes); 
+
+    // Create the mutex 
+    mutex = xSemaphoreCreateMutex(); 
+
+#elif SEMAPHORE_TEST 
+#elif SOFTWARE_TIMER_TEST 
+#elif HARDWARE_INTERRUPT_TEST 
+#elif DEADLOCK_STARVATION_TEST 
+#elif PRIORITY_INVERSION_TEST 
     
 #endif
 } 
@@ -512,15 +673,15 @@ void TaskLoop(void *argument)
             uart_sendstring(USART2, "\r\n>>> "); 
         }
         
-#elif TASK_CONTROL_TEST 
+#elif TASK_SCHEDULING_TEST 
 
         // Suspend the higher priority task for some intervals 
         for (uint8_t i = CLEAR; i < 3; i++)
         {
             osThreadSuspend(msg02Handle); 
-            osDelay(TC_DELAY_1); 
+            osDelay(TS_DELAY_1); 
             osThreadResume(msg02Handle); 
-            osDelay(TC_DELAY_1); 
+            osDelay(TS_DELAY_1); 
         }
         
         // Delete the lower priority task 
@@ -530,7 +691,7 @@ void TaskLoop(void *argument)
             msg01Handle = NULL; 
         }
 
-#elif TERMINAL_ECHO_TEST 
+#elif MEMORY_MANAGEMENT_TEST 
 
         // This interrupt flag will be set when an idle line is detected on UART RX after 
         // receiving new data. 
@@ -540,14 +701,14 @@ void TaskLoop(void *argument)
 
             uint8_t user_in_buff_local[SERIAL_INPUT_MAX_LEN]; 
             uint32_t input_len; 
-            uint8_t mem_info[MEM_STR_MAX_LEN]; 
+            uint8_t mem_info[MM_STR_MAX_LEN]; 
 
             // Get the user input from the circular buffer 
             cb_parse(uart_dma_buff, user_in_buff_local, &buff_index, SERIAL_INPUT_MAX_LEN); 
 
             snprintf(
                 (char *)mem_info, 
-                MEM_STR_MAX_LEN, 
+                MM_STR_MAX_LEN, 
                 "Free task stack (words): %lu\r\nFree heap before malloc (bytes): %lu\r\n", 
                 (uint32_t)uxTaskGetStackHighWaterMark(NULL), 
                 (uint32_t)xPortGetFreeHeapSize()); 
@@ -566,13 +727,83 @@ void TaskLoop(void *argument)
 
             snprintf(
                 (char *)mem_info, 
-                MEM_STR_MAX_LEN, 
+                MM_STR_MAX_LEN, 
                 "Free heap after malloc (bytes): %lu\r\n", 
                 (uint32_t)xPortGetFreeHeapSize()); 
             uart_sendstring(USART2, (char *)mem_info); 
 
-            osThreadResume(TE01Handle); 
+            osThreadResume(MM01Handle); 
         }
+
+#elif QUEUE_TEST 
+
+        static uint32_t blink_count = CLEAR; 
+
+        // This interrupt flag will be set when an idle line is detected on UART RX after 
+        // receiving new data. 
+        if (handler_flags.usart2_flag)
+        {
+            handler_flags.usart2_flag = CLEAR; 
+
+            // Get the user input from the circular buffer 
+            cb_parse(uart_dma_buff, user_in_buff, &buff_index, SERIAL_INPUT_MAX_LEN); 
+            
+            // Check for a valid delay command. If found then updated the LED delay rate. 
+            if (str_compare("delay ", (char *)user_in_buff, BYTE_0))
+            {
+                char *delay_value_cmd = (char *)(user_in_buff + BYTE_6); 
+                uint32_t delay_value = (uint32_t)strtol(delay_value_cmd, NULL, 10); 
+
+                if (delay_value != 0)
+                {
+                    if (delay_value < QUEUE_MIN_LED_RATE)
+                    {
+                        delay_value = QUEUE_MIN_LED_RATE; 
+                    }
+
+                    // Send delay value to queue 0 
+                    if (xQueueSend(msg_queue_0, (void *)&delay_value, 0) == pdTRUE)
+                    {
+                        char delay_value_str[SERIAL_INPUT_MAX_LEN]; 
+                        snprintf(
+                            delay_value_str, 
+                            SERIAL_INPUT_MAX_LEN, 
+                            "Blink delay (ms): %lu", 
+                            delay_value); 
+                        uart_sendstring(USART2, delay_value_str); 
+                        uart_send_new_line(USART2); 
+                    }
+                    else 
+                    {
+                        uart_sendstring(USART2, "Queue full.\n"); 
+                    }
+
+                }
+            }
+
+            uart_sendstring(USART2, "\r\n>>> "); 
+        }
+
+        // Print new messages from queue 1 
+        if (xQueueReceive(msg_queue_1, (void *)&blink_count, 0) == pdTRUE)
+        {
+            char blink_count_str[SERIAL_INPUT_MAX_LEN]; 
+            snprintf(
+                blink_count_str, 
+                SERIAL_INPUT_MAX_LEN, 
+                "\rBlink count (x100): %lu\n", 
+                blink_count); 
+            uart_sendstring(USART2, blink_count_str); 
+            uart_sendstring(USART2, "\r\n>>> "); 
+        }
+
+#elif MUTEX_TEST 
+        // Do nothing 
+#elif SEMAPHORE_TEST 
+#elif SOFTWARE_TIMER_TEST 
+#elif HARDWARE_INTERRUPT_TEST 
+#elif DEADLOCK_STARVATION_TEST 
+#elif PRIORITY_INVERSION_TEST 
 
 #endif
     }
@@ -638,7 +869,7 @@ void TaskMB01(void *argument)
     osThreadTerminate(NULL); 
 }
 
-#elif TASK_CONTROL_TEST 
+#elif TASK_SCHEDULING_TEST 
 
 // Task function: msg01 
 void TaskMsg01(void *argument)
@@ -649,7 +880,7 @@ void TaskMsg01(void *argument)
         uart_send_new_line(USART2); 
         uart_sendstring(USART2, msg); 
         uart_send_new_line(USART2); 
-        osDelay(TC_DELAY_2); 
+        osDelay(TS_DELAY_2); 
     }
 
     osThreadTerminate(NULL); 
@@ -662,16 +893,16 @@ void TaskMsg02(void *argument)
     while (1)
     {
         uart_sendchar(USART2, AST_CHAR); 
-        osDelay(TC_DELAY_3); 
+        osDelay(TS_DELAY_3); 
     }
 
     osThreadTerminate(NULL); 
 }
 
-#elif TERMINAL_ECHO_TEST 
+#elif MEMORY_MANAGEMENT_TEST 
 
-// Task function: TE01 
-void TaskTE01(void *argument)
+// Task function: MM01 
+void TaskMM01(void *argument)
 {
     while (1)
     {
@@ -683,11 +914,98 @@ void TaskTE01(void *argument)
         // Free the heap memory and suspend the task 
         vPortFree(user_msg); 
         user_msg = NULL; 
-        osThreadSuspend(TE01Handle); 
+        osThreadSuspend(MM01Handle); 
     }
 
     osThreadTerminate(NULL); 
 }
+
+#elif QUEUE_TEST 
+
+// Task function: queue01 
+void TaskQueue01(void *argument)
+{
+    uint32_t delay = QUEUE_MIN_LED_RATE, blink_count = CLEAR, blink_tally = CLEAR; 
+    gpio_pin_state_t led_state = GPIO_LOW; 
+
+    while (1)
+    {
+        led_state = GPIO_HIGH - led_state; 
+        gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
+        blink_count += (uint32_t)led_state; 
+
+        if (blink_count >= 100)
+        {
+            blink_count = CLEAR; 
+            blink_tally++; 
+            xQueueSend(msg_queue_1, (void *)&blink_tally, 0); 
+        }
+
+        xQueueReceive(msg_queue_0, (void *)&delay, 0); 
+        osDelay(delay); 
+    }
+
+    osThreadTerminate(NULL); 
+}
+
+#elif MUTEX_TEST 
+
+// Task function: increment01 
+void TaskInc01(void *argument)
+{
+    while (1)
+    {
+        increment_counter(MUTEX_DELAY_1); 
+    }
+
+    osThreadTerminate(NULL); 
+}
+
+
+// Task function: increment02 
+void TaskInc02(void *argument)
+{
+    while (1)
+    {
+        increment_counter(MUTEX_DELAY_2); 
+    }
+
+    osThreadTerminate(NULL); 
+}
+
+
+// Increment counter 
+void increment_counter(uint16_t delay)
+{
+    static uint16_t counter_temp = CLEAR; 
+
+    // Take mutex prior to critical section 
+    if (xSemaphoreTake(mutex, 0) == pdTRUE)
+    {
+        // Purposely increment in a non-efficient manner 
+        counter_temp = counter_shared; 
+        counter_temp++; 
+        osDelay(delay); 
+        counter_shared = counter_temp; 
+
+        char num_str[SERIAL_INPUT_MAX_LEN]; 
+        snprintf(num_str, SERIAL_INPUT_MAX_LEN, "%u\r\n", counter_shared); 
+        uart_sendstring(USART2, num_str); 
+
+        // Give mutex back after critical section 
+        xSemaphoreGive(mutex); 
+    }
+    else 
+    {
+        // Do something useful if the critical section cannot be accessed. 
+    }
+}
+
+#elif SEMAPHORE_TEST 
+#elif SOFTWARE_TIMER_TEST 
+#elif HARDWARE_INTERRUPT_TEST 
+#elif DEADLOCK_STARVATION_TEST 
+#elif PRIORITY_INVERSION_TEST 
 
 #endif
 
