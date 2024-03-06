@@ -28,6 +28,7 @@
 #include "cmsis_os2.h"
 #include "queue.h" 
 #include "semphr.h" 
+#include "timers.h" 
 
 //=======================================================================================
 
@@ -42,8 +43,8 @@
 #define MEMORY_MANAGEMENT_TEST 0 
 #define QUEUE_TEST 0 
 #define MUTEX_TEST 0 
-#define SEMAPHORE_TEST 1 
-#define SOFTWARE_TIMER_TEST 0 
+#define SEMAPHORE_TEST 0 
+#define SOFTWARE_TIMER_TEST 1 
 #define HARDWARE_INTERRUPT_TEST 0 
 #define DEADLOCK_STARVATION_TEST 0 
 #define PRIORITY_INVERSION_TEST 0    // Lowest priority 
@@ -163,27 +164,17 @@
 //==================================================
 // Semaphore Test 
 
-// 5 producer tasks that add values to a shared circular buffer. 
-// 2 consumer tasks that read values from the shared circular buffer. 
-// Each producer task writes its task number to the buffer 3 times in no particular 
-// order. 
-// The shared buffer must be treated as a critical section protected by a mutex. 
-// The shared buffer requires two counting semaphores, one to indicate the number of 
-// free spaces in the buffer and another to indicate the number of spots filled within 
-// the buffer. 
-// The producer threads copy their argument/parameter (task number) to a local 
-// variable in the task function which then gets written to the circular buffer three 
-// times. 
-// The consumer threads simply print out anything they find in the buffer. 
-// A third semaphore (binary) is needed to make sure the parameter gets copied to the 
-// local variable. 
-// The serial output must also be protected. 
-
-// Seven tasks, 5 of which are producers that add values to a circular buffer (shared 
-// resource) and 2 tasks which are consumers that read from the buffer. The producer 
-// tasks write their task number to the buffer 3 times. Semaphores and mutexes are 
-// used to protect the shared circular buffer. The consumer tasks print out anything 
-// read from the buffer to the serial terminal. 
+// There are 5 producer tasks that write to a circular buffer and 2 consumer tasks that 
+// read from it. The producer tasks write their task number to the buffer 3 times and 
+// the consumers print the contents of the buffer to the serial terminal. The serial 
+// terminal output should display each task number exactly 3 times and have one number 
+// output per line, meaning access to the buffer, the state of the buffer and the serial 
+// line must be protected from multiple accesse. Protection is accomplished by a mutex 
+// to protect the buffer and serial line as well as two counting semaphores, one for 
+// the number of empty buffer slots and one for the number of full buffer slots, that 
+// prevent overwriting and overreading the buffer. Each producer task should be created, 
+// copy its task number passed as the task argument to a local variable, run once and 
+// then deleted itself. 
 
 // Memory 
 #define SEMAPHORE_STACK_SIZE configMINIMAL_STACK_SIZE * 4 
@@ -209,6 +200,11 @@
 // software timers to accomplish the task. 
 // - Note: the xTimerStart function will restart a counter if it's called before the 
 //         timer expires. 
+
+// Timing 
+#define SOFTWARE_TIMER_DELAY_1 1000   // ms 
+#define SOFTWARE_TIMER_PERIOD_1 2     // Ticks 
+#define SOFTWARE_TIMER_PERIOD_2 1     // Ticks 
 
 //==================================================
 
@@ -402,6 +398,17 @@ static uint8_t write_index = CLEAR;        // Write/head index for circular buff
 static uint8_t read_index = CLEAR;         // Read/tail index for circular buffer 
 
 #elif SOFTWARE_TIMER_TEST 
+
+// Timer(s) 
+
+// FreeRTOS API method 
+static TimerHandle_t one_shot_timer = NULL; 
+static TimerHandle_t auto_reload_timer = NULL; 
+
+// CMSIS API method 
+static osTimerId_t oneShotTimerHandle; 
+const osTimerAttr_t oneShot_attributes = { .name = "oneShotTimer" }; 
+
 #elif HARDWARE_INTERRUPT_TEST 
 #elif DEADLOCK_STARVATION_TEST 
 #elif PRIORITY_INVERSION_TEST 
@@ -541,6 +548,18 @@ void TaskSemaphoreProducer(void *argument);
 void TaskSemaphoreConsumer(void *argument); 
 
 #elif SOFTWARE_TIMER_TEST 
+
+/**
+ * @brief Task function: softwareTimer 
+ * 
+ * @param argument : NULL 
+ */
+void TaskSoftwareTimer(void *argument); 
+
+
+// Called when one of the timers expires 
+void TimerCallback(TimerHandle_t xTimer); 
+
 #elif HARDWARE_INTERRUPT_TEST 
 #elif DEADLOCK_STARVATION_TEST 
 #elif PRIORITY_INVERSION_TEST 
@@ -713,6 +732,48 @@ void freertos_test_init(void)
     tim_delay_ms(TIM9, SEMPAHORE_DELAY_1); 
 
 #elif SOFTWARE_TIMER_TEST 
+
+    //==================================================
+    // FreeRTOS API method 
+
+    // Create timers 
+    one_shot_timer = xTimerCreate(
+        "one_shot_timer",               // Name of timer 
+        SOFTWARE_TIMER_PERIOD_1,        // Period of timer (ticks) 
+        pdFALSE,                        // Auto-relead --> pdFASLE == One Shot Timer 
+        (void *)0,                      // Timer ID 
+        TimerCallback);                 // Callback function 
+    
+    auto_reload_timer = xTimerCreate(
+        "auto_reload_timer",            // Name of timer 
+        SOFTWARE_TIMER_PERIOD_2,        // Period of timer (ticks) 
+        pdTRUE,                         // Auto-relead --> pdTRUE == Repeat Timer 
+        (void *)1,                      // Timer ID 
+        TimerCallback);                 // Callback function 
+
+    // Check that the timers were created properly 
+    if ((one_shot_timer == NULL) || (auto_reload_timer == NULL))
+    {
+        uart_sendstring(USART2, "Couldn't create timer.\r\n"); 
+    }
+    else 
+    {
+        tim_delay_ms(TIM9, SOFTWARE_TIMER_DELAY_1); 
+        uart_sendstring(USART2, "Starting timers..."); 
+
+        // Start timers (max block time if command queue is full). 
+        // Essentially says to wait forever if the queue is full. 
+        xTimerStart(one_shot_timer, portMAX_DELAY); 
+        xTimerStart(auto_reload_timer, portMAX_DELAY); 
+    }
+    
+    //==================================================
+
+    // // CMSIS API method 
+    // // Note that using this function doesn't allow you to adjust the period of the timer. 
+    // oneShotTimerHandle = osTimerNew(TimerCallback, osTimerOnce, NULL, &oneShot_attributes); 
+    // osTimerStart(oneShotTimerHandle, 1); 
+
 #elif HARDWARE_INTERRUPT_TEST 
 #elif DEADLOCK_STARVATION_TEST 
 #elif PRIORITY_INVERSION_TEST 
@@ -893,6 +954,7 @@ void TaskLoop(void *argument)
 #elif SEMAPHORE_TEST 
         // Do nothing 
 #elif SOFTWARE_TIMER_TEST 
+        // 
 #elif HARDWARE_INTERRUPT_TEST 
 #elif DEADLOCK_STARVATION_TEST 
 #elif PRIORITY_INVERSION_TEST 
@@ -1199,6 +1261,38 @@ void TaskSemaphoreConsumer(void *argument)
 }
 
 #elif SOFTWARE_TIMER_TEST 
+
+// Task function: softwareTimer 
+void TaskSoftwareTimer(void *argument)
+{
+    while (1)
+    {
+        // 
+    }
+
+    osThreadTerminate(NULL); 
+}
+
+
+// Called when one of the timers expires 
+void TimerCallback(TimerHandle_t xTimer)
+{
+    // The 'xTimer' parameter can be used to identify which timer called this function 
+    // when multiple timers call this function. 
+
+    // Print message if timer 0 expired 
+    if ((uint32_t)pvTimerGetTimerID(xTimer) == 0)
+    {
+        uart_sendstring(USART2, "One-shot timer expired.\r\n"); 
+    }
+
+    // Print message if timer 1 expired 
+    if ((uint32_t)pvTimerGetTimerID(xTimer) == 1)
+    {
+        uart_sendstring(USART2, "Auto-reload timer expired. Reloading...\r\n"); 
+    }
+}
+
 #elif HARDWARE_INTERRUPT_TEST 
 #elif DEADLOCK_STARVATION_TEST 
 #elif PRIORITY_INVERSION_TEST 
