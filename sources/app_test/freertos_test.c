@@ -41,8 +41,8 @@
 #define TASK_SCHEDULING_TEST 0 
 #define MEMORY_MANAGEMENT_TEST 0 
 #define QUEUE_TEST 0 
-#define MUTEX_TEST 1 
-#define SEMAPHORE_TEST 0 
+#define MUTEX_TEST 0 
+#define SEMAPHORE_TEST 1 
 #define SOFTWARE_TIMER_TEST 0 
 #define HARDWARE_INTERRUPT_TEST 0 
 #define DEADLOCK_STARVATION_TEST 0 
@@ -163,11 +163,40 @@
 //==================================================
 // Semaphore Test 
 
+// 5 producer tasks that add values to a shared circular buffer. 
+// 2 consumer tasks that read values from the shared circular buffer. 
+// Each producer task writes its task number to the buffer 3 times in no particular 
+// order. 
+// The shared buffer must be treated as a critical section protected by a mutex. 
+// The shared buffer requires two counting semaphores, one to indicate the number of 
+// free spaces in the buffer and another to indicate the number of spots filled within 
+// the buffer. 
+// The producer threads copy their argument/parameter (task number) to a local 
+// variable in the task function which then gets written to the circular buffer three 
+// times. 
+// The consumer threads simply print out anything they find in the buffer. 
+// A third semaphore (binary) is needed to make sure the parameter gets copied to the 
+// local variable. 
+// The serial output must also be protected. 
+
 // Seven tasks, 5 of which are producers that add values to a circular buffer (shared 
 // resource) and 2 tasks which are consumers that read from the buffer. The producer 
 // tasks write their task number to the buffer 3 times. Semaphores and mutexes are 
-// used to to protect the shared circular buffer. The consumer tasks print out 
-// anything read from the buffer to the serial terminal. 
+// used to protect the shared circular buffer. The consumer tasks print out anything 
+// read from the buffer to the serial terminal. 
+
+// Memory 
+#define SEMAPHORE_STACK_SIZE configMINIMAL_STACK_SIZE * 4 
+
+// Data 
+#define SEMAPHORE_NUM_PRODUCERS 5 
+#define SEMAPHORE_NUM_CONSUMERS 2 
+#define SEMAPHORE_NUM_WRITES 3 
+#define SEMAPHORE_BUFF_SIZE 5 
+#define SEMAPHORE_TASK_NAME_LEN 15 
+
+// Timing 
+#define SEMPAHORE_DELAY_1 5000   // (ms) 
 
 //==================================================
 
@@ -349,6 +378,29 @@ static uint16_t counter_shared = CLEAR;
 static SemaphoreHandle_t mutex; 
 
 #elif SEMAPHORE_TEST 
+
+// Task definition: increment01 
+osThreadId_t semaphoreSetupHandle; 
+const osThreadAttr_t semaphoreSetup_attributes = 
+{
+    .name = "semaphoreSetup", 
+    .stack_size = SEMAPHORE_STACK_SIZE, 
+    .priority = (osPriority_t) osPriorityNormal 
+};
+
+// Semaphores 
+static SemaphoreHandle_t binary_sem;   // Allows for parameter copying 
+static SemaphoreHandle_t filled_sem;   // Number of filled slots in the circular buffer 
+static SemaphoreHandle_t empty_sem;    // Number of empty slots in the circular buffer 
+
+// Mutex 
+static SemaphoreHandle_t buff_mutex;   // Protects the circular buffer and serial output 
+
+// Data 
+static uint8_t buff[SEMAPHORE_BUFF_SIZE];  // Circular buffer 
+static uint8_t write_index = CLEAR;        // Write/head index for circular buffer 
+static uint8_t read_index = CLEAR;         // Read/tail index for circular buffer 
+
 #elif SOFTWARE_TIMER_TEST 
 #elif HARDWARE_INTERRUPT_TEST 
 #elif DEADLOCK_STARVATION_TEST 
@@ -464,6 +516,30 @@ void TaskInc02(void *argument);
 void increment_counter(uint16_t delay); 
 
 #elif SEMAPHORE_TEST 
+
+/**
+ * @brief Task function: semaphoreSetup 
+ * 
+ * @param argument : NULL 
+ */
+void TaskSemaphoreSetup(void *argument); 
+
+
+/**
+ * @brief Task function: semaphoreProducer 
+ * 
+ * @param argument : NULL 
+ */
+void TaskSemaphoreProducer(void *argument); 
+
+
+/**
+ * @brief Task function: semaphoreConsumer 
+ * 
+ * @param argument : NULL 
+ */
+void TaskSemaphoreConsumer(void *argument); 
+
 #elif SOFTWARE_TIMER_TEST 
 #elif HARDWARE_INTERRUPT_TEST 
 #elif DEADLOCK_STARVATION_TEST 
@@ -621,6 +697,21 @@ void freertos_test_init(void)
     mutex = xSemaphoreCreateMutex(); 
 
 #elif SEMAPHORE_TEST 
+
+    // Create the thread(s) 
+    semaphoreSetupHandle = osThreadNew(TaskSemaphoreSetup, NULL, &semaphoreSetup_attributes); 
+
+    // Create semaphore(s) 
+    binary_sem = xSemaphoreCreateBinary(); 
+    filled_sem = xSemaphoreCreateCounting(SEMAPHORE_BUFF_SIZE, 0); 
+    empty_sem = xSemaphoreCreateCounting(SEMAPHORE_BUFF_SIZE, SEMAPHORE_BUFF_SIZE); 
+
+    // Create mutex 
+    buff_mutex = xSemaphoreCreateMutex(); 
+
+    // Blocking delay to provide time for the user to connect to the serial terminal 
+    tim_delay_ms(TIM9, SEMPAHORE_DELAY_1); 
+
 #elif SOFTWARE_TIMER_TEST 
 #elif HARDWARE_INTERRUPT_TEST 
 #elif DEADLOCK_STARVATION_TEST 
@@ -800,6 +891,7 @@ void TaskLoop(void *argument)
 #elif MUTEX_TEST 
         // Do nothing 
 #elif SEMAPHORE_TEST 
+        // Do nothing 
 #elif SOFTWARE_TIMER_TEST 
 #elif HARDWARE_INTERRUPT_TEST 
 #elif DEADLOCK_STARVATION_TEST 
@@ -1002,6 +1094,110 @@ void increment_counter(uint16_t delay)
 }
 
 #elif SEMAPHORE_TEST 
+
+// Task function: semaphoreSetup 
+void TaskSemaphoreSetup(void *argument)
+{
+    char task_name[SEMAPHORE_TASK_NAME_LEN]; 
+
+    // Create and start producer threads 
+    for (uint8_t i = CLEAR; i < SEMAPHORE_NUM_PRODUCERS; i++)
+    {
+        snprintf(task_name, SEMAPHORE_TASK_NAME_LEN, "producer-%u", i); 
+
+        const osThreadAttr_t producer_attributes = 
+        {
+            .name = task_name, 
+            .stack_size = SEMAPHORE_STACK_SIZE, 
+            .priority = (osPriority_t) osPriorityNormal 
+        };
+
+        // Tasks delete themselves after executing the task function 
+        osThreadNew(TaskSemaphoreProducer, (void *)&i, &producer_attributes); 
+
+        // Wait for each task to read the argument 
+        xSemaphoreTake(binary_sem, portMAX_DELAY); 
+    }
+
+    // Create and start consumer threads 
+    for (uint8_t i = CLEAR; i < SEMAPHORE_NUM_CONSUMERS; i++)
+    {
+        snprintf(task_name, SEMAPHORE_TASK_NAME_LEN, "consumer-%i", i); 
+
+        const osThreadAttr_t consumer_attributes = 
+        {
+            .name = task_name, 
+            .stack_size = SEMAPHORE_STACK_SIZE, 
+            .priority = (osPriority_t) osPriorityNormal 
+        };
+
+        osThreadNew(TaskSemaphoreConsumer, NULL, &consumer_attributes); 
+    }
+
+    while (1) {} 
+
+    // Delete the task 
+    osThreadTerminate(NULL); 
+}
+
+
+// Task function: semaphoreProducer 
+void TaskSemaphoreProducer(void *argument)
+{
+    // Copy 'argument' into a local variable 
+    uint8_t num = *(uint8_t *)argument; 
+
+    // Release the binary semaphore 
+    xSemaphoreGive(binary_sem); 
+
+    // Fill the shared buffer with the task number 3 times 
+    for (uint8_t i = CLEAR; i < SEMAPHORE_NUM_WRITES; i++)
+    {
+        // Critical section 
+
+        xSemaphoreTake(empty_sem, portMAX_DELAY); 
+        xSemaphoreTake(buff_mutex, portMAX_DELAY); 
+
+        buff[write_index] = num; 
+        write_index = (write_index + 1) % SEMAPHORE_BUFF_SIZE; 
+
+        xSemaphoreGive(buff_mutex); 
+        xSemaphoreGive(filled_sem); 
+    }
+
+    // Delete the task 
+    osThreadTerminate(NULL); 
+
+    // This loop does not execute 
+    while (1) {}
+}
+
+
+// Task function: semaphoreConsumer 
+void TaskSemaphoreConsumer(void *argument)
+{
+    uint8_t val; 
+
+    // Read from the buffer 
+    while (1)
+    {
+        // Critical section 
+
+        xSemaphoreTake(filled_sem, portMAX_DELAY); 
+        xSemaphoreTake(buff_mutex, portMAX_DELAY); 
+
+        val = buff[read_index]; 
+        read_index = (read_index + 1) % SEMAPHORE_BUFF_SIZE; 
+        uart_send_integer(USART2, (int16_t)val); 
+        uart_send_new_line(USART2); 
+
+        xSemaphoreGive(buff_mutex); 
+        xSemaphoreGive(empty_sem); 
+    }
+
+    osThreadTerminate(NULL); 
+}
+
 #elif SOFTWARE_TIMER_TEST 
 #elif HARDWARE_INTERRUPT_TEST 
 #elif DEADLOCK_STARVATION_TEST 
