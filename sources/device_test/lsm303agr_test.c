@@ -17,7 +17,7 @@
 
 #include "lsm303agr_test.h" 
 #include "lsm303agr_config.h" 
-#include "int_handlers.h" 
+#include "stm32f4xx_it.h" 
 
 //=======================================================================================
 
@@ -140,14 +140,14 @@ void lsm303agr_test_init(void)
     nvic_config(TIM1_UP_TIM10_IRQn, EXTI_PRIORITY_0); 
 
     // Screen initialization 
-#if M8Q_TEST_SCREEN_ON_BUS 
+#if LSM303AGR_TEST_SCREEN_ON_BUS 
     // If the HD44780U screen is on the same I2C bus as the LSM303AGR then the screen 
     // must be set up first to prevent it from interfering with the bus. 
     hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH); 
     hd44780u_clear(); 
     hd44780u_display_off(); 
     hd44780u_backlight_off(); 
-#endif   // M8Q_TEST_SCREEN_ON_BUS 
+#endif   // LSM303AGR_TEST_SCREEN_ON_BUS 
 
     // LSM303AGR driver init 
     test_data.driver_status = lsm303agr_m_init(

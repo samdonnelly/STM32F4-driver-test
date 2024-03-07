@@ -17,7 +17,7 @@
 
 #include "m8q_test.h"
 #include "m8q_config.h"
-#include "int_handlers.h"
+#include "stm32f4xx_it.h" 
 
 //=======================================================================================
 

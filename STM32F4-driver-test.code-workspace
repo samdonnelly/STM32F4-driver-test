@@ -89,7 +89,10 @@
 			"freertos_os2.h": "c",
 			"freertos_mpool.h": "c",
 			"uart_test.h": "c",
-			"semphr.h": "c"
+			"semphr.h": "c",
+			"stm32f4xx_it.h": "c",
+			"system_settings.h": "c",
+			"project_init.h": "c"
 		}
 	}
 }

@@ -21,7 +21,7 @@
 
 #include "freertos_test.h" 
 #include "includes_drivers.h" 
-#include "int_handlers.h" 
+#include "stm32f4xx_it.h" 
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -45,8 +45,8 @@
 #define MUTEX_TEST 0 
 #define SEMAPHORE_TEST 0 
 #define SOFTWARE_TIMER_TEST_0 0 
-#define SOFTWARE_TIMER_TEST_1 1 
-#define HARDWARE_INTERRUPT_TEST 0 
+#define SOFTWARE_TIMER_TEST_1 0 
+#define HARDWARE_INTERRUPT_TEST 1 
 #define DEADLOCK_STARVATION_TEST 0 
 #define PRIORITY_INVERSION_TEST 0    // Lowest priority 
 
@@ -439,6 +439,9 @@ const osThreadAttr_t softwareTimer_attributes =
 static TimerHandle_t display_timer = NULL; 
 
 #elif HARDWARE_INTERRUPT_TEST 
+
+// 
+
 #elif DEADLOCK_STARVATION_TEST 
 #elif PRIORITY_INVERSION_TEST 
 

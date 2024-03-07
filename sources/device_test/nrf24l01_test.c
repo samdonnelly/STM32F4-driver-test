@@ -17,6 +17,7 @@
 
 #include "nrf24l01_test.h" 
 #include "nrf24l01_config.h" 
+#include "stm32f4xx_it.h" 
 
 //=======================================================================================
 
@@ -42,6 +43,14 @@
 // - Device 1 (master) sends throttle command to device 2 (slave) 
 // - Device 2 reads throttle command 
 // - Throttle command goes to the ESC driver 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Macros 
+
+#define NRF24L01_TEST_MAX_INPUT 30 
 
 //=======================================================================================
 
@@ -626,7 +635,7 @@ void nrf24l01_test_app(void)
             nrf24l01_test_data.user_buff, 
             nrf24l01_test_data.cmd_buff, 
             &nrf24l01_test_data.buff_index, 
-            UART_TEST_MAX_INPUT); 
+            NRF24L01_TEST_MAX_INPUT); 
 
         // Validate the input - parse into an ID and value if valid 
         if (nrf24l01_test_parse_cmd(nrf24l01_test_data.cmd_buff))

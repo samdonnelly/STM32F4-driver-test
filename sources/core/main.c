@@ -20,10 +20,7 @@
 #include "fatfs.h"
 
 // Application 
-#include "user_init.h"
-#include "user_app.h"
-#include "project_init.h"
-#include "project_app.h"
+#include "project_interface.h" 
 
 //=======================================================================================
 
@@ -90,7 +87,6 @@ int main(void)
     SystemClock_Config(); 
 
     // Run application setup code
-    user_init(); 
     project_init(); 
 
     // Initialize all configured peripherals 
@@ -100,7 +96,6 @@ int main(void)
     // Infinite loop 
     while (1)
     {
-        user_app(); 
         project_app(); 
     }
 }
