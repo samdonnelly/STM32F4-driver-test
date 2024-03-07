@@ -44,7 +44,8 @@
 #define QUEUE_TEST 0 
 #define MUTEX_TEST 0 
 #define SEMAPHORE_TEST 0 
-#define SOFTWARE_TIMER_TEST 1 
+#define SOFTWARE_TIMER_TEST_0 0 
+#define SOFTWARE_TIMER_TEST_1 1 
 #define HARDWARE_INTERRUPT_TEST 0 
 #define DEADLOCK_STARVATION_TEST 0 
 #define PRIORITY_INVERSION_TEST 0    // Lowest priority 
@@ -192,19 +193,35 @@
 //==================================================
 
 //==================================================
-// Software Timer Test 
+// Software Timer Test 0 
 
-// Enter characters in the serial terminal. When the code sees characters being 
-// entered it will turn the board LED on. The board LED will only turn off after there 
-// has been no serial terminal input for a period of time (say 5 seconds). Use 
-// software timers to accomplish the task. 
-// - Note: the xTimerStart function will restart a counter if it's called before the 
-//         timer expires. 
+// There are two software timers, one is a one-shot and the other is a repeat. Both 
+// timers have the same callback function that will display which timer has expired 
+// in the serial terminal. 
 
 // Timing 
-#define SOFTWARE_TIMER_DELAY_1 1000   // ms 
-#define SOFTWARE_TIMER_PERIOD_1 2     // Ticks 
-#define SOFTWARE_TIMER_PERIOD_2 1     // Ticks 
+#define SOFTWARE_TIMER_0_DELAY_1 1000    // ms 
+#define SOFTWARE_TIMER_0_PERIOD_1 1000   // Ticks 
+#define SOFTWARE_TIMER_0_PERIOD_2 2000   // Ticks 
+
+//==================================================
+
+//==================================================
+// Software Timer Test 1 
+
+// Use the board LED to simulate a backlight display. When characters are entered in 
+// the serial terminal (doesn't matter what), the LED lights up as if we're interfacing 
+// with a screen menu. Turn the LED off after 5 second of no input (inactivity). Use a 
+// software timer to accomplish this. Hint: xTimerStart will restart a counter if it's 
+// called before the timer expires. 
+
+// Memory 
+#define SOFTWARE_TIMER_STACK_SIZE configMINIMAL_STACK_SIZE * 4 
+
+// Timing 
+#define SOFTWARE_TIMER_1_DELAY_1 1000   // ms 
+#define SOFTWARE_TIMER_1_DELAY_2 5      // ms
+#define SOFTWARE_TIMER_1_PERIOD 5000    // ticks 
 
 //==================================================
 
@@ -397,17 +414,29 @@ static uint8_t buff[SEMAPHORE_BUFF_SIZE];  // Circular buffer
 static uint8_t write_index = CLEAR;        // Write/head index for circular buffer 
 static uint8_t read_index = CLEAR;         // Read/tail index for circular buffer 
 
-#elif SOFTWARE_TIMER_TEST 
+#elif SOFTWARE_TIMER_TEST_0 
 
-// Timer(s) 
-
-// FreeRTOS API method 
+// Timer(s) - FreeRTOS API method 
 static TimerHandle_t one_shot_timer = NULL; 
 static TimerHandle_t auto_reload_timer = NULL; 
 
-// CMSIS API method 
-static osTimerId_t oneShotTimerHandle; 
-const osTimerAttr_t oneShot_attributes = { .name = "oneShotTimer" }; 
+// Timer(s) - CMSIS API method 
+// static osTimerId_t oneShotTimerHandle; 
+// const osTimerAttr_t oneShot_attributes = { .name = "oneShotTimer" }; 
+
+#elif SOFTWARE_TIMER_TEST_1 
+
+// Task definition: softwareTimer 
+osThreadId_t softwareTimerHandle; 
+const osThreadAttr_t softwareTimer_attributes = 
+{
+    .name = "softwareTimer",
+    .stack_size = SOFTWARE_TIMER_STACK_SIZE,
+    .priority = (osPriority_t) osPriorityNormal 
+};
+
+// Timer(s) 
+static TimerHandle_t display_timer = NULL; 
 
 #elif HARDWARE_INTERRUPT_TEST 
 #elif DEADLOCK_STARVATION_TEST 
@@ -547,7 +576,16 @@ void TaskSemaphoreProducer(void *argument);
  */
 void TaskSemaphoreConsumer(void *argument); 
 
-#elif SOFTWARE_TIMER_TEST 
+#elif SOFTWARE_TIMER_TEST_0 
+
+/**
+ * @brief Called when one of the timers expires 
+ * 
+ * @param xTimer : software timer ID 
+ */
+void myTimerCallback(TimerHandle_t xTimer); 
+
+#elif SOFTWARE_TIMER_TEST_1 
 
 /**
  * @brief Task function: softwareTimer 
@@ -557,8 +595,12 @@ void TaskSemaphoreConsumer(void *argument);
 void TaskSoftwareTimer(void *argument); 
 
 
-// Called when one of the timers expires 
-void TimerCallback(TimerHandle_t xTimer); 
+/**
+ * @brief Called when the display sees no activity 
+ * 
+ * @param argument : NULL 
+ */
+void DisplayBacklightCallback(TimerHandle_t argument); 
 
 #elif HARDWARE_INTERRUPT_TEST 
 #elif DEADLOCK_STARVATION_TEST 
@@ -731,7 +773,7 @@ void freertos_test_init(void)
     // Blocking delay to provide time for the user to connect to the serial terminal 
     tim_delay_ms(TIM9, SEMPAHORE_DELAY_1); 
 
-#elif SOFTWARE_TIMER_TEST 
+#elif SOFTWARE_TIMER_TEST_0 
 
     //==================================================
     // FreeRTOS API method 
@@ -739,27 +781,27 @@ void freertos_test_init(void)
     // Create timers 
     one_shot_timer = xTimerCreate(
         "one_shot_timer",               // Name of timer 
-        SOFTWARE_TIMER_PERIOD_1,        // Period of timer (ticks) 
+        SOFTWARE_TIMER_0_PERIOD_1,      // Period of timer (ticks) 
         pdFALSE,                        // Auto-relead --> pdFASLE == One Shot Timer 
         (void *)0,                      // Timer ID 
-        TimerCallback);                 // Callback function 
+        myTimerCallback);               // Callback function 
     
     auto_reload_timer = xTimerCreate(
         "auto_reload_timer",            // Name of timer 
-        SOFTWARE_TIMER_PERIOD_2,        // Period of timer (ticks) 
+        SOFTWARE_TIMER_0_PERIOD_2,      // Period of timer (ticks) 
         pdTRUE,                         // Auto-relead --> pdTRUE == Repeat Timer 
         (void *)1,                      // Timer ID 
-        TimerCallback);                 // Callback function 
+        myTimerCallback);               // Callback function 
 
     // Check that the timers were created properly 
     if ((one_shot_timer == NULL) || (auto_reload_timer == NULL))
     {
-        uart_sendstring(USART2, "Couldn't create timer.\r\n"); 
+        uart_sendstring(USART2, "Couldn't create at least one of the timers.\r\n"); 
     }
     else 
     {
-        tim_delay_ms(TIM9, SOFTWARE_TIMER_DELAY_1); 
-        uart_sendstring(USART2, "Starting timers..."); 
+        tim_delay_ms(TIM9, SOFTWARE_TIMER_0_DELAY_1); 
+        uart_sendstring(USART2, "Starting timers...\r\n"); 
 
         // Start timers (max block time if command queue is full). 
         // Essentially says to wait forever if the queue is full. 
@@ -769,10 +811,27 @@ void freertos_test_init(void)
     
     //==================================================
 
-    // // CMSIS API method 
-    // // Note that using this function doesn't allow you to adjust the period of the timer. 
-    // oneShotTimerHandle = osTimerNew(TimerCallback, osTimerOnce, NULL, &oneShot_attributes); 
+    //==================================================
+    // CMSIS API method 
+
+    // Note that using this function doesn't allow you to adjust the period of the timer. 
+    // oneShotTimerHandle = osTimerNew(myTimerCallback, osTimerOnce, NULL, &oneShot_attributes); 
     // osTimerStart(oneShotTimerHandle, 1); 
+    
+    //==================================================
+
+#elif SOFTWARE_TIMER_TEST_1 
+
+    // Create the thread(s) 
+    softwareTimerHandle = osThreadNew(TaskSoftwareTimer, NULL, &softwareTimer_attributes); 
+
+    // Create timer(s) 
+    display_timer = xTimerCreate(
+        "display_backlight_timer",      // Name of timer 
+        SOFTWARE_TIMER_1_PERIOD,        // Period of timer (ticks) 
+        pdFALSE,                        // Auto-relead --> pdFASLE == One Shot Timer 
+        NULL,                           // Timer ID 
+        DisplayBacklightCallback);      // Callback function 
 
 #elif HARDWARE_INTERRUPT_TEST 
 #elif DEADLOCK_STARVATION_TEST 
@@ -953,8 +1012,28 @@ void TaskLoop(void *argument)
         // Do nothing 
 #elif SEMAPHORE_TEST 
         // Do nothing 
-#elif SOFTWARE_TIMER_TEST 
-        // 
+#elif SOFTWARE_TIMER_TEST_0 
+
+        // Yield the main loop task to the lower priority software timers. 
+        osDelay(SOFTWARE_TIMER_0_DELAY_1); 
+
+#elif SOFTWARE_TIMER_TEST_1 
+
+        // This interrupt flag will be set when an idle line is detected on UART RX after 
+        // receiving new data. 
+        if (handler_flags.usart2_flag)
+        {
+            handler_flags.usart2_flag = CLEAR; 
+            uart_sendstring(USART2, ">>> "); 
+
+            // Restart the display timeout and turn the board LED on 
+            xTimerStart(display_timer, portMAX_DELAY); 
+            gpio_write(GPIOA, GPIOX_PIN_5, GPIO_HIGH); 
+        }
+
+        // Yield the main loop task to the lower priority software timers. 
+        osDelay(SOFTWARE_TIMER_1_DELAY_2); 
+
 #elif HARDWARE_INTERRUPT_TEST 
 #elif DEADLOCK_STARVATION_TEST 
 #elif PRIORITY_INVERSION_TEST 
@@ -1260,22 +1339,10 @@ void TaskSemaphoreConsumer(void *argument)
     osThreadTerminate(NULL); 
 }
 
-#elif SOFTWARE_TIMER_TEST 
-
-// Task function: softwareTimer 
-void TaskSoftwareTimer(void *argument)
-{
-    while (1)
-    {
-        // 
-    }
-
-    osThreadTerminate(NULL); 
-}
-
+#elif SOFTWARE_TIMER_TEST_0 
 
 // Called when one of the timers expires 
-void TimerCallback(TimerHandle_t xTimer)
+void myTimerCallback(TimerHandle_t xTimer)
 {
     // The 'xTimer' parameter can be used to identify which timer called this function 
     // when multiple timers call this function. 
@@ -1291,6 +1358,38 @@ void TimerCallback(TimerHandle_t xTimer)
     {
         uart_sendstring(USART2, "Auto-reload timer expired. Reloading...\r\n"); 
     }
+}
+
+#elif SOFTWARE_TIMER_TEST_1 
+
+// Task function: softwareTimer 
+void TaskSoftwareTimer(void *argument)
+{
+    if (display_timer == NULL)
+    {
+        uart_sendstring(USART2, "Couldn't create timer.\r\n"); 
+    }
+    else 
+    {
+        tim_delay_ms(TIM9, SOFTWARE_TIMER_1_DELAY_1); 
+        uart_sendstring(USART2, "Starting interface...\r\n>>> "); 
+
+        // Turn the board LED on 
+        gpio_write(GPIOA, GPIOX_PIN_5, GPIO_HIGH); 
+
+        // Start timers (max block time if command queue is full). 
+        xTimerStart(display_timer, portMAX_DELAY); 
+    }
+
+    osThreadTerminate(softwareTimerHandle); 
+}
+
+
+// Called when the display sees no activity 
+void DisplayBacklightCallback(TimerHandle_t argument)
+{
+    // Turn the board LED off 
+    gpio_write(GPIOA, GPIOX_PIN_5, GPIO_LOW); 
 }
 
 #elif HARDWARE_INTERRUPT_TEST 
