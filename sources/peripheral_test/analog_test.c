@@ -21,6 +21,16 @@
 
 
 //=======================================================================================
+// Macros 
+
+// Conditional compilation 
+#define ADC_MODE_0 0   // Single read mode, scan mode disabled 
+#define ADC_MODE_1 1   // Single read mode, scan mode enabled 
+
+//=======================================================================================
+
+
+//=======================================================================================
 // Setup code
 
 void analog_test_init()
@@ -95,16 +105,18 @@ void analog_test_app()
     // Local variables 
     uint16_t adc_result[2]; 
 
-    //==================================================
-    // Read ADC - Single read mode, scan mode disabled 
-    // adc_result[0] = adc_read_single(ADC1, ADC_CHANNEL_10); 
-    // adc_result[1] = adc_read_single(ADC1, ADC_CHANNEL_11); 
-    //==================================================
+#if ADC_MODE_0 
 
-    //==================================================
+    // Read ADC - Single read mode, scan mode disabled 
+    adc_result[0] = adc_read_single(ADC1, ADC_CHANNEL_10); 
+    adc_result[1] = adc_read_single(ADC1, ADC_CHANNEL_11); 
+
+#elif ADC_MODE_1 
+
     // Read ADC - Single read mode, scan mode enabled 
     adc_scan_seq(ADC1, ADC_SEQ_2, adc_result); 
-    //==================================================
+
+#endif 
 
     // Display the result to the serial terminal 
     uart_sendstring(USART2, "ADC1_10: "); 

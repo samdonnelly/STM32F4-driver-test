@@ -228,15 +228,17 @@
 //==================================================
 // Hardware Interrupts Test 
 
-// Use a hardware timer (ISR) to sample ADC 10 times per second. The values get placed 
-// in a double or circular buffer. Once 10 samples have been collected, the ISR should 
-// wake up task A which computes the average of the 10 samples. A double or circular 
-// buffer is recommended so data can be read/used at the same time new data gets 
-// written using the ISR. The average should a be floating point value stored in a 
-// global variable. Assume this global variable cannot be written to or read from in 
-// a single CPU cycle (critical section). Task B will output to the serial terminal 
-// the global variable value is "avg" is entered by the user, otherwise the input is 
-// exhoed back. 
+// Use a hardware timer (ISR) to sample an ADC 10 times per second (10 Hz) and store the 
+// values in a double or circular buffer. A double or circular buffer is recommended so 
+// data can be read/used at the same time new data gets written. Once 10 samples have 
+// been collected, the ISR should wake up task A which computes the average of the 10 
+// samples and stores the result in a global floating point variable. Assume this global 
+// variable cannot be written to or read from in a single instruction cycle (critical 
+// section). Task B will output the value of the global variable to the serial terminal 
+// if "avg" is entered by the user, otherwise the input is ignored. 
+
+// Memory 
+#define HARDWARE_INT_STACK_SIZE configMINIMAL_STACK_SIZE * 4 
 
 //==================================================
 
@@ -426,6 +428,7 @@ static TimerHandle_t auto_reload_timer = NULL;
 
 #elif SOFTWARE_TIMER_TEST_1 
 
+
 // Task definition: softwareTimer 
 osThreadId_t softwareTimerHandle; 
 const osThreadAttr_t softwareTimer_attributes = 
@@ -440,7 +443,25 @@ static TimerHandle_t display_timer = NULL;
 
 #elif HARDWARE_INTERRUPT_TEST 
 
-// 
+// Task definition: hardwareInterrupt01 
+osThreadId_t hardwareInterrupt01Handle; 
+const osThreadAttr_t hardwareInterrupt01_attributes = 
+{
+    .name = "hardwareInterrupt01", 
+    .stack_size = HARDWARE_INT_STACK_SIZE, 
+    .priority = (osPriority_t) osPriorityNormal 
+};
+
+// Data 
+static double avg = CLEAR; 
+static volatile uint16_t adc_result[2][10]; 
+static uint8_t write_index = CLEAR; 
+static uint8_t read_index = SET_BIT; 
+
+// Semaphore(s) and Mutex 
+static SemaphoreHandle_t binary_sem_0; 
+static SemaphoreHandle_t binary_sem_1; 
+static SemaphoreHandle_t mutex; 
 
 #elif DEADLOCK_STARVATION_TEST 
 #elif PRIORITY_INVERSION_TEST 
@@ -606,6 +627,14 @@ void TaskSoftwareTimer(void *argument);
 void DisplayBacklightCallback(TimerHandle_t argument); 
 
 #elif HARDWARE_INTERRUPT_TEST 
+
+/**
+ * @brief Task function: hardwareInterrupt 
+ * 
+ * @param argument : NULL 
+ */
+void TaskHardwareInterrupt(void *argument); 
+
 #elif DEADLOCK_STARVATION_TEST 
 #elif PRIORITY_INVERSION_TEST 
 
@@ -837,6 +866,56 @@ void freertos_test_init(void)
         DisplayBacklightCallback);      // Callback function 
 
 #elif HARDWARE_INTERRUPT_TEST 
+
+    // Re-define timer 9 to be a periodic (counter update) interrupt timer 
+    tim_disable(TIM9); 
+    tim_9_to_11_counter_init(
+        TIM9, 
+        TIM_84MHZ_100US_PSC, 
+        0x03E8,  // ARR=1000, (1000 counts)*(100us/count) = 100ms 
+        TIM_UP_INT_ENABLE); 
+    tim_enable(TIM9); 
+
+    // Enable the interrupt handlers. This interrupt calls interrupt safe FreeRTOS API 
+    // functions so it has to have a lower (numerically higher) priority than 
+    // 'configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY'. 
+    nvic_config(TIM1_BRK_TIM9_IRQn, EXTI_PRIORITY_7); 
+
+    // Initialize the ADC port (called once) 
+    adc1_clock_enable(RCC); 
+    adc_port_init(
+        ADC1, 
+        ADC1_COMMON, 
+        ADC_PCLK2_4, 
+        ADC_RES_8, 
+        ADC_PARAM_ENABLE, 
+        ADC_PARAM_ENABLE, 
+        ADC_PARAM_DISABLE, 
+        ADC_PARAM_DISABLE, 
+        ADC_PARAM_DISABLE, 
+        ADC_PARAM_DISABLE, 
+        ADC_PARAM_DISABLE); 
+
+    // Initialize ADC pin 
+    adc_pin_init(ADC1, GPIOC, PIN_0, ADC_CHANNEL_10, ADC_SMP_15); 
+    adc_seq(ADC1, ADC_CHANNEL_10, ADC_SEQ_1); 
+
+    // Turn the ADC on 
+    adc_on(ADC1); 
+
+    // Create the thread(s) 
+    hardwareInterrupt01Handle = osThreadNew(
+        TaskHardwareInterrupt, NULL, &hardwareInterrupt01_attributes); 
+
+    // Create semaphore(s) and mutex 
+    binary_sem_0 = xSemaphoreCreateBinary(); 
+    binary_sem_1 = xSemaphoreCreateBinary(); 
+    mutex = xSemaphoreCreateMutex(); 
+
+    xSemaphoreGive(binary_sem_1); 
+
+    uart_sendstring(USART2, ">>> "); 
+
 #elif DEADLOCK_STARVATION_TEST 
 #elif PRIORITY_INVERSION_TEST 
     
@@ -1038,6 +1117,39 @@ void TaskLoop(void *argument)
         osDelay(SOFTWARE_TIMER_1_DELAY_2); 
 
 #elif HARDWARE_INTERRUPT_TEST 
+
+        // This interrupt flag will be set when an idle line is detected on UART RX after 
+        // receiving new data. 
+        if (handler_flags.usart2_flag)
+        {
+            handler_flags.usart2_flag = CLEAR; 
+
+            char avg_str[SERIAL_INPUT_MAX_LEN]; 
+
+            // Get the user input from the circular buffer 
+            cb_parse(uart_dma_buff, user_in_buff, &buff_index, SERIAL_INPUT_MAX_LEN); 
+
+            // Check for the "avg" command 
+            if (strlen((char *)user_in_buff) == 3)
+            {
+                if (str_compare("avg", (char *)user_in_buff, BYTE_0))
+                {
+                    // Display the average 
+                    xSemaphoreTake(mutex, portMAX_DELAY); 
+                    snprintf(
+                        avg_str, 
+                        SERIAL_INPUT_MAX_LEN, 
+                        "Average: %u.%u\r\n", 
+                        (uint16_t)avg, 
+                        (uint16_t)(avg * SCALE_10) % DIVIDE_10); 
+                    xSemaphoreGive(mutex); 
+                    uart_sendstring(USART2, avg_str); 
+                }
+            }
+
+            uart_sendstring(USART2, ">>> "); 
+        }
+
 #elif DEADLOCK_STARVATION_TEST 
 #elif PRIORITY_INVERSION_TEST 
 
@@ -1396,6 +1508,71 @@ void DisplayBacklightCallback(TimerHandle_t argument)
 }
 
 #elif HARDWARE_INTERRUPT_TEST 
+
+// Task function: hardwareInterrupt 
+void TaskHardwareInterrupt(void *argument)
+{
+    while (1)
+    {
+        // Waits for indication from ISR that there is 10 new values to read 
+        xSemaphoreTake(binary_sem_0, portMAX_DELAY); 
+
+        // Compute the average of 10 samples at a given index 
+        uint32_t sum = CLEAR; 
+        for (uint8_t i = CLEAR; i < 10; i++)
+        {
+            sum += (uint32_t)adc_result[read_index][i]; 
+        }
+
+        // Allow for read and write section of the buffer to be updated in the ISR 
+        xSemaphoreGive(binary_sem_1); 
+
+        xSemaphoreTake(mutex, portMAX_DELAY); 
+        avg = (double)sum / DIVIDE_10; 
+        xSemaphoreGive(mutex); 
+    }
+
+    osThreadTerminate(NULL); 
+}
+
+
+// Timer 1 break + timer 9 global interrupt - overridden 
+void TIM1_BRK_TIM9_IRQHandler(void)
+{
+    static uint8_t adc_index = CLEAR; 
+    BaseType_t task_woken = pdFALSE; 
+
+    // ADC read 
+    adc_result[write_index][adc_index++] = adc_read_single(ADC1, ADC_CHANNEL_10); 
+
+    if (adc_index >= 10)
+    {
+        adc_index = CLEAR; 
+
+        // If averaging is still happening then don't swap the read and write sections. 
+        if (xSemaphoreTakeFromISR(binary_sem_1, &task_woken) == pdTRUE)
+        {
+            read_index = write_index; 
+            write_index = SET_BIT - write_index; 
+        }
+        // read_index = write_index; 
+        // write_index = SET_BIT - write_index; 
+
+        // Give the semaphore to wake up the averaging task (tell it that data is ready). 
+        // This sepcial ISR API function will never block since this is not a task. 
+        xSemaphoreGiveFromISR(binary_sem_0, &task_woken); 
+    }
+
+    // The following is needed to exit the ISR 
+    tim_uif_clear(TIM1); 
+    tim_uif_clear(TIM9); 
+
+    // Exit from ISR - if 'task_woken' == 'pdTRUE' then 'portYIELD_FROM_ISR' requests a 
+    // context switch to allow a higher priority task to immediately run if it's waiting 
+    // on data from this ISR. 
+    portYIELD_FROM_ISR(task_woken); 
+}
+
 #elif DEADLOCK_STARVATION_TEST 
 #elif PRIORITY_INVERSION_TEST 
 
