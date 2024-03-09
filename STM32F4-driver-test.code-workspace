@@ -92,7 +92,8 @@
 			"semphr.h": "c",
 			"stm32f4xx_it.h": "c",
 			"system_settings.h": "c",
-			"project_init.h": "c"
+			"project_init.h": "c",
+			"queue.h": "c"
 		}
 	}
 }
