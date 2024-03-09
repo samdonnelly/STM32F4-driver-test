@@ -37,7 +37,7 @@
 // Macros 
 
 // Conditional compilation 
-#define PERIODIC_BLINK_TEST 0        // Highest priority 
+#define PERIODIC_BLINK_TEST 1        // Highest priority 
 #define MANUAL_BLINK_TEST 0 
 #define TASK_SCHEDULING_TEST 0 
 #define MEMORY_MANAGEMENT_TEST 0 
@@ -48,7 +48,7 @@
 #define SOFTWARE_TIMER_TEST_1 0 
 #define HARDWARE_INTERRUPT_TEST 0 
 #define DEADLOCK_STARVATION_TEST 0 
-#define PRIORITY_INVERSION_TEST 1    // Lowest priority 
+#define PRIORITY_INVERSION_TEST 0    // Lowest priority 
 
 //==================================================
 // Main task loop 
@@ -2222,20 +2222,123 @@ void philosopher_output(char *buff)
 
 #elif PRIORITY_INVERSION_TEST 
 
-// 
+// There are 3 tasks each with different priority levels (low, medium, high). The low and 
+// high priority tasks share a critical section. The lower priority task is forced to run 
+// first so it takes hold of the critical section before the high priority task can. The 
+// critical section must be properly protected to ensure the medium priority task can't 
+// preempt the low priority task while the low priority task has hold of the critical 
+// section and therefore further delaying the high priority task (bounded vs unbounded 
+// priority inversion). Mutexes in FreeRTOS handle the priority inversion automatically. 
 
 //=======================================================================================
 // Macros 
+
+// Memory 
+#define PRIORITY_INVERSION_STACK_SIZE configMINIMAL_STACK_SIZE * 4 
+
+// Data 
+#define PRIORITY_INVERSION_STR_MAX_LEN 60 
+
+// Timing 
+#define PRIORITY_INVERSION_CS_WAIT 250         // Critical section time (ticks) 
+#define PRIORITY_INVERSION_MEDIUM_WAIT 5000    // Medium task working time (ticks) 
+#define PRIORITY_INVERSION_OUTPUT_DELAY 1000   // Serial terminal output setup wait (ms) 
+#define PRIORITY_INVERSION_TASK_SLEEP 500      // Task sleep (ticks) 
+#define PRIORITY_INVERSION_START_DELAY 100     // Task start delay to force PI (ticks) 
+
 //=======================================================================================
 
 
 //=======================================================================================
 // Variables 
+
+// Task definition: priorityInversionSetup 
+osThreadId_t priorityInversionSetupHandle; 
+const osThreadAttr_t priorityInversionSetup_attributes = 
+{
+    .name = "priorityInversionSetup", 
+    .stack_size = PRIORITY_INVERSION_STACK_SIZE, 
+    .priority = (osPriority_t) osPriorityNormal 
+};
+
+// Task definition: lowPriority 
+osThreadId_t lowPriorityHandle; 
+const osThreadAttr_t lowPriority_attributes = 
+{
+    .name = "lowPriority", 
+    .stack_size = PRIORITY_INVERSION_STACK_SIZE, 
+    .priority = (osPriority_t) osPriorityNormal 
+};
+
+// Task definition: mediumPriority 
+osThreadId_t mediumPriorityHandle; 
+const osThreadAttr_t mediumPriority_attributes = 
+{
+    .name = "mediumPriority", 
+    .stack_size = PRIORITY_INVERSION_STACK_SIZE, 
+    .priority = (osPriority_t) osPriorityNormal1 
+};
+
+// Task definition: highPriority 
+osThreadId_t highPriorityHandle; 
+const osThreadAttr_t highPriority_attributes = 
+{
+    .name = "highPriority", 
+    .stack_size = PRIORITY_INVERSION_STACK_SIZE, 
+    .priority = (osPriority_t) osPriorityNormal2 
+};
+
+// Semaphores 
+static SemaphoreHandle_t lock; 
+
+// Mutex(es) 
+static SemaphoreHandle_t serial_mutex; 
+
 //=======================================================================================
 
 
 //=======================================================================================
 // Prototypes 
+
+/**
+ * @brief Task function: priorityInversionSetup 
+ * 
+ * @param argument : NULL 
+ */
+void TaskPriorityInversionSetup(void *argument); 
+
+
+/**
+ * @brief Task function: lowPriority 
+ * 
+ * @param argument : NULL 
+ */
+void TaskLowPriority(void *argument); 
+
+
+/**
+ * @brief Task function: mediumPriority 
+ * 
+ * @param argument : NULL 
+ */
+void TaskMediumPriority(void *argument); 
+
+
+/**
+ * @brief Task function: highPriority 
+ * 
+ * @param argument : NULL 
+ */
+void TaskHighPriority(void *argument); 
+
+
+/**
+ * @brief Output task priority info to the serial terminal 
+ * 
+ * @param buff : string to output to the serial terminal 
+ */
+void task_priority_output(char *buff); 
+
 //=======================================================================================
 
 
@@ -2244,7 +2347,22 @@ void philosopher_output(char *buff)
 
 void priority_inversion_init(void)
 {
-    // 
+    // Create thread(s) 
+    priorityInversionSetupHandle = 
+        osThreadNew(TaskPriorityInversionSetup, NULL, &priorityInversionSetup_attributes); 
+
+    // Create mutex 
+    serial_mutex = xSemaphoreCreateMutex(); 
+    lock = xSemaphoreCreateMutex(); 
+
+    // Mutexes in FreeRTOS handle priority inversion automatically. If a low priority 
+    // task blocks a high priority task due to the low priority task having a lock on 
+    // the critical section, a mutex will make sure the low priority task executes its 
+    // critical section so the higher priority task can then take over (bounded priority 
+    // inversion). A semaphore does not do this automatically. 
+
+    // Delay to allow user to open terminal 
+    tim_delay_ms(TIM9, PRIORITY_INVERSION_OUTPUT_DELAY); 
 }
 
 //=======================================================================================
@@ -2255,7 +2373,7 @@ void priority_inversion_init(void)
 
 void priority_inversion_loop(void)
 {
-    // 
+    // Do nothing 
 }
 
 //=======================================================================================
@@ -2263,6 +2381,145 @@ void priority_inversion_loop(void)
 
 //=======================================================================================
 // Tasks and functions 
+
+// Task function: priorityInversionSetup 
+void TaskPriorityInversionSetup(void *argument)
+{
+    // The order of starting tasks is important to force priority inversion 
+    lowPriorityHandle = osThreadNew(TaskLowPriority, NULL, &lowPriority_attributes); 
+    osDelay(PRIORITY_INVERSION_START_DELAY);   // Delay to force priority inversion 
+    highPriorityHandle = osThreadNew(TaskHighPriority, NULL, &highPriority_attributes); 
+    mediumPriorityHandle = osThreadNew(TaskMediumPriority, NULL, &mediumPriority_attributes); 
+
+    vTaskDelete(NULL); 
+}
+
+
+// Task function: lowPriority 
+void TaskLowPriority(void *argument)
+{
+    TickType_t timestamp; 
+    char priority_str[PRIORITY_INVERSION_STR_MAX_LEN]; 
+
+    while (1)
+    {
+        // Take lock 
+        task_priority_output("Task L trying to take lock...\r\n"); 
+        timestamp = xTaskGetTickCount() * portTICK_PERIOD_MS; 
+
+        xSemaphoreTake(lock, portMAX_DELAY); 
+        // Can use portENTER_CRITICAL instead of a mutex is desired. This will disable 
+        // the scheduler and interrupts which will allow the critical section to run 
+        // untouched. 
+        // portENTER_CRITICAL(); 
+
+        // Say how long we spend waiting for a lock 
+        snprintf(
+            priority_str, 
+            PRIORITY_INVERSION_STR_MAX_LEN, 
+            "Task L got lock. %lu ms waiting for lock. Working...\r\n", 
+            (uint32_t)((xTaskGetTickCount() * portTICK_PERIOD_MS) - timestamp)); 
+        task_priority_output(priority_str); 
+
+        // Hog the processor and do nothing 
+        timestamp = xTaskGetTickCount() * portTICK_PERIOD_MS; 
+        while (((xTaskGetTickCount() * portTICK_PERIOD_MS) - timestamp) < 
+                PRIORITY_INVERSION_CS_WAIT); 
+
+        // Release lock 
+        task_priority_output("Task L releasing lock.\r\n"); 
+        xSemaphoreGive(lock); 
+
+        // If using portENTER_CRITICAL then use portEXIT_CRITICAL to exit the critical 
+        // section. 
+        // portEXIT_CRITICAL(); 
+
+        // Go to sleep 
+        osDelay(PRIORITY_INVERSION_TASK_SLEEP); 
+    }
+
+    vTaskDelete(NULL); 
+}
+
+
+// Task function: mediumPriority 
+void TaskMediumPriority(void *argument)
+{
+    TickType_t timestamp; 
+
+    while (1)
+    {
+        // Hog the processor and do nothing. This is done using a while loop 
+        // instead of a task delay. 
+        task_priority_output("Task M doing some work...\r\n"); 
+        timestamp = xTaskGetTickCount() * portTICK_PERIOD_MS; 
+        while (((xTaskGetTickCount() * portTICK_PERIOD_MS) - timestamp) < 
+                PRIORITY_INVERSION_MEDIUM_WAIT); 
+
+        // Go to sleep 
+        task_priority_output("Task M done!\r\n"); 
+        osDelay(PRIORITY_INVERSION_TASK_SLEEP); 
+    }
+
+    vTaskDelete(NULL); 
+}
+
+
+// Task function: highPriority 
+void TaskHighPriority(void *argument)
+{
+    TickType_t timestamp; 
+    char priority_str[PRIORITY_INVERSION_STR_MAX_LEN]; 
+
+    while (1)
+    {
+        // Take lock 
+        task_priority_output("Task H trying to take lock...\r\n"); 
+        timestamp = xTaskGetTickCount() * portTICK_PERIOD_MS; 
+
+        xSemaphoreTake(lock, portMAX_DELAY); 
+        // Can use portENTER_CRITICAL instead of a mutex is desired. This will disable 
+        // the scheduler and interrupts which will allow the critical section to run 
+        // untouched. 
+        // portENTER_CRITICAL(); 
+
+        // Say how long we spend waiting for a lock 
+        snprintf(
+            priority_str, 
+            PRIORITY_INVERSION_STR_MAX_LEN, 
+            "Task H got lock. %lu ms waiting for lock. Working...\r\n", 
+            (uint32_t)((xTaskGetTickCount() * portTICK_PERIOD_MS) - timestamp)); 
+        task_priority_output(priority_str); 
+
+        // Hog the processor and do nothing 
+        timestamp = xTaskGetTickCount() * portTICK_PERIOD_MS; 
+        while (((xTaskGetTickCount() * portTICK_PERIOD_MS) - timestamp) < 
+                PRIORITY_INVERSION_CS_WAIT); 
+
+        // Release lock 
+        task_priority_output("Task H releasing lock.\r\n"); 
+        xSemaphoreGive(lock); 
+
+        // If using portENTER_CRITICAL then use portEXIT_CRITICAL to exit the critical 
+        // section. 
+        // portEXIT_CRITICAL(); 
+
+        // Go to sleep 
+        osDelay(PRIORITY_INVERSION_TASK_SLEEP); 
+    }
+
+    vTaskDelete(NULL); 
+}
+
+
+// Output task priority info to the serial terminal 
+void task_priority_output(char *buff)
+{
+    xSemaphoreTake(serial_mutex, portMAX_DELAY); 
+    uart_sendstring(USART2, buff); 
+    xSemaphoreGive(serial_mutex); 
+}
+
 //=======================================================================================
 
 #endif 
