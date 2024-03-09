@@ -46,8 +46,8 @@
 #define SEMAPHORE_TEST 0 
 #define SOFTWARE_TIMER_TEST_0 0 
 #define SOFTWARE_TIMER_TEST_1 0 
-#define HARDWARE_INTERRUPT_TEST 1 
-#define DEADLOCK_STARVATION_TEST 0 
+#define HARDWARE_INTERRUPT_TEST 0 
+#define DEADLOCK_STARVATION_TEST 1 
 #define PRIORITY_INVERSION_TEST 0    // Lowest priority 
 
 // Memory 
@@ -240,12 +240,45 @@
 // Memory 
 #define HARDWARE_INT_STACK_SIZE configMINIMAL_STACK_SIZE * 4 
 
+// Data 
+#define HARDWARE_INT_NUM_SAMPLES 10 
+
 //==================================================
 
 //==================================================
 // Deadlock and Starvation Test 
 
-// 
+// "Dining Philosophers Problem" - based on video series 
+// 5 philosophers at a table, 5 chopsticks available, one bowl of noodles. A chopstick 
+// is placed in between each philosopher and a philosopher can only eat when they have 
+// two chopsticks. The challenge is to find a logical way to make sure all philosophers 
+// get to eat. 
+// For this example, the philosophers are the tasks, the chopsticks are the semaphores 
+// and mutexes, and the bowl of food is the shared resource. There are 5 tasks that all 
+// call the same function which takes a left chopstick, then a right chopstick and "eats" 
+// for a while (i.e. prints to the serial terminal). After it's done then the chopsticks 
+// are put down and the function exits. If all philosophers get a chance to eat then a 
+// "done" message will be printed to the serial terminal. To accomplish this, a hierarchy 
+// solution or an arbitrator solution can be used: 
+// - Hierarchy: A hierarchy (number) is assigned to the chopsticks and philosophers can 
+//              pick up a chopstick next to them with the lowest number. This leaves one 
+//              philosopher free to pick up two chopsticks and eat. Eventually the eating 
+//              philosopher will put down the chopsticks and it will trigger a chain of 
+//              eating. 
+// - Arbitrator: A mutex that protects the chopsticks so only one philosopher can eat at 
+//               a time. This makes the system no better than executing everything in a 
+//               super loop but it's used for the sake of the problem. 
+
+// Memory 
+#define DEADLOCK_STARVATION_STACK_SIZE configMINIMAL_STACK_SIZE * 4 
+
+// Data 
+#define NUM_PHILOSOPHERS 5 
+#define DEADLOCK_STARVATION_TASK_NAME_LEN 15 
+#define PHILOSOPHER_STR_MAX_LEN 50 
+
+// Timing 
+#define DEADLOCK_STARVATION_DELAY_1 5000   // (ms) 
 
 //==================================================
 
@@ -454,7 +487,7 @@ const osThreadAttr_t hardwareInterrupt01_attributes =
 
 // Data 
 static double avg = CLEAR; 
-static volatile uint16_t adc_result[2][10]; 
+static volatile uint16_t adc_result[2][HARDWARE_INT_NUM_SAMPLES]; 
 static uint8_t write_index = CLEAR; 
 static uint8_t read_index = SET_BIT; 
 
@@ -464,6 +497,25 @@ static SemaphoreHandle_t binary_sem_1;
 static SemaphoreHandle_t mutex; 
 
 #elif DEADLOCK_STARVATION_TEST 
+
+// Task definition: increment01 
+osThreadId_t deadlockStarvationSetupHandle; 
+const osThreadAttr_t deadlockStarvationSetup_attributes = 
+{
+    .name = "deadlockStarvationSetup", 
+    .stack_size = DEADLOCK_STARVATION_STACK_SIZE, 
+    .priority = (osPriority_t) osPriorityNormal 
+};
+
+// Semaphores 
+static SemaphoreHandle_t binary_sem;                    // Wait for params to read 
+static SemaphoreHandle_t finish_sem;                    // Notifies main task when done 
+
+// Mutex 
+static SemaphoreHandle_t chopstick[NUM_PHILOSOPHERS];   // Chipstick access 
+static SemaphoreHandle_t serial_mutex;                  // Serial terminal protection 
+static SemaphoreHandle_t arbitrator_mutex;              // Arbitrator chopstick access 
+
 #elif PRIORITY_INVERSION_TEST 
 
 #endif 
@@ -636,6 +688,30 @@ void DisplayBacklightCallback(TimerHandle_t argument);
 void TaskHardwareInterrupt(void *argument); 
 
 #elif DEADLOCK_STARVATION_TEST 
+
+/**
+ * @brief Task function: deadlockStarvationSetup 
+ * 
+ * @param argument : NULL 
+ */
+void TaskDeadlockStarvationSetup(void *argument); 
+
+
+/**
+ * @brief Task function: philosopherEat 
+ * 
+ * @param argument : NULL 
+ */
+void TaskPhilosopherEat(void *argument); 
+
+
+/**
+ * @brief Output philosopher strings to the serial terminal 
+ * 
+ * @param buff : string to output 
+ */
+void philosopher_output(char *buff); 
+
 #elif PRIORITY_INVERSION_TEST 
 
 #endif
@@ -878,10 +954,10 @@ void freertos_test_init(void)
 
     // Enable the interrupt handlers. This interrupt calls interrupt safe FreeRTOS API 
     // functions so it has to have a lower (numerically higher) priority than 
-    // 'configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY'. 
+    // 'configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY' in 'FreeRTOSConfig.h'. 
     nvic_config(TIM1_BRK_TIM9_IRQn, EXTI_PRIORITY_7); 
 
-    // Initialize the ADC port (called once) 
+    // Initialize the ADC port, pin and read sequence 
     adc1_clock_enable(RCC); 
     adc_port_init(
         ADC1, 
@@ -895,12 +971,8 @@ void freertos_test_init(void)
         ADC_PARAM_DISABLE, 
         ADC_PARAM_DISABLE, 
         ADC_PARAM_DISABLE); 
-
-    // Initialize ADC pin 
     adc_pin_init(ADC1, GPIOC, PIN_0, ADC_CHANNEL_10, ADC_SMP_15); 
     adc_seq(ADC1, ADC_CHANNEL_10, ADC_SEQ_1); 
-
-    // Turn the ADC on 
     adc_on(ADC1); 
 
     // Create the thread(s) 
@@ -908,15 +980,38 @@ void freertos_test_init(void)
         TaskHardwareInterrupt, NULL, &hardwareInterrupt01_attributes); 
 
     // Create semaphore(s) and mutex 
-    binary_sem_0 = xSemaphoreCreateBinary(); 
-    binary_sem_1 = xSemaphoreCreateBinary(); 
-    mutex = xSemaphoreCreateMutex(); 
+    binary_sem_0 = xSemaphoreCreateBinary();   // Indicates when samples can be averaged 
+    binary_sem_1 = xSemaphoreCreateBinary();   // Controls double buffer read/write index 
+    mutex = xSemaphoreCreateMutex();           // Protects 'avg' 
 
+    // We give the buffer index semaphore immediately to avoid the initial conflict 
+    // between updating the double buffer index and averaging the first sample of 10. 
     xSemaphoreGive(binary_sem_1); 
 
     uart_sendstring(USART2, ">>> "); 
 
 #elif DEADLOCK_STARVATION_TEST 
+
+    // Create the thread(s) 
+    deadlockStarvationSetupHandle = osThreadNew(
+        TaskDeadlockStarvationSetup, NULL, &deadlockStarvationSetup_attributes); 
+
+    // Create semaphore(s) 
+    binary_sem = xSemaphoreCreateBinary(); 
+    finish_sem = xSemaphoreCreateCounting(NUM_PHILOSOPHERS, 0); 
+
+    // Create mutex 
+    serial_mutex = xSemaphoreCreateMutex(); 
+    arbitrator_mutex = xSemaphoreCreateMutex(); 
+    
+    for (uint8_t i = CLEAR; i < NUM_PHILOSOPHERS; i++)
+    {
+        chopstick[i] = xSemaphoreCreateMutex(); 
+    }
+
+    // Blocking delay to provide time for the user to connect to the serial terminal 
+    tim_delay_ms(TIM9, DEADLOCK_STARVATION_DELAY_1); 
+
 #elif PRIORITY_INVERSION_TEST 
     
 #endif
@@ -1124,17 +1219,18 @@ void TaskLoop(void *argument)
         {
             handler_flags.usart2_flag = CLEAR; 
 
-            char avg_str[SERIAL_INPUT_MAX_LEN]; 
-
             // Get the user input from the circular buffer 
             cb_parse(uart_dma_buff, user_in_buff, &buff_index, SERIAL_INPUT_MAX_LEN); 
 
-            // Check for the "avg" command 
+            // Check for the average command by checking that the input is exactly "avg". 
             if (strlen((char *)user_in_buff) == 3)
             {
+                char avg_str[SERIAL_INPUT_MAX_LEN]; 
+
                 if (str_compare("avg", (char *)user_in_buff, BYTE_0))
                 {
-                    // Display the average 
+                    // Display the average and protect 'avg' so it cannot be updated during 
+                    // the serial output process. 
                     xSemaphoreTake(mutex, portMAX_DELAY); 
                     snprintf(
                         avg_str, 
@@ -1151,6 +1247,7 @@ void TaskLoop(void *argument)
         }
 
 #elif DEADLOCK_STARVATION_TEST 
+        // Do nothing 
 #elif PRIORITY_INVERSION_TEST 
 
 #endif
@@ -1514,22 +1611,29 @@ void TaskHardwareInterrupt(void *argument)
 {
     while (1)
     {
-        // Waits for indication from ISR that there is 10 new values to read 
+        // Waits for indication from the ISR that 10 samples have been read before 
+        // proceeding to average the samples. 
         xSemaphoreTake(binary_sem_0, portMAX_DELAY); 
 
-        // Compute the average of 10 samples at a given index 
+        // Compute the average of 10 samples in the part of the double buffer not 
+        // being written to by the ISR. 
         uint32_t sum = CLEAR; 
-        for (uint8_t i = CLEAR; i < 10; i++)
+        for (uint8_t i = CLEAR; i < HARDWARE_INT_NUM_SAMPLES; i++)
         {
             sum += (uint32_t)adc_result[read_index][i]; 
         }
 
-        // Allow for read and write section of the buffer to be updated in the ISR 
+        // Allow for read and write section indexes of the double buffer to be updated 
+        // in the ISR now that averaging is done. 
         xSemaphoreGive(binary_sem_1); 
 
+        // Protect 'avg' so it can't be used for serial terminal output at the same 
+        // time. 
         xSemaphoreTake(mutex, portMAX_DELAY); 
         avg = (double)sum / DIVIDE_10; 
         xSemaphoreGive(mutex); 
+        // Could also use vPortEnterCritical and vPortExitCritical here to diable 
+        // interrupts for the critical section. 
     }
 
     osThreadTerminate(NULL); 
@@ -1545,21 +1649,24 @@ void TIM1_BRK_TIM9_IRQHandler(void)
     // ADC read 
     adc_result[write_index][adc_index++] = adc_read_single(ADC1, ADC_CHANNEL_10); 
 
-    if (adc_index >= 10)
+    if (adc_index >= HARDWARE_INT_NUM_SAMPLES)
     {
         adc_index = CLEAR; 
 
-        // If averaging is still happening then don't swap the read and write sections. 
+        // If averaging is still happening then don't swap the read and write sections 
+        // and restart the 10 samples. This can be handled in multiple different ways 
+        // such as blocking only one sample at a time. 
         if (xSemaphoreTakeFromISR(binary_sem_1, &task_woken) == pdTRUE)
         {
             read_index = write_index; 
             write_index = SET_BIT - write_index; 
         }
-        // read_index = write_index; 
-        // write_index = SET_BIT - write_index; 
+        // Can output a message if data is dropped to help see what's going on. 
 
         // Give the semaphore to wake up the averaging task (tell it that data is ready). 
-        // This sepcial ISR API function will never block since this is not a task. 
+        // This sepcial ISR API function will never block since this is not a task. There 
+        // are also FreeRTOS ISR functions for directly notifying tasks which could have 
+        // been used instead. 
         xSemaphoreGiveFromISR(binary_sem_0, &task_woken); 
     }
 
@@ -1574,6 +1681,154 @@ void TIM1_BRK_TIM9_IRQHandler(void)
 }
 
 #elif DEADLOCK_STARVATION_TEST 
+
+// Task function: deadlockStarvationSetup 
+void TaskDeadlockStarvationSetup(void *argument)
+{
+    char task_name[DEADLOCK_STARVATION_TASK_NAME_LEN]; 
+
+    // Have philosophers start eating 
+    for (uint8_t i = CLEAR; i < NUM_PHILOSOPHERS; i++)
+    {
+        snprintf(task_name, DEADLOCK_STARVATION_TASK_NAME_LEN, "philosopher-%u", i); 
+
+        const osThreadAttr_t philosopher_attributes = 
+        {
+            .name = task_name, 
+            .stack_size = DEADLOCK_STARVATION_STACK_SIZE, 
+            .priority = (osPriority_t) osPriorityNormal 
+        };
+
+        // Tasks delete themselves after executing the task function 
+        osThreadNew(TaskPhilosopherEat, (void *)&i, &philosopher_attributes); 
+
+        // Wait for each task to read the argument 
+        xSemaphoreTake(binary_sem, portMAX_DELAY); 
+    }
+
+    // Wait until all philosophers are done 
+    for (uint8_t i = CLEAR; i < NUM_PHILOSOPHERS; i++)
+    {
+        xSemaphoreTake(finish_sem, portMAX_DELAY); 
+    }
+
+    // Indicate that all philosophers ate without deadlock 
+    uart_sendstring(USART2, "Done! No deadlock.\r\n"); 
+
+    // Delete the task 
+    vTaskDelete(NULL); 
+}
+
+
+// Task function: philosopherEat 
+void TaskPhilosopherEat(void *argument)
+{
+    uint8_t philosopher_num = *(uint8_t *)argument; 
+    char buff[PHILOSOPHER_STR_MAX_LEN]; 
+
+    // Increment the sempahore count after the parameter has been copied 
+    xSemaphoreGive(binary_sem); 
+
+    //==================================================
+    // Arbitrator Method 
+
+    // xSemaphoreTake(arbitrator_mutex, portMAX_DELAY); 
+    
+    //==================================================
+
+    //==================================================
+    // Hierarchy Method (can run with arbitrator method active) 
+
+    uint8_t left_chop = philosopher_num; 
+    uint8_t right_chop = (philosopher_num + 1) % NUM_PHILOSOPHERS; 
+    uint8_t smallest, largest; 
+    
+    if (left_chop < right_chop)
+    {
+        smallest = left_chop; 
+        largest = right_chop; 
+    }
+    else 
+    {
+        smallest = right_chop; 
+        largest = left_chop; 
+    }
+
+    // Take the smaller value chopstick 
+    xSemaphoreTake(chopstick[smallest], portMAX_DELAY); 
+    snprintf(
+        buff, 
+        PHILOSOPHER_STR_MAX_LEN, 
+        "Philosopher %u took chopstick %u\r\n", 
+        philosopher_num, 
+        philosopher_num); 
+    philosopher_output(buff); 
+
+    // Add some delay to force deadlock - this part of the challenge so don't delete it 
+    osDelay(1); 
+
+    // Take the largest value chopstick 
+    xSemaphoreTake(chopstick[largest], portMAX_DELAY); 
+    snprintf(
+        buff, 
+        PHILOSOPHER_STR_MAX_LEN, 
+        "Philosopher %u took chopstick %u\r\n", 
+        philosopher_num, 
+        (philosopher_num + 1) % NUM_PHILOSOPHERS); 
+    philosopher_output(buff); 
+
+    // Eat the noodles 
+    snprintf(
+        buff, 
+        PHILOSOPHER_STR_MAX_LEN, 
+        "Philosopher %u is eating\r\n", 
+        philosopher_num); 
+    philosopher_output(buff); 
+    osDelay(10); 
+
+    // Return the largest value chopstick 
+    xSemaphoreGive(chopstick[largest]); 
+    snprintf(
+        buff, 
+        PHILOSOPHER_STR_MAX_LEN, 
+        "Philosopher %u returned chopstick %u\r\n", 
+        philosopher_num, 
+        (philosopher_num + 1) % NUM_PHILOSOPHERS); 
+    philosopher_output(buff); 
+
+    // Return the smaller value chopstick 
+    xSemaphoreGive(chopstick[smallest]); 
+    snprintf(
+        buff, 
+        PHILOSOPHER_STR_MAX_LEN, 
+        "Philosopher %u returned chopstick %u\r\n", 
+        philosopher_num, 
+        philosopher_num); 
+    philosopher_output(buff); 
+    
+    //==================================================
+
+    //==================================================
+    // Arbitrator Method 
+
+    // xSemaphoreGive(arbitrator_mutex); 
+
+    //==================================================
+    
+    // Notify setup task and delete self 
+    xSemaphoreGive(finish_sem); 
+    vTaskDelete(NULL); 
+}
+
+
+// Output philosopher strings to the serial terminal 
+void philosopher_output(char *buff)
+{
+    xSemaphoreTake(serial_mutex, portMAX_DELAY); 
+    uart_sendstring(USART2, buff); 
+    xSemaphoreGive(serial_mutex); 
+}
+
 #elif PRIORITY_INVERSION_TEST 
 
 #endif
