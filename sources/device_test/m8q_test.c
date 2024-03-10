@@ -38,6 +38,9 @@
 //=======================================================================================
 // Macros 
 
+// Conditional compilation 
+#define M8Q_TEST_SCREEN_ON_BUS 1     // HD44780U screen on I2C bus 
+
 // Test 0 
 #define M8Q_TEST_0_DATA_BUFF_LIM 400 
 #define M8Q_TEST_0_READ_COUNT_LIM 90 
@@ -63,9 +66,7 @@
 //=======================================================================================
 // Enums 
 
-/**
- * @brief M8Q test state number 
- */
+// M8Q test state number 
 typedef enum {
     M8Q_TEST_STATE_0, 
     M8Q_TEST_STATE_1, 
@@ -96,6 +97,7 @@ typedef struct m8q_test_data_s
 }
 m8q_test_data_t; 
 
+// Data record instance 
 static m8q_test_data_t test_data; 
 
 //=======================================================================================

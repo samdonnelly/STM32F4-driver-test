@@ -21,7 +21,33 @@
 
 
 //=======================================================================================
-// Function prototypes 
+// Macros 
+
+// Conditional compilation 
+#define ESC_CONTROLLER_MODE 1       // Code to control the ESC via a controller - knobs 
+#define ESC_PARAM_ID 0              // Parameter identification code - no driver just timers 
+#define ESC_SECOND_DEVICE 1         // Second device code 
+
+// Parameters 
+#define ESC_PERIOD 20000            // ESC PWM timer period (auto-reload register) 
+#define ESC_FWD_SPEED_LIM 1600      // Forward PWM pulse time limit (us) 
+#define ESC_REV_SPEED_LIM 1440      // Reverse PWM pulse time limit (us) 
+
+// User input 
+#define ESC_INPUT_BUF_LEN 15        // User input buffer length 
+#define ESC_INPUT_MAX_LEN 5         // User input max length 
+#define ESC_NUM_TEST_CMDS 2         // Number of user commands available 
+
+// Data 
+#define ESC_ADC_BUFF_LEN 2          // ADC buffer size 
+#define ESC_ADC_REV_LIM 100         // ADC value reverse command limit 
+#define ESC_ADC_FWD_LIM 155         // ADC value forward command limit 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Prototypes 
 
 #if ESC_CONTROLLER_MODE 
 
@@ -485,11 +511,6 @@ void esc_readytosky_test_app(void)
 //=======================================================================================
 // Test functions 
 
-#if ESC_CONTROLLER_MODE 
-
-// TODO this function is referenced externally so it needs to be removed from conditional 
-//      compilation. 
-
 // ADC to ESC command mapping 
 int16_t esc_test_adc_mapping(
     uint16_t adc_val)
@@ -511,6 +532,8 @@ int16_t esc_test_adc_mapping(
 
     return throttle_cmd; 
 }
+
+#if ESC_CONTROLLER_MODE 
 
 #else   // ESC_CONTROLLER_MODE 
 

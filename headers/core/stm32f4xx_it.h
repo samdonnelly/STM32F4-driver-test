@@ -107,7 +107,7 @@ void int_handler_init(void);
 
 
 //=======================================================================================
-// Prototypes 
+// System Handlers 
 
 /**
  * @brief Non-maskable interrupt handler 
@@ -170,7 +170,7 @@ void SysTick_Handler(void);
 
 
 //=======================================================================================
-// Handlers 
+// Peripheral Handlers 
 
 /**
  * @brief EXTI Line 0 interrupt handler 

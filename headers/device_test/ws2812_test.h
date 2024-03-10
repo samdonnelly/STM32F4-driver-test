@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief WS2812 (neopixels) test code 
+ * @brief WS2812 (neopixels) test code interface 
  * 
  * @version 0.1
  * @date 2023-03-28
@@ -19,14 +19,6 @@
 // Includes 
 
 #include "includes_drivers.h"
-
-//=======================================================================================
-
-
-//=======================================================================================
-// Macros 
-
-#define WS2812_SECOND_DEVICE 0    // Enable second device code 
 
 //=======================================================================================
 

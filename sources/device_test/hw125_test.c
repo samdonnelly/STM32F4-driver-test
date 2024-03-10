@@ -21,7 +21,42 @@
 
 
 //=======================================================================================
-// Function prototypes 
+// Macros 
+
+// Code options 
+#define FORMAT_EXFAT 0 
+#define HW125_CONTROLLER_TEST 0     // For switching between driver and controller testing 
+
+// File system 
+#define BUFF_SIZE 255 
+
+// User interface 
+#define HW125_NUM_DRIVER_CMDS 17    // Number of driver test commands for the user 
+#define HW125_NUM_CONT_CMDS 18      // Number of controller test commands for the user 
+#define CMD_SIZE 50                 // Max user command string length 
+
+// Controller testing 
+#define HW125_NUM_USER_CMDS 10      // Number of defined user commands for controller test 
+#define HW125_MAX_SETTER_ARGS 1     // Maximum arguments of all function pointer below 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Enums 
+
+// User input type 
+typedef enum {
+    FORMAT_FILE_STRING, 
+    FORMAT_FILE_MODE, 
+    FORMAT_FILE_NUM 
+} format_user_input_t; 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Prototypes 
 
 #if HW125_CONTROLLER_TEST 
 

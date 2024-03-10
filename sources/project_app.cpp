@@ -33,8 +33,6 @@
 void project_app(void)
 {
     // Project application code here 
-
-    freertos_test_app(); 
 }
 
 //=======================================================================================

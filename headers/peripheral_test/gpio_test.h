@@ -1,9 +1,9 @@
 /**
- * @file uart_test.h
+ * @file gpio_test.h
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief GPIO test code header 
+ * @brief GPIO test code interface 
  * 
  * @version 0.1
  * @date 2023-09-20
@@ -20,11 +20,6 @@
 
 #include "includes_drivers.h" 
 
-//=======================================================================================
-
-
-//=======================================================================================
-// Macros 
 //=======================================================================================
 
 

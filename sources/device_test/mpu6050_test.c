@@ -21,6 +21,32 @@
 
 
 //=======================================================================================
+// Macros 
+
+// Test control 
+#define MPU6050_CONTROLLER_TEST 1        // Switch between driver and controller testing 
+#define MPU6050_SECOND_DEVICE 0          // Include the test code for a second device 
+#define MPU6050_INT_PIN 0                // Interrupt pin enable 
+#define MPU6050_LCD_ON_BUS 1             // HD44780U LCD on the same I2C bus as mpu6050 
+
+// Data 
+#define MPU6050_DEV1_STBY_MASK 0x00      // Device 1 axis standby status mask 
+#define MPU6050_DEV2_STBY_MASK 0x00      // Device 2 axis standby status mask 
+#define MPU6050_SMPLRT_DIV 0             // Sample Rate Divider 
+
+// Driver test 
+#define MPU6050_DRIVER_LOOP_DELAY 100    // Delay (blocking) between code loops (ms) 
+#define MPU6050_DRIVER_ST_DELAY 10       // Delay (blocking) after self test (ms) 
+
+// Controller test 
+#define MPU6050_NUM_TEST_CMDS 17         // Number of controller test commands for the user 
+#define MPU6050_DEV1_RATE 250000         // Device 1 time between reading new data (us) 
+#define MPU6050_DEV2_RATE 250000         // Device 2 time between reading new data (us) 
+
+//=======================================================================================
+
+
+//=======================================================================================
 // Function prototypes 
 
 #if MPU6050_CONTROLLER_TEST 
@@ -93,9 +119,8 @@ static device_number_t mpu6050_cntrl_test_device;
 
 
 //=======================================================================================
-// Test code 
+// Setup code 
 
-// Setup code
 void mpu6050_test_init()
 {
     //===================================================
@@ -270,8 +295,12 @@ void mpu6050_test_init()
     //===================================================
 } 
 
+//=======================================================================================
 
+
+//=======================================================================================
 // Test code 
+
 void mpu6050_test_app()
 {
 #if MPU6050_CONTROLLER_TEST 

@@ -69,7 +69,7 @@ static state_test_params_t test_params;
 
 
 //================================================================================
-// Functions 
+// Setup code 
 
 // State machine tester initialization 
 void state_machine_init(
@@ -92,8 +92,12 @@ void state_machine_init(
     smt_cmd_prompt(); 
 }
 
+//=======================================================================================
 
-// State machine tester 
+
+//=======================================================================================
+// Test code 
+
 void state_machine_test(
     state_request_t state_request[], 
     char *user_args, 
@@ -101,7 +105,14 @@ void state_machine_test(
     uint8_t *arg_convert, 
     uint32_t *set_get_status)
 {
-    // TODO Check that pointers are valid 
+    if ((state_request == NULL) || 
+        (user_args == NULL) || 
+        (cmd_index == NULL) || 
+        (arg_convert == NULL) || 
+        (set_get_status == NULL))
+    {
+        return; 
+    }
 
     // Check for a user command 
     if (uart_data_ready(USART2))
@@ -209,6 +220,11 @@ void state_machine_test(
     }
 }
 
+//================================================================================
+
+
+//=======================================================================================
+// Test functions 
 
 // Command input prompt 
 void smt_cmd_prompt(void)
@@ -225,4 +241,4 @@ void smt_arg_prompt(void)
     uart_sendstring(USART2, "arg >>> "); 
 }
 
-//================================================================================
+//=======================================================================================

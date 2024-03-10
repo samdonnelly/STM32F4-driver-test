@@ -21,6 +21,38 @@
 
 
 //=======================================================================================
+// Macros 
+
+// Conditional compilation 
+#define ADC_DMA_SECOND_CHANNEL 1      // Enables test code for second ADC channel 
+#define ADC_DMA_THIRD_CHANNEL 1       // Enables test code for third ADC channel 
+#define DMA_TEST_MODE_1 0             // Mode 1 test code control (see source file) 
+#define DMA_TEST_MODE_2 1             // Mode 2 test code control (see source file) 
+#define DMA_TEST_MODE_3 0             // Mode 3 test code control (see source file) 
+
+// Data 
+#define ADC_BUFF_SIZE 3               // Size according to the number of ADCs used 
+
+// Formatting 
+#define ADC_PRINT_SPACES 5            // Spaces between values displayed in the terminal 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Enums 
+
+// ADC index 
+typedef enum {
+    FIRST_ADC, 
+    SECOND_ADC, 
+    THIRD_ADC
+} adc_index_t; 
+
+//=======================================================================================
+
+
+//=======================================================================================
 // Globals 
 
 static uint16_t adc_data[ADC_BUFF_SIZE];  // Location for the DMA to store ADC values 
@@ -53,7 +85,9 @@ static uint16_t adc_data[ADC_BUFF_SIZE];  // Location for the DMA to store ADC v
 //==================================================
 
 
+//=======================================================================================
 // Setup code
+
 void dma_test_init()
 {
     // Initialize timers 
@@ -182,8 +216,12 @@ void dma_test_init()
     //==================================================
 } 
 
+//=======================================================================================
 
+
+//=======================================================================================
 // Test code 
+
 void dma_test_app()
 {
     //==================================================
@@ -239,3 +277,5 @@ void dma_test_app()
     // Delay 
     tim_delay_ms(TIM9, 1000); 
 }
+
+//=======================================================================================

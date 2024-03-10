@@ -22,17 +22,22 @@
 
 
 //=======================================================================================
+// Macros 
+
+#define UART_TEST_MAX_INPUT 30        // Max user input size (bytes) 
+
+//=======================================================================================
+
+
+//=======================================================================================
 // Global variables 
 
-// Data buffers 
 // A circular buffer is used to store a continuous stream of UART (serial terminal) inputs 
 // and is also used to parse the most recent user input which gets stored in a user input 
 // buffer. 
-static uint8_t uart_dma_buff[UART_TEST_MAX_INPUT];   // Circular buffer to store uart inputs 
-static uint8_t user_in_buff[UART_TEST_MAX_INPUT];    // Stores latest user input 
-
-// Buffer indexes 
-static uint8_t buff_index;    // Circular buffer index 
+static uint8_t uart_dma_buff[UART_TEST_MAX_INPUT];     // Circular buffer for uart inputs 
+static uint8_t user_input_buff[UART_TEST_MAX_INPUT];   // Stores latest user input 
+static uint8_t buff_index;                             // Circular buffer index 
 
 //=======================================================================================
 
@@ -118,7 +123,7 @@ void uart_test_init(void)
     // Initialize variables 
 
     memset((void *)uart_dma_buff, CLEAR, sizeof(uart_dma_buff)); 
-    memset((void *)user_in_buff, CLEAR, sizeof(user_in_buff)); 
+    memset((void *)user_input_buff, CLEAR, sizeof(user_input_buff)); 
     buff_index = CLEAR; 
 
     //==================================================
@@ -143,11 +148,11 @@ void uart_test_app(void)
         handler_flags.usart2_flag = CLEAR; 
 
         // Copy the new contents in the circular buffer to the user input buffer 
-        cb_parse(uart_dma_buff, user_in_buff, &buff_index, UART_TEST_MAX_INPUT); 
+        cb_parse(uart_dma_buff, user_input_buff, &buff_index, UART_TEST_MAX_INPUT); 
 
         // Echo the user input back to the terminal 
         uart_send_new_line(USART2); 
-        uart_sendstring(USART2, (char *)user_in_buff); 
+        uart_sendstring(USART2, (char *)user_input_buff); 
         uart_send_new_line(USART2); 
         uart_sendstring(USART2, "\r\n>>> "); 
     }

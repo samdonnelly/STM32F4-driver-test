@@ -1,5 +1,5 @@
 /**
- * @file uart_test.c
+ * @file gpio_test.c
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
@@ -62,7 +62,7 @@ void gpio_test_init(void)
 
 void gpio_test_app(void)
 {
-    // 
+    // Use this space to set and observe pin states 
 }
 
 //=======================================================================================

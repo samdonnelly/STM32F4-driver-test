@@ -21,14 +21,21 @@
 //================================================================================
 
 
-// About the test code 
-// - This test code can test various interrupts, in particular external, ADC and 
-//   DMA. 
-// - The external interrupt was tested by associating it with a hall effect sensor 
-//   that would change state in the presence of a magnetic field. 
+//=======================================================================================
+// Macros 
+
+// Conditional compilation 
+#define INT_EXTI 1            // External interrupt code 
+#define INT_ADC_ENABLE 0      // ADC interrupt code (EXTI0 must be included as well) 
+#define INT_DMA_ENABLE 0      // DMA interrupt code (EXTI0 & ADC must be included as well) 
+
+// Data 
+#define INT_ADC_NUM_CONV 2    // Number of ADC conversions to keep track of 
+
+//=======================================================================================
 
 
-//================================================================================
+//=======================================================================================
 // Globals 
 
 #if INT_ADC_ENABLE 
@@ -38,10 +45,12 @@ static uint16_t adc_conversion[INT_ADC_NUM_CONV];
 
 #endif   // INT_ADC_ENABLE 
 
-//================================================================================
+//=======================================================================================
 
 
+//=======================================================================================
 // Setup code 
+
 void int_test_init()
 {
     // Interrupt initialization code goes here 
@@ -79,6 +88,9 @@ void int_test_init()
     exti_init(); 
 
 #if INT_EXTI 
+
+    // The external interrupt was tested by associating it with a hall effect sensor 
+    // that would change state in the presence of a magnetic field. 
 
     exti_config(
         GPIOB, 
@@ -182,8 +194,12 @@ void int_test_init()
 
 }
 
+//=======================================================================================
 
+
+//=======================================================================================
 // Test code 
+
 void int_test_app()
 {
     // Test code for interrupt_test here 
@@ -240,3 +256,5 @@ void int_test_app()
 
     //==================================================
 }
+
+//=======================================================================================

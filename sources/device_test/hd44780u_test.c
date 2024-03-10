@@ -21,7 +21,24 @@
 
 
 //=======================================================================================
-// Globals 
+// Macros 
+
+// Conditional compilation 
+#define HD44780U_CONTROLLER_TEST 1        // For switching between driver and controller testing 
+#define HD44780U_BACKLIGHT_TEST 1         // Backlight control test 
+#define HD44780U_DISPLAY_TEST 0           // Display on/off test 
+#define HD44780U_CURSOR_TEST 0            // Cursor visibility test 
+#define HD44780U_BLINK_TEST 0             // Cursor blink test 
+
+// Controller 
+#define HD44780U_NUM_USER_CMDS 19         // Number of defined user commands 
+#define HD44780U_MAX_FUNC_PTR_ARGS 3      // Maximum arguments of all function pointer below 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Global variables 
 
 static char* hd44780u_startup_screen[HD44780U_NUM_LINES] = 
 { 
@@ -97,7 +114,9 @@ static char* hd44780u_test_text[HD44780U_NUM_LINES] =
 //================================================================================
 
 
+//=======================================================================================
 // Setup code
+
 void hd44780u_test_init()
 {
     // Setup code for the hd44780u_test here 
@@ -196,8 +215,12 @@ void hd44780u_test_init()
     //=================================================
 } 
 
+//=======================================================================================
 
+
+//=======================================================================================
 // Test code 
+
 void hd44780u_test_app()
 {
     // Test code for the hd44780u_test here 
@@ -413,3 +436,5 @@ void hd44780u_test_app()
 #endif
 
 }
+
+//=======================================================================================

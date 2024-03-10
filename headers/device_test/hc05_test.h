@@ -19,19 +19,7 @@
 // Includes 
 
 #include "includes_drivers.h" 
-
 #include "state_machine_test.h" 
-
-//=======================================================================================
-
-
-//=======================================================================================
-// Macros 
-
-#define HC05_CONTROLLER_TEST 0     // For switching between driver and controller testing 
-
-#define HC05_NUM_USER_CMDS 10      // Number of defined user commands for controller test 
-#define HC05_MAX_SETTER_ARGS 1     // Maximum arguments of all function pointer below 
 
 //=======================================================================================
 
@@ -97,7 +85,7 @@ hc05_func_ptrs_t;
 
 
 //=======================================================================================
-// Function prototypes 
+// Prototypes 
 
 /**
  * @brief HC05 setup code 

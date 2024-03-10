@@ -40,6 +40,9 @@
 //=======================================================================================
 // Macros 
 
+// Conditional compilation 
+#define GPS_NAV_TEST_SCREEN_ON_BUS 1    // HD44780U screen on same I2C bus as device 
+
 // Configuration 
 #define COORDINATE_LPF_GAIN 0.5   // Coordinate low pass filter gain 
 #define HEADING_LPF_GAIN 0.2      // Heading low pass filter gain 
