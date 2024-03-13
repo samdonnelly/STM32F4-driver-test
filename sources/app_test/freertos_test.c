@@ -1891,6 +1891,8 @@ void TaskHardwareInterrupt(void *argument)
 }
 
 
+#if INTERRUPT_OVERRIDE 
+
 // Timer 1 break + timer 9 global interrupt - overridden 
 void TIM1_BRK_TIM9_IRQHandler(void)
 {
@@ -1930,6 +1932,8 @@ void TIM1_BRK_TIM9_IRQHandler(void)
     // on data from this ISR. 
     portYIELD_FROM_ISR(task_woken); 
 }
+
+#endif   // INTERRUPT_OVERRIDE 
 
 //=======================================================================================
 
