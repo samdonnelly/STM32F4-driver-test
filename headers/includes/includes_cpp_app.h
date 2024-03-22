@@ -23,6 +23,7 @@ extern "C" {
 // Includes 
 
 // Application test code 
+#include "active_object_test.h" 
 #include "gps_nav_test.h" 
 
 //=======================================================================================

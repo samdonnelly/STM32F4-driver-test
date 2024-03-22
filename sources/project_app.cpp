@@ -15,7 +15,6 @@
 //=======================================================================================
 // Includes 
 
-// #include "project_app.h"
 #include "project_interface.h" 
 
 #include "includes_app.h"
@@ -33,6 +32,8 @@
 void project_app(void)
 {
     // Project application code here 
+
+    active_object_test_app(); 
 }
 
 //=======================================================================================

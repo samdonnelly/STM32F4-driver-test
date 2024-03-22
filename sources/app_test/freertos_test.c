@@ -37,11 +37,11 @@
 // Macros 
 
 // Conditional compilation 
-#define PERIODIC_BLINK_TEST 1        // Highest priority 
+#define PERIODIC_BLINK_TEST 0        // Highest priority 
 #define MANUAL_BLINK_TEST 0 
 #define TASK_SCHEDULING_TEST 0 
 #define MEMORY_MANAGEMENT_TEST 0 
-#define QUEUE_TEST 0 
+#define QUEUE_TEST 1 
 #define MUTEX_TEST 0 
 #define SEMAPHORE_TEST 0 
 #define SOFTWARE_TIMER_TEST_0 0 
@@ -60,6 +60,26 @@
 #define SERIAL_INPUT_MAX_LEN 30 
 
 //==================================================
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Variables 
+
+// Task definition: main loop 
+osThreadId_t mainLoopHandle; 
+const osThreadAttr_t main_loop_attributes = 
+{
+    .name = "main_loop", 
+    .stack_size = MAIN_LOOP_STACK_SIZE, 
+    .priority = (osPriority_t) osPriorityLow   // Above Idle but below everything else 
+}; 
+
+// Serial terminal data 
+static uint8_t uart_dma_buff[SERIAL_INPUT_MAX_LEN];   // Circular buffer 
+static uint8_t buff_index;                            // Circular buffer index 
+static uint8_t user_in_buff[SERIAL_INPUT_MAX_LEN];    // Stores latest user input 
 
 //=======================================================================================
 
@@ -95,31 +115,6 @@ void hardware_interrupt_loop(void);
 void deadlock_starvation_loop(void); 
 void priority_inversion_loop(void); 
 
-//=======================================================================================
-
-
-//=======================================================================================
-// Variables 
-
-// Task definition: main loop 
-osThreadId_t mainLoopHandle; 
-const osThreadAttr_t main_loop_attributes = 
-{
-    .name = "main_loop", 
-    .stack_size = MAIN_LOOP_STACK_SIZE, 
-    .priority = (osPriority_t) osPriorityLow   // Above Idle but below everything else 
-}; 
-
-// Serial terminal data 
-static uint8_t uart_dma_buff[SERIAL_INPUT_MAX_LEN];   // Circular buffer 
-static uint8_t buff_index;                            // Circular buffer index 
-static uint8_t user_in_buff[SERIAL_INPUT_MAX_LEN];    // Stores latest user input 
-
-//=======================================================================================
-
-
-//=======================================================================================
-// Prototypes 
 
 /**
  * @brief Task function: main loop 
