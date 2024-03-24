@@ -25,7 +25,7 @@
 
 // Conditional compilation 
 #define FREERTOS_ENABLE 1 
-#define INTERRUPT_OVERRIDE 0 
+#define INTERRUPT_OVERRIDE 1 
 
 //=======================================================================================
 

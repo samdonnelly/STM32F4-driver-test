@@ -17,6 +17,7 @@
 
 #include "active_object_test.h" 
 #include "includes_drivers.h" 
+#include "stm32f4xx_it.h" 
 
 // FreeRTOS 
 #include "FreeRTOS.h"
@@ -40,6 +41,9 @@
 #define MIN_STACK_MULTIPLE 8 
 #define THREAD_LOW_STACK_SIZE configMINIMAL_STACK_SIZE * MIN_STACK_MULTIPLE 
 #define THREAD_HIGH_STACK_SIZE configMINIMAL_STACK_SIZE * MIN_STACK_MULTIPLE 
+
+// Data 
+#define SERIAL_INPUT_MAX_LEN 30 
 
 //=======================================================================================
 
@@ -94,17 +98,16 @@ void eventLoop(void *thread_info);
 
 // Low Priority Thread states 
 typedef enum {
-    THREAD_LOW_STATE_0, 
-    THREAD_LOW_STATE_1, 
+    THREAD_LOW_SERIAL_OUT_STATE, 
+    THREAD_LOW_SERIAL_IN_STATE, 
     THREAD_LOW_NUM_STATES 
 } ThreadLowStates; 
 
 // Low Priority Thread event indexes 
 typedef enum {
     THREAD_LOW_NO_EVENT, 
-    THREAD_LOW_EVENT_0, 
-    THREAD_LOW_EVENT_1, 
-    THREAD_LOW_EVENT_2, 
+    THREAD_LOW_SERIAL_OUT_EVENT, 
+    THREAD_LOW_SERIAL_IN_EVENT 
 } ThreadLowEvents; 
 
 //==================================================
@@ -115,8 +118,18 @@ typedef enum {
 // Low Priority Thread trackers 
 struct ThreadLowTrackers 
 {
+    // System info 
     ThreadEventData event_data; 
     ThreadLowStates state; 
+
+    // Serial terminal data 
+    uint8_t uart_dma_buff[SERIAL_INPUT_MAX_LEN];   // Circular buffer 
+    uint8_t buff_index;                            // Circular buffer index 
+    uint8_t user_in_buff[SERIAL_INPUT_MAX_LEN];    // Stores latest user input 
+
+    // State flags 
+    uint8_t serial_out : 1; 
+    uint8_t serial_in  : 1; 
 }; 
 
 // Low Priority Thread object 
@@ -180,8 +193,8 @@ static const thread_low_state_ptr thread_low_state_table[THREAD_LOW_NUM_STATES] 
 
 // High Priority thread states 
 typedef enum {
-    THREAD_HIGH_STATE_0, 
-    THREAD_HIGH_STATE_1, 
+    THREAD_HIGH_LED_SLOW_STATE, 
+    THREAD_HIGH_LED_FAST_STATE, 
     THREAD_HIGH_NUM_STATES 
 } ThreadHighStates; 
 
@@ -201,8 +214,13 @@ typedef enum {
 // High Priority Thread trackers 
 struct ThreadHighTrackers 
 {
+    // System info 
     ThreadEventData event_data; 
     ThreadHighStates state; 
+
+    // State flags 
+    uint8_t led_slow : 1; 
+    uint8_t led_fast : 1; 
 }; 
 
 // High Priority Thread object 
@@ -284,8 +302,15 @@ void active_object_test_init(void)
     // Initialize FreeRTOS scheduler 
     osKernelInitialize(); 
 
+    //==================================================
     // Other general setup (pins, ports, etc.) 
 
+    // Initialize GPIO ports 
+    gpio_port_init(); 
+
+    //==================================================
+
+    // Priority group setup 
     ThreadLowSetup(); 
     ThreadHighSetup(); 
 }
@@ -336,6 +361,63 @@ void eventLoop(void *thread_info)
 // Setup 
 void ThreadLowSetup(void)
 {
+    // Initialize general data 
+    thread_low_trackers.state = THREAD_LOW_SERIAL_OUT_STATE; 
+    memset((void *)thread_low_trackers.uart_dma_buff, CLEAR, 
+           sizeof(thread_low_trackers.uart_dma_buff)); 
+    thread_low_trackers.buff_index = CLEAR; 
+    memset((void *)thread_low_trackers.user_in_buff, CLEAR, 
+           sizeof(thread_low_trackers.user_in_buff)); 
+    thread_low_trackers.serial_out = SET_BIT; 
+    thread_low_trackers.serial_in = CLEAR_BIT; 
+
+    // Initialize UART 
+    uart_init(
+        USART2, 
+        GPIOA, 
+        PIN_3, 
+        PIN_2, 
+        UART_FRAC_42_9600, 
+        UART_MANT_42_9600, 
+        UART_DMA_DISABLE, 
+        UART_DMA_ENABLE);   // RX DMA enabled for serial terminal reading 
+    
+    // Enable IDLE line interrupts for reading serial terminal input with DMA 
+    uart_interrupt_init(
+        USART2, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_ENABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE); 
+
+    // Initialize the DMA stream 
+    dma_stream_init(
+        DMA1, 
+        DMA1_Stream5, 
+        DMA_CHNL_4, 
+        DMA_DIR_PM, 
+        DMA_CM_ENABLE,
+        DMA_PRIOR_VHI, 
+        DMA_ADDR_INCREMENT,   // Increment the buffer pointer to fill the buffer 
+        DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
+        DMA_DATA_SIZE_BYTE, 
+        DMA_DATA_SIZE_BYTE); 
+
+    // Configure and enable the DMA stream 
+    dma_stream_config(
+        DMA1_Stream5, 
+        (uint32_t)(&USART2->DR), 
+        (uint32_t)thread_low_trackers.uart_dma_buff, 
+        (uint16_t)SERIAL_INPUT_MAX_LEN); 
+    dma_stream_enable(DMA1_Stream5); 
+
+    // Initialize interrupt handler flags and enable the interrupt handler 
+    int_handler_init(); 
+    nvic_config(USART2_IRQn, EXTI_PRIORITY_0); 
+
     // Thread definition, queue handle creation and dispatch function assignment 
     thread_low_trackers.event_data = 
     {
@@ -373,16 +455,22 @@ void DispatchThreadLow(Event event)
     // State machine 
     switch (state)
     {
-        case THREAD_LOW_STATE_0: 
-            state = THREAD_LOW_STATE_1; 
-            break; 
-
-        case THREAD_LOW_STATE_1: 
-            state = THREAD_LOW_STATE_0; 
+        case THREAD_LOW_SERIAL_OUT_STATE: 
+            if (thread_low_trackers.serial_in)
+            {
+                state = THREAD_LOW_SERIAL_IN_STATE; 
+            }
             break; 
         
+        case THREAD_LOW_SERIAL_IN_STATE: 
+            if (thread_low_trackers.serial_out)
+            {
+                state = THREAD_LOW_SERIAL_OUT_STATE; 
+            }
+            break; 
+
         default: 
-            state = THREAD_LOW_STATE_0; 
+            state = THREAD_LOW_SERIAL_OUT_STATE; 
             break; 
     }
 
@@ -407,12 +495,8 @@ void ThreadLowState0(
     // Event selection 
     switch (event)
     {
-        case THREAD_LOW_EVENT_0: 
+        case THREAD_LOW_SERIAL_OUT_EVENT: 
             Event0(); 
-            break; 
-
-        case THREAD_LOW_EVENT_1: 
-            Event1(); 
             break; 
 
         default: 
@@ -433,12 +517,14 @@ void ThreadLowState1(
     // Event selection 
     switch (event)
     {
-        case THREAD_LOW_EVENT_0: 
-            Event0(); 
-            break; 
-
-        case THREAD_LOW_EVENT_2: 
-            Event2(); 
+        case THREAD_LOW_SERIAL_IN_EVENT: 
+            // Execute the event then trigger the next state and event 
+            Event1(); 
+            thread_low_trackers.serial_out = SET_BIT; 
+            thread_low_trackers.serial_in = CLEAR_BIT; 
+            thread_low_trackers.event_data.event = THREAD_LOW_SERIAL_OUT_EVENT; 
+            xQueueSend(thread_low_trackers.event_data.ThreadEventQueue, 
+                       (void *)&thread_low_trackers.event_data.event, 0); 
             break; 
 
         default: 
@@ -447,6 +533,28 @@ void ThreadLowState1(
 
     // State exit 
 }
+
+
+#if INTERRUPT_OVERRIDE 
+
+// USART2 - overridden 
+void USART2_IRQHandler(void)
+{
+    handler_flags.usart2_flag = SET_BIT; 
+
+    // Trigger a state change and queue a serial input event 
+    thread_low_trackers.serial_out = CLEAR_BIT; 
+    thread_low_trackers.serial_in = SET_BIT; 
+    thread_low_trackers.event_data.event = THREAD_LOW_SERIAL_IN_EVENT; 
+    xQueueSend(thread_low_trackers.event_data.ThreadEventQueue, 
+                (void *)&thread_low_trackers.event_data.event, 0); 
+
+    // The following is needed to exit the ISR 
+    dummy_read(USART2->SR); 
+    dummy_read(USART2->DR); 
+}
+
+#endif   // INTERRUPT_OVERRIDE 
 
 //=======================================================================================
 
@@ -460,6 +568,9 @@ void ThreadLowState1(
 // Setup 
 void ThreadHighSetup(void)
 {
+    // Initialize board LED (on when logic low) 
+    gpio_pin_init(GPIOA, PIN_5, MODER_GPO, OTYPER_PP, OSPEEDR_HIGH, PUPDR_NO); 
+
     // Thread definition, queue handle creation and dispatch function assignment 
     thread_low_trackers.event_data = 
     {
@@ -484,6 +595,11 @@ void ThreadHighSetup(void)
         (void *)&thread_low_trackers.event_data, 
         &thread_low_trackers.event_data.attr); 
     // Check that the thread creation worked 
+
+    // Initialize other data 
+    thread_high_trackers.state = THREAD_HIGH_LED_SLOW_STATE; 
+    thread_high_trackers.led_slow = SET_BIT; 
+    thread_high_trackers.led_fast = CLEAR_BIT; 
 }
 
 
@@ -502,16 +618,22 @@ void DispatchThreadHigh(Event event)
     // State machine 
     switch (state)
     {
-        case THREAD_HIGH_STATE_0: 
-            state = THREAD_HIGH_STATE_1; 
+        case THREAD_HIGH_LED_SLOW_STATE: 
+            if (thread_high_trackers.led_fast)
+            {
+                state = THREAD_HIGH_LED_FAST_STATE; 
+            }
             break; 
 
-        case THREAD_HIGH_STATE_1: 
-            state = THREAD_HIGH_STATE_0; 
+        case THREAD_HIGH_LED_FAST_STATE: 
+            if (thread_high_trackers.led_slow)
+            {
+                state = THREAD_HIGH_LED_SLOW_STATE; 
+            }
             break; 
         
         default: 
-            state = THREAD_HIGH_STATE_0; 
+            state = THREAD_HIGH_LED_SLOW_STATE; 
             break; 
     }
 
@@ -586,14 +708,23 @@ void ThreadHighState1(
 // Event 0 
 void Event0(void)
 {
-    // 
+    // Output the latest content of the circular buffer to the serial terminal 
+    uart_sendstring(USART2, (char *)thread_low_trackers.user_in_buff); 
+    uart_sendstring(USART2, "\r\n>>> "); 
 }
 
 
 // Event 1 
 void Event1(void)
 {
-    // 
+    handler_flags.usart2_flag = CLEAR; 
+
+    // Get the user input from the circular buffer 
+    cb_parse(
+        thread_low_trackers.uart_dma_buff, 
+        thread_low_trackers.user_in_buff, 
+        &thread_low_trackers.buff_index, 
+        SERIAL_INPUT_MAX_LEN); 
 }
 
 
