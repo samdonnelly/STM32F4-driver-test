@@ -568,6 +568,11 @@ void USART2_IRQHandler(void)
 // Setup 
 void ThreadHighSetup(void)
 {
+    // Initialize general data 
+    thread_high_trackers.state = THREAD_HIGH_LED_SLOW_STATE; 
+    thread_high_trackers.led_slow = SET_BIT; 
+    thread_high_trackers.led_fast = CLEAR_BIT; 
+
     // Initialize board LED (on when logic low) 
     gpio_pin_init(GPIOA, PIN_5, MODER_GPO, OTYPER_PP, OSPEEDR_HIGH, PUPDR_NO); 
 
@@ -595,11 +600,6 @@ void ThreadHighSetup(void)
         (void *)&thread_low_trackers.event_data, 
         &thread_low_trackers.event_data.attr); 
     // Check that the thread creation worked 
-
-    // Initialize other data 
-    thread_high_trackers.state = THREAD_HIGH_LED_SLOW_STATE; 
-    thread_high_trackers.led_slow = SET_BIT; 
-    thread_high_trackers.led_fast = CLEAR_BIT; 
 }
 
 
@@ -725,6 +725,10 @@ void Event1(void)
         thread_low_trackers.user_in_buff, 
         &thread_low_trackers.buff_index, 
         SERIAL_INPUT_MAX_LEN); 
+
+    // Toggle the LED output state - this should be encapsulated better 
+    thread_high_trackers.led_slow = SET_BIT - thread_high_trackers.led_slow; 
+    thread_high_trackers.led_fast = SET_BIT - thread_high_trackers.led_fast; 
 }
 
 
