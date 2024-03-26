@@ -93,6 +93,167 @@ void eventLoop(void *thread_info);
 
 
 //=======================================================================================
+// System threads 
+
+class SystemData 
+{
+private:   // Private members 
+
+    //==================================================
+    // Low Priority Thread 
+
+    // Low Priority Thread States 
+    enum class ThreadLowStates
+    {
+        SERIAL_OUT_STATE, 
+        SERIAL_IN_STATE, 
+        NUM_STATES 
+    } 
+    thread_low_states; 
+
+    // Low Priority Thread Events 
+    enum class ThreadLowEvents
+    {
+        NO_EVENT, 
+        SERIAL_OUT_EVENT, 
+        SERIAL_IN_EVENT 
+    }; 
+
+    // System info 
+    ThreadEventData thread_low_event_data; 
+
+    // Flags 
+    typedef struct 
+    {
+        // System flags 
+        uint8_t state_entry : 1; 
+
+        // State flags 
+        uint8_t serial_out  : 1; 
+        uint8_t serial_in   : 1; 
+    } 
+    ThreadLowFlags; 
+
+    //==================================================
+
+    //==================================================
+    // High Priority Thread 
+
+    // High Priority Thread States 
+    enum class ThreadHighStates 
+    {
+        LED_SLOW_STATE, 
+        LED_FAST_STATE, 
+        NUM_STATES 
+    }
+    thread_high_state; 
+
+    // High Priority Thread Events 
+    enum class ThreadHighEvents 
+    {
+        NO_EVENT, 
+        LED_TOGGLE_EVENT 
+    }; 
+
+    // System info 
+    ThreadEventData thread_high_event_data; 
+
+    // Flags 
+    struct ThreadHighFlags
+    {
+        // System flags 
+        uint8_t state_entry  : 1; 
+        uint8_t state_change : 1; 
+
+        // State flags 
+        uint8_t led_slow     : 1; 
+        uint8_t led_fast     : 1; 
+    } 
+    thread_high_flags; 
+
+    //==================================================
+
+    //==================================================
+    // Software Timer Thread 
+    //==================================================
+
+    //==================================================
+    // General 
+
+    // Ports and pins 
+
+    // LED timers 
+    TimerHandle_t slow_blink_timer; 
+    TimerHandle_t fast_blink_timer; 
+
+    // LED pin data 
+    GPIO_TypeDef *led_gpio; 
+    gpio_pin_num_t led_pin; 
+    gpio_pin_state_t led_state; 
+
+    // Serial terminal data 
+    uint8_t uart_dma_buff[SERIAL_INPUT_MAX_LEN];   // Circular buffer 
+    uint8_t buff_index;                            // Circular buffer index 
+    uint8_t user_in_buff[SERIAL_INPUT_MAX_LEN];    // Stores latest user input 
+
+    //==================================================
+
+public:   // Public members 
+    
+    //==================================================
+    // Low Priority Thread 
+    //==================================================
+
+    //==================================================
+    // High Priority Thread 
+    //==================================================
+
+    //==================================================
+    // Software Timer Thread 
+    //==================================================
+
+private:   // Private member functions 
+    
+    //==================================================
+    // Low Priority Thread 
+    //==================================================
+
+    //==================================================
+    // High Priority Thread 
+    //==================================================
+
+    //==================================================
+    // Software Timer Thread 
+    //==================================================
+
+public:   // Public member functions 
+
+    // Constructor(s) 
+    SystemData() {} 
+
+    // Destructor(s) 
+    ~SystemData() {} 
+    
+    //==================================================
+    // Low Priority Thread
+    //==================================================
+
+    //==================================================
+    // High Priority Thread
+    //==================================================
+
+    //==================================================
+    // Software Timer Thread
+    //==================================================
+}; 
+
+// System object 
+static SystemData trackers; 
+
+//=======================================================================================
+
+
+//=======================================================================================
 // Low Priority Thread module data 
 
 // Local data to the low priority thread 
@@ -231,9 +392,10 @@ struct ThreadHighTrackers
     gpio_pin_state_t led_state; 
 
     // State flags 
-    uint8_t state_entry : 1; 
-    uint8_t led_slow    : 1; 
-    uint8_t led_fast    : 1; 
+    uint8_t state_entry  : 1; 
+    uint8_t state_change : 1; 
+    uint8_t led_slow     : 1; 
+    uint8_t led_fast     : 1; 
 }; 
 
 // High Priority Thread object 
@@ -272,6 +434,7 @@ void ThreadHighState1(ThreadHighTrackers *trackers, Event event);
 
 // Helper functions 
 void ThreadHighStateToggle(void); 
+void ThreadHighStateTrigger(void); 
 
 //==================================================
 
@@ -310,12 +473,32 @@ void LEDTimerCallback(TimerHandle_t xTimer);
 //==================================================
 // Prototypes 
 
-// Events 
+/**
+ * @brief Event: Serial Output 
+ * 
+ * @param output_buff : data to output 
+ */
 void SerialOutEvent(char *output_buff); 
+
+/**
+ * @brief Event: Serial Input 
+ * 
+ * @param circular_buff 
+ * @param circular_buff_index 
+ * @param input_buff 
+ */
 void SerialInEvent(
     uint8_t *circular_buff, 
     uint8_t *circular_buff_index, 
     uint8_t *input_buff); 
+
+/**
+ * @brief Event: Pin Toggle (used to toggle the board LED) 
+ * 
+ * @param pin_gpio 
+ * @param pin_num 
+ * @param pin_state 
+ */
 void PinToggleEvent(
     GPIO_TypeDef *pin_gpio, 
     gpio_pin_num_t pin_num, 
@@ -450,7 +633,7 @@ void ThreadLowSetup(void)
 
     // Initialize interrupt handler flags and enable the interrupt handler 
     int_handler_init(); 
-    nvic_config(USART2_IRQn, EXTI_PRIORITY_0); 
+    nvic_config(USART2_IRQn, EXTI_PRIORITY_15); 
 
     // Thread definition, queue handle creation and dispatch function assignment 
     thread_low_trackers.event_data = 
@@ -509,8 +692,6 @@ void DispatchThreadLow(Event event)
             state = THREAD_LOW_SERIAL_OUT_STATE; 
             break; 
     }
-
-    // if (xQueueSend(queue, (void *)&e, 0) == pdTRUE); 
 
     // Run state function 
     thread_low_state_table[state](&thread_low_trackers, event); 
@@ -602,12 +783,16 @@ void USART2_IRQHandler(void)
 {
     handler_flags.usart2_flag = SET_BIT; 
 
+    BaseType_t task_woken = pdFALSE; 
+
     // Trigger a state change and queue a serial input event 
     thread_low_trackers.serial_out = CLEAR_BIT; 
     thread_low_trackers.serial_in = SET_BIT; 
+    thread_low_trackers.state_entry = SET_BIT; 
+
     thread_low_trackers.event_data.event = THREAD_LOW_SERIAL_IN_EVENT; 
-    xQueueSend(thread_low_trackers.event_data.ThreadEventQueue, 
-                (void *)&thread_low_trackers.event_data.event, 0); 
+    xQueueSendFromISR(thread_low_trackers.event_data.ThreadEventQueue, 
+                      (void *)&thread_low_trackers.event_data.event, &task_woken); 
 
     // The following is needed to exit the ISR 
     dummy_read(USART2->SR); 
@@ -634,6 +819,7 @@ void ThreadHighSetup(void)
     thread_high_trackers.led_pin = GPIOX_PIN_5; 
     thread_high_trackers.led_state = GPIO_LOW; 
     thread_high_trackers.state_entry = SET_BIT; 
+    thread_high_trackers.state_change = CLEAR_BIT; 
     thread_high_trackers.led_slow = SET_BIT; 
     thread_high_trackers.led_fast = CLEAR_BIT; 
 
@@ -739,7 +925,7 @@ void ThreadHighState0(
     {
         thread_high_trackers.state_entry = CLEAR_BIT; 
 
-        xTimerStart(thread_high_trackers.slow_blink_timer, portMAX_DELAY); 
+        xTimerStart(thread_high_trackers.slow_blink_timer, 0); 
     }
 
     // Event selection 
@@ -750,6 +936,15 @@ void ThreadHighState0(
                 thread_high_trackers.led_gpio, 
                 thread_high_trackers.led_pin, 
                 &thread_high_trackers.led_state); 
+
+            if (thread_high_trackers.state_change)
+            {
+                thread_high_trackers.state_change = CLEAR_BIT; 
+                thread_high_trackers.led_fast = SET_BIT; 
+
+                // Trigger the next state with an empty event 
+                ThreadHighStateTrigger(); 
+            }
             break; 
 
         default: 
@@ -762,7 +957,7 @@ void ThreadHighState0(
         thread_high_trackers.state_entry = SET_BIT; 
         thread_high_trackers.led_slow = CLEAR_BIT; 
 
-        xTimerStop(thread_high_trackers.slow_blink_timer, portMAX_DELAY); 
+        xTimerStop(thread_high_trackers.slow_blink_timer, 0); 
     }
 }
 
@@ -777,7 +972,7 @@ void ThreadHighState1(
     {
         thread_high_trackers.state_entry = CLEAR_BIT; 
 
-        xTimerStart(thread_high_trackers.fast_blink_timer, portMAX_DELAY); 
+        xTimerStart(thread_high_trackers.fast_blink_timer, 0); 
     }
 
     // Event selection 
@@ -788,6 +983,15 @@ void ThreadHighState1(
                 thread_high_trackers.led_gpio, 
                 thread_high_trackers.led_pin, 
                 &thread_high_trackers.led_state); 
+
+            if (thread_high_trackers.state_change)
+            {
+                thread_high_trackers.state_change = CLEAR_BIT; 
+                thread_high_trackers.led_slow = SET_BIT; 
+
+                // Trigger the next state with an empty event 
+                ThreadHighStateTrigger(); 
+            }
             break; 
 
         default: 
@@ -800,7 +1004,7 @@ void ThreadHighState1(
         thread_high_trackers.state_entry = SET_BIT; 
         thread_high_trackers.led_fast = CLEAR_BIT; 
 
-        xTimerStop(thread_high_trackers.fast_blink_timer, portMAX_DELAY); 
+        xTimerStop(thread_high_trackers.fast_blink_timer, 0); 
     }
 }
 
@@ -808,14 +1012,13 @@ void ThreadHighState1(
 // Toggle the high priority thread state 
 void ThreadHighStateToggle(void)
 {
-    // This is a sample setter function for the high priority thread. In practice, a 
-    // function for state setters is probably not the best approach but this is done 
-    // to separate thread crossover. 
+    thread_high_trackers.state_change = SET_BIT; 
+}
 
-    // Toggle the LED output state 
-    thread_high_trackers.led_slow = SET_BIT - thread_high_trackers.led_slow; 
-    thread_high_trackers.led_fast = SET_BIT - thread_high_trackers.led_fast; 
 
+// Trigger/start the next state 
+void ThreadHighStateTrigger(void)
+{
     // Queue an empty event to get the thread to change states and start blinking the 
     // LED at an updated rate immediately. 
     thread_high_trackers.event_data.event = THREAD_HIGH_NO_EVENT; 
