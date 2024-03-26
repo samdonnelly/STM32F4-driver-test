@@ -109,7 +109,7 @@ private:   // Private members
         SERIAL_IN_STATE, 
         NUM_STATES 
     } 
-    thread_low_states; 
+    thread_low_state; 
 
     // Low Priority Thread Events 
     enum class ThreadLowEvents
@@ -180,9 +180,7 @@ private:   // Private members
     //==================================================
     // General 
 
-    // Ports and pins 
-
-    // LED timers 
+    // Software timers 
     TimerHandle_t slow_blink_timer; 
     TimerHandle_t fast_blink_timer; 
 
@@ -195,6 +193,22 @@ private:   // Private members
     uint8_t uart_dma_buff[SERIAL_INPUT_MAX_LEN];   // Circular buffer 
     uint8_t buff_index;                            // Circular buffer index 
     uint8_t user_in_buff[SERIAL_INPUT_MAX_LEN];    // Stores latest user input 
+
+    //==================================================
+
+    //==================================================
+    // States 
+
+    static void state0(Event event); 
+    static void state1(Event event); 
+
+    typedef void (*func_ptr)(Event event); 
+
+    const func_ptr state_table[(uint8_t)ThreadLowStates::NUM_STATES] = 
+    {
+        &state0, 
+        &state1 
+    }; 
 
     //==================================================
 
