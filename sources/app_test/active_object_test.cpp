@@ -121,6 +121,7 @@ private:   // Private members
 
     // System info 
     ThreadEventData thread_low_event_data; 
+    const uint8_t thread_low_queue_len = 3; 
 
     // Flags 
     typedef struct 
@@ -157,6 +158,7 @@ private:   // Private members
 
     // System info 
     ThreadEventData thread_high_event_data; 
+    const uint8_t thread_high_queue_len = 3; 
 
     // Flags 
     struct ThreadHighFlags
@@ -175,14 +177,15 @@ private:   // Private members
 
     //==================================================
     // Software Timer Thread 
-    //==================================================
-
-    //==================================================
-    // General 
 
     // Software timers 
     TimerHandle_t slow_blink_timer; 
     TimerHandle_t fast_blink_timer; 
+
+    //==================================================
+
+    //==================================================
+    // General 
 
     // LED pin data 
     GPIO_TypeDef *led_gpio; 
@@ -193,22 +196,6 @@ private:   // Private members
     uint8_t uart_dma_buff[SERIAL_INPUT_MAX_LEN];   // Circular buffer 
     uint8_t buff_index;                            // Circular buffer index 
     uint8_t user_in_buff[SERIAL_INPUT_MAX_LEN];    // Stores latest user input 
-
-    //==================================================
-
-    //==================================================
-    // States 
-
-    static void state0(Event event); 
-    static void state1(Event event); 
-
-    typedef void (*func_ptr)(Event event); 
-
-    const func_ptr state_table[(uint8_t)ThreadLowStates::NUM_STATES] = 
-    {
-        &state0, 
-        &state1 
-    }; 
 
     //==================================================
 
@@ -227,17 +214,59 @@ public:   // Public members
     //==================================================
 
 private:   // Private member functions 
+
+    //==================================================
+    // General 
+
+    // State function pointer 
+    typedef void (*state_func_ptr)(Event event); 
+
+    //==================================================
     
     //==================================================
     // Low Priority Thread 
+
+    // Event loop dispatch function 
+    void DispatchThreadLow(Event event); 
+
+    // State functions 
+    static void ThreadLowState0(Event event); 
+    static void ThreadLowState1(Event event); 
+
+    // State table 
+    const state_func_ptr thread_low_state_table[(uint8_t)ThreadLowStates::NUM_STATES] = 
+    {
+        &ThreadLowState0, 
+        &ThreadLowState1 
+    }; 
+
     //==================================================
 
     //==================================================
     // High Priority Thread 
+
+    // Event loop dispatch function 
+    void DispatchThreadHigh(Event event); 
+
+    // State functions 
+    static void ThreadHighState0(Event event); 
+    static void ThreadHighState1(Event event); 
+
+    // State table 
+    const state_func_ptr thread_high_state_table[(uint8_t)ThreadHighStates::NUM_STATES] = 
+    {
+        &ThreadHighState0, 
+        &ThreadHighState1 
+    }; 
+
     //==================================================
 
     //==================================================
     // Software Timer Thread 
+
+    // Called when LED toggle timers expire 
+    void LEDTimerCallback(TimerHandle_t xTimer); 
+
     //==================================================
 
 public:   // Public member functions 
@@ -247,6 +276,9 @@ public:   // Public member functions
 
     // Destructor(s) 
     ~SystemData() {} 
+
+    // Setup 
+    void SystemDataInit(void); 
     
     //==================================================
     // Low Priority Thread
@@ -262,7 +294,36 @@ public:   // Public member functions
 }; 
 
 // System object 
-static SystemData trackers; 
+static SystemData system_data; 
+
+// Setup code 
+void SystemData::SystemDataInit(void)
+{
+    // 
+}
+
+
+void SystemData::DispatchThreadHigh(Event event)
+{
+    // 
+}
+
+void SystemData::ThreadHighState0(Event event)
+{
+    // 
+}
+
+void SystemData::ThreadHighState1(Event event)
+{
+    // 
+}
+
+
+// Called when LED toggle timers expire 
+void SystemData::LEDTimerCallback(TimerHandle_t xTimer)
+{
+    // 
+}
 
 //=======================================================================================
 
@@ -583,7 +644,53 @@ void eventLoop(void *thread_info)
 
 
 //=======================================================================================
-// Low Priority Thread event control 
+// Low Priority Thread control 
+
+// Low Priority Thread: Dispatch 
+void SystemData::DispatchThreadLow(Event event)
+{
+    // ThreadLowStates state = thread_low_state; 
+
+    // // Continuous events. These are thread events that happen irrespective of state. 
+
+    // // State machine 
+    // switch (state)
+    // {
+    //     case ThreadLowStates::SERIAL_OUT_STATE: 
+    //         if (thread_low_trackers.serial_in)
+    //         {
+    //             state = ThreadLowStates::SERIAL_IN_STATE; 
+    //         }
+    //         break; 
+        
+    //     case ThreadLowStates::SERIAL_IN_STATE: 
+    //         if (thread_low_trackers.serial_out)
+    //         {
+    //             state = ThreadLowStates::SERIAL_OUT_STATE; 
+    //         }
+    //         break; 
+
+    //     default: 
+    //         state = THREAD_LOW_SERIAL_OUT_STATE; 
+    //         break; 
+    // }
+
+    // // Run state function 
+    // thread_low_state_table[state](&thread_low_trackers, event); 
+    // thread_low_trackers.state = state; 
+}
+
+// Low Priority Thread: State 0 
+void SystemData::ThreadLowState0(Event event)
+{
+    // 
+}
+
+// Low Priority Thread: State 1 
+void SystemData::ThreadLowState1(Event event)
+{
+    // 
+}
 
 // In practice these dispatch functions would likely be separated into different files 
 // to help organize the code. 
@@ -678,7 +785,7 @@ void ThreadLowSetup(void)
 }
 
 
-// Dispatch function for low priority task 
+// Dispatch function for low priority thread 
 void DispatchThreadLow(Event event)
 {
     ThreadLowStates state = thread_low_trackers.state; 
