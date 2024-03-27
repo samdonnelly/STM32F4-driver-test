@@ -51,33 +51,6 @@
 
 //=======================================================================================
 
-
-//=======================================================================================
-// Active Object module data 
-
-// Datatype 
-typedef uint8_t Event; 
-
-// Thread Event Info 
-typedef struct 
-{
-    osThreadAttr_t attr;              // Thread attributes 
-    uint8_t event;                    // Event index 
-    QueueHandle_t ThreadEventQueue;   // Queue 
-    void (*dispatch)(Event event);    // Dispatch function 
-}
-ThreadEventData; 
-
-/**
- * @brief Common event loop shared by all threads 
- * 
- * @param thread_info : thread info such as the event queue handler and dispatch function 
- */
-void eventLoop(void *thread_info); 
-
-//=======================================================================================
-
-
 #if AO_CPP_TEST 
 
 //=======================================================================================
@@ -98,11 +71,11 @@ private:   // Private members
     } thread_low_state; 
 
     // Low Priority Thread Events 
-    typedef enum {
+    enum class ThreadLowEvents : uint8_t {
         NO_EVENT, 
         SERIAL_OUT_EVENT, 
         SERIAL_IN_EVENT 
-    } ThreadLowEvents; 
+    } thread_low_event; 
 
     // System info 
     ThreadEventData thread_low_event_data; 
@@ -133,10 +106,10 @@ private:   // Private members
     } thread_high_state; 
 
     // High Priority Thread Events 
-    typedef enum {
+    enum class ThreadHighEvents : uint8_t {
         NO_EVENT, 
         LED_TOGGLE_EVENT 
-    } ThreadHighEvents; 
+    } thread_high_event; 
 
     // System info 
     ThreadEventData thread_high_event_data; 
@@ -194,8 +167,8 @@ private:   // Private member functions
     //==================================================
     // Low Priority Thread 
 
-    // // Event loop dispatch function 
-    // void DispatchThreadLow(Event event); 
+    // Event loop dispatch function 
+    static void DispatchThreadLow(Event event); 
 
     // State functions 
     static void ThreadLowState0(SystemData *data, Event event); 
@@ -214,7 +187,7 @@ private:   // Private member functions
     // High Priority Thread 
 
     // Event loop dispatch function 
-    void DispatchThreadHigh(Event event); 
+    static void DispatchThreadHigh(Event event); 
 
     // State functions 
     static void ThreadHighState0(SystemData *data, Event event); 
@@ -236,7 +209,7 @@ private:   // Private member functions
     // Software Timer Thread 
 
     // Called when LED toggle timers expire 
-    void LEDTimerCallback(TimerHandle_t xTimer); 
+    static void LEDTimerCallback(TimerHandle_t xTimer); 
 
     //==================================================
 
@@ -253,9 +226,6 @@ public:   // Public member functions
 
     //==================================================
     // Low Priority Thread 
-
-    // Event loop dispatch function 
-    void DispatchThreadLow(Event event); 
 
     // Helper functions 
     void SerialInterrupt(void); 
@@ -617,7 +587,7 @@ void SystemData::SystemDataInit(void)
                   .priority = (osPriority_t)osPriorityHigh, 
                   .tz_module = CLEAR, 
                   .reserved = CLEAR }, 
-        .event = ThreadHighEvents::NO_EVENT, 
+        .event = (Event)ThreadHighEvents::NO_EVENT, 
         .ThreadEventQueue = xQueueCreate(thread_high_queue_len, sizeof(uint32_t)), 
         .dispatch = DispatchThreadHigh 
     }; 
@@ -641,13 +611,13 @@ void SystemData::SystemDataInit(void)
 
     // Create timers 
     slow_blink_timer = xTimerCreate(
-        "one_shot_timer",               // Name of timer 
+        "slow_blink_timer",             // Name of timer 
         LED_SLOW_BLINK_PERIOD,          // Period of timer (ticks) 
         pdTRUE,                         // Auto-relead --> pdTRUE == Repeat Timer 
         (void *)0,                      // Timer ID 
         LEDTimerCallback);              // Callback function 
     fast_blink_timer = xTimerCreate(
-        "one_shot_timer",               // Name of timer 
+        "fast_blink_timer",             // Name of timer 
         LED_FAST_BLINK_PERIOD,          // Period of timer (ticks) 
         pdTRUE,                         // Auto-relead --> pdTRUE == Repeat Timer 
         (void *)1,                      // Timer ID 
@@ -806,13 +776,13 @@ void AOSystemInit(void)
 
     // Create timers 
     thread_high_trackers.slow_blink_timer = xTimerCreate(
-        "one_shot_timer",               // Name of timer 
+        "slow_blink_timer",             // Name of timer 
         LED_SLOW_BLINK_PERIOD,          // Period of timer (ticks) 
         pdTRUE,                         // Auto-relead --> pdTRUE == Repeat Timer 
         (void *)0,                      // Timer ID 
         LEDTimerCallback);              // Callback function 
     thread_high_trackers.fast_blink_timer = xTimerCreate(
-        "one_shot_timer",               // Name of timer 
+        "fast_blink_timer",             // Name of timer 
         LED_FAST_BLINK_PERIOD,          // Period of timer (ticks) 
         pdTRUE,                         // Auto-relead --> pdTRUE == Repeat Timer 
         (void *)1,                      // Timer ID 
@@ -828,32 +798,6 @@ void AOSystemInit(void)
 
 
 //=======================================================================================
-// Active Object control 
-
-// In practice the event loop and any other context switching or thread related code 
-// should be in it's own file. The event loop would then dispatch to the thread it's 
-// running in a different file. 
-
-// Common event loop shared by all threads 
-void eventLoop(void *thread_info)
-{
-    ThreadEventData *thread = (ThreadEventData *)thread_info; 
-
-    // Event loop 
-    while (1)
-    {
-        thread->event = CLEAR; 
-        xQueueReceive(thread->ThreadEventQueue, (void *)&thread->event, portMAX_DELAY); 
-        thread->dispatch(thread->event); 
-    }
-
-    vTaskDelete(NULL); 
-}
-
-//=======================================================================================
-
-
-//=======================================================================================
 // Low Priority Thread control 
 
 #if AO_CPP_TEST 
@@ -861,7 +805,7 @@ void eventLoop(void *thread_info)
 // Low Priority Thread: Dispatch 
 void SystemData::DispatchThreadLow(Event event)
 {
-    ThreadLowStates state = thread_low_state; 
+    ThreadLowStates state = system_data.thread_low_state; 
 
     // Continuous events. These are thread events that happen irrespective of state. 
 
@@ -869,14 +813,14 @@ void SystemData::DispatchThreadLow(Event event)
     switch (state)
     {
         case ThreadLowStates::SERIAL_OUT_STATE: 
-            if (thread_low_flags.serial_in)
+            if (system_data.thread_low_flags.serial_in)
             {
                 state = ThreadLowStates::SERIAL_IN_STATE; 
             }
             break; 
         
         case ThreadLowStates::SERIAL_IN_STATE: 
-            if (thread_low_flags.serial_out)
+            if (system_data.thread_low_flags.serial_out)
             {
                 state = ThreadLowStates::SERIAL_OUT_STATE; 
             }
@@ -888,10 +832,8 @@ void SystemData::DispatchThreadLow(Event event)
     }
 
     // Run state function 
-    thread_low_state_table[(uint8_t)state](this, event); 
-    thread_low_state = state; 
-
-    this; 
+    system_data.thread_low_state_table[(uint8_t)state](&system_data, event); 
+    system_data.thread_low_state = state; 
 }
 
 // Low Priority Thread: State 0 
@@ -905,8 +847,10 @@ void SystemData::ThreadLowState0(
         data->thread_low_flags.state_entry = CLEAR_BIT; 
     }
 
+    data->thread_low_event = (ThreadLowEvents)event; 
+
     // Event selection 
-    switch (event)
+    switch (data->thread_low_event)
     {
         case ThreadLowEvents::SERIAL_OUT_EVENT: 
             SerialOutEvent((char *)data->user_in_buff); 
@@ -935,8 +879,10 @@ void SystemData::ThreadLowState1(
         data->thread_low_flags.state_entry = CLEAR_BIT; 
     }
 
+    data->thread_low_event = (ThreadLowEvents)event; 
+
     // Event selection 
-    switch (event)
+    switch (data->thread_low_event)
     {
         case ThreadLowEvents::SERIAL_IN_EVENT: 
             SerialInEvent(
@@ -949,7 +895,7 @@ void SystemData::ThreadLowState1(
             
             // Trigger the next state and event 
             data->thread_low_flags.serial_out = SET_BIT; 
-            data->thread_low_event_data.event = ThreadLowEvents::SERIAL_OUT_EVENT; 
+            data->thread_low_event_data.event = (Event)ThreadLowEvents::SERIAL_OUT_EVENT; 
             xQueueSend(data->thread_low_event_data.ThreadEventQueue, 
                        (void *)&data->thread_low_event_data.event, 0); 
             break; 
@@ -976,7 +922,7 @@ void SystemData::SerialInterrupt(void)
     thread_low_flags.serial_in = SET_BIT; 
     thread_low_flags.state_entry = SET_BIT; 
 
-    thread_low_event_data.event = ThreadLowEvents::SERIAL_IN_EVENT; 
+    thread_low_event_data.event = (Event)ThreadLowEvents::SERIAL_IN_EVENT; 
     xQueueSendFromISR(thread_low_event_data.ThreadEventQueue, 
                       (void *)&thread_low_event_data.event, &task_woken); 
 }
@@ -1148,7 +1094,7 @@ void SystemData::DispatchThreadHigh(Event event)
     // priority thread could be dedicated to reading data from devices irrespective of 
     // state and each read gets triggered by a timer. 
 
-    ThreadHighStates state = thread_high_state; 
+    ThreadHighStates state = system_data.thread_high_state; 
 
     // Continuous events. These are thread events that happen irrespective of state. 
 
@@ -1156,14 +1102,14 @@ void SystemData::DispatchThreadHigh(Event event)
     switch (state)
     {
         case ThreadHighStates::LED_SLOW_STATE: 
-            if (thread_high_flags.led_fast)
+            if (system_data.thread_high_flags.led_fast)
             {
                 state = ThreadHighStates::LED_FAST_STATE; 
             }
             break; 
 
         case ThreadHighStates::LED_FAST_STATE: 
-            if (thread_high_flags.led_slow)
+            if (system_data.thread_high_flags.led_slow)
             {
                 state = ThreadHighStates::LED_SLOW_STATE; 
             }
@@ -1175,8 +1121,8 @@ void SystemData::DispatchThreadHigh(Event event)
     }
 
     // Run state function 
-    thread_high_state_table[(uint8_t)state](this, event); 
-    thread_high_state = state; 
+    system_data.thread_high_state_table[(uint8_t)state](&system_data, event); 
+    system_data.thread_high_state = state; 
 }
 
 // High Priority Thread: State 0 
@@ -1190,8 +1136,10 @@ void SystemData::ThreadHighState0(SystemData *data, Event event)
         xTimerStart(data->slow_blink_timer, 0); 
     }
 
+    data->thread_high_event = (ThreadHighEvents)event; 
+
     // Event selection 
-    switch (event)
+    switch (data->thread_high_event)
     {
         case ThreadHighEvents::LED_TOGGLE_EVENT: 
             PinToggleEvent(
@@ -1234,8 +1182,10 @@ void SystemData::ThreadHighState1(SystemData *data, Event event)
         xTimerStart(data->fast_blink_timer, 0); 
     }
 
+    data->thread_high_event = (ThreadHighEvents)event; 
+
     // Event selection 
-    switch (event)
+    switch (data->thread_high_event)
     {
         case ThreadHighEvents::LED_TOGGLE_EVENT: 
             PinToggleEvent(
@@ -1272,7 +1222,7 @@ void SystemData::ThreadHighStateTrigger(void)
 {
     // Queue an empty event to get the thread to change states and start blinking the 
     // LED at an updated rate immediately. 
-    thread_high_event_data.event = ThreadHighEvents::NO_EVENT; 
+    thread_high_event_data.event = (Event)ThreadHighEvents::NO_EVENT; 
     xQueueSend(thread_high_event_data.ThreadEventQueue, 
         (void *)&thread_high_event_data.event, 0); 
 }
@@ -1451,9 +1401,9 @@ void ThreadHighStateTrigger(void)
 void SystemData::LEDTimerCallback(TimerHandle_t xTimer)
 {
     // Queue an LED toggle event 
-    thread_high_event_data.event = ThreadHighEvents::LED_TOGGLE_EVENT; 
-    xQueueSend(thread_high_event_data.ThreadEventQueue, 
-        (void *)&thread_high_event_data.event, 0); 
+    system_data.thread_high_event_data.event = (Event)ThreadHighEvents::LED_TOGGLE_EVENT; 
+    xQueueSend(system_data.thread_high_event_data.ThreadEventQueue, 
+        (void *)&system_data.thread_high_event_data.event, 0); 
 }
 
 #elif AO_C_TEST 

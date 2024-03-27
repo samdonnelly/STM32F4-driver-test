@@ -95,7 +95,8 @@
 			"project_init.h": "c",
 			"queue.h": "c",
 			"nrf24l01_config.h": "c",
-			"dma_driver.h": "c"
+			"dma_driver.h": "c",
+			"active_object_framework.h": "c"
 		}
 	}
 }
