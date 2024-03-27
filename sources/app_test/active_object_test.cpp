@@ -400,6 +400,8 @@ void LEDTimerCallback(TimerHandle_t xTimer);
 //=======================================================================================
 // Event module(s) 
 
+// In practice these would be independent modules that can be used wherever needed. 
+
 /**
  * @brief Event: Serial Output 
  * 
@@ -800,6 +802,13 @@ void AOSystemInit(void)
 //=======================================================================================
 // Low Priority Thread control 
 
+// Each thread can be separated into its own file to help organize the code. The thread 
+// would considt primarily of the dispatch function and each state function. 
+// A Dispatch function does not necessarily need a state machine. It can consist of only 
+// the events available to that entire thread. For example, the high priority thread 
+// could be dedicated to reading data from devices irrespective of state and each read 
+// gets triggered by a timer. 
+
 #if AO_CPP_TEST 
 
 // Low Priority Thread: Dispatch 
@@ -929,9 +938,6 @@ void SystemData::SerialInterrupt(void)
 
 #elif AO_C_TEST 
 
-// In practice these dispatch functions would likely be separated into different files 
-// to help organize the code. 
-
 // Dispatch function for low priority thread 
 void DispatchThreadLow(Event event)
 {
@@ -966,9 +972,6 @@ void DispatchThreadLow(Event event)
     thread_low_trackers.state = state; 
 }
 
-
-// In practice the state functions would likely be in the same file as the function that 
-// dispatched them. Each dispatching function would likely have its own file. 
 
 // Low Priority Thread: State 0 
 void ThreadLowState0(
@@ -1047,7 +1050,7 @@ void ThreadLowState1(
 
 #if INTERRUPT_OVERRIDE 
 
-// USART2 - overridden 
+// USART2 interrupt - overridden 
 void USART2_IRQHandler(void)
 {
     handler_flags.usart2_flag = SET_BIT; 
@@ -1084,16 +1087,18 @@ void USART2_IRQHandler(void)
 //=======================================================================================
 // High Priority Thread event control 
 
+// Each thread can be separated into its own file to help organize the code. The thread 
+// would considt primarily of the dispatch function and each state function. 
+// A Dispatch function does not necessarily need a state machine. It can consist of only 
+// the events available to that entire thread. For example, the high priority thread 
+// could be dedicated to reading data from devices irrespective of state and each read 
+// gets triggered by a timer. 
+
 #if AO_CPP_TEST 
 
 // High Priority Thread: Dispatch 
 void SystemData::DispatchThreadHigh(Event event)
 {
-    // A thread does not necessarily need a state machine. Instead, there could simply be 
-    // a list of events available for when they're requested. For example, the high 
-    // priority thread could be dedicated to reading data from devices irrespective of 
-    // state and each read gets triggered by a timer. 
-
     ThreadHighStates state = system_data.thread_high_state; 
 
     // Continuous events. These are thread events that happen irrespective of state. 
@@ -1124,6 +1129,7 @@ void SystemData::DispatchThreadHigh(Event event)
     system_data.thread_high_state_table[(uint8_t)state](&system_data, event); 
     system_data.thread_high_state = state; 
 }
+
 
 // High Priority Thread: State 0 
 void SystemData::ThreadHighState0(SystemData *data, Event event)
@@ -1171,6 +1177,7 @@ void SystemData::ThreadHighState0(SystemData *data, Event event)
     }
 }
 
+
 // High Priority Thread: State 1 
 void SystemData::ThreadHighState1(SystemData *data, Event event)
 {
@@ -1217,6 +1224,7 @@ void SystemData::ThreadHighState1(SystemData *data, Event event)
     }
 }
 
+
 // Trigger/start the next state 
 void SystemData::ThreadHighStateTrigger(void)
 {
@@ -1229,17 +1237,9 @@ void SystemData::ThreadHighStateTrigger(void)
 
 #elif AO_C_TEST 
 
-// In practice these dispatch functions would likely be separated into different files 
-// to help organize the code. 
-
 // Dispatch function for high priority thread 
 void DispatchThreadHigh(Event event)
 {
-    // A thread does not necessarily need a state machine. Instead, there could simply be 
-    // a list of events available for when they're requested. For example, the high 
-    // priority thread could be dedicated to reading data from devices irrespective of 
-    // state and each read gets triggered by a timer. 
-
     ThreadHighStates state = thread_high_trackers.state; 
 
     // Continuous events. These are thread events that happen irrespective of state. 
@@ -1271,9 +1271,6 @@ void DispatchThreadHigh(Event event)
     thread_high_trackers.state = state; 
 }
 
-
-// In practice the state functions would likely be in the same file as the function that 
-// dispatched them. Each dispatching function would likely have its own file. 
 
 // High Priority Thread: State 0 
 void ThreadHighState0(
@@ -1394,10 +1391,9 @@ void ThreadHighStateTrigger(void)
 //=======================================================================================
 // Software Timer Thread 
 
-// Software Timer Callback: LED toggle 
-
 #if AO_CPP_TEST 
 
+// Software Timer Callback: LED toggle 
 void SystemData::LEDTimerCallback(TimerHandle_t xTimer)
 {
     // Queue an LED toggle event 
@@ -1408,6 +1404,7 @@ void SystemData::LEDTimerCallback(TimerHandle_t xTimer)
 
 #elif AO_C_TEST 
 
+// Software Timer Callback: LED toggle 
 void LEDTimerCallback(TimerHandle_t xTimer)
 {
     // Queue an LED toggle event 
