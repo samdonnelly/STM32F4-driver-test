@@ -34,8 +34,8 @@
 // Macros 
 
 // Conditional compilation 
+#define AO_CPP_TEST 1 
 #define AO_C_TEST 0 
-#define AO_CPP_TEST 0 
 
 // Memory 
 #define MIN_STACK_MULTIPLE 8 
@@ -55,15 +55,8 @@
 //=======================================================================================
 // Active Object module data 
 
-//==================================================
 // Datatype 
-
 typedef uint8_t Event; 
-
-//==================================================
-
-//==================================================
-// Objects 
 
 // Thread Event Info 
 typedef struct 
@@ -75,11 +68,6 @@ typedef struct
 }
 ThreadEventData; 
 
-//==================================================
-
-//==================================================
-// Prototypes 
-
 /**
  * @brief Common event loop shared by all threads 
  * 
@@ -87,13 +75,13 @@ ThreadEventData;
  */
 void eventLoop(void *thread_info); 
 
-//==================================================
-
 //=======================================================================================
 
 
+#if AO_CPP_TEST 
+
 //=======================================================================================
-// System threads 
+// C++ System 
 
 class SystemData 
 {
@@ -103,28 +91,25 @@ private:   // Private members
     // Low Priority Thread 
 
     // Low Priority Thread States 
-    enum class ThreadLowStates
-    {
+    enum class ThreadLowStates {
         SERIAL_OUT_STATE, 
         SERIAL_IN_STATE, 
         NUM_STATES 
-    } 
-    thread_low_state; 
+    } thread_low_state; 
 
     // Low Priority Thread Events 
-    enum class ThreadLowEvents
-    {
+    typedef enum {
         NO_EVENT, 
         SERIAL_OUT_EVENT, 
         SERIAL_IN_EVENT 
-    }; 
+    } ThreadLowEvents; 
 
     // System info 
     ThreadEventData thread_low_event_data; 
     const uint8_t thread_low_queue_len = 3; 
 
     // Flags 
-    typedef struct 
+    struct ThreadLowFlags 
     {
         // System flags 
         uint8_t state_entry : 1; 
@@ -133,7 +118,7 @@ private:   // Private members
         uint8_t serial_out  : 1; 
         uint8_t serial_in   : 1; 
     } 
-    ThreadLowFlags; 
+    thread_low_flags; 
 
     //==================================================
 
@@ -141,20 +126,17 @@ private:   // Private members
     // High Priority Thread 
 
     // High Priority Thread States 
-    enum class ThreadHighStates 
-    {
+    enum class ThreadHighStates {
         LED_SLOW_STATE, 
         LED_FAST_STATE, 
         NUM_STATES 
-    }
-    thread_high_state; 
+    } thread_high_state; 
 
     // High Priority Thread Events 
-    enum class ThreadHighEvents 
-    {
+    typedef enum {
         NO_EVENT, 
         LED_TOGGLE_EVENT 
-    }; 
+    } ThreadHighEvents; 
 
     // System info 
     ThreadEventData thread_high_event_data; 
@@ -199,39 +181,25 @@ private:   // Private members
 
     //==================================================
 
-public:   // Public members 
-    
-    //==================================================
-    // Low Priority Thread 
-    //==================================================
-
-    //==================================================
-    // High Priority Thread 
-    //==================================================
-
-    //==================================================
-    // Software Timer Thread 
-    //==================================================
-
 private:   // Private member functions 
 
     //==================================================
     // General 
 
     // State function pointer 
-    typedef void (*state_func_ptr)(Event event); 
+    typedef void (*state_func_ptr)(SystemData *data, Event event); 
 
     //==================================================
     
     //==================================================
     // Low Priority Thread 
 
-    // Event loop dispatch function 
-    void DispatchThreadLow(Event event); 
+    // // Event loop dispatch function 
+    // void DispatchThreadLow(Event event); 
 
     // State functions 
-    static void ThreadLowState0(Event event); 
-    static void ThreadLowState1(Event event); 
+    static void ThreadLowState0(SystemData *data, Event event); 
+    static void ThreadLowState1(SystemData *data, Event event); 
 
     // State table 
     const state_func_ptr thread_low_state_table[(uint8_t)ThreadLowStates::NUM_STATES] = 
@@ -249,8 +217,8 @@ private:   // Private member functions
     void DispatchThreadHigh(Event event); 
 
     // State functions 
-    static void ThreadHighState0(Event event); 
-    static void ThreadHighState1(Event event); 
+    static void ThreadHighState0(SystemData *data, Event event); 
+    static void ThreadHighState1(SystemData *data, Event event); 
 
     // State table 
     const state_func_ptr thread_high_state_table[(uint8_t)ThreadHighStates::NUM_STATES] = 
@@ -258,6 +226,9 @@ private:   // Private member functions
         &ThreadHighState0, 
         &ThreadHighState1 
     }; 
+
+    // Helper functions 
+    void ThreadHighStateTrigger(void); 
 
     //==================================================
 
@@ -279,62 +250,39 @@ public:   // Public member functions
 
     // Setup 
     void SystemDataInit(void); 
-    
-    //==================================================
-    // Low Priority Thread
-    //==================================================
 
     //==================================================
-    // High Priority Thread
-    //==================================================
+    // Low Priority Thread 
 
-    //==================================================
-    // Software Timer Thread
+    // Event loop dispatch function 
+    void DispatchThreadLow(Event event); 
+
+    // Helper functions 
+    void SerialInterrupt(void); 
+
     //==================================================
 }; 
 
 // System object 
 static SystemData system_data; 
 
-// Setup code 
-void SystemData::SystemDataInit(void)
-{
-    // 
-}
-
-
-void SystemData::DispatchThreadHigh(Event event)
-{
-    // 
-}
-
-void SystemData::ThreadHighState0(Event event)
-{
-    // 
-}
-
-void SystemData::ThreadHighState1(Event event)
-{
-    // 
-}
-
-
-// Called when LED toggle timers expire 
-void SystemData::LEDTimerCallback(TimerHandle_t xTimer)
-{
-    // 
-}
-
 //=======================================================================================
 
+#elif AO_C_TEST 
 
 //=======================================================================================
-// Low Priority Thread module data 
-
-// Local data to the low priority thread 
+// C System 
 
 //==================================================
-// Enums 
+// General 
+
+// Setup 
+void AOSystemInit(void); 
+
+//==================================================
+
+//==================================================
+// Low Priority Thread module data 
 
 // Low Priority Thread states 
 typedef enum {
@@ -350,10 +298,6 @@ typedef enum {
     THREAD_LOW_SERIAL_IN_EVENT 
 } ThreadLowEvents; 
 
-//==================================================
-
-//==================================================
-// Objects 
 
 // Low Priority Thread trackers 
 struct ThreadLowTrackers 
@@ -376,29 +320,12 @@ struct ThreadLowTrackers
 // Low Priority Thread object 
 static ThreadLowTrackers thread_low_trackers; 
 
-//==================================================
-
-//==================================================
-// Variables 
 
 // Queue info 
 static const uint8_t thread_low_queue_len = 3; 
 
-//==================================================
-
-//==================================================
-// Function pointers 
-
 // State function pointers 
 typedef void (*thread_low_state_ptr)(ThreadLowTrackers *trackers, Event event); 
-
-//==================================================
-
-//==================================================
-// Prototypes 
-
-// Setup 
-void ThreadLowSetup(void); 
 
 // Dispatch functions 
 void DispatchThreadLow(Event event); 
@@ -406,11 +333,6 @@ void DispatchThreadLow(Event event);
 // State functions 
 void ThreadLowState0(ThreadLowTrackers *trackers, Event event); 
 void ThreadLowState1(ThreadLowTrackers *trackers, Event event); 
-
-//==================================================
-
-//==================================================
-// Control data 
 
 // Low Priority Thread state table 
 static const thread_low_state_ptr thread_low_state_table[THREAD_LOW_NUM_STATES] = 
@@ -421,16 +343,9 @@ static const thread_low_state_ptr thread_low_state_table[THREAD_LOW_NUM_STATES] 
 
 //==================================================
 
-//=======================================================================================
-
-
-//=======================================================================================
-// High Priority Thread module data 
-
-// Local data to the high priority thread 
 
 //==================================================
-// Enums 
+// High Priority Thread module data 
 
 // High Priority thread states 
 typedef enum {
@@ -445,10 +360,6 @@ typedef enum {
     THREAD_HIGH_LED_TOGGLE_EVENT 
 } ThreadHighEvents; 
 
-//==================================================
-
-//==================================================
-// Objects 
 
 // High Priority Thread trackers 
 struct ThreadHighTrackers 
@@ -476,29 +387,12 @@ struct ThreadHighTrackers
 // High Priority Thread object 
 static ThreadHighTrackers thread_high_trackers; 
 
-//==================================================
-
-//==================================================
-// Variables 
 
 // Queue info 
 static const uint8_t thread_high_queue_len = 3; 
 
-//==================================================
-
-//==================================================
-// Function pointers 
-
 // State function pointers 
-typedef void (*thread_high_state_ptr)(ThreadHighTrackers *trackers, Event event); 
-
-//==================================================
-
-//==================================================
-// Prototypes 
-
-// Setup 
-void ThreadHighSetup(void); 
+typedef void (*thread_high_state_ptr)(ThreadHighTrackers *trackers, Event event);  
 
 // Dispatch functions 
 void DispatchThreadHigh(Event event); 
@@ -507,15 +401,6 @@ void DispatchThreadHigh(Event event);
 void ThreadHighState0(ThreadHighTrackers *trackers, Event event); 
 void ThreadHighState1(ThreadHighTrackers *trackers, Event event); 
 
-// Helper functions 
-void ThreadHighStateToggle(void); 
-void ThreadHighStateTrigger(void); 
-
-//==================================================
-
-//==================================================
-// Control data 
-
 // High Priority Thread state table 
 static const thread_high_state_ptr thread_high_state_table[THREAD_HIGH_NUM_STATES] = 
 {
@@ -523,16 +408,15 @@ static const thread_high_state_ptr thread_high_state_table[THREAD_HIGH_NUM_STATE
     &ThreadHighState1    // State 1 
 }; 
 
+// Helper functions 
+void ThreadHighStateToggle(void); 
+void ThreadHighStateTrigger(void); 
+
 //==================================================
 
-//=======================================================================================
 
-
-//=======================================================================================
+//==================================================
 // Software Timer Thread 
-
-//==================================================
-// Prototypes 
 
 // Called when LED toggle timers expire 
 void LEDTimerCallback(TimerHandle_t xTimer); 
@@ -541,12 +425,10 @@ void LEDTimerCallback(TimerHandle_t xTimer);
 
 //=======================================================================================
 
+#endif 
 
 //=======================================================================================
 // Event module(s) 
-
-//==================================================
-// Prototypes 
 
 /**
  * @brief Event: Serial Output 
@@ -579,8 +461,6 @@ void PinToggleEvent(
     gpio_pin_num_t pin_num, 
     gpio_pin_state_t *pin_state); 
 
-//==================================================
-
 //=======================================================================================
 
 
@@ -593,17 +473,11 @@ void active_object_test_init(void)
     // Initialize FreeRTOS scheduler 
     osKernelInitialize(); 
 
-    //==================================================
-    // Other general setup (pins, ports, etc.) 
-
-    // Initialize GPIO ports 
-    gpio_port_init(); 
-
-    //==================================================
-
-    // Priority group setup 
-    ThreadLowSetup(); 
-    ThreadHighSetup(); 
+#if AO_CPP_TEST 
+    system_data.SystemDataInit(); 
+#elif AO_C_TEST 
+    AOSystemInit(); 
+#endif 
 }
 
 
@@ -618,86 +492,181 @@ void active_object_test_app(void)
 
 
 //=======================================================================================
-// Active Object control 
-
-// In practice the event loop and any other context switching or thread related code 
-// should be in it's own file. The event loop would then dispatch to the thread it's 
-// running in a different file. 
-
-// Common event loop shared by all threads 
-void eventLoop(void *thread_info)
-{
-    ThreadEventData *thread = (ThreadEventData *)thread_info; 
-
-    // Event loop 
-    while (1)
-    {
-        thread->event = CLEAR; 
-        xQueueReceive(thread->ThreadEventQueue, (void *)&thread->event, portMAX_DELAY); 
-        thread->dispatch(thread->event); 
-    }
-
-    vTaskDelete(NULL); 
-}
-
-//=======================================================================================
-
-
-//=======================================================================================
-// Low Priority Thread control 
-
-// Low Priority Thread: Dispatch 
-void SystemData::DispatchThreadLow(Event event)
-{
-    // ThreadLowStates state = thread_low_state; 
-
-    // // Continuous events. These are thread events that happen irrespective of state. 
-
-    // // State machine 
-    // switch (state)
-    // {
-    //     case ThreadLowStates::SERIAL_OUT_STATE: 
-    //         if (thread_low_trackers.serial_in)
-    //         {
-    //             state = ThreadLowStates::SERIAL_IN_STATE; 
-    //         }
-    //         break; 
-        
-    //     case ThreadLowStates::SERIAL_IN_STATE: 
-    //         if (thread_low_trackers.serial_out)
-    //         {
-    //             state = ThreadLowStates::SERIAL_OUT_STATE; 
-    //         }
-    //         break; 
-
-    //     default: 
-    //         state = THREAD_LOW_SERIAL_OUT_STATE; 
-    //         break; 
-    // }
-
-    // // Run state function 
-    // thread_low_state_table[state](&thread_low_trackers, event); 
-    // thread_low_trackers.state = state; 
-}
-
-// Low Priority Thread: State 0 
-void SystemData::ThreadLowState0(Event event)
-{
-    // 
-}
-
-// Low Priority Thread: State 1 
-void SystemData::ThreadLowState1(Event event)
-{
-    // 
-}
-
-// In practice these dispatch functions would likely be separated into different files 
-// to help organize the code. 
-
 // Setup 
-void ThreadLowSetup(void)
+
+#if AO_CPP_TEST 
+
+void SystemData::SystemDataInit(void)
 {
+    // Initialize GPIO ports 
+    gpio_port_init(); 
+
+    //==================================================
+    // Low Priority Thread 
+
+    // Initialize general data 
+    thread_low_state = ThreadLowStates::SERIAL_OUT_STATE; 
+    memset((void *)uart_dma_buff, CLEAR, sizeof(uart_dma_buff)); 
+    buff_index = CLEAR; 
+    memset((void *)user_in_buff, CLEAR, sizeof(user_in_buff)); 
+    thread_low_flags.state_entry = SET_BIT; 
+    thread_low_flags.serial_out = SET_BIT; 
+    thread_low_flags.serial_in = CLEAR_BIT; 
+
+    // Initialize UART 
+    uart_init(
+        USART2, 
+        GPIOA, 
+        PIN_3, 
+        PIN_2, 
+        UART_FRAC_42_9600, 
+        UART_MANT_42_9600, 
+        UART_DMA_DISABLE, 
+        UART_DMA_ENABLE);   // RX DMA enabled for serial terminal reading 
+    
+    // Enable IDLE line interrupts for reading serial terminal input with DMA 
+    uart_interrupt_init(
+        USART2, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_ENABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE); 
+
+    // Initialize the DMA stream 
+    dma_stream_init(
+        DMA1, 
+        DMA1_Stream5, 
+        DMA_CHNL_4, 
+        DMA_DIR_PM, 
+        DMA_CM_ENABLE,
+        DMA_PRIOR_VHI, 
+        DMA_ADDR_INCREMENT,   // Increment the buffer pointer to fill the buffer 
+        DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
+        DMA_DATA_SIZE_BYTE, 
+        DMA_DATA_SIZE_BYTE); 
+
+    // Configure and enable the DMA stream 
+    dma_stream_config(
+        DMA1_Stream5, 
+        (uint32_t)(&USART2->DR), 
+        (uint32_t)uart_dma_buff, 
+        (uint16_t)SERIAL_INPUT_MAX_LEN); 
+    dma_stream_enable(DMA1_Stream5); 
+
+    // Initialize interrupt handler flags and enable the interrupt handler 
+    int_handler_init(); 
+    nvic_config(USART2_IRQn, EXTI_PRIORITY_15); 
+
+    // Thread definition, queue handle creation and dispatch function assignment 
+    thread_low_event_data = 
+    {
+        .attr = { .name = "ThreadLow", 
+                  .attr_bits = CLEAR, 
+                  .cb_mem = NULL, 
+                  .cb_size = CLEAR, 
+                  .stack_mem = NULL, 
+                  .stack_size = THREAD_LOW_STACK_SIZE, 
+                  .priority = (osPriority_t)osPriorityLow, 
+                  .tz_module = CLEAR, 
+                  .reserved = CLEAR }, 
+        .event = CLEAR, 
+        .ThreadEventQueue = xQueueCreate(thread_low_queue_len, sizeof(uint32_t)), 
+        .dispatch = DispatchThreadLow 
+    }; 
+    // Check that the queues were created successfully 
+
+    // Create the thread(s) 
+    osThreadNew(
+        eventLoop, 
+        (void *)&thread_low_event_data, 
+        &thread_low_event_data.attr); 
+    // Check that the thread creation worked 
+
+    uart_sendstring(USART2, "\r\n>>> "); 
+
+    //==================================================
+
+    //==================================================
+    // High Priority Thread 
+
+    // Initialize general data 
+    thread_high_state = ThreadHighStates::LED_SLOW_STATE; 
+    led_gpio = GPIOA; 
+    led_pin = GPIOX_PIN_5; 
+    led_state = GPIO_LOW; 
+    thread_high_flags.state_entry = SET_BIT; 
+    thread_high_flags.state_change = CLEAR_BIT; 
+    thread_high_flags.led_slow = SET_BIT; 
+    thread_high_flags.led_fast = CLEAR_BIT; 
+
+    // Initialize board LED (on when logic low) 
+    gpio_pin_init(GPIOA, PIN_5, MODER_GPO, OTYPER_PP, OSPEEDR_HIGH, PUPDR_NO); 
+
+    // Thread definition, queue handle creation and dispatch function assignment 
+    thread_high_event_data = 
+    {
+        .attr = { .name = "ThreadHigh", 
+                  .attr_bits = CLEAR, 
+                  .cb_mem = NULL, 
+                  .cb_size = CLEAR, 
+                  .stack_mem = NULL, 
+                  .stack_size = THREAD_HIGH_STACK_SIZE, 
+                  .priority = (osPriority_t)osPriorityHigh, 
+                  .tz_module = CLEAR, 
+                  .reserved = CLEAR }, 
+        .event = ThreadHighEvents::NO_EVENT, 
+        .ThreadEventQueue = xQueueCreate(thread_high_queue_len, sizeof(uint32_t)), 
+        .dispatch = DispatchThreadHigh 
+    }; 
+    // Check that the queues were created successfully 
+
+    // Create the thread(s) 
+    osThreadNew(
+        eventLoop, 
+        (void *)&thread_high_event_data, 
+        &thread_high_event_data.attr); 
+    // Check that the thread creation worked 
+
+    // Queue and empty event to start the LED blinks 
+    xQueueSend(thread_high_event_data.ThreadEventQueue, 
+        (void *)&thread_high_event_data.event, 0); 
+    
+    //==================================================
+
+    //==================================================
+    // Software Timers Thread 
+
+    // Create timers 
+    slow_blink_timer = xTimerCreate(
+        "one_shot_timer",               // Name of timer 
+        LED_SLOW_BLINK_PERIOD,          // Period of timer (ticks) 
+        pdTRUE,                         // Auto-relead --> pdTRUE == Repeat Timer 
+        (void *)0,                      // Timer ID 
+        LEDTimerCallback);              // Callback function 
+    fast_blink_timer = xTimerCreate(
+        "one_shot_timer",               // Name of timer 
+        LED_FAST_BLINK_PERIOD,          // Period of timer (ticks) 
+        pdTRUE,                         // Auto-relead --> pdTRUE == Repeat Timer 
+        (void *)1,                      // Timer ID 
+        LEDTimerCallback);              // Callback function 
+    // Check that timers were created successfully 
+
+    //==================================================
+}
+
+#elif AO_C_TEST 
+
+void AOSystemInit(void)
+{
+    // Initialize GPIO ports 
+    gpio_port_init(); 
+
+    //==================================================
+    // Low Priority Thread 
+
     // Initialize general data 
     thread_low_trackers.state = THREAD_LOW_SERIAL_OUT_STATE; 
     memset((void *)thread_low_trackers.uart_dma_buff, CLEAR, 
@@ -782,8 +751,240 @@ void ThreadLowSetup(void)
     // Check that the thread creation worked 
 
     uart_sendstring(USART2, "\r\n>>> "); 
+
+    //==================================================
+
+    //==================================================
+    // High Priority Thread 
+
+    // Initialize general data 
+    thread_high_trackers.state = THREAD_HIGH_LED_SLOW_STATE; 
+    thread_high_trackers.led_gpio = GPIOA; 
+    thread_high_trackers.led_pin = GPIOX_PIN_5; 
+    thread_high_trackers.led_state = GPIO_LOW; 
+    thread_high_trackers.state_entry = SET_BIT; 
+    thread_high_trackers.state_change = CLEAR_BIT; 
+    thread_high_trackers.led_slow = SET_BIT; 
+    thread_high_trackers.led_fast = CLEAR_BIT; 
+
+    // Initialize board LED (on when logic low) 
+    gpio_pin_init(GPIOA, PIN_5, MODER_GPO, OTYPER_PP, OSPEEDR_HIGH, PUPDR_NO); 
+
+    // Thread definition, queue handle creation and dispatch function assignment 
+    thread_high_trackers.event_data = 
+    {
+        .attr = { .name = "ThreadHigh", 
+                  .attr_bits = CLEAR, 
+                  .cb_mem = NULL, 
+                  .cb_size = CLEAR, 
+                  .stack_mem = NULL, 
+                  .stack_size = THREAD_HIGH_STACK_SIZE, 
+                  .priority = (osPriority_t)osPriorityHigh, 
+                  .tz_module = CLEAR, 
+                  .reserved = CLEAR }, 
+        .event = THREAD_HIGH_NO_EVENT, 
+        .ThreadEventQueue = xQueueCreate(thread_high_queue_len, sizeof(uint32_t)), 
+        .dispatch = DispatchThreadHigh 
+    }; 
+    // Check that the queues were created successfully 
+
+    // Create the thread(s) 
+    osThreadNew(
+        eventLoop, 
+        (void *)&thread_high_trackers.event_data, 
+        &thread_high_trackers.event_data.attr); 
+    // Check that the thread creation worked 
+
+    // Queue and empty event to start the LED blinks 
+    xQueueSend(thread_high_trackers.event_data.ThreadEventQueue, 
+        (void *)&thread_high_trackers.event_data.event, 0); 
+    
+    //==================================================
+
+    //==================================================
+    // Software Timer Thread 
+
+    // Create timers 
+    thread_high_trackers.slow_blink_timer = xTimerCreate(
+        "one_shot_timer",               // Name of timer 
+        LED_SLOW_BLINK_PERIOD,          // Period of timer (ticks) 
+        pdTRUE,                         // Auto-relead --> pdTRUE == Repeat Timer 
+        (void *)0,                      // Timer ID 
+        LEDTimerCallback);              // Callback function 
+    thread_high_trackers.fast_blink_timer = xTimerCreate(
+        "one_shot_timer",               // Name of timer 
+        LED_FAST_BLINK_PERIOD,          // Period of timer (ticks) 
+        pdTRUE,                         // Auto-relead --> pdTRUE == Repeat Timer 
+        (void *)1,                      // Timer ID 
+        LEDTimerCallback);              // Callback function 
+    // Check that timers were created successfully 
+
+    //==================================================
 }
 
+#endif 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Active Object control 
+
+// In practice the event loop and any other context switching or thread related code 
+// should be in it's own file. The event loop would then dispatch to the thread it's 
+// running in a different file. 
+
+// Common event loop shared by all threads 
+void eventLoop(void *thread_info)
+{
+    ThreadEventData *thread = (ThreadEventData *)thread_info; 
+
+    // Event loop 
+    while (1)
+    {
+        thread->event = CLEAR; 
+        xQueueReceive(thread->ThreadEventQueue, (void *)&thread->event, portMAX_DELAY); 
+        thread->dispatch(thread->event); 
+    }
+
+    vTaskDelete(NULL); 
+}
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Low Priority Thread control 
+
+#if AO_CPP_TEST 
+
+// Low Priority Thread: Dispatch 
+void SystemData::DispatchThreadLow(Event event)
+{
+    ThreadLowStates state = thread_low_state; 
+
+    // Continuous events. These are thread events that happen irrespective of state. 
+
+    // State machine 
+    switch (state)
+    {
+        case ThreadLowStates::SERIAL_OUT_STATE: 
+            if (thread_low_flags.serial_in)
+            {
+                state = ThreadLowStates::SERIAL_IN_STATE; 
+            }
+            break; 
+        
+        case ThreadLowStates::SERIAL_IN_STATE: 
+            if (thread_low_flags.serial_out)
+            {
+                state = ThreadLowStates::SERIAL_OUT_STATE; 
+            }
+            break; 
+
+        default: 
+            state = ThreadLowStates::SERIAL_OUT_STATE; 
+            break; 
+    }
+
+    // Run state function 
+    thread_low_state_table[(uint8_t)state](this, event); 
+    thread_low_state = state; 
+
+    this; 
+}
+
+// Low Priority Thread: State 0 
+void SystemData::ThreadLowState0(
+    SystemData *data, 
+    Event event)
+{
+    // State entry 
+    if (data->thread_low_flags.state_entry)
+    {
+        data->thread_low_flags.state_entry = CLEAR_BIT; 
+    }
+
+    // Event selection 
+    switch (event)
+    {
+        case ThreadLowEvents::SERIAL_OUT_EVENT: 
+            SerialOutEvent((char *)data->user_in_buff); 
+            break; 
+
+        default: 
+            break; 
+    }
+
+    // State exit 
+    if (data->thread_low_flags.serial_in)
+    {
+        data->thread_low_flags.state_entry = SET_BIT; 
+        data->thread_low_flags.serial_out = CLEAR_BIT; 
+    }
+}
+
+// Low Priority Thread: State 1 
+void SystemData::ThreadLowState1(
+    SystemData *data, 
+    Event event)
+{
+    // State entry 
+    if (data->thread_low_flags.state_entry)
+    {
+        data->thread_low_flags.state_entry = CLEAR_BIT; 
+    }
+
+    // Event selection 
+    switch (event)
+    {
+        case ThreadLowEvents::SERIAL_IN_EVENT: 
+            SerialInEvent(
+                data->uart_dma_buff, 
+                &data->buff_index, 
+                data->user_in_buff); 
+
+            // Toggle the high priority thread state 
+            data->thread_high_flags.state_change = SET_BIT; 
+            
+            // Trigger the next state and event 
+            data->thread_low_flags.serial_out = SET_BIT; 
+            data->thread_low_event_data.event = ThreadLowEvents::SERIAL_OUT_EVENT; 
+            xQueueSend(data->thread_low_event_data.ThreadEventQueue, 
+                       (void *)&data->thread_low_event_data.event, 0); 
+            break; 
+
+        default: 
+            break; 
+    }
+
+    // State exit 
+    if (data->thread_low_flags.serial_out)
+    {
+        data->thread_low_flags.state_entry = SET_BIT; 
+        data->thread_low_flags.serial_in = CLEAR_BIT; 
+    }
+}
+
+// Serial Interrupt 
+void SystemData::SerialInterrupt(void)
+{
+    BaseType_t task_woken = pdFALSE; 
+
+    // Trigger a state change and queue a serial input event 
+    thread_low_flags.serial_out = CLEAR_BIT; 
+    thread_low_flags.serial_in = SET_BIT; 
+    thread_low_flags.state_entry = SET_BIT; 
+
+    thread_low_event_data.event = ThreadLowEvents::SERIAL_IN_EVENT; 
+    xQueueSendFromISR(thread_low_event_data.ThreadEventQueue, 
+                      (void *)&thread_low_event_data.event, &task_woken); 
+}
+
+#elif AO_C_TEST 
+
+// In practice these dispatch functions would likely be separated into different files 
+// to help organize the code. 
 
 // Dispatch function for low priority thread 
 void DispatchThreadLow(Event event)
@@ -896,6 +1097,7 @@ void ThreadLowState1(
     }
 }
 
+#endif 
 
 #if INTERRUPT_OVERRIDE 
 
@@ -903,6 +1105,12 @@ void ThreadLowState1(
 void USART2_IRQHandler(void)
 {
     handler_flags.usart2_flag = SET_BIT; 
+
+#if AO_CPP_TEST 
+
+    system_data.SerialInterrupt(); 
+
+#elif AO_C_TEST 
 
     BaseType_t task_woken = pdFALSE; 
 
@@ -914,6 +1122,8 @@ void USART2_IRQHandler(void)
     thread_low_trackers.event_data.event = THREAD_LOW_SERIAL_IN_EVENT; 
     xQueueSendFromISR(thread_low_trackers.event_data.ThreadEventQueue, 
                       (void *)&thread_low_trackers.event_data.event, &task_woken); 
+
+#endif 
 
     // The following is needed to exit the ISR 
     dummy_read(USART2->SR); 
@@ -928,70 +1138,149 @@ void USART2_IRQHandler(void)
 //=======================================================================================
 // High Priority Thread event control 
 
-// In practice these dispatch functions would likely be separated into different files 
-// to help organize the code. 
+#if AO_CPP_TEST 
 
-// Setup 
-void ThreadHighSetup(void)
+// High Priority Thread: Dispatch 
+void SystemData::DispatchThreadHigh(Event event)
 {
-    // Initialize general data 
-    thread_high_trackers.state = THREAD_HIGH_LED_SLOW_STATE; 
-    thread_high_trackers.led_gpio = GPIOA; 
-    thread_high_trackers.led_pin = GPIOX_PIN_5; 
-    thread_high_trackers.led_state = GPIO_LOW; 
-    thread_high_trackers.state_entry = SET_BIT; 
-    thread_high_trackers.state_change = CLEAR_BIT; 
-    thread_high_trackers.led_slow = SET_BIT; 
-    thread_high_trackers.led_fast = CLEAR_BIT; 
+    // A thread does not necessarily need a state machine. Instead, there could simply be 
+    // a list of events available for when they're requested. For example, the high 
+    // priority thread could be dedicated to reading data from devices irrespective of 
+    // state and each read gets triggered by a timer. 
 
-    // Initialize board LED (on when logic low) 
-    gpio_pin_init(GPIOA, PIN_5, MODER_GPO, OTYPER_PP, OSPEEDR_HIGH, PUPDR_NO); 
+    ThreadHighStates state = thread_high_state; 
 
-    // Thread definition, queue handle creation and dispatch function assignment 
-    thread_high_trackers.event_data = 
+    // Continuous events. These are thread events that happen irrespective of state. 
+
+    // State machine 
+    switch (state)
     {
-        .attr = { .name = "ThreadHigh", 
-                  .attr_bits = CLEAR, 
-                  .cb_mem = NULL, 
-                  .cb_size = CLEAR, 
-                  .stack_mem = NULL, 
-                  .stack_size = THREAD_HIGH_STACK_SIZE, 
-                  .priority = (osPriority_t)osPriorityHigh, 
-                  .tz_module = CLEAR, 
-                  .reserved = CLEAR }, 
-        .event = THREAD_HIGH_NO_EVENT, 
-        .ThreadEventQueue = xQueueCreate(thread_high_queue_len, sizeof(uint32_t)), 
-        .dispatch = DispatchThreadHigh 
-    }; 
-    // Check that the queues were created successfully 
+        case ThreadHighStates::LED_SLOW_STATE: 
+            if (thread_high_flags.led_fast)
+            {
+                state = ThreadHighStates::LED_FAST_STATE; 
+            }
+            break; 
 
-    // Create the thread(s) 
-    osThreadNew(
-        eventLoop, 
-        (void *)&thread_high_trackers.event_data, 
-        &thread_high_trackers.event_data.attr); 
-    // Check that the thread creation worked 
+        case ThreadHighStates::LED_FAST_STATE: 
+            if (thread_high_flags.led_slow)
+            {
+                state = ThreadHighStates::LED_SLOW_STATE; 
+            }
+            break; 
+        
+        default: 
+            state = ThreadHighStates::LED_SLOW_STATE; 
+            break; 
+    }
 
-    // Create timers 
-    thread_high_trackers.slow_blink_timer = xTimerCreate(
-        "one_shot_timer",               // Name of timer 
-        LED_SLOW_BLINK_PERIOD,          // Period of timer (ticks) 
-        pdTRUE,                         // Auto-relead --> pdTRUE == Repeat Timer 
-        (void *)0,                      // Timer ID 
-        LEDTimerCallback);              // Callback function 
-    thread_high_trackers.fast_blink_timer = xTimerCreate(
-        "one_shot_timer",               // Name of timer 
-        LED_FAST_BLINK_PERIOD,          // Period of timer (ticks) 
-        pdTRUE,                         // Auto-relead --> pdTRUE == Repeat Timer 
-        (void *)1,                      // Timer ID 
-        LEDTimerCallback);              // Callback function 
-    // Check that timers were created successfully 
-
-    // Queue and empty event to start the LED blinks 
-    xQueueSend(thread_high_trackers.event_data.ThreadEventQueue, 
-        (void *)&thread_high_trackers.event_data.event, 0); 
+    // Run state function 
+    thread_high_state_table[(uint8_t)state](this, event); 
+    thread_high_state = state; 
 }
 
+// High Priority Thread: State 0 
+void SystemData::ThreadHighState0(SystemData *data, Event event)
+{
+    // State entry 
+    if (data->thread_high_flags.state_entry)
+    {
+        data->thread_high_flags.state_entry = CLEAR_BIT; 
+
+        xTimerStart(data->slow_blink_timer, 0); 
+    }
+
+    // Event selection 
+    switch (event)
+    {
+        case ThreadHighEvents::LED_TOGGLE_EVENT: 
+            PinToggleEvent(
+                data->led_gpio, 
+                data->led_pin, 
+                &data->led_state); 
+
+            if (data->thread_high_flags.state_change)
+            {
+                data->thread_high_flags.state_change = CLEAR_BIT; 
+                data->thread_high_flags.led_fast = SET_BIT; 
+
+                // Trigger the next state with an empty event 
+                data->ThreadHighStateTrigger(); 
+            }
+            break; 
+
+        default: 
+            break; 
+    }
+
+    // State exit 
+    if (data->thread_high_flags.led_fast)
+    {
+        data->thread_high_flags.state_entry = SET_BIT; 
+        data->thread_high_flags.led_slow = CLEAR_BIT; 
+
+        xTimerStop(data->slow_blink_timer, 0); 
+    }
+}
+
+// High Priority Thread: State 1 
+void SystemData::ThreadHighState1(SystemData *data, Event event)
+{
+    // State entry 
+    if (data->thread_high_flags.state_entry)
+    {
+        data->thread_high_flags.state_entry = CLEAR_BIT; 
+
+        xTimerStart(data->fast_blink_timer, 0); 
+    }
+
+    // Event selection 
+    switch (event)
+    {
+        case ThreadHighEvents::LED_TOGGLE_EVENT: 
+            PinToggleEvent(
+                data->led_gpio, 
+                data->led_pin, 
+                &data->led_state); 
+
+            if (data->thread_high_flags.state_change)
+            {
+                data->thread_high_flags.state_change = CLEAR_BIT; 
+                data->thread_high_flags.led_slow = SET_BIT; 
+
+                // Trigger the next state with an empty event 
+                data->ThreadHighStateTrigger(); 
+            }
+            break; 
+
+        default: 
+            break; 
+    }
+
+    // State exit 
+    if (data->thread_high_flags.led_slow)
+    {
+        data->thread_high_flags.state_entry = SET_BIT; 
+        data->thread_high_flags.led_fast = CLEAR_BIT; 
+
+        xTimerStop(data->fast_blink_timer, 0); 
+    }
+}
+
+// Trigger/start the next state 
+void SystemData::ThreadHighStateTrigger(void)
+{
+    // Queue an empty event to get the thread to change states and start blinking the 
+    // LED at an updated rate immediately. 
+    thread_high_event_data.event = ThreadHighEvents::NO_EVENT; 
+    xQueueSend(thread_high_event_data.ThreadEventQueue, 
+        (void *)&thread_high_event_data.event, 0); 
+}
+
+#elif AO_C_TEST 
+
+// In practice these dispatch functions would likely be separated into different files 
+// to help organize the code. 
 
 // Dispatch function for high priority thread 
 void DispatchThreadHigh(Event event)
@@ -1147,13 +1436,28 @@ void ThreadHighStateTrigger(void)
         (void *)&thread_high_trackers.event_data.event, 0); 
 }
 
+#endif 
+
 //=======================================================================================
 
 
 //=======================================================================================
 // Software Timer Thread 
 
-// Called when LED toggle timers expire 
+// Software Timer Callback: LED toggle 
+
+#if AO_CPP_TEST 
+
+void SystemData::LEDTimerCallback(TimerHandle_t xTimer)
+{
+    // Queue an LED toggle event 
+    thread_high_event_data.event = ThreadHighEvents::LED_TOGGLE_EVENT; 
+    xQueueSend(thread_high_event_data.ThreadEventQueue, 
+        (void *)&thread_high_event_data.event, 0); 
+}
+
+#elif AO_C_TEST 
+
 void LEDTimerCallback(TimerHandle_t xTimer)
 {
     // Queue an LED toggle event 
@@ -1161,6 +1465,8 @@ void LEDTimerCallback(TimerHandle_t xTimer)
     xQueueSend(thread_high_trackers.event_data.ThreadEventQueue, 
         (void *)&thread_high_trackers.event_data.event, 0); 
 }
+
+#endif 
 
 //=======================================================================================
 
@@ -1177,7 +1483,7 @@ void SerialOutEvent(char *output_buff)
     {
         // Output the latest content of the circular buffer to the serial terminal 
         uart_sendstring(USART2, "Echo: "); 
-        uart_sendstring(USART2, (char *)thread_low_trackers.user_in_buff); 
+        uart_sendstring(USART2, output_buff); 
         uart_sendstring(USART2, "\r\n>>> "); 
     }
 }
