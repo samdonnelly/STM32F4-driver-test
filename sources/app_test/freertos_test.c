@@ -22,6 +22,7 @@
 #include "freertos_test.h" 
 #include "includes_drivers.h" 
 #include "stm32f4xx_it.h" 
+#include "system_settings.h" 
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -31,6 +32,9 @@
 #include "timers.h" 
 
 //=======================================================================================
+
+
+#if FREERTOS_ENABLE 
 
 
 //=======================================================================================
@@ -2522,3 +2526,5 @@ void task_priority_output(char *buff)
 //=======================================================================================
 
 #endif 
+
+#endif   // FREERTOS_ENABLE 

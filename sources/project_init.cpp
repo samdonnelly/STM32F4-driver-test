@@ -33,7 +33,7 @@ void project_init(void)
 {
     // Project initialization code here 
 
-    active_object_test_init(); 
+    nrf24l01_test_init(); 
 }
 
 //=======================================================================================

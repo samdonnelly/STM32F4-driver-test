@@ -18,6 +18,7 @@
 #include "active_object_test.h" 
 #include "includes_drivers.h" 
 #include "stm32f4xx_it.h" 
+#include "system_settings.h" 
 
 // FreeRTOS 
 #include "FreeRTOS.h"
@@ -28,6 +29,9 @@
 #include "timers.h" 
 
 //=======================================================================================
+
+
+#if FREERTOS_ENABLE 
 
 
 //=======================================================================================
@@ -1464,3 +1468,5 @@ void PinToggleEvent(
 }
 
 //=======================================================================================
+
+#endif   // FREERTOS_ENABLE 

@@ -24,7 +24,7 @@
 // Macros 
 
 // Conditional compilation 
-#define FREERTOS_ENABLE 1 
+#define FREERTOS_ENABLE 0 
 #define INTERRUPT_OVERRIDE 1 
 
 //=======================================================================================
