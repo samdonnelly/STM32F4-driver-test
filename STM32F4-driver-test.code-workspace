@@ -96,7 +96,9 @@
 			"queue.h": "c",
 			"nrf24l01_config.h": "c",
 			"dma_driver.h": "c",
-			"active_object_framework.h": "c"
+			"active_object_framework.h": "c",
+			"i2c_comm_mock.h": "c",
+			"spi_comm_mock.h": "c"
 		}
 	}
 }

@@ -369,17 +369,20 @@ void nrf24l01_test_init(void)
 
     // General setup common to all device - must be called once during setup 
     nrf24l01_init(
-        SPI2,    // SPI port to use 
-        GPIOC,   // Slave select pin GPIO port 
-        PIN_1,   // Slave select pin number 
-        GPIOC,   // Enable pin (CE) GPIO port 
-        PIN_0,   // Enable pin (CE) number 
-        TIM9);   // General purpose timer port 
+        SPI2,                    // SPI port to use 
+        GPIOC,                   // Slave select pin GPIO port 
+        PIN_1,                   // Slave select pin number 
+        GPIOC,                   // Enable pin (CE) GPIO port 
+        PIN_0,                   // Enable pin (CE) number 
+        TIM9,                    // General purpose timer port 
+        NRF24L01_RF_FREQ,        // Initial RF channel frequency 
+        NRF24L01_DR_2MBPS,       // Initial data rate to communicate at 
+        NRF24L01_RF_PWR_6DBM);   // Initial power output to us 
 
     // Set the devices initial communication parameters - can be updated as needed 
-    nrf24l01_set_rf_channel(NRF24L01_RF_FREQ); 
-    nrf24l01_set_rf_dr(NRF24L01_DR_2MBPS); 
-    nrf24l01_set_rf_pwr(NRF24L01_RF_PWR_6DBM); 
+    // nrf24l01_set_rf_channel(NRF24L01_RF_FREQ); 
+    // nrf24l01_set_rf_dr(NRF24L01_DR_2MBPS); 
+    // nrf24l01_set_rf_pwr(NRF24L01_RF_PWR_6DBM); 
 
     // PTX and PRX setup is required and is found below depending on the device 
 

@@ -23,9 +23,20 @@
 //=======================================================================================
 // Macros 
 
+//==================================================
 // Conditional compilation 
+
+// This needs to be set if using FreeRTOS as it includes additional files and alters 
+// some core code that's used with FreeRTOS. Note that the 'RTOS_ENABLE' variable in 
+// CMakeLists must be updated to match this macro. 
 #define FREERTOS_ENABLE 0 
-#define INTERRUPT_OVERRIDE 1 
+
+// This includes interrupt handler definitions that override defaults. Overrides will 
+// be used for specific tests. If interrupts are used for a test but the test has no 
+// specific override then this should be cleared. 
+#define INTERRUPT_OVERRIDE 0 
+
+//==================================================
 
 //=======================================================================================
 
