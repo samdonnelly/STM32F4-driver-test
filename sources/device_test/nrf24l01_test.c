@@ -54,12 +54,19 @@
 //=======================================================================================
 // Macros 
 
+//==================================================
 // Conditional compilation 
+
+#define NRF24L01_CONTROLTECH_TEST 0 
+
 #define NRF24L01_DEV1_CODE 1     // Choose between device 1 or 2 
 #define NRF24L01_HEARTBEAT 1     // Heartbeat test code 
 #define NRF24L01_MULTI_SPI 0     // SD card on same SPI bus but different pins test code 
 #define NRF24L01_RC 0            // Remote control test code 
+
 #define NRF24L01_TEST_SCREEN 1   // HD44780U screen in the system - shuts screen off 
+
+//==================================================
 
 // Configuration 
 #define NRF24L01_RF_FREQ 10      // 2400 MHz + this value --> communication frequency (MHz) 
@@ -422,9 +429,75 @@ void nrf24l01_test_init(void)
 #endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
 #endif   // NRF24L01_DEV1_CODE --> End of device 2 code 
 
+    //==================================================
+    // Dev 
+
+    #if NRF24L01_DEV1_CODE 
+    nrf24l01_test_device1_init(); 
+    #else 
+    nrf24l01_test_device2_init(); 
+    #endif 
+
+    #if NRF24L01_HEARTBEAT 
+    nrf24l01_test_heartbeat_init(); 
+    #elif NRF24L01_MULTI_SPI 
+    nrf24l01_test_multi_spi_init(); 
+    #elif NRF24L01_RC 
+    nrf24l01_test_rc_init(); 
+    #endif 
+
+    //==================================================
+
     // Provide an initial user prompt 
     uart_sendstring(USART2, "\r\n>>> "); 
 }
+
+
+#if NRF24L01_DEV1_CODE 
+
+// Device 1 setup 
+void nrf24l01_test_device1_init(void)
+{
+    // Configure the PTX settings depending on the devices role/purpose 
+    nrf24l01_ptx_config(nrf24l01_pipe_addr); 
+
+    // Board LED - on when logic low 
+    gpio_pin_init(GPIOA, PIN_5, MODER_GPO, OTYPER_PP, OSPEEDR_HIGH, PUPDR_NO); 
+}
+
+#else 
+
+// Device 2 setup 
+void nrf24l01_test_device2_init(void)
+{
+    // Initialize the device driver 
+    // Configure the PRX settings depending on the devices role/purpose 
+    nrf24l01_prx_config(nrf24l01_pipe_addr, NRF24L01_DP_1); 
+
+#if NRF24L01_TEST_SCREEN 
+
+    // Initialize the screen so it can be turned off 
+
+    // Initialize I2C1
+    i2c_init(
+        I2C1, 
+        PIN_9, 
+        GPIOB, 
+        PIN_8, 
+        GPIOB, 
+        I2C_MODE_SM,
+        I2C_APB1_42MHZ,
+        I2C_CCR_SM_42_100,
+        I2C_TRISE_1000_42);
+
+    hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH); 
+    hd44780u_clear(); 
+    hd44780u_backlight_off(); 
+
+#endif   // NRF24L01_TEST_SCREEN 
+}
+
+#endif 
 
 //=======================================================================================
 
@@ -485,6 +558,7 @@ void nrf24l01_test_app(void)
 #elif NRF24L01_RC 
     nrf24l01_test_device1_rc_loop(); 
 #endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
+
 #else   // NRF24L01_DEV1_CODE --> End of device 1 code, start of device 2 code 
     // No common loop code for only device 2 
 #if NRF24L01_HEARTBEAT 
@@ -495,9 +569,227 @@ void nrf24l01_test_app(void)
     nrf24l01_test_device2_rc_loop(); 
 #endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
 #endif   // NRF24L01_DEV1_CODE --> End of device 2 code 
+
+    //==================================================
+    // Dev 
+
+    #if NRF24L01_HEARTBEAT 
+    nrf24l01_test_heartbeat_loop(); 
+    #elif NRF24L01_MULTI_SPI 
+    nrf24l01_test_multi_spi_loop(); 
+    #elif NRF24L01_RC 
+    nrf24l01_test_rc_loop(); 
+    #endif 
+
+    //==================================================
 }
 
 //=======================================================================================
+
+
+#if NRF24L01_DEV1_CODE 
+#else 
+#endif 
+
+
+#if NRF24L01_HEARTBEAT 
+
+// Description 
+
+//==================================================
+// Macros 
+
+#define NRF24L01_HB_PERIOD 500000   // Time between heartbeat checks (us) 
+#define NRF24L01_HB_TIMEOUT 30      // period*timeout = time before conecction lost status 
+
+//==================================================
+
+
+//==================================================
+// Variables 
+//==================================================
+
+
+//==================================================
+// Prototypes 
+//==================================================
+
+
+//==================================================
+// Setup 
+
+void nrf24l01_test_heartbeat_init(void)
+{
+    // 
+}
+
+//==================================================
+
+
+//==================================================
+// Loop 
+
+void nrf24l01_test_heartbeat_loop(void)
+{
+    // 
+}
+
+//==================================================
+
+
+//==================================================
+// Test functions 
+//==================================================
+
+#elif NRF24L01_MULTI_SPI 
+
+// Description 
+
+//==================================================
+// Macros 
+//==================================================
+
+
+//==================================================
+// Variables 
+//==================================================
+
+
+//==================================================
+// Prototypes 
+//==================================================
+
+
+//==================================================
+// Setup 
+
+void nrf24l01_test_multi_spi_init(void)
+{
+    // 
+}
+
+//==================================================
+
+
+//==================================================
+// Loop 
+
+void nrf24l01_test_multi_spi_loop(void)
+{
+    // 
+}
+
+//==================================================
+
+
+//==================================================
+// Test functions 
+//==================================================
+
+#elif NRF24L01_RC 
+
+// Description 
+
+//==================================================
+// Macros 
+
+#define NRF24L01_LEFT_MOTOR 0x4C         // "L" character that indicates left motor 
+#define NRF24L01_RIGHT_MOTOR 0x52        // "R" character that indicates right motor 
+#define NRF24L01_FWD_THRUST 0x50         // "P" (plus) - indicates forward thrust 
+#define NRF24L01_REV_THRUST 0x4D         // "M" (minus) - indicates reverse thrust 
+#define NRF24L01_NEUTRAL 0x4E            // "N" (neutral) - indicates neutral gear or zero thrust 
+#define NRF24L01_NO_THRUST 0             // Force thruster output to zero 
+#define NRF24L01_TEST_ADC_NUM 2          // Number of ADCs used for throttle command 
+#define NRF24L01_RC_PERIOD 50000         // Time between throttle command sends (us) 
+
+//==================================================
+
+
+//==================================================
+// Variables 
+//==================================================
+
+
+//==================================================
+// Prototypes 
+//==================================================
+
+
+//==================================================
+// Setup 
+
+void nrf24l01_test_rc_init(void)
+{
+    // 
+}
+
+//==================================================
+
+
+//==================================================
+// Loop 
+
+void nrf24l01_test_rc_loop(void)
+{
+    // 
+}
+
+//==================================================
+
+
+//==================================================
+// Test functions 
+//==================================================
+
+#elif NRF24L01_CONTROLTECH_TEST 
+
+// Description 
+
+//==================================================
+// Macros 
+//==================================================
+
+
+//==================================================
+// Variables 
+//==================================================
+
+
+//==================================================
+// Prototypes 
+//==================================================
+
+
+//==================================================
+// Setup 
+
+void nrf24l01_test_controltech_init(void)
+{
+    // 
+}
+
+//==================================================
+
+
+//==================================================
+// Loop 
+
+void nrf24l01_test_controltech_loop(void)
+{
+    // 
+}
+
+//==================================================
+
+
+//==================================================
+// Test functions 
+//==================================================
+
+#endif 
+
+
+
 
 
 #if NRF24L01_DEV1_CODE 
@@ -760,7 +1052,7 @@ void nrf24l01_test_device2_init(void)
 {
     // Initialize the device driver 
     // Configure the PRX settings depending on the devices role/purpose 
-    nrf24l01_prx_config(pipe_addr_buff, NRF24L01_DP_1); 
+    nrf24l01_prx_config(nrf24l01_pipe_addr, NRF24L01_DP_1); 
 
 #if NRF24L01_TEST_SCREEN 
 
