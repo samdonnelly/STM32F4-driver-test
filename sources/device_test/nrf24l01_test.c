@@ -5,6 +5,12 @@
  * 
  * @brief nRF24L01 RF module test code 
  * 
+ * @details There are multiple tests and each test has code for two separate radio 
+ *          transceivers that are meant to wirelessly communicate with one another. These 
+ *          transceivers are meant to be controlled by two separate systems/controllers. 
+ *          Device one code should be flashed to system one and device two code to system 
+ *          two. 
+ * 
  * @version 0.1
  * @date 2023-08-23
  * 
@@ -23,71 +29,31 @@
 
 
 //=======================================================================================
-// Tests 
-
-// There is test code for two RF modules used by separate controllers that are meant to 
-// wirelessly communicate with one another. The conditional compilation below can be used 
-// to switch between tests and toggle the device/module number within a test. 
-
-// Heartbeat test 
-// - Device 1 (master) sends a 'ping' to device 2 (slave) periodically 
-// - Device 2 reads ping and responds with a confirmation 
-// - Device 1 reads confirmation to verify communication is working 
-// - If device 1 doesn't get a response then indicate a loss of communication 
-// - Option to enter a "configuration" mode (on both devices) where settings can be 
-//   manually changed by the user. Can then switch back to heartbeat mode to make sure 
-//   there is still communication. 
-
-// Multi-SPI test 
-// - Device 1 (master) sends a user input message to device 2 (slave) upon user request 
-// - Device 2 reads message and attempts to save it to a file on an SD card 
-// - Device 2 reports back the status of the SD card write to device 1 
-
-// RC (remote control) test 
-// - Device 1 (master) sends throttle command to device 2 (slave) 
-// - Device 2 reads throttle command 
-// - Throttle command goes to the ESC driver 
-
-//=======================================================================================
-
-
-//=======================================================================================
 // Macros 
 
 //==================================================
 // Conditional compilation 
 
-#define NRF24L01_CONTROLTECH_TEST 0 
+// Device 
+#define NRF24L01_DEV1_CODE 0          // 1 = device one, 0 = device two 
 
-#define NRF24L01_DEV1_CODE 1     // Choose between device 1 or 2 
-#define NRF24L01_HEARTBEAT 1     // Heartbeat test code 
-#define NRF24L01_MULTI_SPI 0     // SD card on same SPI bus but different pins test code 
-#define NRF24L01_RC 0            // Remote control test code 
+// Test code 
+#define NRF24L01_HEARTBEAT 0          // Heartbeat 
+#define NRF24L01_MULTI_SPI 0          // SD card on same SPI bus but different pins 
+#define NRF24L01_RC 0                 // Remote control 
+#define NRF24L01_CONTROLTECH_TEST 1 
 
-#define NRF24L01_TEST_SCREEN 1   // HD44780U screen in the system - shuts screen off 
+// Hardware 
+#define NRF24L01_TEST_SCREEN 0        // HD44780U screen in the system - shuts screen off 
 
 //==================================================
 
 // Configuration 
-#define NRF24L01_RF_FREQ 10      // 2400 MHz + this value --> communication frequency (MHz) 
+#define NRF24L01_RF_FREQ 10           // Comm frequency: 2400 MHz + this value (MHz) 
 
 // User commands 
-#define NRF24L01_TEST_MAX_INPUT 30   // Max user input command length (bytes) 
-#define NRF24L01_NUM_USER_CMDS 4     // Number of test states 
-
-// Heartbeat test 
-#define NRF24L01_HB_PERIOD 500000   // Time between heartbeat checks (us) 
-#define NRF24L01_HB_TIMEOUT 30      // period*timeout = time before conecction lost status 
-
-// RC test 
-#define NRF24L01_LEFT_MOTOR 0x4C         // "L" character that indicates left motor 
-#define NRF24L01_RIGHT_MOTOR 0x52        // "R" character that indicates right motor 
-#define NRF24L01_FWD_THRUST 0x50         // "P" (plus) - indicates forward thrust 
-#define NRF24L01_REV_THRUST 0x4D         // "M" (minus) - indicates reverse thrust 
-#define NRF24L01_NEUTRAL 0x4E            // "N" (neutral) - indicates neutral gear or zero thrust 
-#define NRF24L01_NO_THRUST 0             // Force thruster output to zero 
-#define NRF24L01_TEST_ADC_NUM 2          // Number of ADCs used for throttle command 
-#define NRF24L01_RC_PERIOD 50000         // Time between throttle command sends (us) 
+#define NRF24L01_TEST_MAX_INPUT 30    // Max user input command length (bytes) 
+#define NRF24L01_NUM_USER_CMDS 4      // Number of test states 
 
 //=======================================================================================
 
@@ -139,11 +105,27 @@ nrf24l01_test_trackers_t;
 // Device tracker instance 
 static nrf24l01_test_trackers_t nrf24l01_test_data; 
 
+
+static const char tx_str[] = "ello world"; 
+static uint8_t rx_buff[NRF24L01_MAX_PAYLOAD_LEN]; 
+
+
 //=======================================================================================
 
 
 //=======================================================================================
 // Function prototypes 
+
+// Setup and looped code for each test 
+void nrf24l01_test_heartbeat_init(void); 
+void nrf24l01_test_multi_spi_init(void); 
+void nrf24l01_test_rc_init(void); 
+void nrf24l01_test_controltech_init(void); 
+void nrf24l01_test_heartbeat_loop(void); 
+void nrf24l01_test_multi_spi_loop(void); 
+void nrf24l01_test_rc_loop(void); 
+void nrf24l01_test_controltech_loop(void); 
+
 
 /**
  * @brief Parse the user command into an ID and value 
@@ -228,25 +210,6 @@ void nrf24l01_test_status(uint8_t status);
  * @brief Invalid user input serial terminal feedback 
  */
 void nrf24l01_test_invalid_input(void); 
-
-
-// Setup code for each test 
-void nrf24l01_test_device1_init(void); 
-void nrf24l01_test_device1_heartbeat_init(void); 
-void nrf24l01_test_device1_multi_spi_init(void); 
-void nrf24l01_test_device1_rc_init(void); 
-void nrf24l01_test_device2_init(void); 
-void nrf24l01_test_device2_heartbeat_init(void); 
-void nrf24l01_test_device2_multi_spi_init(void); 
-void nrf24l01_test_device2_rc_init(void); 
-
-// Main loop code for each test 
-void nrf24l01_test_device1_heartbeat_loop(void); 
-void nrf24l01_test_device1_multi_spi_loop(void); 
-void nrf24l01_test_device1_rc_loop(void); 
-void nrf24l01_test_device2_heartbeat_loop(void); 
-void nrf24l01_test_device2_multi_spi_loop(void); 
-void nrf24l01_test_device2_rc_loop(void); 
 
 //=======================================================================================
 
@@ -356,6 +319,33 @@ void nrf24l01_test_init(void)
     //==================================================
 
     //==================================================
+    // Initialize I2C / screen 
+
+#if NRF24L01_TEST_SCREEN 
+
+    // Initialize the screen so it can be turned off 
+
+    // Initialize I2C1 
+    i2c_init(
+        I2C1, 
+        PIN_9, 
+        GPIOB, 
+        PIN_8, 
+        GPIOB, 
+        I2C_MODE_SM,
+        I2C_APB1_42MHZ,
+        I2C_CCR_SM_42_100,
+        I2C_TRISE_1000_42);
+
+    hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH); 
+    hd44780u_clear(); 
+    hd44780u_backlight_off(); 
+
+#endif   // NRF24L01_TEST_SCREEN 
+
+    //==================================================
+
+    //==================================================
     // Initialize SPI 
 
     // SPI for the RF module 
@@ -391,7 +381,20 @@ void nrf24l01_test_init(void)
     // nrf24l01_set_rf_dr(NRF24L01_DR_2MBPS); 
     // nrf24l01_set_rf_pwr(NRF24L01_RF_PWR_6DBM); 
 
-    // PTX and PRX setup is required and is found below depending on the device 
+    // PTX and PRX setup 
+    #if NRF24L01_DEV1_CODE 
+
+    // Configure the PTX settings depending on the devices role/purpose. Also configure 
+    // the board LED to blink when transmitting (on when logic low). 
+    nrf24l01_ptx_config(nrf24l01_pipe_addr); 
+    gpio_pin_init(GPIOA, PIN_5, MODER_GPO, OTYPER_PP, OSPEEDR_HIGH, PUPDR_NO); 
+    
+    #else 
+    
+    // Configure the PRX settings depending on the devices role/purpose 
+    nrf24l01_prx_config(nrf24l01_pipe_addr, NRF24L01_DP_1); 
+    
+    #endif 
 
     //==================================================
 
@@ -409,95 +412,19 @@ void nrf24l01_test_init(void)
     
     //==================================================
 
-#if NRF24L01_DEV1_CODE   // Start of device 1 code 
-    nrf24l01_test_device1_init(); 
 #if NRF24L01_HEARTBEAT 
-    nrf24l01_test_device1_heartbeat_init(); 
-#elif NRF24L01_MULTI_SPI 
-    nrf24l01_test_device1_multi_spi_init(); 
-#elif NRF24L01_RC 
-    nrf24l01_test_device1_rc_init(); 
-#endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
-#else   // NRF24L01_DEV1_CODE --> End of device 1 code, start of device 2 code 
-    nrf24l01_test_device2_init(); 
-#if NRF24L01_HEARTBEAT 
-    nrf24l01_test_device2_heartbeat_init(); 
-#elif NRF24L01_MULTI_SPI 
-    nrf24l01_test_device2_multi_spi_init(); 
-#elif NRF24L01_RC 
-    nrf24l01_test_device2_rc_init(); 
-#endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
-#endif   // NRF24L01_DEV1_CODE --> End of device 2 code 
-
-    //==================================================
-    // Dev 
-
-    #if NRF24L01_DEV1_CODE 
-    nrf24l01_test_device1_init(); 
-    #else 
-    nrf24l01_test_device2_init(); 
-    #endif 
-
-    #if NRF24L01_HEARTBEAT 
     nrf24l01_test_heartbeat_init(); 
-    #elif NRF24L01_MULTI_SPI 
+#elif NRF24L01_MULTI_SPI 
     nrf24l01_test_multi_spi_init(); 
-    #elif NRF24L01_RC 
+#elif NRF24L01_RC 
     nrf24l01_test_rc_init(); 
-    #endif 
-
-    //==================================================
+#elif NRF24L01_CONTROLTECH_TEST 
+    nrf24l01_test_controltech_init(); 
+#endif 
 
     // Provide an initial user prompt 
     uart_sendstring(USART2, "\r\n>>> "); 
 }
-
-
-#if NRF24L01_DEV1_CODE 
-
-// Device 1 setup 
-void nrf24l01_test_device1_init(void)
-{
-    // Configure the PTX settings depending on the devices role/purpose 
-    nrf24l01_ptx_config(nrf24l01_pipe_addr); 
-
-    // Board LED - on when logic low 
-    gpio_pin_init(GPIOA, PIN_5, MODER_GPO, OTYPER_PP, OSPEEDR_HIGH, PUPDR_NO); 
-}
-
-#else 
-
-// Device 2 setup 
-void nrf24l01_test_device2_init(void)
-{
-    // Initialize the device driver 
-    // Configure the PRX settings depending on the devices role/purpose 
-    nrf24l01_prx_config(nrf24l01_pipe_addr, NRF24L01_DP_1); 
-
-#if NRF24L01_TEST_SCREEN 
-
-    // Initialize the screen so it can be turned off 
-
-    // Initialize I2C1
-    i2c_init(
-        I2C1, 
-        PIN_9, 
-        GPIOB, 
-        PIN_8, 
-        GPIOB, 
-        I2C_MODE_SM,
-        I2C_APB1_42MHZ,
-        I2C_CCR_SM_42_100,
-        I2C_TRISE_1000_42);
-
-    hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH); 
-    hd44780u_clear(); 
-    hd44780u_backlight_off(); 
-
-#endif   // NRF24L01_TEST_SCREEN 
-}
-
-#endif 
 
 //=======================================================================================
 
@@ -509,92 +436,73 @@ void nrf24l01_test_app(void)
 {
     // Universal (to all nrf24l01 tests) application test code 
 
-    // Check for user serial terminal input 
-    if (handler_flags.usart2_flag)
-    {
-        // Reset the USART2 interrupt flag 
-        handler_flags.usart2_flag = CLEAR; 
+    // // Check for user serial terminal input 
+    // if (handler_flags.usart2_flag)
+    // {
+    //     // Reset the USART2 interrupt flag 
+    //     handler_flags.usart2_flag = CLEAR; 
 
-        // Copy the new contents in the circular buffer to the user input buffer 
-        cb_parse(
-            nrf24l01_test_data.user_buff, 
-            nrf24l01_test_data.cmd_buff, 
-            &nrf24l01_test_data.buff_index, 
-            NRF24L01_TEST_MAX_INPUT); 
+    //     // Copy the new contents in the circular buffer to the user input buffer 
+    //     cb_parse(
+    //         nrf24l01_test_data.user_buff, 
+    //         nrf24l01_test_data.cmd_buff, 
+    //         &nrf24l01_test_data.buff_index, 
+    //         NRF24L01_TEST_MAX_INPUT); 
 
-        // Validate the input - parse into an ID and value if valid 
-        if (nrf24l01_test_parse_cmd(nrf24l01_test_data.cmd_buff))
-        {
-            // Valid input - compare the ID to each of the available pre-defined commands 
-            for (uint8_t i = CLEAR; i < NRF24L01_NUM_USER_CMDS; i++) 
-            {
-                // Check that the command is available for the "state" before comparing it 
-                // against the ID. 
-                if (cmd_table[i].cmd_mask & (SET_BIT << nrf24l01_test_data.state))
-                {
-                    // Command available. Compare with the ID. 
-                    if (str_compare(
-                            cmd_table[i].user_cmds, 
-                            (char *)nrf24l01_test_data.cmd_id, 
-                            BYTE_0)) 
-                    {
-                        // ID matched to a command. Execute the command. 
-                        (cmd_table[i].nrf24l01_test_func_ptr)(nrf24l01_test_data.cmd_value); 
-                        break; 
-                    }
-                }
-            }
-        }
+    //     // Validate the input - parse into an ID and value if valid 
+    //     if (nrf24l01_test_parse_cmd(nrf24l01_test_data.cmd_buff))
+    //     {
+    //         // Valid input - compare the ID to each of the available pre-defined commands 
+    //         for (uint8_t i = CLEAR; i < NRF24L01_NUM_USER_CMDS; i++) 
+    //         {
+    //             // Check that the command is available for the "state" before comparing it 
+    //             // against the ID. 
+    //             if (cmd_table[i].cmd_mask & (SET_BIT << nrf24l01_test_data.state))
+    //             {
+    //                 // Command available. Compare with the ID. 
+    //                 if (str_compare(
+    //                         cmd_table[i].user_cmds, 
+    //                         (char *)nrf24l01_test_data.cmd_id, 
+    //                         BYTE_0)) 
+    //                 {
+    //                     // ID matched to a command. Execute the command. 
+    //                     (cmd_table[i].nrf24l01_test_func_ptr)(nrf24l01_test_data.cmd_value); 
+    //                     break; 
+    //                 }
+    //             }
+    //         }
+    //     }
 
-        uart_sendstring(USART2, "\r\n>>> "); 
-    }
+    //     uart_sendstring(USART2, "\r\n>>> "); 
+    // }
 
-#if NRF24L01_DEV1_CODE   // Start of device 1 code 
-    // No common loop code for only device 1 
 #if NRF24L01_HEARTBEAT 
-    nrf24l01_test_device1_heartbeat_loop(); 
-#elif NRF24L01_MULTI_SPI 
-    nrf24l01_test_device1_multi_spi_loop(); 
-#elif NRF24L01_RC 
-    nrf24l01_test_device1_rc_loop(); 
-#endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
-
-#else   // NRF24L01_DEV1_CODE --> End of device 1 code, start of device 2 code 
-    // No common loop code for only device 2 
-#if NRF24L01_HEARTBEAT 
-    nrf24l01_test_device2_heartbeat_loop(); 
-#elif NRF24L01_MULTI_SPI 
-    nrf24l01_test_device2_multi_spi_loop(); 
-#elif NRF24L01_RC 
-    nrf24l01_test_device2_rc_loop(); 
-#endif   // NRF24L01_HEARTBEAT || NRF24L01_MULTI_SPI || NRF24L01_RC 
-#endif   // NRF24L01_DEV1_CODE --> End of device 2 code 
-
-    //==================================================
-    // Dev 
-
-    #if NRF24L01_HEARTBEAT 
     nrf24l01_test_heartbeat_loop(); 
-    #elif NRF24L01_MULTI_SPI 
+#elif NRF24L01_MULTI_SPI 
     nrf24l01_test_multi_spi_loop(); 
-    #elif NRF24L01_RC 
+#elif NRF24L01_RC 
     nrf24l01_test_rc_loop(); 
-    #endif 
-
-    //==================================================
+#elif NRF24L01_CONTROLTECH_TEST 
+    nrf24l01_test_controltech_loop(); 
+#endif 
 }
 
 //=======================================================================================
 
 
-#if NRF24L01_DEV1_CODE 
-#else 
-#endif 
-
-
 #if NRF24L01_HEARTBEAT 
 
+//=======================================================================================
+// Heartbeat test 
+
 // Description 
+// - Device 1 (master) sends a 'ping' to device 2 (slave) periodically 
+// - Device 2 reads ping and responds with a confirmation 
+// - Device 1 reads confirmation to verify communication is working 
+// - If device 1 doesn't get a response then indicate a loss of communication 
+// - Option to enter a "configuration" mode (on both devices) where settings can be 
+//   manually changed by the user. Can then switch back to heartbeat mode to make sure 
+//   there is still communication. 
 
 //==================================================
 // Macros 
@@ -620,7 +528,11 @@ void nrf24l01_test_app(void)
 
 void nrf24l01_test_heartbeat_init(void)
 {
-    // 
+#if NRF24L01_DEV1_CODE   // Device one 
+    nrf24l01_test_data.state = NRF24L01_TEST_DEV1_HB_STATE; 
+#else 
+    nrf24l01_test_data.state = NRF24L01_TEST_DEV2_HB_STATE; 
+#endif 
 }
 
 //==================================================
@@ -631,7 +543,77 @@ void nrf24l01_test_heartbeat_init(void)
 
 void nrf24l01_test_heartbeat_loop(void)
 {
-    // 
+#if NRF24L01_DEV1_CODE   // Device one 
+
+    static gpio_pin_state_t led_state = GPIO_LOW; 
+
+    // Periodically send a ping to the PRX device 
+    if (tim_compare(nrf24l01_test_data.timer_nonblocking, 
+                    nrf24l01_test_data.delay_timer.clk_freq, 
+                    NRF24L01_HB_PERIOD, 
+                    &nrf24l01_test_data.delay_timer.time_cnt_total, 
+                    &nrf24l01_test_data.delay_timer.time_cnt, 
+                    &nrf24l01_test_data.delay_timer.time_start))
+    {
+        // time_start flag does not need to be set again because this timer runs 
+        // continuously. 
+
+        // Try sending out a payload and toggle the led if it was sent 
+        if (nrf24l01_send_payload(nrf24l01_test_data.hb_msg))
+        {
+            led_state = GPIO_HIGH - led_state; 
+            gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
+        } 
+    }
+
+#else   // Device two 
+
+    static uint8_t timeout_count = CLEAR; 
+
+    // Increment the timeout counter periodically 
+    if (tim_compare(nrf24l01_test_data.timer_nonblocking, 
+                    nrf24l01_test_data.delay_timer.clk_freq, 
+                    NRF24L01_HB_PERIOD, 
+                    &nrf24l01_test_data.delay_timer.time_cnt_total, 
+                    &nrf24l01_test_data.delay_timer.time_cnt, 
+                    &nrf24l01_test_data.delay_timer.time_start))
+    {
+        // time_start flag does not need to be set again because this timer runs 
+        // continuously. 
+
+        // Increment the timeout count until it's at the threshold at which point hold 
+        // the count and clear the connection status. 
+        if (timeout_count >= NRF24L01_HB_TIMEOUT)
+        {
+            nrf24l01_test_data.conn_status = CLEAR_BIT; 
+        }
+        else 
+        {
+            timeout_count++; 
+        }
+    }
+    
+    // Check if a payload has been received 
+    if (nrf24l01_data_ready_status(NRF24L01_DP_1))
+    {
+        // Payload has been received. Read the payload from the device RX FIFO. 
+        nrf24l01_receive_payload(nrf24l01_test_data.read_buff, NRF24L01_DP_1); 
+
+        // Check to see if the received payload matches the heartbeat message 
+        if (str_compare((char *)nrf24l01_test_data.hb_msg, 
+                        (char *)nrf24l01_test_data.read_buff, 
+                        BYTE_1))
+        {
+            // Heartbeat message received - reset the timeout and set the connection status 
+            timeout_count = CLEAR; 
+            nrf24l01_test_data.conn_status = SET_BIT; 
+        }
+
+        memset((void *)nrf24l01_test_data.read_buff, CLEAR, 
+               sizeof(nrf24l01_test_data.read_buff)); 
+    }
+    
+#endif 
 }
 
 //==================================================
@@ -641,9 +623,18 @@ void nrf24l01_test_heartbeat_loop(void)
 // Test functions 
 //==================================================
 
+//=======================================================================================
+
+
 #elif NRF24L01_MULTI_SPI 
 
+//=======================================================================================
+// Multi SPI test 
+
 // Description 
+// - Device 1 (master) sends a user input message to device 2 (slave) upon user request 
+// - Device 2 reads message and attempts to save it to a file on an SD card 
+// - Device 2 reports back the status of the SD card write to device 1 
 
 //==================================================
 // Macros 
@@ -665,7 +656,47 @@ void nrf24l01_test_heartbeat_loop(void)
 
 void nrf24l01_test_multi_spi_init(void)
 {
-    // 
+#if NRF24L01_DEV1_CODE   // Device one 
+
+    nrf24l01_test_data.state = NRF24L01_TEST_DEV1_MSPI_STATE; 
+
+#else   // Device two 
+
+    //==================================================
+    // Initialize SPI 
+
+    // SPI2 and slave select pin for SD card 
+    // This is on different pins than the RF module to test if the same SPI bus works across 
+    // multiple pins. 
+    spi_init(
+        SPI2, 
+        GPIOB,   // SCK pin GPIO port 
+        PIN_10,  // SCK pin 
+        GPIOB,   // Data (MISO/MOSI) pin GPIO port 
+        PIN_14,  // MISO pin 
+        PIN_15,  // MOSI pin 
+        SPI_BR_FPCLK_16, 
+        SPI_CLOCK_MODE_0); 
+    spi_ss_init(GPIOB, PIN_12); 
+
+    //==================================================
+
+    //==================================================
+    // Initialize SD card --> for testing multiple SPI pins on the same SPI bus 
+
+    // SD card user initialization 
+    hw125_user_init(SPI2, GPIOB, GPIOX_PIN_12); 
+    
+    //==================================================
+
+    //==================================================
+    // Initialize variables 
+
+    nrf24l01_test_data.state = NRF24L01_TEST_DEV2_MSPI_STATE; 
+    
+    //==================================================
+
+#endif 
 }
 
 //==================================================
@@ -676,7 +707,11 @@ void nrf24l01_test_multi_spi_init(void)
 
 void nrf24l01_test_multi_spi_loop(void)
 {
-    // 
+#if NRF24L01_DEV1_CODE   // Device one 
+    // Test code 
+#else   // Device two 
+    // Test code 
+#endif 
 }
 
 //==================================================
@@ -686,27 +721,40 @@ void nrf24l01_test_multi_spi_loop(void)
 // Test functions 
 //==================================================
 
+//=======================================================================================
+
+
 #elif NRF24L01_RC 
 
+//=======================================================================================
+// RC (remote control) test 
+
 // Description 
+// - Device 1 (master) sends throttle command to device 2 (slave) 
+// - Device 2 reads throttle command 
+// - Throttle command goes to the ESC driver 
 
 //==================================================
 // Macros 
 
-#define NRF24L01_LEFT_MOTOR 0x4C         // "L" character that indicates left motor 
-#define NRF24L01_RIGHT_MOTOR 0x52        // "R" character that indicates right motor 
-#define NRF24L01_FWD_THRUST 0x50         // "P" (plus) - indicates forward thrust 
-#define NRF24L01_REV_THRUST 0x4D         // "M" (minus) - indicates reverse thrust 
-#define NRF24L01_NEUTRAL 0x4E            // "N" (neutral) - indicates neutral gear or zero thrust 
-#define NRF24L01_NO_THRUST 0             // Force thruster output to zero 
-#define NRF24L01_TEST_ADC_NUM 2          // Number of ADCs used for throttle command 
-#define NRF24L01_RC_PERIOD 50000         // Time between throttle command sends (us) 
+#define NRF24L01_LEFT_MOTOR 0x4C    // "L" character that indicates left motor 
+#define NRF24L01_RIGHT_MOTOR 0x52   // "R" character that indicates right motor 
+#define NRF24L01_FWD_THRUST 0x50    // "P" (plus) - indicates forward thrust 
+#define NRF24L01_REV_THRUST 0x4D    // "M" (minus) - indicates reverse thrust 
+#define NRF24L01_NEUTRAL 0x4E       // "N" (neutral) - indicates neutral gear or zero thrust 
+#define NRF24L01_NO_THRUST 0        // Force thruster output to zero 
+#define NRF24L01_TEST_ADC_NUM 2     // Number of ADCs used for throttle command 
+#define NRF24L01_RC_PERIOD 50000    // Time between throttle command sends (us) 
 
 //==================================================
 
 
 //==================================================
 // Variables 
+
+// ADC storage 
+static uint16_t adc_data[NRF24L01_TEST_ADC_NUM];  // Location for the DMA to store ADC values 
+
 //==================================================
 
 
@@ -720,180 +768,7 @@ void nrf24l01_test_multi_spi_loop(void)
 
 void nrf24l01_test_rc_init(void)
 {
-    // 
-}
-
-//==================================================
-
-
-//==================================================
-// Loop 
-
-void nrf24l01_test_rc_loop(void)
-{
-    // 
-}
-
-//==================================================
-
-
-//==================================================
-// Test functions 
-//==================================================
-
-#elif NRF24L01_CONTROLTECH_TEST 
-
-// Description 
-
-//==================================================
-// Macros 
-//==================================================
-
-
-//==================================================
-// Variables 
-//==================================================
-
-
-//==================================================
-// Prototypes 
-//==================================================
-
-
-//==================================================
-// Setup 
-
-void nrf24l01_test_controltech_init(void)
-{
-    // 
-}
-
-//==================================================
-
-
-//==================================================
-// Loop 
-
-void nrf24l01_test_controltech_loop(void)
-{
-    // 
-}
-
-//==================================================
-
-
-//==================================================
-// Test functions 
-//==================================================
-
-#endif 
-
-
-
-
-
-#if NRF24L01_DEV1_CODE 
-
-//=======================================================================================
-// Device 1 
-
-//==================================================
-// Setup 
-
-void nrf24l01_test_device1_init(void)
-{
-    // Configure the PTX settings depending on the devices role/purpose 
-    nrf24l01_ptx_config(nrf24l01_pipe_addr); 
-
-    // Board LED - on when logic low 
-    gpio_pin_init(GPIOA, PIN_5, MODER_GPO, OTYPER_PP, OSPEEDR_HIGH, PUPDR_NO); 
-}
-
-//==================================================
-
-#if NRF24L01_HEARTBEAT 
-
-//==================================================
-// Setup 
-
-void nrf24l01_test_device1_heartbeat_init(void)
-{
-    nrf24l01_test_data.state = NRF24L01_TEST_DEV1_HB_STATE; 
-}
-
-//==================================================
-
-
-//==================================================
-// Loop 
-
-void nrf24l01_test_device1_heartbeat_loop(void)
-{
-    // Local variables 
-    static gpio_pin_state_t led_state = GPIO_LOW; 
-
-    // Periodically send a ping to the PRX device 
-    if (tim_compare(nrf24l01_test_data.timer_nonblocking, 
-                    nrf24l01_test_data.delay_timer.clk_freq, 
-                    NRF24L01_HB_PERIOD, 
-                    &nrf24l01_test_data.delay_timer.time_cnt_total, 
-                    &nrf24l01_test_data.delay_timer.time_cnt, 
-                    &nrf24l01_test_data.delay_timer.time_start))
-    {
-        // time_start flag does not need to be set again because this timer runs 
-        // continuously. 
-
-        // Try sending out a payload and toggle the led if it was sent 
-        if (nrf24l01_send_payload(nrf24l01_test_data.hb_msg))
-        {
-            led_state = GPIO_HIGH - led_state; 
-            gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
-        } 
-    }
-}
-
-//==================================================
-
-#elif NRF24L01_MULTI_SPI 
-
-//==================================================
-// Setup 
-
-void nrf24l01_test_device1_multi_spi_init(void)
-{
-    nrf24l01_test_data.state = NRF24L01_TEST_DEV1_MSPI_STATE; 
-}
-
-//==================================================
-
-
-//==================================================
-// Loop 
-
-void nrf24l01_test_device1_multi_spi_loop(void)
-{
-    // Device one - Multiple SPI test code 
-}
-
-//==================================================
-
-#elif NRF24L01_RC 
-
-//==================================================
-// Variables 
-
-// ADC storage 
-static uint16_t adc_data[NRF24L01_TEST_ADC_NUM];  // Location for the DMA to store ADC values 
-
-//==================================================
-
-
-//==================================================
-// Setup 
-
-void nrf24l01_test_device1_rc_init(void)
-{
-    // Device one - RC setup code 
+#if NRF24L01_DEV1_CODE   // Device one 
 
     //===================================================
     // ADC setup - for user controller mode 
@@ -967,6 +842,39 @@ void nrf24l01_test_device1_rc_init(void)
     memset((void *)adc_data, CLEAR, sizeof(adc_data)); 
     
     //==================================================
+
+#else   // Device two 
+
+    // ESC driver setup 
+    esc_readytosky_init(
+        DEVICE_ONE, 
+        TIM3, 
+        TIMER_CH4, 
+        GPIOB, 
+        PIN_1, 
+        TIM_84MHZ_1US_PSC, 
+        ESC_PERIOD, 
+        ESC_FWD_SPEED_LIM, 
+        ESC_REV_SPEED_LIM); 
+
+    esc_readytosky_init(
+        DEVICE_TWO, 
+        TIM3, 
+        TIMER_CH3, 
+        GPIOB, 
+        PIN_0, 
+        TIM_84MHZ_1US_PSC, 
+        ESC_PERIOD, 
+        ESC_FWD_SPEED_LIM, 
+        ESC_REV_SPEED_LIM); 
+
+    // Enable the PWM timer 
+    tim_enable(TIM3); 
+
+    // Initialize variables 
+    nrf24l01_test_data.state = NRF24L01_TEST_DEV2_RC_STATE; 
+
+#endif 
 }
 
 //==================================================
@@ -975,11 +883,10 @@ void nrf24l01_test_device1_rc_init(void)
 //==================================================
 // Loop 
 
-void nrf24l01_test_device1_rc_loop(void)
+void nrf24l01_test_rc_loop(void)
 {
-    // Device one - RC test code 
-    
-    // Local variables 
+#if NRF24L01_DEV1_CODE   // Device one 
+
     static gpio_pin_state_t led_state = GPIO_LOW; 
     static uint8_t thruster = CLEAR; 
     char side = CLEAR; 
@@ -1032,224 +939,9 @@ void nrf24l01_test_device1_rc_loop(void)
         // Toggle the thruster flag 
         thruster = SET_BIT - thruster; 
     }
-}
 
-//==================================================
+#else   // Device two 
 
-#endif 
-
-//=======================================================================================
-
-#else   // NRF24L01_DEV1_CODE --> start of device 2 code 
-
-//=======================================================================================
-// Device 2 
-
-//==================================================
-// Setup 
-
-void nrf24l01_test_device2_init(void)
-{
-    // Initialize the device driver 
-    // Configure the PRX settings depending on the devices role/purpose 
-    nrf24l01_prx_config(nrf24l01_pipe_addr, NRF24L01_DP_1); 
-
-#if NRF24L01_TEST_SCREEN 
-
-    // Initialize the screen so it can be turned off 
-
-    // Initialize I2C1
-    i2c_init(
-        I2C1, 
-        PIN_9, 
-        GPIOB, 
-        PIN_8, 
-        GPIOB, 
-        I2C_MODE_SM,
-        I2C_APB1_42MHZ,
-        I2C_CCR_SM_42_100,
-        I2C_TRISE_1000_42);
-
-    hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH); 
-    hd44780u_clear(); 
-    hd44780u_backlight_off(); 
-
-#endif   // NRF24L01_TEST_SCREEN 
-}
-
-//==================================================
-
-#if NRF24L01_HEARTBEAT 
-
-//==================================================
-// Setup 
-
-void nrf24l01_test_device2_heartbeat_init(void)
-{
-    nrf24l01_test_data.state = NRF24L01_TEST_DEV2_HB_STATE; 
-}
-
-//==================================================
-
-
-//==================================================
-// Loop 
-
-void nrf24l01_test_device2_heartbeat_loop(void)
-{
-    // Device two - Heartbeat test code 
-
-    // Local variables 
-    static uint8_t timeout_count = CLEAR; 
-
-    // Increment the timeout counter periodically 
-    if (tim_compare(nrf24l01_test_data.timer_nonblocking, 
-                    nrf24l01_test_data.delay_timer.clk_freq, 
-                    NRF24L01_HB_PERIOD, 
-                    &nrf24l01_test_data.delay_timer.time_cnt_total, 
-                    &nrf24l01_test_data.delay_timer.time_cnt, 
-                    &nrf24l01_test_data.delay_timer.time_start))
-    {
-        // time_start flag does not need to be set again because this timer runs 
-        // continuously. 
-
-        // Increment the timeout count until it's at the threshold at which point hold 
-        // the count and clear the connection status. 
-        if (timeout_count >= NRF24L01_HB_TIMEOUT)
-        {
-            nrf24l01_test_data.conn_status = CLEAR_BIT; 
-        }
-        else 
-        {
-            timeout_count++; 
-        }
-    }
-    
-    // Check if a payload has been received 
-    if (nrf24l01_data_ready_status(NRF24L01_DP_1))
-    {
-        // Payload has been received. Read the payload from the device RX FIFO. 
-        nrf24l01_receive_payload(nrf24l01_test_data.read_buff, NRF24L01_DP_1); 
-
-        // Check to see if the received payload matches the heartbeat message 
-        if (str_compare((char *)nrf24l01_test_data.hb_msg, 
-                        (char *)nrf24l01_test_data.read_buff, 
-                        BYTE_1))
-        {
-            // Heartbeat message received - reset the timeout and set the connection status 
-            timeout_count = CLEAR; 
-            nrf24l01_test_data.conn_status = SET_BIT; 
-        }
-
-        memset((void *)nrf24l01_test_data.read_buff, CLEAR, 
-               sizeof(nrf24l01_test_data.read_buff)); 
-    }
-}
-
-//==================================================
-
-#elif NRF24L01_MULTI_SPI 
-
-//==================================================
-// Setup 
-
-void nrf24l01_test_device2_multi_spi_init(void)
-{
-    // Device two - Multiple SPI devices setup code 
-
-    //==================================================
-    // Initialize SPI 
-
-    // SPI2 and slave select pin for SD card 
-    // This is on different pins than the RF module to test if the same SPI bus works across 
-    // multiple pins. 
-    spi_init(
-        SPI2, 
-        GPIOB,   // SCK pin GPIO port 
-        PIN_10,  // SCK pin 
-        GPIOB,   // Data (MISO/MOSI) pin GPIO port 
-        PIN_14,  // MISO pin 
-        PIN_15,  // MOSI pin 
-        SPI_BR_FPCLK_16, 
-        SPI_CLOCK_MODE_0); 
-    spi_ss_init(GPIOB, PIN_12); 
-
-    //==================================================
-
-    //==================================================
-    // Initialize SD card --> for testing multiple SPI pins on the same SPI bus 
-
-    // SD card user initialization 
-    hw125_user_init(SPI2, GPIOB, GPIOX_PIN_12); 
-    
-    //==================================================
-
-    //==================================================
-    // Initialize variables 
-
-    nrf24l01_test_data.state = NRF24L01_TEST_DEV2_MSPI_STATE; 
-    
-    //==================================================
-}
-
-//==================================================
-
-
-//==================================================
-// Loop 
-
-void nrf24l01_test_device2_multi_spi_loop(void)
-{
-    // Device two - Multiple SPI test code 
-}
-
-//==================================================
-
-#elif NRF24L01_RC 
-
-//==================================================
-// Setup 
-
-void nrf24l01_test_device2_rc_init(void)
-{
-    // ESC driver setup 
-    esc_readytosky_init(
-        DEVICE_ONE, 
-        TIM3, 
-        TIMER_CH4, 
-        GPIOB, 
-        PIN_1, 
-        TIM_84MHZ_1US_PSC, 
-        ESC_PERIOD, 
-        ESC_FWD_SPEED_LIM, 
-        ESC_REV_SPEED_LIM); 
-
-    esc_readytosky_init(
-        DEVICE_TWO, 
-        TIM3, 
-        TIMER_CH3, 
-        GPIOB, 
-        PIN_0, 
-        TIM_84MHZ_1US_PSC, 
-        ESC_PERIOD, 
-        ESC_FWD_SPEED_LIM, 
-        ESC_REV_SPEED_LIM); 
-
-    // Enable the PWM timer 
-    tim_enable(TIM3); 
-
-    // Initialize variables 
-    nrf24l01_test_data.state = NRF24L01_TEST_DEV2_RC_STATE; 
-}
-
-//==================================================
-
-
-//==================================================
-// Loop 
-
-void nrf24l01_test_device2_rc_loop(void)
-{
     //==================================================
     // Note 
     // - Bit shifting works on signed integers - the sign bit is respected. 
@@ -1325,15 +1017,122 @@ void nrf24l01_test_device2_rc_loop(void)
         memset((void *)nrf24l01_test_data.read_buff, CLEAR, 
                sizeof(nrf24l01_test_data.read_buff)); 
     }
+
+#endif 
 }
 
+//==================================================
+
+
+//==================================================
+// Test functions 
+//==================================================
+
+//=======================================================================================
+
+
+#elif NRF24L01_CONTROLTECH_TEST 
+
+//=======================================================================================
+// Controllers Tech Test 
+
+// Description 
+
+//==================================================
+// Macros 
+//==================================================
+
+
+//==================================================
+// Variables 
+//==================================================
+
+
+//==================================================
+// Prototypes 
+//==================================================
+
+
+//==================================================
+// Setup 
+
+void nrf24l01_test_controltech_init(void)
+{
+#if NRF24L01_DEV1_CODE   // Device one 
+
+    gpio_write(GPIOA, GPIOX_PIN_5, GPIO_LOW); 
+
+#else   // Device two 
+
+    memset((void *)rx_buff, CLEAR, sizeof(rx_buff)); 
+
+#endif 
+}
+
+//==================================================
+
+
+//==================================================
+// Loop 
+
+void nrf24l01_test_controltech_loop(void)
+{
+#if NRF24L01_DEV1_CODE   // Device one 
+
+    static gpio_pin_state_t led_state = GPIO_LOW; 
+
+    // Periodically send a ping to the PRX device 
+    if (tim_compare(nrf24l01_test_data.timer_nonblocking, 
+                    nrf24l01_test_data.delay_timer.clk_freq, 
+                    1000000, 
+                    &nrf24l01_test_data.delay_timer.time_cnt_total, 
+                    &nrf24l01_test_data.delay_timer.time_cnt, 
+                    &nrf24l01_test_data.delay_timer.time_start))
+    {
+        if (nrf24l01_send_payload((uint8_t *)tx_str) == NRF24L01_OK)
+        {
+            led_state = GPIO_HIGH - led_state; 
+            gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
+            // uart_sendstring(USART2, "yes\r\n"); 
+        }
+        // else 
+        // {
+        //     uart_sendstring(USART2, "no\r\n"); 
+        // }
+    }
+
+#else   // Device two 
+
+    // Periodically send a ping to the PRX device 
+    if (tim_compare(nrf24l01_test_data.timer_nonblocking, 
+                    nrf24l01_test_data.delay_timer.clk_freq, 
+                    50000, 
+                    &nrf24l01_test_data.delay_timer.time_cnt_total, 
+                    &nrf24l01_test_data.delay_timer.time_cnt, 
+                    &nrf24l01_test_data.delay_timer.time_start))
+    {
+        if (nrf24l01_data_ready_status(NRF24L01_DP_1))
+        {
+            nrf24l01_receive_payload(rx_buff, NRF24L01_DP_1); 
+            uart_sendstring(USART2, (char *)rx_buff); 
+            uart_send_new_line(USART2); 
+        }
+    }
+
+#endif 
+}
+
+//==================================================
+
+
+//==================================================
+// Test functions 
 //==================================================
 
 //=======================================================================================
 
 #endif 
 
-#endif 
 
 //=======================================================================================
 // Test functions 
@@ -1419,7 +1218,7 @@ void nrf24l01_test_rf_ch(uint8_t rf_ch)
     // Check that input is within bounds 
     if (rf_ch <= NRF24L01_RF_CH_MAX)
     {
-        nrf24l01_set_rf_channel(rf_ch); 
+        nrf24l01_set_rf_ch(rf_ch); 
 
         if (nrf24l01_get_rf_ch() == rf_ch)
         {
@@ -1439,9 +1238,9 @@ void nrf24l01_test_rf_dr(uint8_t rf_dr)
     // Check that input is within bounds 
     if (rf_dr <= (uint8_t)NRF24L01_DR_250KBPS)
     {
-        nrf24l01_set_rf_dr((nrf24l01_data_rate_t)rf_dr); 
+        nrf24l01_set_rf_setup_dr((nrf24l01_data_rate_t)rf_dr); 
 
-        if (nrf24l01_get_rf_dr() == (nrf24l01_data_rate_t)rf_dr)
+        if (nrf24l01_get_rf_setup_dr() == (nrf24l01_data_rate_t)rf_dr)
         {
             uart_sendstring(USART2, "\r\nSuccess.\r\n"); 
         }
@@ -1459,9 +1258,9 @@ void nrf24l01_test_rf_pwr(uint8_t rf_pwr)
     // Check that input is within bounds 
     if (rf_pwr <= (uint8_t)NRF24L01_RF_PWR_0DBM)
     {
-        nrf24l01_set_rf_pwr((nrf24l01_rf_pwr_t)rf_pwr); 
+        nrf24l01_set_rf_setup_pwr((nrf24l01_rf_pwr_t)rf_pwr); 
 
-        if (nrf24l01_get_rf_pwr() == (nrf24l01_rf_pwr_t)rf_pwr)
+        if (nrf24l01_get_rf_setup_pwr() == (nrf24l01_rf_pwr_t)rf_pwr)
         {
             uart_sendstring(USART2, "\r\nSuccess.\r\n"); 
         }
