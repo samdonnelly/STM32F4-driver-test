@@ -35,7 +35,7 @@
 // Conditional compilation 
 
 // Device 
-#define NRF24L01_DEV1_CODE 0          // 1 = device one, 0 = device two 
+#define NRF24L01_DEV1_CODE 1          // 1 = device one, 0 = device two 
 
 // Test code 
 #define NRF24L01_HEARTBEAT 0          // Heartbeat 
@@ -44,7 +44,7 @@
 #define NRF24L01_CONTROLTECH_TEST 1 
 
 // Hardware 
-#define NRF24L01_TEST_SCREEN 0        // HD44780U screen in the system - shuts screen off 
+#define NRF24L01_TEST_SCREEN 1        // HD44780U screen in the system - shuts screen off 
 
 //==================================================
 
@@ -365,7 +365,7 @@ void nrf24l01_test_init(void)
     // Initialize the device driver 
 
     // General setup common to all device - must be called once during setup 
-    nrf24l01_init(
+    NRF24L01_STATUS init_status = nrf24l01_init(
         SPI2,                    // SPI port to use 
         GPIOC,                   // Slave select pin GPIO port 
         PIN_1,                   // Slave select pin number 
@@ -374,7 +374,12 @@ void nrf24l01_test_init(void)
         TIM9,                    // General purpose timer port 
         NRF24L01_RF_FREQ,        // Initial RF channel frequency 
         NRF24L01_DR_2MBPS,       // Initial data rate to communicate at 
-        NRF24L01_RF_PWR_6DBM);   // Initial power output to us 
+        NRF24L01_RF_PWR_0DBM);   // Initial power output to us 
+
+    if (init_status)
+    {
+        uart_sendstring(USART2, "bad\r\n"); 
+    }
 
     // Set the devices initial communication parameters - can be updated as needed 
     // nrf24l01_set_rf_channel(NRF24L01_RF_FREQ); 
@@ -395,6 +400,9 @@ void nrf24l01_test_init(void)
     nrf24l01_prx_config(nrf24l01_pipe_addr, NRF24L01_DP_1); 
     
     #endif 
+
+    // Power up the device now that it is configured 
+    // nrf24l01_pwr_up(); 
 
     //==================================================
 
@@ -1112,8 +1120,10 @@ void nrf24l01_test_controltech_loop(void)
                     &nrf24l01_test_data.delay_timer.time_start))
     {
         if (nrf24l01_data_ready_status(NRF24L01_DP_1))
+        // if (nrf24l01_data_ready_status(NRF24L01_DP_1) == NRF24L01_DP_1)
         {
             nrf24l01_receive_payload(rx_buff, NRF24L01_DP_1); 
+            // nrf24l01_receive_payload(rx_buff); 
             uart_sendstring(USART2, (char *)rx_buff); 
             uart_send_new_line(USART2); 
         }
