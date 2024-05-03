@@ -44,7 +44,7 @@
 #define NRF24L01_CONTROLTECH_TEST 1 
 
 // Hardware 
-#define NRF24L01_TEST_SCREEN 1        // HD44780U screen in the system - shuts screen off 
+#define NRF24L01_TEST_SCREEN 0        // HD44780U screen in the system - shuts screen off 
 
 //==================================================
 
@@ -366,7 +366,7 @@ void nrf24l01_test_init(void)
 
     // General setup common to all device - must be called once during setup 
     // NRF24L01_STATUS init_status = nrf24l01_init(
-    nrf24l01_init(
+    NRF24L01_STATUS nrf24l01_init_status = nrf24l01_init(
         SPI2,                    // SPI port to use 
         GPIOC,                   // Slave select pin GPIO port 
         PIN_1,                   // Slave select pin number 
@@ -377,10 +377,15 @@ void nrf24l01_test_init(void)
         NRF24L01_DR_2MBPS,       // Initial data rate to communicate at 
         NRF24L01_RF_PWR_0DBM);   // Initial power output to us 
 
-    // if (init_status)
-    // {
-    //     uart_sendstring(USART2, "bad\r\n"); 
-    // }
+    if (nrf24l01_init_status)
+    {
+        uart_sendstring(USART2, "nRF24L01 init failed."); 
+        while(1); 
+    }
+    else 
+    {
+        uart_sendstring(USART2, "nRF24L01 init success."); 
+    }
 
     // Set the devices initial communication parameters - can be updated as needed 
     // nrf24l01_set_rf_channel(NRF24L01_RF_FREQ); 
@@ -1120,11 +1125,9 @@ void nrf24l01_test_controltech_loop(void)
                     &nrf24l01_test_data.delay_timer.time_cnt, 
                     &nrf24l01_test_data.delay_timer.time_start))
     {
-        if (nrf24l01_data_ready_status(NRF24L01_DP_1))
-        // if (nrf24l01_data_ready_status(NRF24L01_DP_1) == NRF24L01_DP_1)
+        if (nrf24l01_data_ready_status() == NRF24L01_DP_1)
         {
-            nrf24l01_receive_payload(rx_buff, NRF24L01_DP_1); 
-            // nrf24l01_receive_payload(rx_buff); 
+            nrf24l01_receive_payload(rx_buff); 
             uart_sendstring(USART2, (char *)rx_buff); 
             uart_send_new_line(USART2); 
         }
