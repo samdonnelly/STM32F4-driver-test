@@ -35,17 +35,16 @@
 // Conditional compilation 
 
 // Device 
-#define NRF24L01_DEVICE_1 0           // Enable device 1 code 
-#define NRF24L01_DEVICE_2 1           // Enable device 2 code 
+#define NRF24L01_DEVICE_1 1           // Enable device 1 code 
+#define NRF24L01_DEVICE_2 0           // Enable device 2 code 
 
 // Test code 
-#define NRF24L01_HEARTBEAT 1          // Heartbeat 
-#define NRF24L01_MULTI_SPI 0          // SD card on same SPI bus but different pins 
+#define NRF24L01_HEARTBEAT 0          // Heartbeat 
+#define NRF24L01_MULTI_SPI 1          // SD card on same SPI bus but different pins 
 #define NRF24L01_RC 0                 // Remote control 
-#define NRF24L01_CONTROLTECH_TEST 0 
 
 // Hardware 
-#define NRF24L01_TEST_SCREEN 1        // HD44780U screen in the system - shuts screen off 
+#define NRF24L01_TEST_SCREEN 0        // HD44780U screen in the system - shuts screen off 
 
 //==================================================
 
@@ -109,10 +108,6 @@ nrf24l01_test_trackers_t;
 // Device tracker instance 
 static nrf24l01_test_trackers_t nrf24l01_test; 
 
-
-// static const char tx_str[] = "ello world"; 
-static uint8_t rx_buff[NRF24L01_MAX_PAYLOAD_LEN]; 
-
 //=======================================================================================
 
 
@@ -123,11 +118,15 @@ static uint8_t rx_buff[NRF24L01_MAX_PAYLOAD_LEN];
 void nrf24l01_test_heartbeat_init(void); 
 void nrf24l01_test_multi_spi_init(void); 
 void nrf24l01_test_rc_init(void); 
-void nrf24l01_test_controltech_init(void); 
 void nrf24l01_test_heartbeat_loop(void); 
 void nrf24l01_test_multi_spi_loop(void); 
 void nrf24l01_test_rc_loop(void); 
-void nrf24l01_test_controltech_loop(void); 
+
+
+/**
+ * @brief User serial terminal input 
+ */
+void nrf24l01_test_user_input(void); 
 
 
 /**
@@ -442,8 +441,6 @@ void nrf24l01_test_init(void)
     nrf24l01_test_multi_spi_init(); 
 #elif NRF24L01_RC 
     nrf24l01_test_rc_init(); 
-#elif NRF24L01_CONTROLTECH_TEST 
-    nrf24l01_test_controltech_init(); 
 #endif 
 
     // Provide an initial user prompt 
@@ -460,54 +457,12 @@ void nrf24l01_test_app(void)
 {
     // Universal (to all nrf24l01 tests) application test code 
 
-    // // Check for user serial terminal input 
-    // if (handler_flags.usart2_flag)
-    // {
-    //     // Reset the USART2 interrupt flag 
-    //     handler_flags.usart2_flag = CLEAR; 
-
-    //     // Copy the new contents in the circular buffer to the user input buffer 
-    //     cb_parse(
-    //         nrf24l01_test.user_buff, 
-    //         nrf24l01_test.cmd_buff, 
-    //         &nrf24l01_test.buff_index, 
-    //         NRF24L01_TEST_MAX_INPUT); 
-
-    //     // Validate the input - parse into an ID and value if valid 
-    //     if (nrf24l01_test_parse_cmd(nrf24l01_test.cmd_buff))
-    //     {
-    //         // Valid input - compare the ID to each of the available pre-defined commands 
-    //         for (uint8_t i = CLEAR; i < NRF24L01_NUM_USER_CMDS; i++) 
-    //         {
-    //             // Check that the command is available for the "state" before comparing it 
-    //             // against the ID. 
-    //             if (cmd_table[i].cmd_mask & (SET_BIT << nrf24l01_test.state))
-    //             {
-    //                 // Command available. Compare with the ID. 
-    //                 if (str_compare(
-    //                         cmd_table[i].user_cmds, 
-    //                         (char *)nrf24l01_test.cmd_id, 
-    //                         BYTE_0)) 
-    //                 {
-    //                     // ID matched to a command. Execute the command. 
-    //                     (cmd_table[i].nrf24l01_test_func_ptr)(nrf24l01_test.cmd_value); 
-    //                     break; 
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     uart_sendstring(USART2, "\r\n>>> "); 
-    // }
-
 #if NRF24L01_HEARTBEAT 
     nrf24l01_test_heartbeat_loop(); 
 #elif NRF24L01_MULTI_SPI 
     nrf24l01_test_multi_spi_loop(); 
 #elif NRF24L01_RC 
     nrf24l01_test_rc_loop(); 
-#elif NRF24L01_CONTROLTECH_TEST 
-    nrf24l01_test_controltech_loop(); 
 #endif 
 }
 
@@ -531,10 +486,11 @@ void nrf24l01_test_app(void)
 //==================================================
 // Macros 
 
-#define NRF24L01_HB_PERIOD 50000    // Time between heartbeat checks (us) 
-// #define NRF24L01_HB_TIMEOUT 30      // period*timeout = time before connection lost status 
+#define HB_PERIOD 50000             // Time between checking for new data (us) 
+#define HB_SEND_TIMER 40            // Counter to control message send frequency 
 
-#define HB_SEND_TIMER 40 
+#define HB_LETTER_O 0x6F            // ASCII for lowercase "o" 
+#define HB_EXCLAMATION 0x21         // ASCII for "!" 
 
 //==================================================
 
@@ -542,22 +498,32 @@ void nrf24l01_test_app(void)
 //==================================================
 // Variables 
 
-static uint8_t send_timer = CLEAR; 
-static uint8_t msg_counter = CLEAR; 
+#if NRF24L01_DEVICE_1 
 
 static const char 
 hb_message[] = "ping%u", 
 hb_response[] = "pong%u!"; 
 
-static char 
-hb_msg[NRF24L01_MAX_PAYLOAD_LEN], 
-hb_res[NRF24L01_MAX_PAYLOAD_LEN]; 
+#elif NRF24L01_DEVICE_2 
+#endif 
 
-//==================================================
+// Device tracker data record 
+typedef struct hb_test_trackers_s 
+{
+    uint8_t send_timer; 
+    uint8_t msg_counter; 
 
+    uint8_t rx_buff[NRF24L01_MAX_PAYLOAD_LEN]; 
+    char hb_msg[NRF24L01_MAX_PAYLOAD_LEN]; 
+    char hb_res[NRF24L01_MAX_PAYLOAD_LEN]; 
 
-//==================================================
-// Prototypes 
+    gpio_pin_state_t led_state; 
+}
+hb_test_trackers_t; 
+
+// Device tracker instance 
+static hb_test_trackers_t hb_test; 
+
 //==================================================
 
 
@@ -566,21 +532,19 @@ hb_res[NRF24L01_MAX_PAYLOAD_LEN];
 
 void nrf24l01_test_heartbeat_init(void)
 {
+    hb_test.send_timer = CLEAR; 
+    hb_test.msg_counter = CLEAR; 
+    memset((void *)hb_test.rx_buff, CLEAR, sizeof(hb_test.rx_buff)); 
+    memset((void *)hb_test.hb_msg, CLEAR, sizeof(hb_test.hb_msg)); 
+    memset((void *)hb_test.hb_res, CLEAR, sizeof(hb_test.hb_res)); 
+    hb_test.led_state = GPIO_LOW; 
+
 #if NRF24L01_DEVICE_1 
 
-    // nrf24l01_test.state = NRF24L01_TEST_DEV1_HB_STATE; 
-
-    snprintf(hb_msg, NRF24L01_MAX_PAYLOAD_LEN, hb_message, msg_counter); 
-    snprintf(hb_res, NRF24L01_MAX_PAYLOAD_LEN, hb_response, msg_counter); 
+    snprintf(hb_test.hb_msg, NRF24L01_MAX_PAYLOAD_LEN, hb_message, hb_test.msg_counter); 
+    snprintf(hb_test.hb_res, NRF24L01_MAX_PAYLOAD_LEN, hb_response, hb_test.msg_counter); 
 
 #elif NRF24L01_DEVICE_2 
-
-    // nrf24l01_test.state = NRF24L01_TEST_DEV2_HB_STATE; 
-
-    memset((void *)rx_buff, CLEAR, sizeof(rx_buff)); 
-    // snprintf(hb_msg, NRF24L01_MAX_PAYLOAD_LEN, handshake_msg, msg_counter + 1); 
-    // snprintf(hb_res, NRF24L01_MAX_PAYLOAD_LEN, handshake_msg, msg_counter); 
-
 #endif 
 }
 
@@ -592,12 +556,10 @@ void nrf24l01_test_heartbeat_init(void)
 
 void nrf24l01_test_heartbeat_loop(void)
 {
-    static gpio_pin_state_t led_state = GPIO_LOW; 
-
     // Periodically check for action items 
     if (tim_compare(nrf24l01_test.timer_nonblocking, 
                     nrf24l01_test.delay_timer.clk_freq, 
-                    NRF24L01_HB_PERIOD, 
+                    HB_PERIOD, 
                     &nrf24l01_test.delay_timer.time_cnt_total, 
                     &nrf24l01_test.delay_timer.time_cnt, 
                     &nrf24l01_test.delay_timer.time_start))
@@ -608,39 +570,41 @@ void nrf24l01_test_heartbeat_loop(void)
 #if NRF24L01_DEVICE_1 
 
         // Send heartbeat message periodically 
-        if (!send_timer++)
+        if (!hb_test.send_timer++)
         {
-            if (nrf24l01_send_payload((uint8_t *)hb_msg) == NRF24L01_OK)
+            if (nrf24l01_send_payload((uint8_t *)hb_test.hb_msg) == NRF24L01_OK)
             {
                 // Toggle the board LED 
-                led_state = GPIO_HIGH - led_state; 
-                gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
+                hb_test.led_state = GPIO_HIGH - hb_test.led_state; 
+                gpio_write(GPIOA, GPIOX_PIN_5, hb_test.led_state); 
 
                 // Show the heartbeat message 
                 uart_send_new_line(USART2); 
-                uart_sendstring(USART2, hb_msg); 
+                uart_sendstring(USART2, hb_test.hb_msg); 
                 uart_sendstring(USART2, "... "); 
             }
         }
 
-        if (send_timer > HB_SEND_TIMER)
+        if (hb_test.send_timer > HB_SEND_TIMER)
         {
-            send_timer = CLEAR; 
+            hb_test.send_timer = CLEAR; 
         }
 
         // Look for a heartbeat response 
         if (nrf24l01_data_ready_status() == nrf24l01_test.pipe)
         {
-            nrf24l01_receive_payload(rx_buff); 
+            nrf24l01_receive_payload(hb_test.rx_buff); 
 
             // Check if the received message is the one we need 
-            if (!strcmp((char *)rx_buff, hb_res))
+            if (!strcmp((char *)hb_test.rx_buff, hb_test.hb_res))
             {
                 // Display the response and update the heatbeat message and response 
-                uart_sendstring(USART2, (char *)rx_buff); 
-                msg_counter++; 
-                snprintf(hb_msg, NRF24L01_MAX_PAYLOAD_LEN, hb_message, msg_counter); 
-                snprintf(hb_res, NRF24L01_MAX_PAYLOAD_LEN, hb_response, msg_counter); 
+                uart_sendstring(USART2, (char *)hb_test.rx_buff); 
+                hb_test.msg_counter++; 
+                snprintf(hb_test.hb_msg, NRF24L01_MAX_PAYLOAD_LEN, 
+                         hb_message, hb_test.msg_counter); 
+                snprintf(hb_test.hb_res, NRF24L01_MAX_PAYLOAD_LEN, 
+                         hb_response, hb_test.msg_counter); 
             }
         }
 
@@ -649,120 +613,30 @@ void nrf24l01_test_heartbeat_loop(void)
         // Look for a heartbeat message 
         if (nrf24l01_data_ready_status() == nrf24l01_test.pipe)
         {
-            nrf24l01_receive_payload(rx_buff); 
+            nrf24l01_receive_payload(hb_test.rx_buff); 
 
             // Modify the received message to get the desired response (changes "ping#" 
             // to "pong#!"). Note that the contents of the received message is not 
             // checked on purpose as it's not necessary for this test. 
             uint8_t msg_index = 1; 
-            rx_buff[msg_index] = 0x6F;   // "o" 
-            while (rx_buff[msg_index] != NULL_CHAR) msg_index++; 
-            rx_buff[msg_index] = 0x21;   // "!" 
-            rx_buff[++msg_index] = NULL_CHAR; 
+            hb_test.rx_buff[msg_index] = HB_LETTER_O; 
+            
+            while (hb_test.rx_buff[msg_index] != NULL_CHAR) 
+            {
+                msg_index++; 
+            }
+
+            hb_test.rx_buff[msg_index] = HB_EXCLAMATION; 
+            hb_test.rx_buff[++msg_index] = NULL_CHAR; 
 
             // Send the response back 
-            nrf24l01_send_payload(rx_buff); 
+            nrf24l01_send_payload(hb_test.rx_buff); 
         }
 
 #endif 
     }
-
-// #if NRF24L01_DEVICE_1   // Device one 
-
-//     static gpio_pin_state_t led_state = GPIO_LOW; 
-
-//     // Periodically send a ping to the PRX device 
-//     if (tim_compare(nrf24l01_test.timer_nonblocking, 
-//                     nrf24l01_test.delay_timer.clk_freq, 
-//                     NRF24L01_HB_PERIOD, 
-//                     &nrf24l01_test.delay_timer.time_cnt_total, 
-//                     &nrf24l01_test.delay_timer.time_cnt, 
-//                     &nrf24l01_test.delay_timer.time_start))
-//     {
-//         // time_start flag does not need to be set again because this timer runs 
-//         // continuously. 
-
-//         // if (nrf24l01_send_payload(nrf24l01_test.hb_msg)) 
-//         if (nrf24l01_send_payload((uint8_t *)tx_str) == NRF24L01_OK)
-//         {
-//             led_state = GPIO_HIGH - led_state; 
-//             gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
-//         }
-//     }
-
-// #else   // Device two 
-
-//     static uint8_t timeout_count = CLEAR; 
-
-//     // Increment the timeout counter periodically 
-//     if (tim_compare(nrf24l01_test.timer_nonblocking, 
-//                     nrf24l01_test.delay_timer.clk_freq, 
-//                     NRF24L01_HB_PERIOD, 
-//                     &nrf24l01_test.delay_timer.time_cnt_total, 
-//                     &nrf24l01_test.delay_timer.time_cnt, 
-//                     &nrf24l01_test.delay_timer.time_start))
-//     {
-//         // time_start flag does not need to be set again because this timer runs 
-//         // continuously. 
-
-//         // Increment the timeout count until it's at the threshold at which point hold 
-//         // the count and clear the connection status. 
-//         if (timeout_count >= NRF24L01_HB_TIMEOUT)
-//         {
-//             nrf24l01_test.conn_status = CLEAR_BIT; 
-//         }
-//         else 
-//         {
-//             timeout_count++; 
-//         }
-//     }
-    
-//     // Check if a payload has been received 
-//     if (nrf24l01_data_ready_status())
-//     {
-//         // Payload has been received. Read the payload from the device RX FIFO. 
-//         nrf24l01_receive_payload(nrf24l01_test.read_buff); 
-
-//         // Check to see if the received payload matches the heartbeat message 
-//         if (str_compare((char *)nrf24l01_test.hb_msg, 
-//                         (char *)nrf24l01_test.read_buff, 
-//                         BYTE_1))
-//         {
-//             // Heartbeat message received - reset the timeout and set the connection status 
-//             timeout_count = CLEAR; 
-//             nrf24l01_test.conn_status = SET_BIT; 
-//         }
-
-//         memset((void *)nrf24l01_test.read_buff, CLEAR, 
-//                sizeof(nrf24l01_test.read_buff)); 
-//     }
-
-
-
-//     // Periodically send a ping to the PRX device 
-//     if (tim_compare(nrf24l01_test.timer_nonblocking, 
-//                     nrf24l01_test.delay_timer.clk_freq, 
-//                     50000, 
-//                     &nrf24l01_test.delay_timer.time_cnt_total, 
-//                     &nrf24l01_test.delay_timer.time_cnt, 
-//                     &nrf24l01_test.delay_timer.time_start))
-//     {
-//         if (nrf24l01_data_ready_status() == nrf24l01_test.pipe)
-//         {
-//             nrf24l01_receive_payload(rx_buff); 
-//             uart_sendstring(USART2, (char *)rx_buff); 
-//             uart_send_new_line(USART2); 
-//         }
-//     }
-    
-// #endif 
 }
 
-//==================================================
-
-
-//==================================================
-// Test functions 
 //==================================================
 
 //=======================================================================================
@@ -798,11 +672,11 @@ void nrf24l01_test_heartbeat_loop(void)
 
 void nrf24l01_test_multi_spi_init(void)
 {
-#if NRF24L01_DEVICE_1   // Device one 
+#if NRF24L01_DEVICE_1 
 
     nrf24l01_test.state = NRF24L01_TEST_DEV1_MSPI_STATE; 
 
-#else   // Device two 
+#elif NRF24L01_DEVICE_2 
 
     //==================================================
     // Initialize SPI 
@@ -849,9 +723,9 @@ void nrf24l01_test_multi_spi_init(void)
 
 void nrf24l01_test_multi_spi_loop(void)
 {
-#if NRF24L01_DEVICE_1   // Device one 
+#if NRF24L01_DEVICE_1 
     // Test code 
-#else   // Device two 
+#elif NRF24L01_DEVICE_2 
     // Test code 
 #endif 
 }
@@ -1163,6 +1037,51 @@ void nrf24l01_test_rc_loop(void)
 #endif 
 }
 
+//     static uint8_t timeout_count = CLEAR; 
+
+//     // Increment the timeout counter periodically 
+//     if (tim_compare(nrf24l01_test.timer_nonblocking, 
+//                     nrf24l01_test.delay_timer.clk_freq, 
+//                     HB_PERIOD, 
+//                     &nrf24l01_test.delay_timer.time_cnt_total, 
+//                     &nrf24l01_test.delay_timer.time_cnt, 
+//                     &nrf24l01_test.delay_timer.time_start))
+//     {
+//         // time_start flag does not need to be set again because this timer runs 
+//         // continuously. 
+
+//         // Increment the timeout count until it's at the threshold at which point hold 
+//         // the count and clear the connection status. 
+//         if (timeout_count >= NRF24L01_HB_TIMEOUT)
+//         {
+//             nrf24l01_test.conn_status = CLEAR_BIT; 
+//         }
+//         else 
+//         {
+//             timeout_count++; 
+//         }
+//     }
+    
+//     // Check if a payload has been received 
+//     if (nrf24l01_data_ready_status())
+//     {
+//         // Payload has been received. Read the payload from the device RX FIFO. 
+//         nrf24l01_receive_payload(nrf24l01_test.read_buff); 
+
+//         // Check to see if the received payload matches the heartbeat message 
+//         if (str_compare((char *)nrf24l01_test.hb_msg, 
+//                         (char *)nrf24l01_test.read_buff, 
+//                         BYTE_1))
+//         {
+//             // Heartbeat message received - reset the timeout and set the connection status 
+//             timeout_count = CLEAR; 
+//             nrf24l01_test.conn_status = SET_BIT; 
+//         }
+
+//         memset((void *)nrf24l01_test.read_buff, CLEAR, 
+//                sizeof(nrf24l01_test.read_buff)); 
+//     }
+
 //==================================================
 
 
@@ -1172,107 +1091,56 @@ void nrf24l01_test_rc_loop(void)
 
 //=======================================================================================
 
+#endif 
 
-#elif NRF24L01_CONTROLTECH_TEST 
 
 //=======================================================================================
-// Controllers Tech Test 
+// Test functions 
 
-// Description 
-
-//==================================================
-// Macros 
-//==================================================
-
-
-//==================================================
-// Variables 
-//==================================================
-
-
-//==================================================
-// Prototypes 
-//==================================================
-
-
-//==================================================
-// Setup 
-
-void nrf24l01_test_controltech_init(void)
+// User serial terminal input 
+void nrf24l01_test_user_input(void)
 {
-#if NRF24L01_DEVICE_1   // Device one 
+    // // Check for user serial terminal input 
+    // if (handler_flags.usart2_flag)
+    // {
+    //     // Reset the USART2 interrupt flag 
+    //     handler_flags.usart2_flag = CLEAR; 
 
-    gpio_write(GPIOA, GPIOX_PIN_5, GPIO_LOW); 
+    //     // Copy the new contents in the circular buffer to the user input buffer 
+    //     cb_parse(
+    //         nrf24l01_test.user_buff, 
+    //         nrf24l01_test.cmd_buff, 
+    //         &nrf24l01_test.buff_index, 
+    //         NRF24L01_TEST_MAX_INPUT); 
 
-#else   // Device two 
+    //     // Validate the input - parse into an ID and value if valid 
+    //     if (nrf24l01_test_parse_cmd(nrf24l01_test.cmd_buff))
+    //     {
+    //         // Valid input - compare the ID to each of the available pre-defined commands 
+    //         for (uint8_t i = CLEAR; i < NRF24L01_NUM_USER_CMDS; i++) 
+    //         {
+    //             // Check that the command is available for the "state" before comparing it 
+    //             // against the ID. 
+    //             if (cmd_table[i].cmd_mask & (SET_BIT << nrf24l01_test.state))
+    //             {
+    //                 // Command available. Compare with the ID. 
+    //                 if (str_compare(
+    //                         cmd_table[i].user_cmds, 
+    //                         (char *)nrf24l01_test.cmd_id, 
+    //                         BYTE_0)) 
+    //                 {
+    //                     // ID matched to a command. Execute the command. 
+    //                     (cmd_table[i].nrf24l01_test_func_ptr)(nrf24l01_test.cmd_value); 
+    //                     break; 
+    //                 }
+    //             }
+    //         }
+    //     }
 
-    memset((void *)rx_buff, CLEAR, sizeof(rx_buff)); 
-
-#endif 
+    //     uart_sendstring(USART2, "\r\n>>> "); 
+    // }
 }
 
-//==================================================
-
-
-//==================================================
-// Loop 
-
-void nrf24l01_test_controltech_loop(void)
-{
-#if NRF24L01_DEVICE_1   // Device one 
-
-    static gpio_pin_state_t led_state = GPIO_LOW; 
-
-    // Periodically send a ping to the PRX device 
-    if (tim_compare(nrf24l01_test.timer_nonblocking, 
-                    nrf24l01_test.delay_timer.clk_freq, 
-                    1000000, 
-                    &nrf24l01_test.delay_timer.time_cnt_total, 
-                    &nrf24l01_test.delay_timer.time_cnt, 
-                    &nrf24l01_test.delay_timer.time_start))
-    {
-        if (nrf24l01_send_payload((uint8_t *)tx_str) == NRF24L01_OK)
-        {
-            led_state = GPIO_HIGH - led_state; 
-            gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
-        }
-    }
-
-#else   // Device two 
-
-    // Periodically send a ping to the PRX device 
-    if (tim_compare(nrf24l01_test.timer_nonblocking, 
-                    nrf24l01_test.delay_timer.clk_freq, 
-                    50000, 
-                    &nrf24l01_test.delay_timer.time_cnt_total, 
-                    &nrf24l01_test.delay_timer.time_cnt, 
-                    &nrf24l01_test.delay_timer.time_start))
-    {
-        if (nrf24l01_data_ready_status() == nrf24l01_test.pipe)
-        {
-            nrf24l01_receive_payload(rx_buff); 
-            uart_sendstring(USART2, (char *)rx_buff); 
-            uart_send_new_line(USART2); 
-        }
-    }
-
-#endif 
-}
-
-//==================================================
-
-
-//==================================================
-// Test functions 
-//==================================================
-
-//=======================================================================================
-
-#endif 
-
-
-//=======================================================================================
-// Test functions 
 
 // Parse the user command into an ID and value 
 uint8_t nrf24l01_test_parse_cmd(uint8_t *command_buffer)
