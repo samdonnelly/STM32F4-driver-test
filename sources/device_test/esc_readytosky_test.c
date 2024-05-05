@@ -512,8 +512,7 @@ void esc_readytosky_test_app(void)
 // Test functions 
 
 // ADC to ESC command mapping 
-int16_t esc_test_adc_mapping(
-    uint16_t adc_val)
+int16_t esc_test_adc_mapping(uint16_t adc_val)
 {
     // Local variables 
     int16_t throttle_cmd = CLEAR;   // Assume 0% throttle and change if different 

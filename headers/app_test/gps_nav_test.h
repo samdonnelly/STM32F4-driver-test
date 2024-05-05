@@ -44,13 +44,13 @@ extern "C" {
 // Functions 
 
 /**
- * @brief M8Q location test setup code 
+ * @brief GPS navigation test setup code 
  */
 void gps_nav_test_init(void); 
 
 
 /**
- * @brief M8Q location test code 
+ * @brief GPS navigation test code 
  */
 void gps_nav_test_app(void); 
 

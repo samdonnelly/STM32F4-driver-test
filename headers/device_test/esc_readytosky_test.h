@@ -56,8 +56,7 @@ void esc_readytosky_test_app(void);
  * @param adc_val : ADC input reading (0-255) 
  * @return int16_t : mapped throttle command to be sent to the ESC driver 
  */
-int16_t esc_test_adc_mapping(
-    uint16_t adc_val); 
+int16_t esc_test_adc_mapping(uint16_t adc_val); 
 
 //=======================================================================================
 

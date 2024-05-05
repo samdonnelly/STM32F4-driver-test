@@ -35,13 +35,12 @@
 // Conditional compilation 
 
 // Device 
-#define NRF24L01_DEVICE_1 1           // Enable device 1 code 
-#define NRF24L01_DEVICE_2 0           // Enable device 2 code 
+#define NRF24L01_SYSTEM_1 1           // Enable device 1 code 
+#define NRF24L01_SYSTEM_2 0           // Enable device 2 code 
 
 // Test code 
 #define NRF24L01_HEARTBEAT 0          // Heartbeat 
-#define NRF24L01_MULTI_SPI 1          // SD card on same SPI bus but different pins 
-#define NRF24L01_RC 0                 // Remote control 
+#define NRF24L01_MANUAL_CONTROL 1          // SD card on same SPI bus but different pins 
 
 // Hardware 
 #define NRF24L01_TEST_SCREEN 0        // HD44780U screen in the system - shuts screen off 
@@ -54,6 +53,8 @@
 // User commands 
 #define NRF24L01_TEST_MAX_INPUT 30    // Max user input command length (bytes) 
 #define NRF24L01_NUM_USER_CMDS 4      // Number of test states 
+
+#define MAX_INPUT_LEN 30 
 
 //=======================================================================================
 
@@ -77,6 +78,27 @@ typedef enum {
 //=======================================================================================
 // Global Variables 
 
+// Command template 
+typedef struct nrf24l01_cmds_s 
+{
+    char *user_cmds; 
+    void (*cmd_ptr)(uint8_t); 
+}
+nrf24l01_cmds_t; 
+
+
+// User command data 
+typedef struct nrf24l01_cmd_data_s 
+{
+    uint8_t cb[MAX_INPUT_LEN];        // Circular buffer (CB) that stores user inputs 
+    uint8_t cb_index;                 // CB index used for parsing commands 
+    uint8_t cmd_buff[MAX_INPUT_LEN];  // Stores a user command parsed from the CB 
+    uint8_t cmd_id[MAX_INPUT_LEN];    // Stores the ID of the user command 
+    uint8_t cmd_value;                // Stores the value of the user command 
+}
+nrf24l01_cmd_data_t; 
+
+
 // Device tracker data record 
 typedef struct nrf24l01_test_trackers_s 
 {
@@ -88,20 +110,20 @@ typedef struct nrf24l01_test_trackers_s
     nrf24l01_data_pipe_t pipe; 
 
     // User command data 
-    uint8_t user_buff[NRF24L01_TEST_MAX_INPUT];    // Circular buffer (CB) that stores user inputs 
-    uint8_t buff_index;                            // CB index used for parsing commands 
-    uint8_t cmd_buff[NRF24L01_TEST_MAX_INPUT];     // Stores a user command parsed from the CB 
-    uint8_t cmd_id[NRF24L01_TEST_MAX_INPUT];       // Stores the ID of the user command 
-    uint8_t cmd_value;                             // Stores the value of the user command 
+    // uint8_t user_buff[NRF24L01_TEST_MAX_INPUT];    // Circular buffer (CB) that stores user inputs 
+    // uint8_t buff_index;                            // CB index used for parsing commands 
+    // uint8_t cmd_buff[NRF24L01_TEST_MAX_INPUT];     // Stores a user command parsed from the CB 
+    // uint8_t cmd_id[NRF24L01_TEST_MAX_INPUT];       // Stores the ID of the user command 
+    // uint8_t cmd_value;                             // Stores the value of the user command 
 
     // Payload data 
     uint8_t hb_msg[NRF24L01_MAX_PAYLOAD_LEN];      // Heartbeat message 
     uint8_t read_buff[NRF24L01_MAX_PAYLOAD_LEN];   // Data read by PRX from PTX device 
     uint8_t write_buff[NRF24L01_MAX_PAYLOAD_LEN];  // Data sent to PRX from PTX device 
 
-    // Status 
-    uint8_t state;                                 // Test code "state" 
-    uint8_t conn_status;                           // Device connection status 
+    // // Status 
+    // uint8_t state;                                 // Test code "state" 
+    // uint8_t conn_status;                           // Device connection status 
 }
 nrf24l01_test_trackers_t; 
 
@@ -115,18 +137,21 @@ static nrf24l01_test_trackers_t nrf24l01_test;
 // Function prototypes 
 
 // Setup and looped code for each test 
-void nrf24l01_test_heartbeat_init(void); 
-void nrf24l01_test_multi_spi_init(void); 
-void nrf24l01_test_rc_init(void); 
-void nrf24l01_test_heartbeat_loop(void); 
-void nrf24l01_test_multi_spi_loop(void); 
-void nrf24l01_test_rc_loop(void); 
+void nrf24l01_heartbeat_test_init(void); 
+void nrf24l01_manual_control_test_init(void); 
+void nrf24l01_heartbeat_test_loop(void); 
+void nrf24l01_manual_control_test_loop(void); 
 
 
 /**
  * @brief User serial terminal input 
+ * 
+ * @param cmd_data 
+ * @param cmd_table 
  */
-void nrf24l01_test_user_input(void); 
+void nrf24l01_test_user_input(
+    nrf24l01_cmd_data_t *cmd_data, 
+    nrf24l01_cmds_t *cmd_table); 
 
 
 /**
@@ -142,10 +167,11 @@ void nrf24l01_test_user_input(void);
  * @see nrf24l01_test_rf_pwr 
  * @see nrf24l01_test_status 
  * 
- * @param command_buffer : buffer that contains the unparsed user command 
+//  * @param command_buffer : buffer that contains the unparsed user command 
+ * @param cmd_data : user command data 
  * @return uint8_t : status of the parse - return true for a valid command 
  */
-uint8_t nrf24l01_test_parse_cmd(uint8_t *command_buffer); 
+uint8_t nrf24l01_test_parse_cmd(nrf24l01_cmd_data_t *cmd_data); 
 
 
 /**
@@ -219,14 +245,14 @@ void nrf24l01_test_invalid_input(void);
 //=======================================================================================
 // User commands 
 
-// // Command pointers 
-// typedef struct nrf24l01_user_cmds_s 
-// {
-//     const char user_cmds[NRF24L01_TEST_MAX_INPUT]; 
-//     void (*nrf24l01_test_func_ptr)(uint8_t); 
-//     uint8_t cmd_mask; 
-// }
-// nrf24l01_user_cmds_t; 
+// Command pointers 
+typedef struct nrf24l01_user_cmds_s 
+{
+    const char user_cmds[NRF24L01_TEST_MAX_INPUT]; 
+    void (*nrf24l01_test_func_ptr)(uint8_t); 
+    uint8_t cmd_mask; 
+}
+nrf24l01_user_cmds_t; 
 
 
 // // Command table 
@@ -280,47 +306,23 @@ void nrf24l01_test_init(void)
         UART_FRAC_42_9600, 
         UART_MANT_42_9600, 
         UART_DMA_DISABLE, 
-        UART_DMA_ENABLE); 
+        UART_DMA_ENABLE);   // 
 
-    // Enable the IDLE line interrupt 
-    uart_interrupt_init(
-        USART2, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_ENABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE); 
+    //==================================================
 
-    // Initialize the DMA stream for the UART 
-    dma_stream_init(
-        DMA1, 
-        DMA1_Stream5, 
-        DMA_CHNL_4, 
-        DMA_DIR_PM, 
-        DMA_CM_ENABLE,
-        DMA_PRIOR_VHI, 
-        DMA_ADDR_INCREMENT,   // Increment the buffer pointer to fill the buffer 
-        DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
-        DMA_DATA_SIZE_BYTE, 
-        DMA_DATA_SIZE_BYTE); 
+    //==================================================
+    // Initialize SPI 
 
-    // Configure the DMA stream for the UART 
-    dma_stream_config(
-        DMA1_Stream5, 
-        (uint32_t)(&USART2->DR), 
-        (uint32_t)nrf24l01_test.user_buff, 
-        (uint16_t)NRF24L01_TEST_MAX_INPUT); 
-
-    // Enable the DMA stream for the UART 
-    dma_stream_enable(DMA1_Stream5); 
-
-    // Initialize interrupt handler flags (called once) 
-    int_handler_init(); 
-
-    // Enable the interrupt handlers (called for each interrupt) - for USART2_RX 
-    nvic_config(USART2_IRQn, EXTI_PRIORITY_0); 
+    // SPI for the RF module 
+    spi_init(
+        SPI2, 
+        GPIOB,   // GPIO port for SCK pin 
+        PIN_10,  // SCK pin 
+        GPIOC,   // GPIO port for data (MISO/MOSI) pins 
+        PIN_2,   // MISO pin 
+        PIN_3,   // MOSI pin 
+        SPI_BR_FPCLK_16, 
+        SPI_CLOCK_MODE_0); 
 
     //==================================================
 
@@ -352,22 +354,6 @@ void nrf24l01_test_init(void)
     //==================================================
 
     //==================================================
-    // Initialize SPI 
-
-    // SPI for the RF module 
-    spi_init(
-        SPI2, 
-        GPIOB,   // GPIO port for SCK pin 
-        PIN_10,  // SCK pin 
-        GPIOC,   // GPIO port for data (MISO/MOSI) pins 
-        PIN_2,   // MISO pin 
-        PIN_3,   // MOSI pin 
-        SPI_BR_FPCLK_16, 
-        SPI_CLOCK_MODE_0); 
-
-    //==================================================
-
-    //==================================================
     // Initialize test data 
 
     // Timing 
@@ -381,11 +367,11 @@ void nrf24l01_test_init(void)
     nrf24l01_test.pipe = NRF24L01_DP_1; 
 
     // User command data 
-    memset((void *)nrf24l01_test.user_buff, CLEAR, sizeof(nrf24l01_test.user_buff)); 
-    nrf24l01_test.buff_index = CLEAR; 
-    memset((void *)nrf24l01_test.cmd_buff, CLEAR, sizeof(nrf24l01_test.cmd_buff)); 
-    memset((void *)nrf24l01_test.cmd_id, CLEAR, sizeof(nrf24l01_test.cmd_id)); 
-    nrf24l01_test.cmd_value = CLEAR; 
+    // memset((void *)nrf24l01_test.user_buff, CLEAR, sizeof(nrf24l01_test.user_buff)); 
+    // nrf24l01_test.buff_index = CLEAR; 
+    // memset((void *)nrf24l01_test.cmd_buff, CLEAR, sizeof(nrf24l01_test.cmd_buff)); 
+    // memset((void *)nrf24l01_test.cmd_id, CLEAR, sizeof(nrf24l01_test.cmd_id)); 
+    // nrf24l01_test.cmd_value = CLEAR; 
 
     // Payload data 
     strcpy((char *)nrf24l01_test.hb_msg, "ping"); 
@@ -393,7 +379,7 @@ void nrf24l01_test_init(void)
     memset((void *)nrf24l01_test.write_buff, CLEAR, sizeof(nrf24l01_test.write_buff)); 
 
     // Status 
-    nrf24l01_test.conn_status = CLEAR_BIT; 
+    // nrf24l01_test.conn_status = CLEAR_BIT; 
 
     //==================================================
 
@@ -403,7 +389,6 @@ void nrf24l01_test_init(void)
     NRF24L01_STATUS nrf24l01_init_status = NRF24L01_OK; 
 
     // General setup common to all device - must be called once during setup 
-    // NRF24L01_STATUS init_status = nrf24l01_init(
     nrf24l01_init_status |= nrf24l01_init(
         SPI2,                    // SPI port to use 
         GPIOC,                   // Slave select pin GPIO port 
@@ -425,26 +410,21 @@ void nrf24l01_test_init(void)
     // Check init status 
     if (nrf24l01_init_status)
     {
-        uart_sendstring(USART2, "nRF24L01 init failed."); 
+        uart_sendstring(USART2, "nRF24L01 init failed.\r\n"); 
         while(1); 
     }
     else 
     {
-        uart_sendstring(USART2, "nRF24L01 init success."); 
+        uart_sendstring(USART2, "nRF24L01 init success.\r\n"); 
     }
 
     //==================================================
 
 #if NRF24L01_HEARTBEAT 
-    nrf24l01_test_heartbeat_init(); 
-#elif NRF24L01_MULTI_SPI 
-    nrf24l01_test_multi_spi_init(); 
-#elif NRF24L01_RC 
-    nrf24l01_test_rc_init(); 
+    nrf24l01_heartbeat_test_init(); 
+#elif NRF24L01_MANUAL_CONTROL 
+    nrf24l01_manual_control_test_init(); 
 #endif 
-
-    // Provide an initial user prompt 
-    uart_sendstring(USART2, "\r\n>>> "); 
 }
 
 //=======================================================================================
@@ -458,11 +438,9 @@ void nrf24l01_test_app(void)
     // Universal (to all nrf24l01 tests) application test code 
 
 #if NRF24L01_HEARTBEAT 
-    nrf24l01_test_heartbeat_loop(); 
-#elif NRF24L01_MULTI_SPI 
-    nrf24l01_test_multi_spi_loop(); 
-#elif NRF24L01_RC 
-    nrf24l01_test_rc_loop(); 
+    nrf24l01_heartbeat_test_loop(); 
+#elif NRF24L01_MANUAL_CONTROL 
+    nrf24l01_manual_control_test_loop(); 
 #endif 
 }
 
@@ -498,13 +476,13 @@ void nrf24l01_test_app(void)
 //==================================================
 // Variables 
 
-#if NRF24L01_DEVICE_1 
+#if NRF24L01_SYSTEM_1 
 
 static const char 
 hb_message[] = "ping%u", 
 hb_response[] = "pong%u!"; 
 
-#elif NRF24L01_DEVICE_2 
+#elif NRF24L01_SYSTEM_2 
 #endif 
 
 // Device tracker data record 
@@ -530,7 +508,7 @@ static hb_test_trackers_t hb_test;
 //==================================================
 // Setup 
 
-void nrf24l01_test_heartbeat_init(void)
+void nrf24l01_heartbeat_test_init(void)
 {
     hb_test.send_timer = CLEAR; 
     hb_test.msg_counter = CLEAR; 
@@ -539,12 +517,12 @@ void nrf24l01_test_heartbeat_init(void)
     memset((void *)hb_test.hb_res, CLEAR, sizeof(hb_test.hb_res)); 
     hb_test.led_state = GPIO_LOW; 
 
-#if NRF24L01_DEVICE_1 
+#if NRF24L01_SYSTEM_1 
 
     snprintf(hb_test.hb_msg, NRF24L01_MAX_PAYLOAD_LEN, hb_message, hb_test.msg_counter); 
     snprintf(hb_test.hb_res, NRF24L01_MAX_PAYLOAD_LEN, hb_response, hb_test.msg_counter); 
 
-#elif NRF24L01_DEVICE_2 
+#elif NRF24L01_SYSTEM_2 
 #endif 
 }
 
@@ -554,7 +532,7 @@ void nrf24l01_test_heartbeat_init(void)
 //==================================================
 // Loop 
 
-void nrf24l01_test_heartbeat_loop(void)
+void nrf24l01_heartbeat_test_loop(void)
 {
     // Periodically check for action items 
     if (tim_compare(nrf24l01_test.timer_nonblocking, 
@@ -567,7 +545,7 @@ void nrf24l01_test_heartbeat_loop(void)
         // time_start flag does not need to be set again because this timer runs 
         // continuously. 
 
-#if NRF24L01_DEVICE_1 
+#if NRF24L01_SYSTEM_1 
 
         // Send heartbeat message periodically 
         if (!hb_test.send_timer++)
@@ -608,7 +586,7 @@ void nrf24l01_test_heartbeat_loop(void)
             }
         }
 
-#elif NRF24L01_DEVICE_2 
+#elif NRF24L01_SYSTEM_2 
 
         // Look for a heartbeat message 
         if (nrf24l01_data_ready_status() == nrf24l01_test.pipe)
@@ -642,125 +620,28 @@ void nrf24l01_test_heartbeat_loop(void)
 //=======================================================================================
 
 
-#elif NRF24L01_MULTI_SPI 
+#elif NRF24L01_MANUAL_CONTROL 
 
 //=======================================================================================
-// Multi SPI test 
+// Manual control test 
 
 // Description 
-// - Device 1 (master) sends a user input message to device 2 (slave) upon user request 
-// - Device 2 reads message and attempts to save it to a file on an SD card 
-// - Device 2 reports back the status of the SD card write to device 1 
-
-//==================================================
-// Macros 
-//==================================================
-
-
-//==================================================
-// Variables 
-//==================================================
-
-
-//==================================================
-// Prototypes 
-//==================================================
-
-
-//==================================================
-// Setup 
-
-void nrf24l01_test_multi_spi_init(void)
-{
-#if NRF24L01_DEVICE_1 
-
-    nrf24l01_test.state = NRF24L01_TEST_DEV1_MSPI_STATE; 
-
-#elif NRF24L01_DEVICE_2 
-
-    //==================================================
-    // Initialize SPI 
-
-    // SPI2 and slave select pin for SD card 
-    // This is on different pins than the RF module to test if the same SPI bus works across 
-    // multiple pins. 
-    spi_init(
-        SPI2, 
-        GPIOB,   // SCK pin GPIO port 
-        PIN_10,  // SCK pin 
-        GPIOB,   // Data (MISO/MOSI) pin GPIO port 
-        PIN_14,  // MISO pin 
-        PIN_15,  // MOSI pin 
-        SPI_BR_FPCLK_16, 
-        SPI_CLOCK_MODE_0); 
-    spi_ss_init(GPIOB, PIN_12); 
-
-    //==================================================
-
-    //==================================================
-    // Initialize SD card --> for testing multiple SPI pins on the same SPI bus 
-
-    // SD card user initialization 
-    hw125_user_init(SPI2, GPIOB, GPIOX_PIN_12); 
-    
-    //==================================================
-
-    //==================================================
-    // Initialize variables 
-
-    nrf24l01_test.state = NRF24L01_TEST_DEV2_MSPI_STATE; 
-    
-    //==================================================
-
-#endif 
-}
-
-//==================================================
-
-
-//==================================================
-// Loop 
-
-void nrf24l01_test_multi_spi_loop(void)
-{
-#if NRF24L01_DEVICE_1 
-    // Test code 
-#elif NRF24L01_DEVICE_2 
-    // Test code 
-#endif 
-}
-
-//==================================================
-
-
-//==================================================
-// Test functions 
-//==================================================
-
-//=======================================================================================
-
-
-#elif NRF24L01_RC 
-
-//=======================================================================================
-// RC (remote control) test 
-
-// Description 
-// - Device 1 (master) sends throttle command to device 2 (slave) 
-// - Device 2 reads throttle command 
-// - Throttle command goes to the ESC driver 
+// - System 1: 
+//   - Looks for user input at the serial terminal. If there is an input then try to 
+//     match it to one of the pre-defined commands. If a command is matched then execute 
+//     the command. If not then do nothing. 
+//   - Available commands will be to change device settings and ping the second system. 
+//   - Periodically looks for a message from the second system. The second system will 
+//     only send a message when responding to a ping. 
+// - System 2: 
+//   - Periodically check for a ping message from system 1. If a message is received then 
+//     the message is checked to see if it matched the ping message. If there is a match 
+//     then a response is sent. 
 
 //==================================================
 // Macros 
 
-#define NRF24L01_LEFT_MOTOR 0x4C    // "L" character that indicates left motor 
-#define NRF24L01_RIGHT_MOTOR 0x52   // "R" character that indicates right motor 
-#define NRF24L01_FWD_THRUST 0x50    // "P" (plus) - indicates forward thrust 
-#define NRF24L01_REV_THRUST 0x4D    // "M" (minus) - indicates reverse thrust 
-#define NRF24L01_NEUTRAL 0x4E       // "N" (neutral) - indicates neutral gear or zero thrust 
-#define NRF24L01_NO_THRUST 0        // Force thruster output to zero 
-#define NRF24L01_TEST_ADC_NUM 2     // Number of ADCs used for throttle command 
-#define NRF24L01_RC_PERIOD 50000    // Time between throttle command sends (us) 
+#define MC_PERIOD 100000             // Time between checking for new data (us) 
 
 //==================================================
 
@@ -768,8 +649,26 @@ void nrf24l01_test_multi_spi_loop(void)
 //==================================================
 // Variables 
 
-// ADC storage 
-static uint16_t adc_data[NRF24L01_TEST_ADC_NUM];  // Location for the DMA to store ADC values 
+static const char 
+ping_msg[] = "ping", 
+ping_res[] = "pong", 
+set_ch[] = "channel", 
+set_dr[] = "data_rate", 
+set_pwr[] = "power"; 
+
+
+// Command table 
+static const nrf24l01_cmds_t mc_cmd_table[] = 
+{
+    {ping_msg, &nrf24l01_test_rf_ch}, 
+    {set_ch,   &nrf24l01_test_rf_dr}, 
+    {set_dr,   &nrf24l01_test_rf_pwr}, 
+    {set_pwr,  &nrf24l01_test_status} 
+}; 
+
+
+// 
+static nrf24l01_cmd_data_t mc_cmd_data; 
 
 //==================================================
 
@@ -782,114 +681,65 @@ static uint16_t adc_data[NRF24L01_TEST_ADC_NUM];  // Location for the DMA to sto
 //==================================================
 // Setup 
 
-void nrf24l01_test_rc_init(void)
+void nrf24l01_manual_control_test_init(void)
 {
-#if NRF24L01_DEVICE_1   // Device one 
-
-    //===================================================
-    // ADC setup - for user controller mode 
-
-    // Initialize the ADC port (called once) 
-    adc1_clock_enable(RCC); 
-    adc_port_init(
-        ADC1, 
-        ADC1_COMMON, 
-        ADC_PCLK2_4, 
-        ADC_RES_8, 
-        ADC_PARAM_ENABLE, 
-        ADC_PARAM_ENABLE, 
-        ADC_PARAM_ENABLE, 
-        ADC_PARAM_ENABLE, 
-        ADC_PARAM_ENABLE, 
-        ADC_PARAM_DISABLE, 
-        ADC_PARAM_DISABLE); 
-
-    // Initialize the ADC pins and channels (called for each pin/channel) 
-    adc_pin_init(ADC1, GPIOA, PIN_6, ADC_CHANNEL_6, ADC_SMP_15); 
-    adc_pin_init(ADC1, GPIOA, PIN_7, ADC_CHANNEL_7, ADC_SMP_15); 
-
-    // Set the ADC conversion sequence (called for each sequence entry) 
-    adc_seq(ADC1, ADC_CHANNEL_6, ADC_SEQ_1); 
-    adc_seq(ADC1, ADC_CHANNEL_7, ADC_SEQ_2); 
-
-    // Set the sequence length (called once and only for more than one channel) 
-    adc_seq_len_set(ADC1, ADC_SEQ_2); 
-
-    // Turn the ADC on 
-    adc_on(ADC1); 
-    
-    //===================================================
+#if NRF24L01_SYSTEM_1 
 
     //==================================================
-    // Initialize DMA 
+    // UART DMA 
 
-    // Initialize the DMA stream for the ADC 
+    // Enable the IDLE line interrupt 
+    uart_interrupt_init(
+        USART2, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_ENABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE); 
+
+    // Initialize the DMA stream for the UART 
     dma_stream_init(
-        DMA2, 
-        DMA2_Stream0, 
-        DMA_CHNL_0, 
+        DMA1, 
+        DMA1_Stream5, 
+        DMA_CHNL_4, 
         DMA_DIR_PM, 
         DMA_CM_ENABLE,
         DMA_PRIOR_VHI, 
-        DMA_ADDR_INCREMENT, 
+        DMA_ADDR_INCREMENT,   // Increment the buffer pointer to fill the buffer 
         DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
-        DMA_DATA_SIZE_HALF, 
-        DMA_DATA_SIZE_HALF); 
+        DMA_DATA_SIZE_BYTE, 
+        DMA_DATA_SIZE_BYTE); 
 
-    // Configure the DMA stream for the ADC 
+    // Configure the DMA stream for the UART 
     dma_stream_config(
-        DMA2_Stream0, 
-        (uint32_t)(&ADC1->DR), 
-        (uint32_t)adc_data, 
-        (uint16_t)NRF24L01_TEST_ADC_NUM); 
+        DMA1_Stream5, 
+        (uint32_t)(&USART2->DR), 
+        (uint32_t)mc_cmd_data.cb, 
+        (uint16_t)NRF24L01_TEST_MAX_INPUT); 
 
-    // Enable the DMA stream for the ADC 
-    dma_stream_enable(DMA2_Stream0); 
+    // Enable the DMA stream for the UART 
+    dma_stream_enable(DMA1_Stream5); 
 
-    // Start the ADC conversions (continuous mode) 
-    adc_start(ADC1); 
+    // Initialize interrupt handler flags (called once) 
+    int_handler_init(); 
+
+    // Enable the interrupt handlers (called for each interrupt) - for USART2_RX 
+    nvic_config(USART2_IRQn, EXTI_PRIORITY_0); 
 
     //==================================================
 
-    //==================================================
-    // Initialize variables 
+    memset((void *)mc_cmd_data.cb, CLEAR, sizeof(mc_cmd_data.cb)); 
+    mc_cmd_data.cb_index = CLEAR; 
+    memset((void *)mc_cmd_data.cmd_buff, CLEAR, sizeof(mc_cmd_data.cmd_buff)); 
+    memset((void *)mc_cmd_data.cmd_id, CLEAR, sizeof(mc_cmd_data.cmd_id)); 
+    mc_cmd_data.cmd_value = CLEAR; 
 
-    nrf24l01_test.state = NRF24L01_TEST_DEV1_RC_STATE; 
-    memset((void *)adc_data, CLEAR, sizeof(adc_data)); 
+    // Provide an initial user prompt 
+    uart_sendstring(USART2, "\r\n>>> "); 
     
-    //==================================================
-
-#else   // Device two 
-
-    // ESC driver setup 
-    esc_readytosky_init(
-        DEVICE_ONE, 
-        TIM3, 
-        TIMER_CH4, 
-        GPIOB, 
-        PIN_1, 
-        TIM_84MHZ_1US_PSC, 
-        ESC_PERIOD, 
-        ESC_FWD_SPEED_LIM, 
-        ESC_REV_SPEED_LIM); 
-
-    esc_readytosky_init(
-        DEVICE_TWO, 
-        TIM3, 
-        TIMER_CH3, 
-        GPIOB, 
-        PIN_0, 
-        TIM_84MHZ_1US_PSC, 
-        ESC_PERIOD, 
-        ESC_FWD_SPEED_LIM, 
-        ESC_REV_SPEED_LIM); 
-
-    // Enable the PWM timer 
-    tim_enable(TIM3); 
-
-    // Initialize variables 
-    nrf24l01_test.state = NRF24L01_TEST_DEV2_RC_STATE; 
-
+#elif NRF24L01_SYSTEM_2 
 #endif 
 }
 
@@ -899,21 +749,19 @@ void nrf24l01_test_rc_init(void)
 //==================================================
 // Loop 
 
-void nrf24l01_test_rc_loop(void)
+void nrf24l01_manual_control_test_loop(void)
 {
-#if NRF24L01_DEVICE_1   // Device one 
+#if NRF24L01_SYSTEM_1 
 
-    static gpio_pin_state_t led_state = GPIO_LOW; 
-    static uint8_t thruster = CLEAR; 
-    char side = CLEAR; 
-    char sign = NRF24L01_FWD_THRUST; 
-    int16_t throttle = CLEAR; 
+    // Check for user input 
+    nrf24l01_test_user_input(&mc_cmd_data, mc_cmd_table); 
+    
+#endif 
 
-    // Periodically send the throttle command - alternate between left and right side throttle 
-    // commands for each send. 
+    // Periodically check for action items 
     if (tim_compare(nrf24l01_test.timer_nonblocking, 
                     nrf24l01_test.delay_timer.clk_freq, 
-                    NRF24L01_RC_PERIOD, 
+                    MC_PERIOD, 
                     &nrf24l01_test.delay_timer.time_cnt_total, 
                     &nrf24l01_test.delay_timer.time_cnt, 
                     &nrf24l01_test.delay_timer.time_start))
@@ -921,301 +769,33 @@ void nrf24l01_test_rc_loop(void)
         // time_start flag does not need to be set again because this timer runs 
         // continuously. 
 
-        // Choose between right and left thruster 
-        side = (thruster) ? NRF24L01_LEFT_MOTOR : NRF24L01_RIGHT_MOTOR; 
+#if NRF24L01_SYSTEM_1 
 
-        // Read the ADC input and format the value for writing to the payload 
-        throttle = esc_test_adc_mapping(adc_data[thruster]); 
-        if (throttle == NRF24L01_NO_THRUST)
+        // 
+
+#elif NRF24L01_SYSTEM_2 
+
+        // Look for a heartbeat message 
+        if (nrf24l01_data_ready_status() == nrf24l01_test.pipe)
         {
-            sign = NRF24L01_NEUTRAL; 
-        }
-        else if (throttle < NRF24L01_NO_THRUST)
-        {
-            // If the throttle is negative then change the value to positive and set the sign 
-            // in the payload as negative. This helps on the receiving end. 
-            throttle = ~throttle + 1; 
-            sign = NRF24L01_REV_THRUST; 
-        }
+            nrf24l01_receive_payload(nrf24l01_test.read_buff); 
 
-        // Format the payload with the thruster specifier and the throttle then send the 
-        // payload. 
-        snprintf(
-            (char *)nrf24l01_test.write_buff, 
-            NRF24L01_MAX_PAYLOAD_LEN, 
-            "%c%c%d", 
-            side, sign, throttle); 
-
-        if (nrf24l01_send_payload(nrf24l01_test.write_buff))
-        {
-            led_state = GPIO_HIGH - led_state; 
-            gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
-        } 
-
-        // Toggle the thruster flag 
-        thruster = SET_BIT - thruster; 
-    }
-
-#else   // Device two 
-
-    //==================================================
-    // Note 
-    // - Bit shifting works on signed integers - the sign bit is respected. 
-    //==================================================
-    
-    // Local variables 
-    static int16_t right_throttle = CLEAR; 
-    static int16_t left_throttle = CLEAR; 
-    int16_t cmd_value = CLEAR; 
-
-    // Check if a payload has been received 
-    if (nrf24l01_data_ready_status(NRF24L01_DP_1))
-    {
-        // Payload has been received. Read the payload from the device RX FIFO. 
-        nrf24l01_receive_payload(nrf24l01_test.read_buff, NRF24L01_DP_1); 
-
-        // Validate the payload format 
-        if (nrf24l01_test_parse_cmd(&nrf24l01_test.read_buff[1]))
-        {
-            // Check that the command matches a valid throttle command. If it does then update 
-            // the thruster command. 
-
-            cmd_value = (int16_t)nrf24l01_test.cmd_value; 
-
-            if (nrf24l01_test.cmd_id[0] == NRF24L01_RIGHT_MOTOR)
+            // If a ping message is seen then send a response back 
+            if (!strcmp(ping_msg, (char *)nrf24l01_test.read_buff))
             {
-                switch (nrf24l01_test.cmd_id[1])
-                {
-                    case NRF24L01_FWD_THRUST: 
-                        right_throttle += (cmd_value - right_throttle) >> SHIFT_3; 
-                        esc_readytosky_send(DEVICE_ONE, right_throttle); 
-                        break; 
-                    case NRF24L01_REV_THRUST: 
-                        right_throttle += ((~cmd_value + 1) - right_throttle) >> SHIFT_3; 
-                        esc_readytosky_send(DEVICE_ONE, right_throttle); 
-                        break; 
-                    case NRF24L01_NEUTRAL: 
-                        if (cmd_value == NRF24L01_NO_THRUST)
-                        {
-                            right_throttle = NRF24L01_NO_THRUST; 
-                            esc_readytosky_send(DEVICE_ONE, right_throttle); 
-                        }
-                        break; 
-                    default: 
-                        break; 
-                }
-            }
-            else if (nrf24l01_test.cmd_id[0] == NRF24L01_LEFT_MOTOR)
-            {
-                switch (nrf24l01_test.cmd_id[1])
-                {
-                    case NRF24L01_FWD_THRUST: 
-                        left_throttle += (cmd_value - left_throttle) >> SHIFT_3; 
-                        esc_readytosky_send(DEVICE_TWO, left_throttle); 
-                        break; 
-                    case NRF24L01_REV_THRUST: 
-                        left_throttle += ((~cmd_value + 1) - left_throttle) >> SHIFT_3; 
-                        esc_readytosky_send(DEVICE_TWO, left_throttle); 
-                        break; 
-                    case NRF24L01_NEUTRAL: 
-                        if (cmd_value == NRF24L01_NO_THRUST)
-                        {
-                            left_throttle = NRF24L01_NO_THRUST; 
-                            esc_readytosky_send(DEVICE_TWO, left_throttle); 
-                        }
-                        break; 
-                    default: 
-                        break; 
-                }
+                nrf24l01_send_payload((uint8_t *)ping_res);     
             }
         }
-
-        memset((void *)nrf24l01_test.read_buff, CLEAR, 
-               sizeof(nrf24l01_test.read_buff)); 
-    }
 
 #endif 
+    }
 }
-
-//     static uint8_t timeout_count = CLEAR; 
-
-//     // Increment the timeout counter periodically 
-//     if (tim_compare(nrf24l01_test.timer_nonblocking, 
-//                     nrf24l01_test.delay_timer.clk_freq, 
-//                     HB_PERIOD, 
-//                     &nrf24l01_test.delay_timer.time_cnt_total, 
-//                     &nrf24l01_test.delay_timer.time_cnt, 
-//                     &nrf24l01_test.delay_timer.time_start))
-//     {
-//         // time_start flag does not need to be set again because this timer runs 
-//         // continuously. 
-
-//         // Increment the timeout count until it's at the threshold at which point hold 
-//         // the count and clear the connection status. 
-//         if (timeout_count >= NRF24L01_HB_TIMEOUT)
-//         {
-//             nrf24l01_test.conn_status = CLEAR_BIT; 
-//         }
-//         else 
-//         {
-//             timeout_count++; 
-//         }
-//     }
-    
-//     // Check if a payload has been received 
-//     if (nrf24l01_data_ready_status())
-//     {
-//         // Payload has been received. Read the payload from the device RX FIFO. 
-//         nrf24l01_receive_payload(nrf24l01_test.read_buff); 
-
-//         // Check to see if the received payload matches the heartbeat message 
-//         if (str_compare((char *)nrf24l01_test.hb_msg, 
-//                         (char *)nrf24l01_test.read_buff, 
-//                         BYTE_1))
-//         {
-//             // Heartbeat message received - reset the timeout and set the connection status 
-//             timeout_count = CLEAR; 
-//             nrf24l01_test.conn_status = SET_BIT; 
-//         }
-
-//         memset((void *)nrf24l01_test.read_buff, CLEAR, 
-//                sizeof(nrf24l01_test.read_buff)); 
-//     }
 
 //==================================================
 
 
 //==================================================
 // Test functions 
-//==================================================
-
-//=======================================================================================
-
-#endif 
-
-
-//=======================================================================================
-// Test functions 
-
-// User serial terminal input 
-void nrf24l01_test_user_input(void)
-{
-    // // Check for user serial terminal input 
-    // if (handler_flags.usart2_flag)
-    // {
-    //     // Reset the USART2 interrupt flag 
-    //     handler_flags.usart2_flag = CLEAR; 
-
-    //     // Copy the new contents in the circular buffer to the user input buffer 
-    //     cb_parse(
-    //         nrf24l01_test.user_buff, 
-    //         nrf24l01_test.cmd_buff, 
-    //         &nrf24l01_test.buff_index, 
-    //         NRF24L01_TEST_MAX_INPUT); 
-
-    //     // Validate the input - parse into an ID and value if valid 
-    //     if (nrf24l01_test_parse_cmd(nrf24l01_test.cmd_buff))
-    //     {
-    //         // Valid input - compare the ID to each of the available pre-defined commands 
-    //         for (uint8_t i = CLEAR; i < NRF24L01_NUM_USER_CMDS; i++) 
-    //         {
-    //             // Check that the command is available for the "state" before comparing it 
-    //             // against the ID. 
-    //             if (cmd_table[i].cmd_mask & (SET_BIT << nrf24l01_test.state))
-    //             {
-    //                 // Command available. Compare with the ID. 
-    //                 if (str_compare(
-    //                         cmd_table[i].user_cmds, 
-    //                         (char *)nrf24l01_test.cmd_id, 
-    //                         BYTE_0)) 
-    //                 {
-    //                     // ID matched to a command. Execute the command. 
-    //                     (cmd_table[i].nrf24l01_test_func_ptr)(nrf24l01_test.cmd_value); 
-    //                     break; 
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     uart_sendstring(USART2, "\r\n>>> "); 
-    // }
-}
-
-
-// Parse the user command into an ID and value 
-uint8_t nrf24l01_test_parse_cmd(uint8_t *command_buffer)
-{
-    // Local variables 
-    uint8_t id_flag = SET_BIT; 
-    uint8_t id_index = CLEAR; 
-    uint8_t data = CLEAR; 
-    uint8_t cmd_value[NRF24L01_TEST_MAX_INPUT]; 
-    uint8_t value_size = CLEAR; 
-
-    // Initialize data 
-    memset((void *)nrf24l01_test.cmd_id, CLEAR, sizeof(nrf24l01_test.cmd_id)); 
-    nrf24l01_test.cmd_value = CLEAR; 
-    memset((void *)cmd_value, CLEAR, sizeof(cmd_value)); 
-
-    // Parse the command into an ID and value 
-    for (uint8_t i = CLEAR; command_buffer[i] != NULL_CHAR; i++)
-    {
-        data = command_buffer[i]; 
-
-        if (id_flag)
-        {
-            // cmd ID parsing 
-
-            id_index = i; 
-
-            // Check that the command byte is within range 
-            if ((data >= A_LO_CHAR && data <= Z_LO_CHAR) || 
-                (data >= A_UP_CHAR && data <= Z_UP_CHAR))
-            {
-                // Valid character byte seen 
-                nrf24l01_test.cmd_id[i] = data; 
-            }
-            else if (data >= ZERO_CHAR && data <= NINE_CHAR)
-            {
-                // Valid digit character byte seen 
-                id_flag = CLEAR_BIT; 
-                nrf24l01_test.cmd_id[i] = NULL_CHAR; 
-                cmd_value[i-id_index] = data; 
-                value_size++; 
-            }
-            else 
-            {
-                // Valid data not seen 
-                return FALSE; 
-            }
-        }
-        else 
-        {
-            // cmd value parsing 
-
-            if (data >= ZERO_CHAR && data <= NINE_CHAR)
-            {
-                // Valid digit character byte seen 
-                cmd_value[i-id_index] = data; 
-                value_size++; 
-            }
-            else 
-            {
-                // Valid data not seen 
-                return FALSE; 
-            }
-        }
-    }
-
-    // Calculate the cmd value 
-    for (uint8_t i = CLEAR; i < value_size; i++)
-    {
-        nrf24l01_test.cmd_value += (uint8_t)char_to_int(cmd_value[i], value_size-i-1); 
-    }
-
-    return TRUE; 
-}
-
 
 // RF channel set state 
 void nrf24l01_test_rf_ch(uint8_t rf_ch)
@@ -1277,24 +857,260 @@ void nrf24l01_test_rf_pwr(uint8_t rf_pwr)
 }
 
 
-// PRX device connection status 
-void nrf24l01_test_status(uint8_t dummy_status)
-{
-    if (nrf24l01_test.conn_status)
-    {
-        uart_sendstring(USART2, "\r\nConnected.\r\n"); 
-    }
-    else 
-    {
-        uart_sendstring(USART2, "\r\nNot connected.\r\n"); 
-    }
-}
+// // PRX device connection status 
+// void nrf24l01_test_status(uint8_t dummy_status)
+// {
+//     if (nrf24l01_test.conn_status)
+//     {
+//         uart_sendstring(USART2, "\r\nConnected.\r\n"); 
+//     }
+//     else 
+//     {
+//         uart_sendstring(USART2, "\r\nNot connected.\r\n"); 
+//     }
+// }
 
 
 // Invalid input user feedback 
 void nrf24l01_test_invalid_input(void)
 {
     uart_sendstring(USART2, "\r\nInvalid cmd value.\r\n"); 
+}
+
+//==================================================
+
+//=======================================================================================
+
+#endif 
+
+
+//=======================================================================================
+// Test functions 
+
+// User serial terminal input 
+void nrf24l01_test_user_input(
+    nrf24l01_cmd_data_t *cmd_data, 
+    nrf24l01_cmds_t *cmd_table)
+{
+    // Check for user serial terminal input 
+    if (handler_flags.usart2_flag)
+    {
+        // Reset the USART2 interrupt flag 
+        handler_flags.usart2_flag = CLEAR; 
+
+        // Copy the new contents in the circular buffer to the user input buffer 
+        cb_parse(
+            cmd_data->cb, 
+            cmd_data->cmd_buff, 
+            &cmd_data->cb_index, 
+            MAX_INPUT_LEN); 
+
+        // Validate the input - parse into an ID and value if valid 
+        // if (nrf24l01_test_parse_cmd(cmd_data->cmd_buff))
+        if (nrf24l01_test_parse_cmd(cmd_data))
+        {
+            // Valid input - compare the ID to each of the available pre-defined commands 
+            for (uint8_t i = CLEAR; i < NRF24L01_NUM_USER_CMDS; i++) 
+            {
+                if (!strcmp(cmd_table[i].user_cmds, cmd_data->cmd_id))
+                {
+                    // ID matched to a command. Execute the command. 
+                    (cmd_table[i].cmd_ptr)(cmd_data->cmd_value); 
+                    break; 
+                }
+            }
+        }
+
+        uart_sendstring(USART2, "\r\n>>> "); 
+    }
+
+    //==================================================
+    // Old 
+
+    // // Check for user serial terminal input 
+    // if (handler_flags.usart2_flag)
+    // {
+    //     // Reset the USART2 interrupt flag 
+    //     handler_flags.usart2_flag = CLEAR; 
+
+    //     // Copy the new contents in the circular buffer to the user input buffer 
+    //     cb_parse(
+    //         nrf24l01_test.user_buff, 
+    //         nrf24l01_test.cmd_buff, 
+    //         &nrf24l01_test.buff_index, 
+    //         NRF24L01_TEST_MAX_INPUT); 
+
+    //     // Validate the input - parse into an ID and value if valid 
+    //     if (nrf24l01_test_parse_cmd(nrf24l01_test.cmd_buff))
+    //     {
+    //         // Valid input - compare the ID to each of the available pre-defined commands 
+    //         for (uint8_t i = CLEAR; i < NRF24L01_NUM_USER_CMDS; i++) 
+    //         {
+    //             // Check that the command is available for the "state" before comparing it 
+    //             // against the ID. 
+    //             if (cmd_table[i].cmd_mask & (SET_BIT << nrf24l01_test.state))
+    //             {
+    //                 // Command available. Compare with the ID. 
+    //                 if (str_compare(
+    //                         cmd_table[i].user_cmds, 
+    //                         (char *)nrf24l01_test.cmd_id, 
+    //                         BYTE_0)) 
+    //                 {
+    //                     // ID matched to a command. Execute the command. 
+    //                     (cmd_table[i].nrf24l01_test_func_ptr)(nrf24l01_test.cmd_value); 
+    //                     break; 
+    //                 }
+    //             }
+    //         }
+    //     }
+
+    //     uart_sendstring(USART2, "\r\n>>> "); 
+    // }
+
+    //==================================================
+}
+
+
+// Parse the user command into an ID and value 
+uint8_t nrf24l01_test_parse_cmd(nrf24l01_cmd_data_t *cmd_data)
+{
+    // Local variables 
+    uint8_t id_flag = SET_BIT; 
+    uint8_t id_index = CLEAR; 
+    uint8_t data = CLEAR; 
+    uint8_t cmd_value[NRF24L01_TEST_MAX_INPUT]; 
+    uint8_t value_size = CLEAR; 
+
+    // Initialize data 
+    memset((void *)cmd_data->cmd_id, CLEAR, sizeof(cmd_data->cmd_id)); 
+    cmd_data->cmd_value = CLEAR; 
+    memset((void *)cmd_value, CLEAR, sizeof(cmd_value)); 
+
+    // Parse the command into an ID and value 
+    for (uint8_t i = CLEAR; cmd_data->cmd_buff[i] != NULL_CHAR; i++)
+    {
+        data = cmd_data->cmd_buff[i]; 
+
+        if (id_flag)
+        {
+            // cmd ID parsing 
+
+            id_index = i; 
+
+            // Check that the command byte is within range 
+            if ((data >= A_LO_CHAR && data <= Z_LO_CHAR) || 
+                (data >= A_UP_CHAR && data <= Z_UP_CHAR))
+            {
+                // Valid character byte seen 
+                cmd_data->cmd_id[i] = data; 
+            }
+            else if (data >= ZERO_CHAR && data <= NINE_CHAR)
+            {
+                // Valid digit character byte seen 
+                id_flag = CLEAR_BIT; 
+                cmd_data->cmd_id[i] = NULL_CHAR; 
+                cmd_value[i-id_index] = data; 
+                value_size++; 
+            }
+            else 
+            {
+                // Valid data not seen 
+                return FALSE; 
+            }
+        }
+        else 
+        {
+            // cmd value parsing 
+
+            if (data >= ZERO_CHAR && data <= NINE_CHAR)
+            {
+                // Valid digit character byte seen 
+                cmd_value[i-id_index] = data; 
+                value_size++; 
+            }
+            else 
+            {
+                // Valid data not seen 
+                return FALSE; 
+            }
+        }
+    }
+
+    // Calculate the cmd value 
+    for (uint8_t i = CLEAR; i < value_size; i++)
+    {
+        cmd_data->cmd_value += (uint8_t)char_to_int(cmd_value[i], value_size-i-1); 
+    }
+
+    return TRUE; 
+
+    //==================================================
+    // Old 
+
+    // // Initialize data 
+    // memset((void *)nrf24l01_test.cmd_id, CLEAR, sizeof(nrf24l01_test.cmd_id)); 
+    // nrf24l01_test.cmd_value = CLEAR; 
+    // memset((void *)cmd_value, CLEAR, sizeof(cmd_value)); 
+
+    // // Parse the command into an ID and value 
+    // for (uint8_t i = CLEAR; command_buffer[i] != NULL_CHAR; i++)
+    // {
+    //     data = command_buffer[i]; 
+
+    //     if (id_flag)
+    //     {
+    //         // cmd ID parsing 
+
+    //         id_index = i; 
+
+    //         // Check that the command byte is within range 
+    //         if ((data >= A_LO_CHAR && data <= Z_LO_CHAR) || 
+    //             (data >= A_UP_CHAR && data <= Z_UP_CHAR))
+    //         {
+    //             // Valid character byte seen 
+    //             nrf24l01_test.cmd_id[i] = data; 
+    //         }
+    //         else if (data >= ZERO_CHAR && data <= NINE_CHAR)
+    //         {
+    //             // Valid digit character byte seen 
+    //             id_flag = CLEAR_BIT; 
+    //             nrf24l01_test.cmd_id[i] = NULL_CHAR; 
+    //             cmd_value[i-id_index] = data; 
+    //             value_size++; 
+    //         }
+    //         else 
+    //         {
+    //             // Valid data not seen 
+    //             return FALSE; 
+    //         }
+    //     }
+    //     else 
+    //     {
+    //         // cmd value parsing 
+
+    //         if (data >= ZERO_CHAR && data <= NINE_CHAR)
+    //         {
+    //             // Valid digit character byte seen 
+    //             cmd_value[i-id_index] = data; 
+    //             value_size++; 
+    //         }
+    //         else 
+    //         {
+    //             // Valid data not seen 
+    //             return FALSE; 
+    //         }
+    //     }
+    // }
+
+    // // Calculate the cmd value 
+    // for (uint8_t i = CLEAR; i < value_size; i++)
+    // {
+    //     nrf24l01_test.cmd_value += (uint8_t)char_to_int(cmd_value[i], value_size-i-1); 
+    // }
+
+    // return TRUE; 
+    
+    //==================================================
 }
 
 //=======================================================================================

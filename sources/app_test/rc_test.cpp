@@ -1,0 +1,839 @@
+/**
+ * @file rc_test.cpp
+ * 
+ * @author Sam Donnelly (samueldonnelly11@gmail.com)
+ * 
+ * @brief Remote control (RC) test 
+ * 
+ * @version 0.1
+ * @date 2024-05-05
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
+
+//=======================================================================================
+// Includes 
+
+#include "rc_test.h" 
+
+#include "esc_readytosky_test.h" 
+
+#include "nrf24l01_config.h" 
+
+#include "stm32f4xx_it.h" 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Macros 
+
+//==================================================
+// Conditional compilation 
+
+// Devices 
+#define RC_SYSTEM_1 0 
+#define RC_SYSTEM_2 1 
+
+// Test code 
+#define RC_SD_CARD_TEST 1 
+#define RC_MOTOR_TEST 0 
+
+// Hardware 
+#define RC_TEST_SCREEN 0        // HD44780U screen in the system - shuts screen off 
+
+//==================================================
+
+// Commands 
+#define RC_LEFT_MOTOR 0x4C    // "L" character that indicates left motor 
+#define RC_RIGHT_MOTOR 0x52   // "R" character that indicates right motor 
+#define RC_FWD_THRUST 0x50    // "P" (plus) - indicates forward thrust 
+#define RC_REV_THRUST 0x4D    // "M" (minus) - indicates reverse thrust 
+#define RC_NEUTRAL 0x4E       // "N" (neutral) - indicates neutral gear or zero thrust 
+#define RC_NO_THRUST 0        // Force thruster output to zero 
+#define RC_TEST_ADC_NUM 2     // Number of ADCs used for throttle command 
+#define RC_PERIOD 50000       // Time between throttle command sends (us) 
+
+// ESC Parameters 
+#define RC_ESC_PERIOD 20000            // ESC PWM timer period (auto-reload register) 
+#define RC_ESC_FWD_SPEED_LIM 1600      // Forward PWM pulse time limit (us) 
+#define RC_ESC_REV_SPEED_LIM 1440      // Reverse PWM pulse time limit (us) 
+
+// Configuration 
+#define NRF24L01_RF_FREQ 10           // Comm frequency: 2400 MHz + this value (MHz) 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Classes 
+//=======================================================================================
+
+
+//=======================================================================================
+// Variables 
+
+// Device tracker data record 
+typedef struct rc_test_trackers_s 
+{
+    // Timing information 
+    TIM_TypeDef *timer_nonblocking;                // Timer used for non-blocking delays 
+    tim_compare_t delay_timer;                     // Delay timing info 
+
+    // Configuration 
+    nrf24l01_data_pipe_t pipe; 
+
+    // User command data 
+    uint8_t user_buff[NRF24L01_MAX_PAYLOAD_LEN];   // Circular buffer (CB) that stores user inputs 
+    uint8_t buff_index;                            // CB index used for parsing commands 
+    uint8_t cmd_buff[NRF24L01_MAX_PAYLOAD_LEN];    // Stores a user command parsed from the CB 
+    uint8_t cmd_id[NRF24L01_MAX_PAYLOAD_LEN];      // Stores the ID of the user command 
+    uint8_t cmd_value;                             // Stores the value of the user command 
+
+    // Payload data 
+    uint8_t hb_msg[NRF24L01_MAX_PAYLOAD_LEN];      // Heartbeat message 
+    uint8_t read_buff[NRF24L01_MAX_PAYLOAD_LEN];   // Data read by PRX from PTX device 
+    uint8_t write_buff[NRF24L01_MAX_PAYLOAD_LEN];  // Data sent to PRX from PTX device 
+
+    // Status 
+    uint8_t state;                                 // Test code "state" 
+    uint8_t conn_status;                           // Device connection status 
+}
+rc_test_trackers_t; 
+
+// Device tracker instance 
+static rc_test_trackers_t rc_test; 
+
+
+// ADC storage 
+static uint16_t adc_data[RC_TEST_ADC_NUM];  // Location for the DMA to store ADC values 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Prototypes 
+
+void rc_sd_card_test_init(void); 
+void rc_sd_card_test_loop(void); 
+void rc_motor_test_init(void); 
+void rc_motor_test_loop(void); 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Setup code 
+
+// Remote control test setup code 
+void rc_test_init(void)
+{
+    // Universal (to all nrf24l01 tests) setup code 
+
+    //==================================================
+    // General setup 
+
+    // Initialize GPIO ports 
+    gpio_port_init(); 
+
+    // General purpose timer 
+    tim_9_to_11_counter_init(
+        TIM9, 
+        TIM_84MHZ_1US_PSC, 
+        0xFFFF,  // Max ARR value 
+        TIM_UP_INT_DISABLE); 
+    tim_enable(TIM9); 
+
+    // Configure the board LED to blink when transmitting. 
+    gpio_pin_init(GPIOA, PIN_5, MODER_GPO, OTYPER_PP, OSPEEDR_HIGH, PUPDR_NO); 
+    gpio_write(GPIOA, GPIOX_PIN_5, GPIO_LOW); 
+    
+    //==================================================
+
+    //==================================================
+    // UART initialization 
+
+    // Initialize UART
+    uart_init(
+        USART2, 
+        GPIOA, 
+        PIN_3, 
+        PIN_2, 
+        UART_FRAC_42_9600, 
+        UART_MANT_42_9600, 
+        UART_DMA_DISABLE, 
+        UART_DMA_ENABLE); 
+
+    // Enable the IDLE line interrupt 
+    uart_interrupt_init(
+        USART2, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_ENABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE); 
+
+    // Initialize the DMA stream for the UART 
+    dma_stream_init(
+        DMA1, 
+        DMA1_Stream5, 
+        DMA_CHNL_4, 
+        DMA_DIR_PM, 
+        DMA_CM_ENABLE,
+        DMA_PRIOR_VHI, 
+        DMA_ADDR_INCREMENT,   // Increment the buffer pointer to fill the buffer 
+        DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
+        DMA_DATA_SIZE_BYTE, 
+        DMA_DATA_SIZE_BYTE); 
+
+    // Configure the DMA stream for the UART 
+    dma_stream_config(
+        DMA1_Stream5, 
+        (uint32_t)(&USART2->DR), 
+        (uint32_t)rc_test.user_buff, 
+        (uint16_t)NRF24L01_MAX_PAYLOAD_LEN); 
+
+    // Enable the DMA stream for the UART 
+    dma_stream_enable(DMA1_Stream5); 
+
+    // Initialize interrupt handler flags (called once) 
+    int_handler_init(); 
+
+    // Enable the interrupt handlers (called for each interrupt) - for USART2_RX 
+    nvic_config(USART2_IRQn, EXTI_PRIORITY_0); 
+
+    //==================================================
+
+    //==================================================
+    // Initialize I2C / screen 
+
+#if RC_TEST_SCREEN 
+
+    // Initialize the screen so it can be turned off 
+
+    // Initialize I2C1 
+    i2c_init(
+        I2C1, 
+        PIN_9, 
+        GPIOB, 
+        PIN_8, 
+        GPIOB, 
+        I2C_MODE_SM,
+        I2C_APB1_42MHZ,
+        I2C_CCR_SM_42_100,
+        I2C_TRISE_1000_42);
+
+    hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH); 
+    hd44780u_clear(); 
+    hd44780u_backlight_off(); 
+
+#endif   // RC_TEST_SCREEN 
+
+    //==================================================
+
+    //==================================================
+    // Initialize SPI 
+
+    // SPI for the RF module 
+    spi_init(
+        SPI2, 
+        GPIOB,   // GPIO port for SCK pin 
+        PIN_10,  // SCK pin 
+        GPIOC,   // GPIO port for data (MISO/MOSI) pins 
+        PIN_2,   // MISO pin 
+        PIN_3,   // MOSI pin 
+        SPI_BR_FPCLK_16, 
+        SPI_CLOCK_MODE_0); 
+
+    //==================================================
+
+    //==================================================
+    // Initialize test data 
+
+    // Timing 
+    rc_test.timer_nonblocking = TIM9; 
+    rc_test.delay_timer.clk_freq = tim_get_pclk_freq(rc_test.timer_nonblocking); 
+    rc_test.delay_timer.time_cnt_total = CLEAR; 
+    rc_test.delay_timer.time_cnt = CLEAR; 
+    rc_test.delay_timer.time_start = SET_BIT; 
+
+    // Configuration 
+    rc_test.pipe = NRF24L01_DP_1; 
+
+    // User command data 
+    memset((void *)rc_test.user_buff, CLEAR, sizeof(rc_test.user_buff)); 
+    rc_test.buff_index = CLEAR; 
+    memset((void *)rc_test.cmd_buff, CLEAR, sizeof(rc_test.cmd_buff)); 
+    memset((void *)rc_test.cmd_id, CLEAR, sizeof(rc_test.cmd_id)); 
+    rc_test.cmd_value = CLEAR; 
+
+    // Payload data 
+    strcpy((char *)rc_test.hb_msg, "ping"); 
+    memset((void *)rc_test.read_buff, CLEAR, sizeof(rc_test.read_buff)); 
+    memset((void *)rc_test.write_buff, CLEAR, sizeof(rc_test.write_buff)); 
+
+    // Status 
+    rc_test.conn_status = CLEAR_BIT; 
+
+    //==================================================
+
+    //==================================================
+    // Initialize the device driver 
+
+    NRF24L01_STATUS nrf24l01_init_status = NRF24L01_OK; 
+
+    // General setup common to all device - must be called once during setup 
+    // NRF24L01_STATUS init_status = nrf24l01_init(
+    nrf24l01_init_status |= nrf24l01_init(
+        SPI2,                    // SPI port to use 
+        GPIOC,                   // Slave select pin GPIO port 
+        PIN_1,                   // Slave select pin number 
+        GPIOC,                   // Enable pin (CE) GPIO port 
+        PIN_0,                   // Enable pin (CE) number 
+        TIM9,                    // General purpose timer port 
+        NRF24L01_RF_FREQ,        // Initial RF channel frequency 
+        NRF24L01_DR_2MBPS,       // Initial data rate to communicate at 
+        NRF24L01_RF_PWR_0DBM);   // Initial power output to us 
+
+    // Configure the PTX and PRX settings depending on the devices role/purpose. 
+    nrf24l01_init_status |= nrf24l01_ptx_config(nrf24l01_pipe_addr); 
+    nrf24l01_init_status |= nrf24l01_prx_config(nrf24l01_pipe_addr, rc_test.pipe); 
+
+    // Power up the device now that it is configured 
+    nrf24l01_init_status |= nrf24l01_pwr_up(); 
+
+    // Check init status 
+    if (nrf24l01_init_status)
+    {
+        uart_sendstring(USART2, "nRF24L01 init failed."); 
+        while(1); 
+    }
+    else 
+    {
+        uart_sendstring(USART2, "nRF24L01 init success."); 
+    }
+
+    //==================================================
+
+#if RC_SD_CARD_TEST 
+    rc_sd_card_test_init(); 
+#elif RC_MOTOR_TEST 
+    rc_motor_test_init(); 
+#endif 
+}
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Test code 
+
+// Remote control test code 
+void rc_test_app(void)
+{
+#if RC_SD_CARD_TEST 
+    rc_sd_card_test_loop(); 
+#elif RC_MOTOR_TEST 
+    rc_motor_test_loop(); 
+#endif 
+}
+
+//=======================================================================================
+
+
+#if RC_SD_CARD_TEST 
+
+//=======================================================================================
+// SD card test 
+
+// Description 
+// - Device 1 (master) sends a user input message to device 2 (slave) upon user request 
+// - Device 2 reads message and attempts to save it to a file on an SD card 
+// - Device 2 reports back the status of the SD card write to device 1 
+
+//==================================================
+// Macros 
+//==================================================
+
+
+//==================================================
+// Variables 
+//==================================================
+
+
+//==================================================
+// Setup 
+
+void rc_sd_card_test_init(void)
+{
+#if RC_SYSTEM_1 
+#elif RC_SYSTEM_2 
+
+    //==================================================
+    // Initialize SPI 
+
+    // SPI2 and slave select pin for SD card 
+    // This is on different pins than the RF module to test if the same SPI bus works across 
+    // multiple pins. 
+    spi_init(
+        SPI2, 
+        GPIOB,   // SCK pin GPIO port 
+        PIN_10,  // SCK pin 
+        GPIOB,   // Data (MISO/MOSI) pin GPIO port 
+        PIN_14,  // MISO pin 
+        PIN_15,  // MOSI pin 
+        SPI_BR_FPCLK_16, 
+        SPI_CLOCK_MODE_0); 
+    spi_ss_init(GPIOB, PIN_12); 
+
+    //==================================================
+
+    //==================================================
+    // Initialize SD card --> for testing multiple SPI pins on the same SPI bus 
+
+    // SD card user initialization 
+    hw125_user_init(SPI2, GPIOB, GPIOX_PIN_12); 
+    
+    //==================================================
+    
+#endif 
+}
+
+//==================================================
+
+
+//==================================================
+// Loop 
+
+void rc_sd_card_test_loop(void)
+{
+#if RC_SYSTEM_1 
+#elif RC_SYSTEM_2 
+#endif 
+}
+
+//==================================================
+
+
+//==================================================
+// Test functions 
+//==================================================
+
+//=======================================================================================
+
+
+#elif RC_MOTOR_TEST 
+
+//=======================================================================================
+// Multi SPI test 
+
+// Description 
+// - 
+
+//==================================================
+// Macros 
+//==================================================
+
+
+//==================================================
+// Variables 
+//==================================================
+
+
+//==================================================
+// Prototypes 
+//==================================================
+
+
+//==================================================
+// Setup 
+
+void rc_motor_test_init(void)
+{
+#if RC_SYSTEM_1 
+
+    //===================================================
+    // ADC setup - for user controller mode 
+
+    // Initialize the ADC port (called once) 
+    adc1_clock_enable(RCC); 
+    adc_port_init(
+        ADC1, 
+        ADC1_COMMON, 
+        ADC_PCLK2_4, 
+        ADC_RES_8, 
+        ADC_PARAM_ENABLE, 
+        ADC_PARAM_ENABLE, 
+        ADC_PARAM_ENABLE, 
+        ADC_PARAM_ENABLE, 
+        ADC_PARAM_ENABLE, 
+        ADC_PARAM_DISABLE, 
+        ADC_PARAM_DISABLE); 
+
+    // Initialize the ADC pins and channels (called for each pin/channel) 
+    adc_pin_init(ADC1, GPIOA, PIN_6, ADC_CHANNEL_6, ADC_SMP_15); 
+    adc_pin_init(ADC1, GPIOA, PIN_7, ADC_CHANNEL_7, ADC_SMP_15); 
+
+    // Set the ADC conversion sequence (called for each sequence entry) 
+    adc_seq(ADC1, ADC_CHANNEL_6, ADC_SEQ_1); 
+    adc_seq(ADC1, ADC_CHANNEL_7, ADC_SEQ_2); 
+
+    // Set the sequence length (called once and only for more than one channel) 
+    adc_seq_len_set(ADC1, ADC_SEQ_2); 
+
+    // Turn the ADC on 
+    adc_on(ADC1); 
+    
+    //===================================================
+
+    //==================================================
+    // Initialize DMA 
+
+    // Initialize the DMA stream for the ADC 
+    dma_stream_init(
+        DMA2, 
+        DMA2_Stream0, 
+        DMA_CHNL_0, 
+        DMA_DIR_PM, 
+        DMA_CM_ENABLE,
+        DMA_PRIOR_VHI, 
+        DMA_ADDR_INCREMENT, 
+        DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
+        DMA_DATA_SIZE_HALF, 
+        DMA_DATA_SIZE_HALF); 
+
+    // Configure the DMA stream for the ADC 
+    dma_stream_config(
+        DMA2_Stream0, 
+        (uint32_t)(&ADC1->DR), 
+        (uint32_t)adc_data, 
+        (uint16_t)RC_TEST_ADC_NUM); 
+
+    // Enable the DMA stream for the ADC 
+    dma_stream_enable(DMA2_Stream0); 
+
+    // Start the ADC conversions (continuous mode) 
+    adc_start(ADC1); 
+
+    //==================================================
+
+    //==================================================
+    // Initialize variables 
+
+    memset((void *)adc_data, CLEAR, sizeof(adc_data)); 
+    
+    //==================================================
+
+#elif RC_SYSTEM_2 
+
+    // ESC driver setup 
+    esc_readytosky_init(
+        DEVICE_ONE, 
+        TIM3, 
+        TIMER_CH4, 
+        GPIOB, 
+        PIN_1, 
+        TIM_84MHZ_1US_PSC, 
+        RC_ESC_PERIOD, 
+        RC_ESC_FWD_SPEED_LIM, 
+        RC_ESC_REV_SPEED_LIM); 
+
+    esc_readytosky_init(
+        DEVICE_TWO, 
+        TIM3, 
+        TIMER_CH3, 
+        GPIOB, 
+        PIN_0, 
+        TIM_84MHZ_1US_PSC, 
+        RC_ESC_PERIOD, 
+        RC_ESC_FWD_SPEED_LIM, 
+        RC_ESC_REV_SPEED_LIM); 
+
+    // Enable the PWM timer 
+    tim_enable(TIM3); 
+
+#endif 
+}
+
+//==================================================
+
+
+//==================================================
+// Loop 
+
+void rc_motor_test_loop(void)
+{
+#if RC_SYSTEM_1 
+
+    static gpio_pin_state_t led_state = GPIO_LOW; 
+    static uint8_t thruster = CLEAR; 
+    char side = CLEAR; 
+    char sign = RC_FWD_THRUST; 
+    int16_t throttle = CLEAR; 
+
+    // Periodically send the throttle command - alternate between left and right side throttle 
+    // commands for each send. 
+    if (tim_compare(rc_test.timer_nonblocking, 
+                    rc_test.delay_timer.clk_freq, 
+                    RC_PERIOD, 
+                    &rc_test.delay_timer.time_cnt_total, 
+                    &rc_test.delay_timer.time_cnt, 
+                    &rc_test.delay_timer.time_start))
+    {
+        // time_start flag does not need to be set again because this timer runs 
+        // continuously. 
+
+        // Choose between right and left thruster 
+        side = (thruster) ? RC_LEFT_MOTOR : RC_RIGHT_MOTOR; 
+
+        // Read the ADC input and format the value for writing to the payload 
+        throttle = esc_test_adc_mapping(adc_data[thruster]); 
+        if (throttle == RC_NO_THRUST)
+        {
+            sign = RC_NEUTRAL; 
+        }
+        else if (throttle < RC_NO_THRUST)
+        {
+            // If the throttle is negative then change the value to positive and set the sign 
+            // in the payload as negative. This helps on the receiving end. 
+            throttle = ~throttle + 1; 
+            sign = RC_REV_THRUST; 
+        }
+
+        // Format the payload with the thruster specifier and the throttle then send the 
+        // payload. 
+        snprintf(
+            (char *)rc_test.write_buff, 
+            NRF24L01_MAX_PAYLOAD_LEN, 
+            "%c%c%d", 
+            side, sign, throttle); 
+
+        if (nrf24l01_send_payload(rc_test.write_buff))
+        {
+            led_state = (gpio_pin_state_t)(GPIO_HIGH - led_state); 
+            gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
+        } 
+
+        // Toggle the thruster flag 
+        thruster = SET_BIT - thruster; 
+    }
+
+#elif RC_SYSTEM_2 
+
+    //==================================================
+    // Note 
+    // - Bit shifting works on signed integers - the sign bit is respected. 
+    //==================================================
+    
+    // Local variables 
+    static int16_t right_throttle = CLEAR; 
+    static int16_t left_throttle = CLEAR; 
+    int16_t cmd_value = CLEAR; 
+
+    // Check if a payload has been received 
+    if (nrf24l01_data_ready_status())
+    {
+        // Payload has been received. Read the payload from the device RX FIFO. 
+        nrf24l01_receive_payload(rc_test.read_buff); 
+
+        // Validate the payload format 
+        if (rc_test_parse_cmd(&rc_test.read_buff[1]))
+        {
+            // Check that the command matches a valid throttle command. If it does then update 
+            // the thruster command. 
+
+            cmd_value = (int16_t)rc_test.cmd_value; 
+
+            if (rc_test.cmd_id[0] == RC_RIGHT_MOTOR)
+            {
+                switch (rc_test.cmd_id[1])
+                {
+                    case RC_FWD_THRUST: 
+                        right_throttle += (cmd_value - right_throttle) >> SHIFT_3; 
+                        esc_readytosky_send(DEVICE_ONE, right_throttle); 
+                        break; 
+                    case RC_REV_THRUST: 
+                        right_throttle += ((~cmd_value + 1) - right_throttle) >> SHIFT_3; 
+                        esc_readytosky_send(DEVICE_ONE, right_throttle); 
+                        break; 
+                    case RC_NEUTRAL: 
+                        if (cmd_value == RC_NO_THRUST)
+                        {
+                            right_throttle = RC_NO_THRUST; 
+                            esc_readytosky_send(DEVICE_ONE, right_throttle); 
+                        }
+                        break; 
+                    default: 
+                        break; 
+                }
+            }
+            else if (rc_test.cmd_id[0] == RC_LEFT_MOTOR)
+            {
+                switch (rc_test.cmd_id[1])
+                {
+                    case RC_FWD_THRUST: 
+                        left_throttle += (cmd_value - left_throttle) >> SHIFT_3; 
+                        esc_readytosky_send(DEVICE_TWO, left_throttle); 
+                        break; 
+                    case RC_REV_THRUST: 
+                        left_throttle += ((~cmd_value + 1) - left_throttle) >> SHIFT_3; 
+                        esc_readytosky_send(DEVICE_TWO, left_throttle); 
+                        break; 
+                    case RC_NEUTRAL: 
+                        if (cmd_value == RC_NO_THRUST)
+                        {
+                            left_throttle = RC_NO_THRUST; 
+                            esc_readytosky_send(DEVICE_TWO, left_throttle); 
+                        }
+                        break; 
+                    default: 
+                        break; 
+                }
+            }
+        }
+
+        memset((void *)rc_test.read_buff, CLEAR, sizeof(rc_test.read_buff)); 
+    }
+
+#endif 
+}
+
+
+//     static uint8_t timeout_count = CLEAR; 
+
+//     // Increment the timeout counter periodically 
+//     if (tim_compare(rc_test.timer_nonblocking, 
+//                     rc_test.delay_timer.clk_freq, 
+//                     HB_PERIOD, 
+//                     &rc_test.delay_timer.time_cnt_total, 
+//                     &rc_test.delay_timer.time_cnt, 
+//                     &rc_test.delay_timer.time_start))
+//     {
+//         // time_start flag does not need to be set again because this timer runs 
+//         // continuously. 
+
+//         // Increment the timeout count until it's at the threshold at which point hold 
+//         // the count and clear the connection status. 
+//         if (timeout_count >= NRF24L01_HB_TIMEOUT)
+//         {
+//             rc_test.conn_status = CLEAR_BIT; 
+//         }
+//         else 
+//         {
+//             timeout_count++; 
+//         }
+//     }
+    
+//     // Check if a payload has been received 
+//     if (nrf24l01_data_ready_status())
+//     {
+//         // Payload has been received. Read the payload from the device RX FIFO. 
+//         nrf24l01_receive_payload(rc_test.read_buff); 
+
+//         // Check to see if the received payload matches the heartbeat message 
+//         if (str_compare((char *)rc_test.hb_msg, 
+//                         (char *)rc_test.read_buff, 
+//                         BYTE_1))
+//         {
+//             // Heartbeat message received - reset the timeout and set the connection status 
+//             timeout_count = CLEAR; 
+//             rc_test.conn_status = SET_BIT; 
+//         }
+
+//         memset((void *)rc_test.read_buff, CLEAR, 
+//                sizeof(rc_test.read_buff)); 
+//     }
+
+//==================================================
+
+
+//==================================================
+// Test functions 
+//==================================================
+
+//=======================================================================================
+
+#endif 
+
+
+//=======================================================================================
+// Test functions 
+
+// Parse the user command into an ID and value 
+uint8_t rc_test_parse_cmd(uint8_t *command_buffer)
+{
+    // Local variables 
+    uint8_t id_flag = SET_BIT; 
+    uint8_t id_index = CLEAR; 
+    uint8_t data = CLEAR; 
+    uint8_t cmd_value[NRF24L01_MAX_PAYLOAD_LEN]; 
+    uint8_t value_size = CLEAR; 
+
+    // Initialize data 
+    memset((void *)rc_test.cmd_id, CLEAR, sizeof(rc_test.cmd_id)); 
+    rc_test.cmd_value = CLEAR; 
+    memset((void *)cmd_value, CLEAR, sizeof(cmd_value)); 
+
+    // Parse the command into an ID and value 
+    for (uint8_t i = CLEAR; command_buffer[i] != NULL_CHAR; i++)
+    {
+        data = command_buffer[i]; 
+
+        if (id_flag)
+        {
+            // cmd ID parsing 
+
+            id_index = i; 
+
+            // Check that the command byte is within range 
+            if ((data >= A_LO_CHAR && data <= Z_LO_CHAR) || 
+                (data >= A_UP_CHAR && data <= Z_UP_CHAR))
+            {
+                // Valid character byte seen 
+                rc_test.cmd_id[i] = data; 
+            }
+            else if (data >= ZERO_CHAR && data <= NINE_CHAR)
+            {
+                // Valid digit character byte seen 
+                id_flag = CLEAR_BIT; 
+                rc_test.cmd_id[i] = NULL_CHAR; 
+                cmd_value[i-id_index] = data; 
+                value_size++; 
+            }
+            else 
+            {
+                // Valid data not seen 
+                return FALSE; 
+            }
+        }
+        else 
+        {
+            // cmd value parsing 
+
+            if (data >= ZERO_CHAR && data <= NINE_CHAR)
+            {
+                // Valid digit character byte seen 
+                cmd_value[i-id_index] = data; 
+                value_size++; 
+            }
+            else 
+            {
+                // Valid data not seen 
+                return FALSE; 
+            }
+        }
+    }
+
+    // Calculate the cmd value 
+    for (uint8_t i = CLEAR; i < value_size; i++)
+    {
+        rc_test.cmd_value += (uint8_t)char_to_int(cmd_value[i], value_size-i-1); 
+    }
+
+    return TRUE; 
+}
+
+//=======================================================================================
