@@ -35,12 +35,12 @@
 // Conditional compilation 
 
 // Device 
-#define NRF24L01_SYSTEM_1 1           // Enable device 1 code 
-#define NRF24L01_SYSTEM_2 0           // Enable device 2 code 
+#define NRF24L01_SYSTEM_1 0           // Enable device 1 code 
+#define NRF24L01_SYSTEM_2 1           // Enable device 2 code 
 
 // Test code 
 #define NRF24L01_HEARTBEAT 0          // Heartbeat 
-#define NRF24L01_MANUAL_CONTROL 1          // SD card on same SPI bus but different pins 
+#define NRF24L01_MANUAL_CONTROL 1     // SD card on same SPI bus but different pins 
 
 // Hardware 
 #define NRF24L01_TEST_SCREEN 0        // HD44780U screen in the system - shuts screen off 
@@ -81,7 +81,7 @@ typedef enum {
 // Command template 
 typedef struct nrf24l01_cmds_s 
 {
-    char *user_cmds; 
+    const char *user_cmds; 
     void (*cmd_ptr)(uint8_t); 
 }
 nrf24l01_cmds_t; 
@@ -151,7 +151,7 @@ void nrf24l01_manual_control_test_loop(void);
  */
 void nrf24l01_test_user_input(
     nrf24l01_cmd_data_t *cmd_data, 
-    nrf24l01_cmds_t *cmd_table); 
+    const nrf24l01_cmds_t *cmd_table); 
 
 
 /**
@@ -173,86 +173,20 @@ void nrf24l01_test_user_input(
  */
 uint8_t nrf24l01_test_parse_cmd(nrf24l01_cmd_data_t *cmd_data); 
 
-
-/**
- * @brief RF channel set command 
- * 
- * @details This function is called if an RF channel set command is sent by the user. 
- *          The value from the command updates the RF channel that the device operates 
- *          on. The user should check that the channel will be compatible between the 
- *          transmitting and receiving devices as this code will not verify that. If 
- *          the specified channel is out of range or the attempt to update the value is 
- *          unsuccessful then this will be communicated back over the serial terminal. 
- *          Available commands can be found in the 'cmd_table'. 
- * 
- * @param rf_ch : RF channel to set the device to 
- */
-void nrf24l01_test_rf_ch(uint8_t rf_ch); 
-
-
-/**
- * @brief RF data rate set command 
- * 
- * @details This function is called if an RF data rate set command is sent by the user. 
- *          The value from the command updates the RF data rate that the device uses. The 
- *          user should check that the data rate will be compatible between the 
- *          transmitting and receiving devices as this code will not verify that. If the 
- *          specified data rate is invalid or the attempt to update the value is 
- *          unsuccessful then this will be communicated back over the serial terminal. 
- *          Available commands can be found in the 'cmd_table'. 
- * 
- * @param rf_dr : data rate to set the device to 
- */
-void nrf24l01_test_rf_dr(uint8_t rf_dr); 
-
-
-/**
- * @brief RF power output set command 
- * 
- * @details This function is called if an RF power output set command is sent by the 
- *          user. The value from the command updates the devices power output. The user 
- *          should check that the power output works for their system and as this code 
- *          can't verify that. If the specified power output is invalid or the attempt 
- *          to update the value is unsuccessful then this will be communicated back over 
- *          the serial terminal. Available commands can be found in the 'cmd_table'. 
- * 
- * @param rf_pwr : power output to set the device to 
- */
-void nrf24l01_test_rf_pwr(uint8_t rf_pwr); 
-
-
-/**
- * @brief PRX device connection status command 
- * 
- * @details This function is called if a status command is sent by the user. This command 
- *          will output the connection status to the serial terminal. Connected means 
- *          there is communication happening between the two devices. Available commands 
- *          can be found in the 'cmd_table'. 
- * 
- * @param status : argument is not used - used for compatibility with function pointer 
- */
-void nrf24l01_test_status(uint8_t status); 
-
-
-/**
- * @brief Invalid user input serial terminal feedback 
- */
-void nrf24l01_test_invalid_input(void); 
-
 //=======================================================================================
 
 
 //=======================================================================================
 // User commands 
 
-// Command pointers 
-typedef struct nrf24l01_user_cmds_s 
-{
-    const char user_cmds[NRF24L01_TEST_MAX_INPUT]; 
-    void (*nrf24l01_test_func_ptr)(uint8_t); 
-    uint8_t cmd_mask; 
-}
-nrf24l01_user_cmds_t; 
+// // Command pointers 
+// typedef struct nrf24l01_user_cmds_s 
+// {
+//     const char user_cmds[NRF24L01_TEST_MAX_INPUT]; 
+//     void (*nrf24l01_test_func_ptr)(uint8_t); 
+//     uint8_t cmd_mask; 
+// }
+// nrf24l01_user_cmds_t; 
 
 
 // // Command table 
@@ -491,7 +425,6 @@ typedef struct hb_test_trackers_s
     uint8_t send_timer; 
     uint8_t msg_counter; 
 
-    uint8_t rx_buff[NRF24L01_MAX_PAYLOAD_LEN]; 
     char hb_msg[NRF24L01_MAX_PAYLOAD_LEN]; 
     char hb_res[NRF24L01_MAX_PAYLOAD_LEN]; 
 
@@ -512,7 +445,6 @@ void nrf24l01_heartbeat_test_init(void)
 {
     hb_test.send_timer = CLEAR; 
     hb_test.msg_counter = CLEAR; 
-    memset((void *)hb_test.rx_buff, CLEAR, sizeof(hb_test.rx_buff)); 
     memset((void *)hb_test.hb_msg, CLEAR, sizeof(hb_test.hb_msg)); 
     memset((void *)hb_test.hb_res, CLEAR, sizeof(hb_test.hb_res)); 
     hb_test.led_state = GPIO_LOW; 
@@ -571,13 +503,13 @@ void nrf24l01_heartbeat_test_loop(void)
         // Look for a heartbeat response 
         if (nrf24l01_data_ready_status() == nrf24l01_test.pipe)
         {
-            nrf24l01_receive_payload(hb_test.rx_buff); 
+            nrf24l01_receive_payload(nrf24l01_test.read_buff); 
 
             // Check if the received message is the one we need 
-            if (!strcmp((char *)hb_test.rx_buff, hb_test.hb_res))
+            if (!strcmp((char *)nrf24l01_test.read_buff, hb_test.hb_res))
             {
                 // Display the response and update the heatbeat message and response 
-                uart_sendstring(USART2, (char *)hb_test.rx_buff); 
+                uart_sendstring(USART2, (char *)nrf24l01_test.read_buff); 
                 hb_test.msg_counter++; 
                 snprintf(hb_test.hb_msg, NRF24L01_MAX_PAYLOAD_LEN, 
                          hb_message, hb_test.msg_counter); 
@@ -591,24 +523,24 @@ void nrf24l01_heartbeat_test_loop(void)
         // Look for a heartbeat message 
         if (nrf24l01_data_ready_status() == nrf24l01_test.pipe)
         {
-            nrf24l01_receive_payload(hb_test.rx_buff); 
+            nrf24l01_receive_payload(nrf24l01_test.read_buff); 
 
             // Modify the received message to get the desired response (changes "ping#" 
             // to "pong#!"). Note that the contents of the received message is not 
             // checked on purpose as it's not necessary for this test. 
             uint8_t msg_index = 1; 
-            hb_test.rx_buff[msg_index] = HB_LETTER_O; 
+            nrf24l01_test.read_buff[msg_index] = HB_LETTER_O; 
             
-            while (hb_test.rx_buff[msg_index] != NULL_CHAR) 
+            while (nrf24l01_test.read_buff[msg_index] != NULL_CHAR) 
             {
                 msg_index++; 
             }
 
-            hb_test.rx_buff[msg_index] = HB_EXCLAMATION; 
-            hb_test.rx_buff[++msg_index] = NULL_CHAR; 
+            nrf24l01_test.read_buff[msg_index] = HB_EXCLAMATION; 
+            nrf24l01_test.read_buff[++msg_index] = NULL_CHAR; 
 
             // Send the response back 
-            nrf24l01_send_payload(hb_test.rx_buff); 
+            nrf24l01_send_payload(nrf24l01_test.read_buff); 
         }
 
 #endif 
@@ -641,7 +573,78 @@ void nrf24l01_heartbeat_test_loop(void)
 //==================================================
 // Macros 
 
-#define MC_PERIOD 100000             // Time between checking for new data (us) 
+#define MC_PERIOD 50000             // Time between checking for new data (us) 
+
+//==================================================
+
+
+//==================================================
+// Prototypes 
+
+/**
+ * @brief RF channel set command 
+ * 
+ * @details This function is called if an RF channel set command is sent by the user. 
+ *          The value from the command updates the RF channel that the device operates 
+ *          on. The user should check that the channel will be compatible between the 
+ *          transmitting and receiving devices as this code will not verify that. If 
+ *          the specified channel is out of range or the attempt to update the value is 
+ *          unsuccessful then this will be communicated back over the serial terminal. 
+ *          Available commands can be found in the 'cmd_table'. 
+ * 
+ * @param rf_ch : RF channel to set the device to 
+ */
+void nrf24l01_test_rf_ch(uint8_t rf_ch); 
+
+
+/**
+ * @brief RF data rate set command 
+ * 
+ * @details This function is called if an RF data rate set command is sent by the user. 
+ *          The value from the command updates the RF data rate that the device uses. The 
+ *          user should check that the data rate will be compatible between the 
+ *          transmitting and receiving devices as this code will not verify that. If the 
+ *          specified data rate is invalid or the attempt to update the value is 
+ *          unsuccessful then this will be communicated back over the serial terminal. 
+ *          Available commands can be found in the 'cmd_table'. 
+ * 
+ * @param rf_dr : data rate to set the device to 
+ */
+void nrf24l01_test_rf_dr(uint8_t rf_dr); 
+
+
+/**
+ * @brief RF power output set command 
+ * 
+ * @details This function is called if an RF power output set command is sent by the 
+ *          user. The value from the command updates the devices power output. The user 
+ *          should check that the power output works for their system and as this code 
+ *          can't verify that. If the specified power output is invalid or the attempt 
+ *          to update the value is unsuccessful then this will be communicated back over 
+ *          the serial terminal. Available commands can be found in the 'cmd_table'. 
+ * 
+ * @param rf_pwr : power output to set the device to 
+ */
+void nrf24l01_test_rf_pwr(uint8_t rf_pwr); 
+
+
+/**
+ * @brief PRX device connection status command 
+ * 
+ * @details This function is called if a status command is sent by the user. This command 
+ *          will output the connection status to the serial terminal. Connected means 
+ *          there is communication happening between the two devices. Available commands 
+ *          can be found in the 'cmd_table'. 
+ * 
+ * @param status : argument is not used - used for compatibility with function pointer 
+ */
+void nrf24l01_test_status(uint8_t status); 
+
+
+/**
+ * @brief Invalid user input serial terminal feedback 
+ */
+void nrf24l01_test_invalid_input(void); 
 
 //==================================================
 
@@ -651,14 +654,18 @@ void nrf24l01_heartbeat_test_loop(void)
 
 static const char 
 ping_msg[] = "ping", 
-ping_res[] = "pong", 
+ping_res[] = "pong"; 
+
+
+#if NRF24L01_SYSTEM_1 
+
+static const char 
 set_ch[] = "channel", 
 set_dr[] = "data_rate", 
 set_pwr[] = "power"; 
 
-
 // Command table 
-static const nrf24l01_cmds_t mc_cmd_table[] = 
+static const nrf24l01_cmds_t mc_cmd_table[NRF24L01_NUM_USER_CMDS] = 
 {
     {ping_msg, &nrf24l01_test_rf_ch}, 
     {set_ch,   &nrf24l01_test_rf_dr}, 
@@ -667,14 +674,11 @@ static const nrf24l01_cmds_t mc_cmd_table[] =
 }; 
 
 
-// 
+// Command data 
 static nrf24l01_cmd_data_t mc_cmd_data; 
 
-//==================================================
+#endif 
 
-
-//==================================================
-// Prototypes 
 //==================================================
 
 
@@ -769,25 +773,29 @@ void nrf24l01_manual_control_test_loop(void)
         // time_start flag does not need to be set again because this timer runs 
         // continuously. 
 
-#if NRF24L01_SYSTEM_1 
-
-        // 
-
-#elif NRF24L01_SYSTEM_2 
-
         // Look for a heartbeat message 
         if (nrf24l01_data_ready_status() == nrf24l01_test.pipe)
         {
             nrf24l01_receive_payload(nrf24l01_test.read_buff); 
+
+#if NRF24L01_SYSTEM_1 
+
+            // If a ping response message is seen then display the response 
+            if (!strcmp(ping_res, (char *)nrf24l01_test.read_buff))
+            {
+                uart_sendstring(USART2, "\rresponse: "); 
+                uart_sendstring(USART2, ping_res); 
+            }
+
+#elif NRF24L01_SYSTEM_2 
 
             // If a ping message is seen then send a response back 
             if (!strcmp(ping_msg, (char *)nrf24l01_test.read_buff))
             {
                 nrf24l01_send_payload((uint8_t *)ping_res);     
             }
-        }
-
 #endif 
+        }
     }
 }
 
@@ -796,6 +804,8 @@ void nrf24l01_manual_control_test_loop(void)
 
 //==================================================
 // Test functions 
+
+#if NRF24L01_SYSTEM_1 
 
 // RF channel set state 
 void nrf24l01_test_rf_ch(uint8_t rf_ch)
@@ -857,18 +867,18 @@ void nrf24l01_test_rf_pwr(uint8_t rf_pwr)
 }
 
 
-// // PRX device connection status 
-// void nrf24l01_test_status(uint8_t dummy_status)
-// {
-//     if (nrf24l01_test.conn_status)
-//     {
-//         uart_sendstring(USART2, "\r\nConnected.\r\n"); 
-//     }
-//     else 
-//     {
-//         uart_sendstring(USART2, "\r\nNot connected.\r\n"); 
-//     }
-// }
+// PRX device connection status 
+void nrf24l01_test_status(uint8_t dummy_status)
+{
+    // if (nrf24l01_test.conn_status)
+    // {
+    //     uart_sendstring(USART2, "\r\nConnected.\r\n"); 
+    // }
+    // else 
+    // {
+    //     uart_sendstring(USART2, "\r\nNot connected.\r\n"); 
+    // }
+}
 
 
 // Invalid input user feedback 
@@ -876,6 +886,8 @@ void nrf24l01_test_invalid_input(void)
 {
     uart_sendstring(USART2, "\r\nInvalid cmd value.\r\n"); 
 }
+
+#endif 
 
 //==================================================
 
@@ -890,7 +902,7 @@ void nrf24l01_test_invalid_input(void)
 // User serial terminal input 
 void nrf24l01_test_user_input(
     nrf24l01_cmd_data_t *cmd_data, 
-    nrf24l01_cmds_t *cmd_table)
+    const nrf24l01_cmds_t *cmd_table)
 {
     // Check for user serial terminal input 
     if (handler_flags.usart2_flag)
@@ -906,13 +918,12 @@ void nrf24l01_test_user_input(
             MAX_INPUT_LEN); 
 
         // Validate the input - parse into an ID and value if valid 
-        // if (nrf24l01_test_parse_cmd(cmd_data->cmd_buff))
         if (nrf24l01_test_parse_cmd(cmd_data))
         {
             // Valid input - compare the ID to each of the available pre-defined commands 
             for (uint8_t i = CLEAR; i < NRF24L01_NUM_USER_CMDS; i++) 
             {
-                if (!strcmp(cmd_table[i].user_cmds, cmd_data->cmd_id))
+                if (!strcmp(cmd_table[i].user_cmds, (char *)cmd_data->cmd_id))
                 {
                     // ID matched to a command. Execute the command. 
                     (cmd_table[i].cmd_ptr)(cmd_data->cmd_value); 
