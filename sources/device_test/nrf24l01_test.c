@@ -657,7 +657,7 @@ void nrf24l01_manual_control_test_loop(void)
 #if NRF24L01_SYSTEM_1 
 
     // Check for user input 
-    nrf24l01_test_user_input(&mc_cmd_data, mc_cmd_table); 
+    nrf24l01_test_user_input(&mc_cmd_data, mc_cmd_table, NUM_USER_CMDS); 
     
 #endif 
 
@@ -816,7 +816,8 @@ void nrf24l01_test_user_prompt(void)
 // Check for user input and execute callbacks if a valid command arrives 
 void nrf24l01_test_user_input(
     nrf24l01_cmd_data_t *cmd_data, 
-    const nrf24l01_cmds_t *cmd_table)
+    const nrf24l01_cmds_t *cmd_table, 
+    uint8_t num_cmds)
 {
     // Check for user serial terminal input 
     if (handler_flags.usart2_flag)
@@ -834,7 +835,7 @@ void nrf24l01_test_user_input(
         if (nrf24l01_test_parse_cmd(cmd_data))
         {
             // Valid input - compare the ID to each of the available pre-defined commands 
-            for (uint8_t i = CLEAR; i < NUM_USER_CMDS; i++) 
+            for (uint8_t i = CLEAR; i < num_cmds; i++) 
             {
                 if (!strcmp(cmd_table[i].user_cmds, (char *)cmd_data->cmd_id))
                 {

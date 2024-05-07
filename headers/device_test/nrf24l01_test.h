@@ -86,10 +86,12 @@ void nrf24l01_test_app(void);
  * 
  * @param cmd_data : user command info 
  * @param cmd_table : list of commands and callbacks 
+ * @param num_cmds : number of commands 
  */
 void nrf24l01_test_user_input(
     nrf24l01_cmd_data_t *cmd_data, 
-    const nrf24l01_cmds_t *cmd_table); 
+    const nrf24l01_cmds_t *cmd_table, 
+    uint8_t num_cmds); 
 
 //=======================================================================================
 

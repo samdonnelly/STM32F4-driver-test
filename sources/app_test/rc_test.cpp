@@ -83,30 +83,14 @@ typedef struct rc_test_trackers_s
     // Configuration 
     nrf24l01_data_pipe_t pipe; 
 
-    // User command data 
-    uint8_t user_buff[NRF24L01_MAX_PAYLOAD_LEN];   // Circular buffer (CB) that stores user inputs 
-    uint8_t buff_index;                            // CB index used for parsing commands 
-    uint8_t cmd_buff[NRF24L01_MAX_PAYLOAD_LEN];    // Stores a user command parsed from the CB 
-    uint8_t cmd_id[NRF24L01_MAX_PAYLOAD_LEN];      // Stores the ID of the user command 
-    uint8_t cmd_value;                             // Stores the value of the user command 
-
     // Payload data 
-    uint8_t hb_msg[NRF24L01_MAX_PAYLOAD_LEN];      // Heartbeat message 
     uint8_t read_buff[NRF24L01_MAX_PAYLOAD_LEN];   // Data read by PRX from PTX device 
     uint8_t write_buff[NRF24L01_MAX_PAYLOAD_LEN];  // Data sent to PRX from PTX device 
-
-    // Status 
-    uint8_t state;                                 // Test code "state" 
-    uint8_t conn_status;                           // Device connection status 
 }
 rc_test_trackers_t; 
 
 // Device tracker instance 
 static rc_test_trackers_t rc_test; 
-
-
-// ADC storage 
-static uint16_t adc_data[RC_TEST_ADC_NUM];  // Location for the DMA to store ADC values 
 
 //=======================================================================================
 
@@ -163,46 +147,6 @@ void rc_test_init(void)
         UART_MANT_42_9600, 
         UART_DMA_DISABLE, 
         UART_DMA_ENABLE); 
-
-    // Enable the IDLE line interrupt 
-    uart_interrupt_init(
-        USART2, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_ENABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE); 
-
-    // Initialize the DMA stream for the UART 
-    dma_stream_init(
-        DMA1, 
-        DMA1_Stream5, 
-        DMA_CHNL_4, 
-        DMA_DIR_PM, 
-        DMA_CM_ENABLE,
-        DMA_PRIOR_VHI, 
-        DMA_ADDR_INCREMENT,   // Increment the buffer pointer to fill the buffer 
-        DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
-        DMA_DATA_SIZE_BYTE, 
-        DMA_DATA_SIZE_BYTE); 
-
-    // Configure the DMA stream for the UART 
-    dma_stream_config(
-        DMA1_Stream5, 
-        (uint32_t)(&USART2->DR), 
-        (uint32_t)rc_test.user_buff, 
-        (uint16_t)NRF24L01_MAX_PAYLOAD_LEN); 
-
-    // Enable the DMA stream for the UART 
-    dma_stream_enable(DMA1_Stream5); 
-
-    // Initialize interrupt handler flags (called once) 
-    int_handler_init(); 
-
-    // Enable the interrupt handlers (called for each interrupt) - for USART2_RX 
-    nvic_config(USART2_IRQn, EXTI_PRIORITY_0); 
 
     //==================================================
 
@@ -262,20 +206,9 @@ void rc_test_init(void)
     // Configuration 
     rc_test.pipe = NRF24L01_DP_1; 
 
-    // User command data 
-    memset((void *)rc_test.user_buff, CLEAR, sizeof(rc_test.user_buff)); 
-    rc_test.buff_index = CLEAR; 
-    memset((void *)rc_test.cmd_buff, CLEAR, sizeof(rc_test.cmd_buff)); 
-    memset((void *)rc_test.cmd_id, CLEAR, sizeof(rc_test.cmd_id)); 
-    rc_test.cmd_value = CLEAR; 
-
     // Payload data 
-    strcpy((char *)rc_test.hb_msg, "ping"); 
     memset((void *)rc_test.read_buff, CLEAR, sizeof(rc_test.read_buff)); 
     memset((void *)rc_test.write_buff, CLEAR, sizeof(rc_test.write_buff)); 
-
-    // Status 
-    rc_test.conn_status = CLEAR_BIT; 
 
     //==================================================
 
@@ -352,13 +285,69 @@ void rc_test_app(void)
 // - Device 2 reads message and attempts to save it to a file on an SD card 
 // - Device 2 reports back the status of the SD card write to device 1 
 
+// - Input from the serial terminal by the user to system 1. 
+// - Input processed by system 1. If the input matches a valid command then do something. 
+//   Otherwise ignore it. 
+// - Commands will be "push" and "pop". "push" is followed by a message. "push" sends 
+//   a message to system 2 and where the message gets saved to the end of the test 
+//   file on the SD card. "pop" requests the most recent message from the test file and 
+//   system 2 sends it back to system 1 and deletes it from the SD card. There will be 
+//   a handshakes between 1 and 2 before pushing a message. 
+
 //==================================================
 // Macros 
+
+// Timing 
+#define RC_SD_PERIOD 50000          // (us) 
+#define RC_SD_PUSH_MSG_TIMEOUT 10   // Counts 
+#define RC_SD_PUSH_MSG_DELAY 5      // (ms) 
+
+// Commands 
+#define RC_SD_NUM_CMDS 2 
+
+//==================================================
+
+
+//==================================================
+// Prototypes 
+
+// "push" callback 
+void rc_test_push_callback(uint8_t arg); 
+
+// "pop" callback 
+void rc_test_pop_callback(uint8_t arg); 
+
 //==================================================
 
 
 //==================================================
 // Variables 
+
+// Messages sent between system 
+static const char 
+push_cmd[] = "push",   // Doubles as a user command 
+pop_cmd[] = "pop"; 
+
+// Command table 
+static const nrf24l01_cmds_t rc_cmd_table[RC_SD_NUM_CMDS] = 
+{
+    {push_cmd, &rc_test_push_callback}, 
+    {pop_cmd,  &rc_test_pop_callback} 
+};
+
+#if RC_SYSTEM_1 
+
+// Command data 
+static nrf24l01_cmd_data_t rc_cmd_data; 
+
+#elif RC_SYSTEM_2 
+
+static const char 
+push_confirm[] = "push confirm", 
+msg_confirm[] = "msg confirm"; 
+
+#endif 
+
 //==================================================
 
 
@@ -368,6 +357,52 @@ void rc_test_app(void)
 void rc_sd_card_test_init(void)
 {
 #if RC_SYSTEM_1 
+
+    //==================================================
+    // UART DMA 
+
+    // Enable the IDLE line interrupt 
+    uart_interrupt_init(
+        USART2, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_ENABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE); 
+
+    // Initialize the DMA stream for the UART 
+    dma_stream_init(
+        DMA1, 
+        DMA1_Stream5, 
+        DMA_CHNL_4, 
+        DMA_DIR_PM, 
+        DMA_CM_ENABLE,
+        DMA_PRIOR_VHI, 
+        DMA_ADDR_INCREMENT,   // Increment the buffer pointer to fill the buffer 
+        DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
+        DMA_DATA_SIZE_BYTE, 
+        DMA_DATA_SIZE_BYTE); 
+
+    // Configure the DMA stream for the UART 
+    dma_stream_config(
+        DMA1_Stream5, 
+        (uint32_t)(&USART2->DR), 
+        (uint32_t)rc_cmd_data.cb, 
+        (uint16_t)NRF24L01_MAX_PAYLOAD_LEN); 
+
+    // Enable the DMA stream for the UART 
+    dma_stream_enable(DMA1_Stream5); 
+
+    // Initialize interrupt handler flags (called once) 
+    int_handler_init(); 
+
+    // Enable the interrupt handlers (called for each interrupt) - for USART2_RX 
+    nvic_config(USART2_IRQn, EXTI_PRIORITY_0); 
+
+    //==================================================
+
 #elif RC_SYSTEM_2 
 
     //==================================================
@@ -409,7 +444,55 @@ void rc_sd_card_test_init(void)
 void rc_sd_card_test_loop(void)
 {
 #if RC_SYSTEM_1 
+
+    // Check for user input and match inputs to commands 
+    nrf24l01_test_user_input(&rc_cmd_data, rc_cmd_table, RC_SD_NUM_CMDS); 
+
 #elif RC_SYSTEM_2 
+
+    // Look for a message from system 1 
+    // If a message is received then try to match it against a pre-defined command. 
+    // If a command is matched then execute a callback. 
+    // Callback 1 ("push"): 
+    // - Send a comfirmation message back to system 1. 
+    // - Look for the next available message. If one is received then write it's contents 
+    //   (regardless of what) to the SD card test file at the end. Maybe add a timeout 
+    //   for looking for a message. 
+    // - Return to looking for a command. 
+    // Callback 2 ("pop"): 
+    // - Retreive the last (most recent) message from the SD card test file. 
+    // - Send the message to system 1. 
+    // - Return to looking for a command. 
+
+    // Periodically check for action items 
+    if (tim_compare(rc_test.timer_nonblocking, 
+                    rc_test.delay_timer.clk_freq, 
+                    RC_SD_PERIOD, 
+                    &rc_test.delay_timer.time_cnt_total, 
+                    &rc_test.delay_timer.time_cnt, 
+                    &rc_test.delay_timer.time_start))
+    {
+        // time_start flag does not need to be set again because this timer runs 
+        // continuously. 
+
+        // Look for a message from system 1 
+        if (nrf24l01_data_ready_status() == rc_test.pipe)
+        {
+            nrf24l01_receive_payload(rc_test.read_buff); 
+            
+            // Compare the input to the available commands 
+            for (uint8_t i = CLEAR; i < RC_SD_NUM_CMDS; i++) 
+            {
+                if (!strcmp(rc_cmd_table[i].user_cmds, (char *)rc_test.read_buff))
+                {
+                    // ID matched to a command. Execute the command callback. 
+                    (rc_cmd_table[i].cmd_ptr)(CLEAR); 
+                    break; 
+                }
+            }
+        }
+    }
+
 #endif 
 }
 
@@ -418,6 +501,57 @@ void rc_sd_card_test_loop(void)
 
 //==================================================
 // Test functions 
+
+// "push" callback 
+void rc_test_push_callback(uint8_t arg)
+{
+#if RC_SYSTEM_1 
+
+    // 
+
+#elif RC_SYSTEM_2 
+
+    // Send a confirmation to system 1 that a "push" command was received 
+    nrf24l01_send_payload((uint8_t *)push_confirm); 
+
+    // Check a few times (with a delay) if a message arrives 
+    for (uint8_t i = CLEAR; i < RC_SD_PUSH_MSG_TIMEOUT; i++)
+    {
+        tim_delay_ms(rc_test.timer_nonblocking, RC_SD_PUSH_MSG_DELAY); 
+
+        // Look for a message from system 1 
+        if (nrf24l01_data_ready_status() == rc_test.pipe)
+        {
+            nrf24l01_receive_payload(rc_test.read_buff); 
+
+            // Save the contents to the end of the test file on the SD card 
+
+            // Send another confirmation to system 1 that the message was received 
+            nrf24l01_send_payload((uint8_t *)msg_confirm); 
+        }
+    }
+
+#endif 
+}
+
+
+// "pop" callback 
+void rc_test_pop_callback(uint8_t arg)
+{
+#if RC_SYSTEM_1 
+
+    // 
+
+#elif RC_SYSTEM_2 
+
+    // Get the most recent message from the test file on the SD card 
+
+    // Send the message back to system 1 
+    nrf24l01_send_payload(rc_test.write_buff); 
+
+#endif 
+}
+
 //==================================================
 
 //=======================================================================================
@@ -438,6 +572,10 @@ void rc_sd_card_test_loop(void)
 
 //==================================================
 // Variables 
+
+// ADC storage 
+static uint16_t adc_data[RC_TEST_ADC_NUM];  // Location for the DMA to store ADC values 
+
 //==================================================
 
 
