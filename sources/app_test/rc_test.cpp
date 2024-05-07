@@ -16,12 +16,11 @@
 // Includes 
 
 #include "rc_test.h" 
-
-#include "esc_readytosky_test.h" 
-
 #include "nrf24l01_config.h" 
-
 #include "stm32f4xx_it.h" 
+
+#include "nrf24l01_test.h" 
+#include "esc_readytosky_test.h" 
 
 //=======================================================================================
 
@@ -286,7 +285,6 @@ void rc_test_init(void)
     NRF24L01_STATUS nrf24l01_init_status = NRF24L01_OK; 
 
     // General setup common to all device - must be called once during setup 
-    // NRF24L01_STATUS init_status = nrf24l01_init(
     nrf24l01_init_status |= nrf24l01_init(
         SPI2,                    // SPI port to use 
         GPIOC,                   // Slave select pin GPIO port 
@@ -761,79 +759,4 @@ void rc_motor_test_loop(void)
 
 //=======================================================================================
 // Test functions 
-
-// Parse the user command into an ID and value 
-uint8_t rc_test_parse_cmd(uint8_t *command_buffer)
-{
-    // Local variables 
-    uint8_t id_flag = SET_BIT; 
-    uint8_t id_index = CLEAR; 
-    uint8_t data = CLEAR; 
-    uint8_t cmd_value[NRF24L01_MAX_PAYLOAD_LEN]; 
-    uint8_t value_size = CLEAR; 
-
-    // Initialize data 
-    memset((void *)rc_test.cmd_id, CLEAR, sizeof(rc_test.cmd_id)); 
-    rc_test.cmd_value = CLEAR; 
-    memset((void *)cmd_value, CLEAR, sizeof(cmd_value)); 
-
-    // Parse the command into an ID and value 
-    for (uint8_t i = CLEAR; command_buffer[i] != NULL_CHAR; i++)
-    {
-        data = command_buffer[i]; 
-
-        if (id_flag)
-        {
-            // cmd ID parsing 
-
-            id_index = i; 
-
-            // Check that the command byte is within range 
-            if ((data >= A_LO_CHAR && data <= Z_LO_CHAR) || 
-                (data >= A_UP_CHAR && data <= Z_UP_CHAR))
-            {
-                // Valid character byte seen 
-                rc_test.cmd_id[i] = data; 
-            }
-            else if (data >= ZERO_CHAR && data <= NINE_CHAR)
-            {
-                // Valid digit character byte seen 
-                id_flag = CLEAR_BIT; 
-                rc_test.cmd_id[i] = NULL_CHAR; 
-                cmd_value[i-id_index] = data; 
-                value_size++; 
-            }
-            else 
-            {
-                // Valid data not seen 
-                return FALSE; 
-            }
-        }
-        else 
-        {
-            // cmd value parsing 
-
-            if (data >= ZERO_CHAR && data <= NINE_CHAR)
-            {
-                // Valid digit character byte seen 
-                cmd_value[i-id_index] = data; 
-                value_size++; 
-            }
-            else 
-            {
-                // Valid data not seen 
-                return FALSE; 
-            }
-        }
-    }
-
-    // Calculate the cmd value 
-    for (uint8_t i = CLEAR; i < value_size; i++)
-    {
-        rc_test.cmd_value += (uint8_t)char_to_int(cmd_value[i], value_size-i-1); 
-    }
-
-    return TRUE; 
-}
-
 //=======================================================================================

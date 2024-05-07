@@ -51,7 +51,6 @@
 #define NRF24L01_RF_FREQ 10           // Comm frequency: 2400 MHz + this value (MHz) 
 
 // User commands 
-#define MAX_INPUT_LEN 30              // Max user input command length (bytes) 
 #define NUM_USER_CMDS 4               // Number of test states 
 
 //=======================================================================================
@@ -59,27 +58,6 @@
 
 //=======================================================================================
 // Global Variables 
-
-// Command template 
-typedef struct nrf24l01_cmds_s 
-{
-    const char *user_cmds; 
-    void (*cmd_ptr)(uint8_t); 
-}
-nrf24l01_cmds_t; 
-
-
-// User command data 
-typedef struct nrf24l01_cmd_data_s 
-{
-    uint8_t cb[MAX_INPUT_LEN];        // Circular buffer (CB) that stores user inputs 
-    uint8_t cb_index;                 // CB index used for parsing commands 
-    uint8_t cmd_buff[MAX_INPUT_LEN];  // Stores a user command parsed from the CB 
-    uint8_t cmd_id[MAX_INPUT_LEN];    // Stores the ID of the user command 
-    uint8_t cmd_value;                // Stores the value of the user command 
-}
-nrf24l01_cmd_data_t; 
-
 
 // Device tracker data record 
 typedef struct nrf24l01_test_trackers_s 
@@ -116,17 +94,6 @@ void nrf24l01_manual_control_test_loop(void);
  * @brief User terminal prompt 
  */
 void nrf24l01_test_user_prompt(void); 
-
-
-/**
- * @brief Check for user input and execute callbacks if a valid command arrives 
- * 
- * @param cmd_data : user command info 
- * @param cmd_table : list of commands and callbacks 
- */
-void nrf24l01_test_user_input(
-    nrf24l01_cmd_data_t *cmd_data, 
-    const nrf24l01_cmds_t *cmd_table); 
 
 
 /**
@@ -300,8 +267,6 @@ void nrf24l01_test_init(void)
 
 void nrf24l01_test_app(void)
 {
-    // Universal (to all nrf24l01 tests) application test code 
-
 #if NRF24L01_HEARTBEAT 
     nrf24l01_heartbeat_test_loop(); 
 #elif NRF24L01_MANUAL_CONTROL 
@@ -656,7 +621,7 @@ void nrf24l01_manual_control_test_init(void)
         DMA1_Stream5, 
         (uint32_t)(&USART2->DR), 
         (uint32_t)mc_cmd_data.cb, 
-        (uint16_t)MAX_INPUT_LEN); 
+        (uint16_t)NRF24L01_TEST_MAX_INPUT); 
 
     // Enable the DMA stream for the UART 
     dma_stream_enable(DMA1_Stream5); 
@@ -859,7 +824,11 @@ void nrf24l01_test_user_input(
         handler_flags.usart2_flag = CLEAR; 
 
         // Copy the new contents in the circular buffer to the user input buffer 
-        cb_parse(cmd_data->cb, cmd_data->cmd_buff, &cmd_data->cb_index, MAX_INPUT_LEN); 
+        cb_parse(
+            cmd_data->cb, 
+            cmd_data->cmd_buff, 
+            &cmd_data->cb_index, 
+            NRF24L01_TEST_MAX_INPUT); 
 
         // Validate the input - parse into an ID and value if valid 
         if (nrf24l01_test_parse_cmd(cmd_data))
@@ -887,7 +856,7 @@ uint8_t nrf24l01_test_parse_cmd(nrf24l01_cmd_data_t *cmd_data)
     uint8_t id_flag = SET_BIT; 
     uint8_t id_index = CLEAR; 
     uint8_t data = CLEAR; 
-    uint8_t cmd_value[MAX_INPUT_LEN]; 
+    uint8_t cmd_value[NRF24L01_TEST_MAX_INPUT]; 
     uint8_t value_size = CLEAR; 
 
     // Initialize data 

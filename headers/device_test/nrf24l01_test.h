@@ -28,7 +28,41 @@ extern "C" {
 
 
 //=======================================================================================
-// Prototypes 
+// Macros 
+
+#define NRF24L01_TEST_MAX_INPUT 30   // Max user input command length (bytes) 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Structs 
+
+// Command template 
+typedef struct nrf24l01_cmds_s 
+{
+    const char *user_cmds; 
+    void (*cmd_ptr)(uint8_t); 
+}
+nrf24l01_cmds_t; 
+
+
+// User command data 
+typedef struct nrf24l01_cmd_data_s 
+{
+    uint8_t cb[NRF24L01_TEST_MAX_INPUT];        // Circular buffer (CB) for user inputs 
+    uint8_t cb_index;                           // CB index used for parsing commands 
+    uint8_t cmd_buff[NRF24L01_TEST_MAX_INPUT];  // User command parsed from the CB 
+    uint8_t cmd_id[NRF24L01_TEST_MAX_INPUT];    // ID from the user command 
+    uint8_t cmd_value;                          // Value from the user command 
+}
+nrf24l01_cmd_data_t; 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Test code 
 
 /**
  * @brief nRF24L01 setup code 
@@ -40,6 +74,22 @@ void nrf24l01_test_init(void);
  * @brief nRF24L01 test code 
  */
 void nrf24l01_test_app(void); 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Test functions 
+
+/**
+ * @brief Check for user input and execute callbacks if a valid command arrives 
+ * 
+ * @param cmd_data : user command info 
+ * @param cmd_table : list of commands and callbacks 
+ */
+void nrf24l01_test_user_input(
+    nrf24l01_cmd_data_t *cmd_data, 
+    const nrf24l01_cmds_t *cmd_table); 
 
 //=======================================================================================
 
