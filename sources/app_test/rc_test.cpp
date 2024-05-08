@@ -32,8 +32,8 @@
 // Conditional compilation 
 
 // Devices 
-#define RC_SYSTEM_1 0 
-#define RC_SYSTEM_2 1 
+#define RC_SYSTEM_1 1 
+#define RC_SYSTEM_2 0 
 
 // Test code 
 #define RC_SD_CARD_TEST 1 
@@ -43,21 +43,6 @@
 #define RC_TEST_SCREEN 0        // HD44780U screen in the system - shuts screen off 
 
 //==================================================
-
-// Commands 
-#define RC_LEFT_MOTOR 0x4C    // "L" character that indicates left motor 
-#define RC_RIGHT_MOTOR 0x52   // "R" character that indicates right motor 
-#define RC_FWD_THRUST 0x50    // "P" (plus) - indicates forward thrust 
-#define RC_REV_THRUST 0x4D    // "M" (minus) - indicates reverse thrust 
-#define RC_NEUTRAL 0x4E       // "N" (neutral) - indicates neutral gear or zero thrust 
-#define RC_NO_THRUST 0        // Force thruster output to zero 
-#define RC_TEST_ADC_NUM 2     // Number of ADCs used for throttle command 
-#define RC_PERIOD 50000       // Time between throttle command sends (us) 
-
-// ESC Parameters 
-#define RC_ESC_PERIOD 20000            // ESC PWM timer period (auto-reload register) 
-#define RC_ESC_FWD_SPEED_LIM 1600      // Forward PWM pulse time limit (us) 
-#define RC_ESC_REV_SPEED_LIM 1440      // Reverse PWM pulse time limit (us) 
 
 // Configuration 
 #define NRF24L01_RF_FREQ 10           // Comm frequency: 2400 MHz + this value (MHz) 
@@ -146,7 +131,7 @@ void rc_test_init(void)
         UART_FRAC_42_9600, 
         UART_MANT_42_9600, 
         UART_DMA_DISABLE, 
-        UART_DMA_ENABLE); 
+        UART_DMA_ENABLE);   // DMA enabled so it can be configured later 
 
     //==================================================
 
@@ -299,7 +284,7 @@ void rc_test_app(void)
 
 // Timing 
 #define RC_SD_PERIOD 50000          // (us) 
-#define RC_SD_PUSH_MSG_TIMEOUT 10   // Counts 
+#define RC_SD_PUSH_MSG_TIMEOUT 20   // Counts 
 #define RC_SD_PUSH_MSG_DELAY 5      // (ms) 
 
 // Commands 
@@ -403,6 +388,12 @@ void rc_sd_card_test_init(void)
 
     //==================================================
 
+    memset((void *)rc_cmd_data.cb, CLEAR, sizeof(rc_cmd_data.cb)); 
+    rc_cmd_data.cb_index = CLEAR; 
+    memset((void *)rc_cmd_data.cmd_buff, CLEAR, sizeof(rc_cmd_data.cmd_buff)); 
+    memset((void *)rc_cmd_data.cmd_id, CLEAR, sizeof(rc_cmd_data.cmd_id)); 
+    rc_cmd_data.cmd_value = CLEAR; 
+
 #elif RC_SYSTEM_2 
 
     //==================================================
@@ -444,6 +435,19 @@ void rc_sd_card_test_init(void)
 void rc_sd_card_test_loop(void)
 {
 #if RC_SYSTEM_1 
+
+    // Look for an input from the user. 
+    // If there's an input then look for a matching command. 
+    // If there is a matching command then run the command callback function. 
+    // Callback 1 ("push"): 
+    // - Send the push command to system 2. 
+    // - Look for a confirmation response from system 2 (include a timeout). 
+    // - If response seen then send the message to system 2. 
+    // - Look for a confirmation response from system 2. 
+    // - Return to looking for a user command. 
+    // Callback 2 ("pop"): 
+    // - Look for the message from the system 2 (include a timeout). 
+    // - Return to looking for a user command. 
 
     // Check for user input and match inputs to commands 
     nrf24l01_test_user_input(&rc_cmd_data, rc_cmd_table, RC_SD_NUM_CMDS); 
@@ -567,6 +571,22 @@ void rc_test_pop_callback(uint8_t arg)
 
 //==================================================
 // Macros 
+
+// Commands 
+#define RC_LEFT_MOTOR 0x4C    // "L" character that indicates left motor 
+#define RC_RIGHT_MOTOR 0x52   // "R" character that indicates right motor 
+#define RC_FWD_THRUST 0x50    // "P" (plus) - indicates forward thrust 
+#define RC_REV_THRUST 0x4D    // "M" (minus) - indicates reverse thrust 
+#define RC_NEUTRAL 0x4E       // "N" (neutral) - indicates neutral gear or zero thrust 
+#define RC_NO_THRUST 0        // Force thruster output to zero 
+#define RC_TEST_ADC_NUM 2     // Number of ADCs used for throttle command 
+#define RC_PERIOD 50000       // Time between throttle command sends (us) 
+
+// ESC Parameters 
+#define RC_ESC_PERIOD 20000            // ESC PWM timer period (auto-reload register) 
+#define RC_ESC_FWD_SPEED_LIM 1600      // Forward PWM pulse time limit (us) 
+#define RC_ESC_REV_SPEED_LIM 1440      // Reverse PWM pulse time limit (us) 
+
 //==================================================
 
 

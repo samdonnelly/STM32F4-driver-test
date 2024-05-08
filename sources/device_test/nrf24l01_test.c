@@ -150,23 +150,7 @@ void nrf24l01_test_init(void)
         UART_FRAC_42_9600, 
         UART_MANT_42_9600, 
         UART_DMA_DISABLE, 
-        UART_DMA_ENABLE);   // DMA enabled but configured later 
-
-    //==================================================
-
-    //==================================================
-    // Initialize SPI 
-
-    // SPI for the RF module 
-    spi_init(
-        SPI2, 
-        GPIOB,   // GPIO port for SCK pin 
-        PIN_10,  // SCK pin 
-        GPIOC,   // GPIO port for data (MISO/MOSI) pins 
-        PIN_2,   // MISO pin 
-        PIN_3,   // MOSI pin 
-        SPI_BR_FPCLK_16, 
-        SPI_CLOCK_MODE_0); 
+        UART_DMA_ENABLE);   // DMA enabled so it can be configured later 
 
     //==================================================
 
@@ -194,6 +178,22 @@ void nrf24l01_test_init(void)
     hd44780u_backlight_off(); 
 
 #endif   // NRF24L01_TEST_SCREEN 
+
+    //==================================================
+
+    //==================================================
+    // Initialize SPI 
+
+    // SPI for the RF module 
+    spi_init(
+        SPI2, 
+        GPIOB,   // GPIO port for SCK pin 
+        PIN_10,  // SCK pin 
+        GPIOC,   // GPIO port for data (MISO/MOSI) pins 
+        PIN_2,   // MISO pin 
+        PIN_3,   // MOSI pin 
+        SPI_BR_FPCLK_16, 
+        SPI_CLOCK_MODE_0); 
 
     //==================================================
 
@@ -854,7 +854,8 @@ void nrf24l01_test_user_input(
 // Parse the user input into an ID (command) and value 
 uint8_t nrf24l01_test_parse_cmd(nrf24l01_cmd_data_t *cmd_data)
 {
-    uint8_t id_flag = SET_BIT; 
+    // uint8_t cmd_flag = SET_BIT; 
+    uint8_t cmd_flag = CLEAR_BIT; 
     uint8_t id_index = CLEAR; 
     uint8_t data = CLEAR; 
     uint8_t cmd_value[NRF24L01_TEST_MAX_INPUT]; 
@@ -870,48 +871,118 @@ uint8_t nrf24l01_test_parse_cmd(nrf24l01_cmd_data_t *cmd_data)
     {
         data = cmd_data->cmd_buff[i]; 
 
-        if (id_flag)
+        switch (cmd_flag)
         {
-            // cmd ID parsing 
+            case 0:   // cmd ID parsing 
 
-            // Check that the command byte is within range 
-            if ((data >= A_LO_CHAR && data <= Z_LO_CHAR) || 
-                (data >= A_UP_CHAR && data <= Z_UP_CHAR) || 
-                (data >= ZERO_CHAR && data <= NINE_CHAR) || 
-                (data == UNDERSCORE_CHAR))
-            {
-                // Valid character byte seen 
-                cmd_data->cmd_id[i] = data; 
-            }
-            else if (data == SPACE_CHAR)
-            {
-                // End of ID, start of optional value 
-                id_flag = CLEAR_BIT; 
-                cmd_data->cmd_id[i] = NULL_CHAR; 
-                id_index = i + 1; 
-            }
-            else 
-            {
-                // Valid data not seen 
-                return FALSE; 
-            }
-        }
-        else 
-        {
-            // cmd value parsing 
+                // Check that the command byte is within range 
+                if ((data >= A_LO_CHAR && data <= Z_LO_CHAR) || 
+                    (data >= A_UP_CHAR && data <= Z_UP_CHAR) || 
+                    (data >= ZERO_CHAR && data <= NINE_CHAR) || 
+                    (data == UNDERSCORE_CHAR))
+                {
+                    // Valid character byte seen 
+                    cmd_data->cmd_id[i] = data; 
+                }
+                else if (data == SPACE_CHAR)
+                {
+                    // End of ID, start of optional value 
+                    cmd_flag = SET_BIT;   // + argument option 
+                    cmd_data->cmd_id[i] = NULL_CHAR; 
+                    id_index = i + 1; 
+                }
+                else 
+                {
+                    // Valid data not seen 
+                    return FALSE; 
+                }
 
-            if (data >= ZERO_CHAR && data <= NINE_CHAR)
-            {
-                // Valid digit character byte seen 
-                cmd_value[i-id_index] = data; 
-                value_size++; 
-            }
-            else 
-            {
-                // Valid data not seen 
-                return FALSE; 
-            }
+                break; 
+
+            case 1:   // cmd value parsing 
+
+                if (data >= ZERO_CHAR && data <= NINE_CHAR)
+                {
+                    // Valid digit character byte seen 
+                    cmd_value[i-id_index] = data; 
+                    value_size++; 
+                }
+                else 
+                {
+                    // Valid data not seen 
+                    return FALSE; 
+                }
+
+                break; 
+
+            case 2: 
+
+                // Check that the command byte is within range 
+                if ((data >= A_LO_CHAR && data <= Z_LO_CHAR) || 
+                    (data >= A_UP_CHAR && data <= Z_UP_CHAR) || 
+                    (data >= ZERO_CHAR && data <= NINE_CHAR) || 
+                    (data == UNDERSCORE_CHAR))
+                {
+                    // 
+                }
+                else if (data == SPACE_CHAR)
+                {
+                    // 
+                }
+                else 
+                {
+                    // Valid data not seen 
+                    return FALSE; 
+                }
+
+                break; 
+
+            default: 
+                break; 
         }
+
+        // if (cmd_flag)
+        // {
+        //     // cmd ID parsing 
+
+        //     // Check that the command byte is within range 
+        //     if ((data >= A_LO_CHAR && data <= Z_LO_CHAR) || 
+        //         (data >= A_UP_CHAR && data <= Z_UP_CHAR) || 
+        //         (data >= ZERO_CHAR && data <= NINE_CHAR) || 
+        //         (data == UNDERSCORE_CHAR))
+        //     {
+        //         // Valid character byte seen 
+        //         cmd_data->cmd_id[i] = data; 
+        //     }
+        //     else if (data == SPACE_CHAR)
+        //     {
+        //         // End of ID, start of optional value 
+        //         cmd_flag = CLEAR_BIT; 
+        //         cmd_data->cmd_id[i] = NULL_CHAR; 
+        //         id_index = i + 1; 
+        //     }
+        //     else 
+        //     {
+        //         // Valid data not seen 
+        //         return FALSE; 
+        //     }
+        // }
+        // else 
+        // {
+        //     // cmd value parsing 
+
+        //     if (data >= ZERO_CHAR && data <= NINE_CHAR)
+        //     {
+        //         // Valid digit character byte seen 
+        //         cmd_value[i-id_index] = data; 
+        //         value_size++; 
+        //     }
+        //     else 
+        //     {
+        //         // Valid data not seen 
+        //         return FALSE; 
+        //     }
+        // }
     }
 
     // Calculate the cmd value 
