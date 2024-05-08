@@ -104,9 +104,12 @@ void nrf24l01_test_user_prompt(void);
  *          and will default to zero. 
  * 
  * @param cmd_data : user command info 
+ * @param cmd_arg_type : argument type to look for 
  * @return uint8_t : status of the parse - return true for a valid command and value 
  */
-uint8_t nrf24l01_test_parse_cmd(nrf24l01_cmd_data_t *cmd_data); 
+uint8_t nrf24l01_test_parse_cmd(
+    nrf24l01_cmd_data_t *cmd_data, 
+    nrf24l01_cmd_arg_t cmd_arg_type); 
 
 //=======================================================================================
 
@@ -480,9 +483,12 @@ void nrf24l01_heartbeat_test_loop(void)
 /**
  * @brief Send a ping and output the send operation status to the serial terminal 
  * 
- * @param arg : argument is not used - included for compatibility with function pointer 
+ * @param arg_value : argument is not used 
+ * @param arg_str : argument is not used 
  */
-void nrf24l01_test_send_ping(uint8_t arg); 
+void nrf24l01_test_send_ping(
+    uint8_t arg, 
+    uint8_t *arg_str); 
 
 
 /**
@@ -494,8 +500,11 @@ void nrf24l01_test_send_ping(uint8_t arg);
  *          not update the device. The status of the request is output for the user. 
  * 
  * @param rf_ch : RF channel to set the device to (0-125) 
+ * @param arg_str : argument is not used 
  */
-void nrf24l01_test_set_rf_ch(uint8_t rf_ch); 
+void nrf24l01_test_set_rf_ch(
+    uint8_t rf_ch, 
+    uint8_t *arg_str); 
 
 
 /**
@@ -509,8 +518,11 @@ void nrf24l01_test_set_rf_ch(uint8_t rf_ch);
  * @see nrf24l01_data_rate_t 
  * 
  * @param rf_dr : data rate to set the device to 
+ * @param arg_str : argument is not used 
  */
-void nrf24l01_test_set_rf_dr(uint8_t rf_dr); 
+void nrf24l01_test_set_rf_dr(
+    uint8_t rf_dr, 
+    uint8_t *arg_str); 
 
 
 /**
@@ -524,8 +536,11 @@ void nrf24l01_test_set_rf_dr(uint8_t rf_dr);
  * @see nrf24l01_rf_pwr_t 
  * 
  * @param rf_pwr : power output to set the device to 
+ * @param arg_str : argument is not used 
  */
-void nrf24l01_test_set_rf_pwr(uint8_t rf_pwr); 
+void nrf24l01_test_set_rf_pwr(
+    uint8_t rf_pwr, 
+    uint8_t *arg_str); 
 
 
 /**
@@ -639,6 +654,7 @@ void nrf24l01_manual_control_test_init(void)
     memset((void *)mc_cmd_data.cmd_buff, CLEAR, sizeof(mc_cmd_data.cmd_buff)); 
     memset((void *)mc_cmd_data.cmd_id, CLEAR, sizeof(mc_cmd_data.cmd_id)); 
     mc_cmd_data.cmd_value = CLEAR; 
+    memset((void *)mc_cmd_data.cmd_str, CLEAR, sizeof(mc_cmd_data.cmd_str)); 
 
     nrf24l01_test_user_prompt(); 
     
@@ -657,7 +673,7 @@ void nrf24l01_manual_control_test_loop(void)
 #if NRF24L01_SYSTEM_1 
 
     // Check for user input 
-    nrf24l01_test_user_input(&mc_cmd_data, mc_cmd_table, NUM_USER_CMDS); 
+    nrf24l01_test_user_input(&mc_cmd_data, mc_cmd_table, NUM_USER_CMDS, NRF24L01_CMD_ARG_VALUE); 
     
 #endif 
 
@@ -710,7 +726,9 @@ void nrf24l01_manual_control_test_loop(void)
 #if NRF24L01_SYSTEM_1 
 
 // PRX device connection status 
-void nrf24l01_test_send_ping(uint8_t arg)
+void nrf24l01_test_send_ping(
+    uint8_t arg_value, 
+    uint8_t *arg_str)
 {
     if (nrf24l01_send_payload((uint8_t *)ping_msg) == NRF24L01_OK)
     {
@@ -725,7 +743,9 @@ void nrf24l01_test_send_ping(uint8_t arg)
 
 
 // RF channel set callback 
-void nrf24l01_test_set_rf_ch(uint8_t rf_ch)
+void nrf24l01_test_set_rf_ch(
+    uint8_t rf_ch, 
+    uint8_t *arg_str)
 {
     if (rf_ch <= NRF24L01_RF_CH_MAX)
     {
@@ -743,7 +763,9 @@ void nrf24l01_test_set_rf_ch(uint8_t rf_ch)
 
 
 // RF data rate set callback 
-void nrf24l01_test_set_rf_dr(uint8_t rf_dr)
+void nrf24l01_test_set_rf_dr(
+    uint8_t rf_dr, 
+    uint8_t *arg_str)
 {
     if (rf_dr <= (uint8_t)NRF24L01_DR_250KBPS)
     {
@@ -762,7 +784,9 @@ void nrf24l01_test_set_rf_dr(uint8_t rf_dr)
 
 
 // RF power output set callback 
-void nrf24l01_test_set_rf_pwr(uint8_t rf_pwr)
+void nrf24l01_test_set_rf_pwr(
+    uint8_t rf_pwr, 
+    uint8_t *arg_str)
 {
     if (rf_pwr <= (uint8_t)NRF24L01_RF_PWR_0DBM)
     {
@@ -817,7 +841,8 @@ void nrf24l01_test_user_prompt(void)
 void nrf24l01_test_user_input(
     nrf24l01_cmd_data_t *cmd_data, 
     const nrf24l01_cmds_t *cmd_table, 
-    uint8_t num_cmds)
+    uint8_t num_cmds, 
+    nrf24l01_cmd_arg_t cmd_arg_type)
 {
     // Check for user serial terminal input 
     if (handler_flags.usart2_flag)
@@ -832,7 +857,7 @@ void nrf24l01_test_user_input(
             NRF24L01_TEST_MAX_INPUT); 
 
         // Validate the input - parse into an ID and value if valid 
-        if (nrf24l01_test_parse_cmd(cmd_data))
+        if (nrf24l01_test_parse_cmd(cmd_data, cmd_arg_type))
         {
             // Valid input - compare the ID to each of the available pre-defined commands 
             for (uint8_t i = CLEAR; i < num_cmds; i++) 
@@ -840,7 +865,7 @@ void nrf24l01_test_user_input(
                 if (!strcmp(cmd_table[i].user_cmds, (char *)cmd_data->cmd_id))
                 {
                     // ID matched to a command. Execute the command. 
-                    (cmd_table[i].cmd_ptr)(cmd_data->cmd_value); 
+                    (cmd_table[i].cmd_ptr)(cmd_data->cmd_value, cmd_data->cmd_str); 
                     break; 
                 }
             }
@@ -852,28 +877,33 @@ void nrf24l01_test_user_input(
 
 
 // Parse the user input into an ID (command) and value 
-uint8_t nrf24l01_test_parse_cmd(nrf24l01_cmd_data_t *cmd_data)
+uint8_t nrf24l01_test_parse_cmd(
+    nrf24l01_cmd_data_t *cmd_data, 
+    nrf24l01_cmd_arg_t cmd_arg_type)
 {
     // uint8_t cmd_flag = SET_BIT; 
-    uint8_t cmd_flag = CLEAR_BIT; 
+    nrf24l01_cmd_arg_t cmd_arg_flag = NRF24L01_CMD_ARG_NONE; 
     uint8_t id_index = CLEAR; 
-    uint8_t data = CLEAR; 
+    // uint8_t data = CLEAR; 
+    uint8_t data = cmd_data->cmd_buff[0]; 
     uint8_t cmd_value[NRF24L01_TEST_MAX_INPUT]; 
     uint8_t value_size = CLEAR; 
 
     // Initialize data 
     memset((void *)cmd_data->cmd_id, CLEAR, sizeof(cmd_data->cmd_id)); 
     cmd_data->cmd_value = CLEAR; 
+    memset((void *)cmd_data->cmd_str, CLEAR, sizeof(cmd_data->cmd_str)); 
     memset((void *)cmd_value, CLEAR, sizeof(cmd_value)); 
 
     // Parse the command into an ID and value 
-    for (uint8_t i = CLEAR; cmd_data->cmd_buff[i] != NULL_CHAR; i++)
+    // for (uint8_t i = CLEAR; cmd_data->cmd_buff[i] != NULL_CHAR; i++)
+    for (uint8_t i = CLEAR; data != NULL_CHAR; i++)
     {
-        data = cmd_data->cmd_buff[i]; 
+        // data = cmd_data->cmd_buff[i]; 
 
-        switch (cmd_flag)
+        switch (cmd_arg_flag)
         {
-            case 0:   // cmd ID parsing 
+            case NRF24L01_CMD_ARG_NONE:   // Command ID parsing 
 
                 // Check that the command byte is within range 
                 if ((data >= A_LO_CHAR && data <= Z_LO_CHAR) || 
@@ -887,7 +917,7 @@ uint8_t nrf24l01_test_parse_cmd(nrf24l01_cmd_data_t *cmd_data)
                 else if (data == SPACE_CHAR)
                 {
                     // End of ID, start of optional value 
-                    cmd_flag = SET_BIT;   // + argument option 
+                    cmd_arg_flag = cmd_arg_type; 
                     cmd_data->cmd_id[i] = NULL_CHAR; 
                     id_index = i + 1; 
                 }
@@ -899,7 +929,7 @@ uint8_t nrf24l01_test_parse_cmd(nrf24l01_cmd_data_t *cmd_data)
 
                 break; 
 
-            case 1:   // cmd value parsing 
+            case NRF24L01_CMD_ARG_VALUE:   // Command value parsing 
 
                 if (data >= ZERO_CHAR && data <= NINE_CHAR)
                 {
@@ -915,31 +945,15 @@ uint8_t nrf24l01_test_parse_cmd(nrf24l01_cmd_data_t *cmd_data)
 
                 break; 
 
-            case 2: 
-
-                // Check that the command byte is within range 
-                if ((data >= A_LO_CHAR && data <= Z_LO_CHAR) || 
-                    (data >= A_UP_CHAR && data <= Z_UP_CHAR) || 
-                    (data >= ZERO_CHAR && data <= NINE_CHAR) || 
-                    (data == UNDERSCORE_CHAR))
-                {
-                    // 
-                }
-                else if (data == SPACE_CHAR)
-                {
-                    // 
-                }
-                else 
-                {
-                    // Valid data not seen 
-                    return FALSE; 
-                }
-
+            case NRF24L01_CMD_ARG_STR:   // Command string parsing 
+                cmd_data->cmd_str[i-id_index] = data; 
                 break; 
 
             default: 
                 break; 
         }
+
+        data = cmd_data->cmd_buff[i+1]; 
 
         // if (cmd_flag)
         // {

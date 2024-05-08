@@ -20,6 +20,7 @@
 #include "stm32f4xx_it.h" 
 
 #include "nrf24l01_test.h" 
+#include "hw125_test.h" 
 #include "esc_readytosky_test.h" 
 
 //=======================================================================================
@@ -32,8 +33,8 @@
 // Conditional compilation 
 
 // Devices 
-#define RC_SYSTEM_1 1 
-#define RC_SYSTEM_2 0 
+#define RC_SYSTEM_1 0 
+#define RC_SYSTEM_2 1 
 
 // Test code 
 #define RC_SD_CARD_TEST 1 
@@ -285,7 +286,7 @@ void rc_test_app(void)
 // Timing 
 #define RC_SD_PERIOD 50000          // (us) 
 #define RC_SD_PUSH_MSG_TIMEOUT 20   // Counts 
-#define RC_SD_PUSH_MSG_DELAY 5      // (ms) 
+#define RC_SD_PUSH_MSG_DELAY 10     // (ms) 
 
 // Commands 
 #define RC_SD_NUM_CMDS 2 
@@ -297,10 +298,14 @@ void rc_test_app(void)
 // Prototypes 
 
 // "push" callback 
-void rc_test_push_callback(uint8_t arg); 
+void rc_test_push_callback(
+    uint8_t arg_value, 
+    uint8_t *arg_str); 
 
 // "pop" callback 
-void rc_test_pop_callback(uint8_t arg); 
+void rc_test_pop_callback(
+    uint8_t arg_value, 
+    uint8_t *arg_str); 
 
 //==================================================
 
@@ -311,7 +316,9 @@ void rc_test_pop_callback(uint8_t arg);
 // Messages sent between system 
 static const char 
 push_cmd[] = "push",   // Doubles as a user command 
-pop_cmd[] = "pop"; 
+pop_cmd[] = "pop", 
+push_confirm[] = "push confirm", 
+msg_confirm[] = "msg confirm"; 
 
 // Command table 
 static const nrf24l01_cmds_t rc_cmd_table[RC_SD_NUM_CMDS] = 
@@ -322,14 +329,20 @@ static const nrf24l01_cmds_t rc_cmd_table[RC_SD_NUM_CMDS] =
 
 #if RC_SYSTEM_1 
 
+static const char 
+push_status[] = "Push requested... ", 
+push_success[] = "message saved.", 
+pop_status[] = "Popped message: "; 
+
 // Command data 
 static nrf24l01_cmd_data_t rc_cmd_data; 
 
 #elif RC_SYSTEM_2 
 
 static const char 
-push_confirm[] = "push confirm", 
-msg_confirm[] = "msg confirm"; 
+no_msgs[] = "No messages to pop."; 
+
+static hw125_test_drive_data_t rc_sd_card; 
 
 #endif 
 
@@ -394,6 +407,9 @@ void rc_sd_card_test_init(void)
     memset((void *)rc_cmd_data.cmd_id, CLEAR, sizeof(rc_cmd_data.cmd_id)); 
     rc_cmd_data.cmd_value = CLEAR; 
 
+    // Provide an initial prompt for the user 
+    uart_sendstring(USART2, "\r\n\n>>> "); 
+
 #elif RC_SYSTEM_2 
 
     //==================================================
@@ -402,24 +418,44 @@ void rc_sd_card_test_init(void)
     // SPI2 and slave select pin for SD card 
     // This is on different pins than the RF module to test if the same SPI bus works across 
     // multiple pins. 
-    spi_init(
-        SPI2, 
-        GPIOB,   // SCK pin GPIO port 
-        PIN_10,  // SCK pin 
-        GPIOB,   // Data (MISO/MOSI) pin GPIO port 
-        PIN_14,  // MISO pin 
-        PIN_15,  // MOSI pin 
-        SPI_BR_FPCLK_16, 
-        SPI_CLOCK_MODE_0); 
-    spi_ss_init(GPIOB, PIN_12); 
+    // spi_init(
+    //     SPI2, 
+    //     GPIOB,   // SCK pin GPIO port 
+    //     PIN_10,  // SCK pin 
+    //     GPIOB,   // Data (MISO/MOSI) pin GPIO port 
+    //     PIN_14,  // MISO pin 
+    //     PIN_15,  // MOSI pin 
+    //     SPI_BR_FPCLK_16, 
+    //     SPI_CLOCK_MODE_0); 
+    // spi_ss_init(GPIOB, PIN_12); 
 
     //==================================================
 
     //==================================================
-    // Initialize SD card --> for testing multiple SPI pins on the same SPI bus 
+    // Initialize SD card 
 
     // SD card user initialization 
-    hw125_user_init(SPI2, GPIOB, GPIOX_PIN_12); 
+    // hw125_user_init(SPI2, GPIOB, GPIOX_PIN_12); 
+
+    // uint8_t sd_init_status = FR_OK; 
+
+    // // Mount the drive 
+    // sd_init_status |= f_mount(&rc_sd_card.file_sys, "", HW125_MOUNT_NOW); 
+
+    // // Check for the test directory 
+    // // - If it doesn't exist then create it. 
+
+
+    // // Open the file with FA_OPEN_APPEND (HW125_MODE_AA) to either open the existing 
+    // // file or create a new one and move to the end of the file. 
+
+    // // Close the file 
+
+    // if (sd_init_status)
+    // {
+    //     uart_sendstring(USART2, "Drive configured successfully."); 
+    //     uart_sendstring(USART2, "Error configuring the drive."); 
+    // }
     
     //==================================================
     
@@ -436,37 +472,10 @@ void rc_sd_card_test_loop(void)
 {
 #if RC_SYSTEM_1 
 
-    // Look for an input from the user. 
-    // If there's an input then look for a matching command. 
-    // If there is a matching command then run the command callback function. 
-    // Callback 1 ("push"): 
-    // - Send the push command to system 2. 
-    // - Look for a confirmation response from system 2 (include a timeout). 
-    // - If response seen then send the message to system 2. 
-    // - Look for a confirmation response from system 2. 
-    // - Return to looking for a user command. 
-    // Callback 2 ("pop"): 
-    // - Look for the message from the system 2 (include a timeout). 
-    // - Return to looking for a user command. 
-
     // Check for user input and match inputs to commands 
-    nrf24l01_test_user_input(&rc_cmd_data, rc_cmd_table, RC_SD_NUM_CMDS); 
+    nrf24l01_test_user_input(&rc_cmd_data, rc_cmd_table, RC_SD_NUM_CMDS, NRF24L01_CMD_ARG_STR); 
 
 #elif RC_SYSTEM_2 
-
-    // Look for a message from system 1 
-    // If a message is received then try to match it against a pre-defined command. 
-    // If a command is matched then execute a callback. 
-    // Callback 1 ("push"): 
-    // - Send a comfirmation message back to system 1. 
-    // - Look for the next available message. If one is received then write it's contents 
-    //   (regardless of what) to the SD card test file at the end. Maybe add a timeout 
-    //   for looking for a message. 
-    // - Return to looking for a command. 
-    // Callback 2 ("pop"): 
-    // - Retreive the last (most recent) message from the SD card test file. 
-    // - Send the message to system 1. 
-    // - Return to looking for a command. 
 
     // Periodically check for action items 
     if (tim_compare(rc_test.timer_nonblocking, 
@@ -490,7 +499,7 @@ void rc_sd_card_test_loop(void)
                 if (!strcmp(rc_cmd_table[i].user_cmds, (char *)rc_test.read_buff))
                 {
                     // ID matched to a command. Execute the command callback. 
-                    (rc_cmd_table[i].cmd_ptr)(CLEAR); 
+                    (rc_cmd_table[i].cmd_ptr)(CLEAR, NULL); 
                     break; 
                 }
             }
@@ -507,18 +516,66 @@ void rc_sd_card_test_loop(void)
 // Test functions 
 
 // "push" callback 
-void rc_test_push_callback(uint8_t arg)
+void rc_test_push_callback(
+    uint8_t arg_value, 
+    uint8_t *arg_str)
 {
 #if RC_SYSTEM_1 
 
-    // 
+    // Send a "push" command to system 2 
+    nrf24l01_send_payload((uint8_t *)push_cmd); 
+
+    // Provide user feedback 
+    uart_sendstring(USART2, push_status); 
+
+    // Check repeatedly for a push confirmation message. If the confirmation is received 
+    // within the time limit then send the message to system 2. 
+    for (uint8_t i = CLEAR; i < RC_SD_PUSH_MSG_TIMEOUT; i++)
+    {
+        tim_delay_ms(rc_test.timer_nonblocking, RC_SD_PUSH_MSG_DELAY); 
+
+        if (nrf24l01_data_ready_status() == rc_test.pipe)
+        {
+            nrf24l01_receive_payload(rc_test.read_buff); 
+
+            if (!strcmp(push_confirm, (char *)rc_test.read_buff))
+            {
+                // Send the message to system 2 
+                // nrf24l01_send_payload(rc_cmd_data.cmd_str); 
+                nrf24l01_send_payload(arg_str); 
+
+                // Check repeatedly for a message received confirmation. If the 
+                // confirmation is received within the time limit then provide feedback 
+                // to the user that the operation was successful. 
+                for (uint8_t j = CLEAR; j < RC_SD_PUSH_MSG_TIMEOUT; j++)
+                {
+                    tim_delay_ms(rc_test.timer_nonblocking, RC_SD_PUSH_MSG_DELAY); 
+
+                    // Look for a message from system 2 
+                    if (nrf24l01_data_ready_status() == rc_test.pipe)
+                    {
+                        nrf24l01_receive_payload(rc_test.read_buff); 
+
+                        if (!strcmp(msg_confirm, (char *)rc_test.read_buff))
+                        {
+                            // Output a confirmation 
+                            uart_sendstring(USART2, push_success); 
+                            break; 
+                        }
+                    }
+                }
+
+                break; 
+            }
+        }
+    }
 
 #elif RC_SYSTEM_2 
 
     // Send a confirmation to system 1 that a "push" command was received 
     nrf24l01_send_payload((uint8_t *)push_confirm); 
 
-    // Check a few times (with a delay) if a message arrives 
+    // Check multiple times (with a delay) if a message arrives 
     for (uint8_t i = CLEAR; i < RC_SD_PUSH_MSG_TIMEOUT; i++)
     {
         tim_delay_ms(rc_test.timer_nonblocking, RC_SD_PUSH_MSG_DELAY); 
@@ -540,18 +597,42 @@ void rc_test_push_callback(uint8_t arg)
 
 
 // "pop" callback 
-void rc_test_pop_callback(uint8_t arg)
+void rc_test_pop_callback(
+    uint8_t arg, 
+    uint8_t *arg_str)
 {
 #if RC_SYSTEM_1 
 
-    // 
+    // Send a "pop" command to system 2 
+    nrf24l01_send_payload((uint8_t *)pop_cmd); 
+
+    // Provide user feedback 
+    uart_sendstring(USART2, pop_status); 
+
+    // Check repeatedly for a message from system 2. If a message is received then 
+    // output it for the user to see. 
+    for (uint8_t i = CLEAR; i < RC_SD_PUSH_MSG_TIMEOUT; i++)
+    {
+        tim_delay_ms(rc_test.timer_nonblocking, RC_SD_PUSH_MSG_DELAY); 
+
+        if (nrf24l01_data_ready_status() == rc_test.pipe)
+        {
+            nrf24l01_receive_payload(rc_test.read_buff); 
+            uart_sendstring(USART2, (char *)rc_test.read_buff); 
+            break; 
+        }
+    }
 
 #elif RC_SYSTEM_2 
 
     // Get the most recent message from the test file on the SD card 
+    // If there are none left then send the indication back to system 1. 
+
+    // nrf24l01_send_payload((uint8_t *)no_msgs); 
 
     // Send the message back to system 1 
-    nrf24l01_send_payload(rc_test.write_buff); 
+    // nrf24l01_send_payload(rc_test.write_buff); 
+    nrf24l01_send_payload((uint8_t *)"string!"); 
 
 #endif 
 }
