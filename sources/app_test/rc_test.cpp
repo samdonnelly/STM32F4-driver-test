@@ -41,7 +41,7 @@
 #define RC_MOTOR_TEST 0 
 
 // Hardware 
-#define RC_TEST_SCREEN 0        // HD44780U screen in the system - shuts screen off 
+#define RC_TEST_SCREEN 1        // HD44780U screen in the system - shuts screen off 
 
 //==================================================
 
@@ -267,18 +267,33 @@ void rc_test_app(void)
 // SD card test 
 
 // Description 
-// - Device 1 (master) sends a user input message to device 2 (slave) upon user request 
-// - Device 2 reads message and attempts to save it to a file on an SD card 
-// - Device 2 reports back the status of the SD card write to device 1 
-
-// - Input from the serial terminal by the user to system 1. 
-// - Input processed by system 1. If the input matches a valid command then do something. 
-//   Otherwise ignore it. 
-// - Commands will be "push" and "pop". "push" is followed by a message. "push" sends 
-//   a message to system 2 and where the message gets saved to the end of the test 
-//   file on the SD card. "pop" requests the most recent message from the test file and 
-//   system 2 sends it back to system 1 and deletes it from the SD card. There will be 
-//   a handshakes between 1 and 2 before pushing a message. 
+// - System 1: 
+//   - Look for serial terminal input from a user. Valid inputs are "push" followed by 
+//     a string or "pop". 
+//   - If an inout matches a pre-defined command then execute the command callback. 
+//   - Callback 1: ("push") 
+//     - Send a push request to system 2. 
+//     - If a response is seen then send the string/message to system 2. 
+//     - If a confirmation is received then indicate success back to the user. 
+//     - If no response is seen then it's considered a fail and system 1 goes back to 
+//       looking for user input. 
+//   - Callback 2: ("pop") 
+//     - Send a pop request to system 2. 
+//     - If a response is seen then output the response to the serial terminal for the 
+//       user to see. 
+// 
+// - System 2: 
+//   - Look for a message from system 1. 
+//   - Attempt to match an input to a pre-defined command. If there is a match then 
+//     the command callback is executed. 
+//   - Callback 1: ("push") 
+//     - Send a push confirmation message to system 1. 
+//     - Wait for a message from system 1. 
+//     - If a message is received then save it to the SD card and send a confirmation 
+//       back to system 1. 
+//   - Callback 2: ("pop") 
+//     - Get the most recent message from the SD card file and send it back to system 
+//       1. Delete the message from the file. 
 
 //==================================================
 // Macros 
@@ -341,8 +356,6 @@ static nrf24l01_cmd_data_t rc_cmd_data;
 
 static const char 
 no_msgs[] = "No messages to pop."; 
-
-static hw125_test_drive_data_t rc_sd_card; 
 
 #endif 
 
@@ -414,20 +427,10 @@ void rc_sd_card_test_init(void)
 
     //==================================================
     // Initialize SPI 
-
-    // SPI2 and slave select pin for SD card 
-    // This is on different pins than the RF module to test if the same SPI bus works across 
-    // multiple pins. 
-    // spi_init(
-    //     SPI2, 
-    //     GPIOB,   // SCK pin GPIO port 
-    //     PIN_10,  // SCK pin 
-    //     GPIOB,   // Data (MISO/MOSI) pin GPIO port 
-    //     PIN_14,  // MISO pin 
-    //     PIN_15,  // MOSI pin 
-    //     SPI_BR_FPCLK_16, 
-    //     SPI_CLOCK_MODE_0); 
-    // spi_ss_init(GPIOB, PIN_12); 
+    
+    // The same SPI network (ex. SPI2) can't be used on multiple pins. Didn't work when 
+    // initialization for the same SPI port on was done on multiple pins. Must use a 
+    // different SPI port or only use one set of pins. 
 
     //==================================================
 
@@ -435,27 +438,16 @@ void rc_sd_card_test_init(void)
     // Initialize SD card 
 
     // SD card user initialization 
-    // hw125_user_init(SPI2, GPIOB, GPIOX_PIN_12); 
 
-    // uint8_t sd_init_status = FR_OK; 
+    // Mount the drive 
 
-    // // Mount the drive 
-    // sd_init_status |= f_mount(&rc_sd_card.file_sys, "", HW125_MOUNT_NOW); 
+    // Check for the test directory 
+    // - If it doesn't exist then create it. 
 
-    // // Check for the test directory 
-    // // - If it doesn't exist then create it. 
+    // Open the file with FA_OPEN_APPEND (HW125_MODE_AA) to either open the existing 
+    // file or create a new one and move to the end of the file. 
 
-
-    // // Open the file with FA_OPEN_APPEND (HW125_MODE_AA) to either open the existing 
-    // // file or create a new one and move to the end of the file. 
-
-    // // Close the file 
-
-    // if (sd_init_status)
-    // {
-    //     uart_sendstring(USART2, "Drive configured successfully."); 
-    //     uart_sendstring(USART2, "Error configuring the drive."); 
-    // }
+    // Close the file. Will be opened for each read/write operation. 
     
     //==================================================
     
@@ -628,11 +620,8 @@ void rc_test_pop_callback(
     // Get the most recent message from the test file on the SD card 
     // If there are none left then send the indication back to system 1. 
 
-    // nrf24l01_send_payload((uint8_t *)no_msgs); 
-
-    // Send the message back to system 1 
-    // nrf24l01_send_payload(rc_test.write_buff); 
-    nrf24l01_send_payload((uint8_t *)"string!"); 
+    // Send the message back to system 1 - temp message for now 
+    nrf24l01_send_payload((uint8_t *)no_msgs); 
 
 #endif 
 }
