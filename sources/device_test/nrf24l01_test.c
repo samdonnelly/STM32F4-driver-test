@@ -95,22 +95,6 @@ void nrf24l01_manual_control_test_loop(void);
  */
 void nrf24l01_test_user_prompt(void); 
 
-
-/**
- * @brief Parse the user input into an ID (command) and value 
- * 
- * @details User commands are entered via the serial terminal in the format "<ID> <value>" 
- *          and this function will parse the input into each part. The value is optional 
- *          and will default to zero. 
- * 
- * @param cmd_data : user command info 
- * @param cmd_arg_type : argument type to look for 
- * @return uint8_t : status of the parse - return true for a valid command and value 
- */
-uint8_t nrf24l01_test_parse_cmd(
-    nrf24l01_cmd_data_t *cmd_data, 
-    nrf24l01_cmd_arg_t cmd_arg_type); 
-
 //=======================================================================================
 
 

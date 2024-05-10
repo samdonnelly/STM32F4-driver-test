@@ -37,11 +37,11 @@
 #define RC_SYSTEM_2 1 
 
 // Test code 
-#define RC_SD_CARD_TEST 1 
-#define RC_MOTOR_TEST 0 
+#define RC_SD_CARD_TEST 0 
+#define RC_MOTOR_TEST 1 
 
 // Hardware 
-#define RC_TEST_SCREEN 1        // HD44780U screen in the system - shuts screen off 
+#define RC_TEST_SCREEN 0        // HD44780U screen in the system - shuts screen off 
 
 //==================================================
 
@@ -60,8 +60,9 @@
 // Variables 
 
 // Device tracker data record 
-typedef struct rc_test_trackers_s 
+class rc_test_trackers 
 {
+public: 
     // Timing information 
     TIM_TypeDef *timer_nonblocking;                // Timer used for non-blocking delays 
     tim_compare_t delay_timer;                     // Delay timing info 
@@ -72,11 +73,10 @@ typedef struct rc_test_trackers_s
     // Payload data 
     uint8_t read_buff[NRF24L01_MAX_PAYLOAD_LEN];   // Data read by PRX from PTX device 
     uint8_t write_buff[NRF24L01_MAX_PAYLOAD_LEN];  // Data sent to PRX from PTX device 
-}
-rc_test_trackers_t; 
+}; 
 
 // Device tracker instance 
-static rc_test_trackers_t rc_test; 
+static rc_test_trackers rc_test; 
 
 //=======================================================================================
 
@@ -643,14 +643,14 @@ void rc_test_pop_callback(
 // Macros 
 
 // Commands 
-#define RC_LEFT_MOTOR 0x4C    // "L" character that indicates left motor 
-#define RC_RIGHT_MOTOR 0x52   // "R" character that indicates right motor 
-#define RC_FWD_THRUST 0x50    // "P" (plus) - indicates forward thrust 
-#define RC_REV_THRUST 0x4D    // "M" (minus) - indicates reverse thrust 
-#define RC_NEUTRAL 0x4E       // "N" (neutral) - indicates neutral gear or zero thrust 
-#define RC_NO_THRUST 0        // Force thruster output to zero 
-#define RC_TEST_ADC_NUM 2     // Number of ADCs used for throttle command 
-#define RC_PERIOD 50000       // Time between throttle command sends (us) 
+#define RC_LEFT_MOTOR 0x4C      // "L" character that indicates left motor 
+#define RC_RIGHT_MOTOR 0x52     // "R" character that indicates right motor 
+#define RC_FWD_THRUST 0x50      // "P" (plus) - indicates forward thrust 
+#define RC_REV_THRUST 0x4D      // "M" (minus) - indicates reverse thrust 
+#define RC_NEUTRAL 0x4E         // "N" (neutral) - indicates neutral gear or zero thrust 
+#define RC_NO_THRUST 0          // Force thruster output to zero 
+#define RC_TEST_ADC_NUM 2       // Number of ADCs used for throttle command 
+#define RC_MOTOR_PERIOD 50000   // Time between throttle command sends (us) 
 
 // ESC Parameters 
 #define RC_ESC_PERIOD 20000            // ESC PWM timer period (auto-reload register) 
@@ -663,8 +663,17 @@ void rc_test_pop_callback(
 //==================================================
 // Variables 
 
+#if RC_SYSTEM_1 
+
 // ADC storage 
 static uint16_t adc_data[RC_TEST_ADC_NUM];  // Location for the DMA to store ADC values 
+
+#elif RC_SYSTEM_2 
+
+// Command data 
+static nrf24l01_cmd_data_t rc_cmd_data; 
+
+#endif 
 
 //==================================================
 
@@ -746,14 +755,12 @@ void rc_motor_test_init(void)
 
     //==================================================
 
-    //==================================================
-    // Initialize variables 
-
     memset((void *)adc_data, CLEAR, sizeof(adc_data)); 
-    
-    //==================================================
 
 #elif RC_SYSTEM_2 
+
+    //==================================================
+    // 
 
     // ESC driver setup 
     esc_readytosky_init(
@@ -780,6 +787,14 @@ void rc_motor_test_init(void)
 
     // Enable the PWM timer 
     tim_enable(TIM3); 
+    
+    //==================================================
+
+    memset((void *)rc_cmd_data.cb, CLEAR, sizeof(rc_cmd_data.cb)); 
+    rc_cmd_data.cb_index = CLEAR; 
+    memset((void *)rc_cmd_data.cmd_buff, CLEAR, sizeof(rc_cmd_data.cmd_buff)); 
+    memset((void *)rc_cmd_data.cmd_id, CLEAR, sizeof(rc_cmd_data.cmd_id)); 
+    rc_cmd_data.cmd_value = CLEAR; 
 
 #endif 
 }
@@ -800,17 +815,27 @@ void rc_motor_test_loop(void)
     char sign = RC_FWD_THRUST; 
     int16_t throttle = CLEAR; 
 
+#elif RC_SYSTEM_2 
+
+    static int16_t right_throttle = CLEAR; 
+    static int16_t left_throttle = CLEAR; 
+    int16_t cmd_value = CLEAR; 
+
+#endif 
+
     // Periodically send the throttle command - alternate between left and right side throttle 
     // commands for each send. 
     if (tim_compare(rc_test.timer_nonblocking, 
                     rc_test.delay_timer.clk_freq, 
-                    RC_PERIOD, 
+                    RC_MOTOR_PERIOD, 
                     &rc_test.delay_timer.time_cnt_total, 
                     &rc_test.delay_timer.time_cnt, 
                     &rc_test.delay_timer.time_start))
     {
         // time_start flag does not need to be set again because this timer runs 
         // continuously. 
+        
+#if RC_SYSTEM_1 
 
         // Choose between right and left thruster 
         side = (thruster) ? RC_LEFT_MOTOR : RC_RIGHT_MOTOR; 
@@ -837,7 +862,7 @@ void rc_motor_test_loop(void)
             "%c%c%d", 
             side, sign, throttle); 
 
-        if (nrf24l01_send_payload(rc_test.write_buff))
+        if (nrf24l01_send_payload(rc_test.write_buff) == NRF24L01_OK)
         {
             led_state = (gpio_pin_state_t)(GPIO_HIGH - led_state); 
             gpio_write(GPIOA, GPIOX_PIN_5, led_state); 
@@ -845,86 +870,82 @@ void rc_motor_test_loop(void)
 
         // Toggle the thruster flag 
         thruster = SET_BIT - thruster; 
-    }
 
 #elif RC_SYSTEM_2 
 
-    //==================================================
-    // Note 
-    // - Bit shifting works on signed integers - the sign bit is respected. 
-    //==================================================
-    
-    // Local variables 
-    static int16_t right_throttle = CLEAR; 
-    static int16_t left_throttle = CLEAR; 
-    int16_t cmd_value = CLEAR; 
+        //==================================================
+        // Note 
+        // - Bit shifting works on signed integers - the sign bit is respected. 
+        //==================================================
 
-    // Check if a payload has been received 
-    if (nrf24l01_data_ready_status())
-    {
-        // Payload has been received. Read the payload from the device RX FIFO. 
-        nrf24l01_receive_payload(rc_test.read_buff); 
-
-        // Validate the payload format 
-        if (rc_test_parse_cmd(&rc_test.read_buff[1]))
+        // Check if a payload has been received 
+        if (nrf24l01_data_ready_status() == rc_test.pipe)
         {
-            // Check that the command matches a valid throttle command. If it does then update 
-            // the thruster command. 
+            // Payload has been received. Read the payload from the device RX FIFO. 
+            nrf24l01_receive_payload(rc_test.read_buff); 
 
-            cmd_value = (int16_t)rc_test.cmd_value; 
-
-            if (rc_test.cmd_id[0] == RC_RIGHT_MOTOR)
+            // Validate the payload format 
+            // if (rc_test_parse_cmd(&rc_test.read_buff[1]))
+            if (nrf24l01_test_parse_cmd(&rc_cmd_data, NRF24L01_CMD_ARG_VALUE))
             {
-                switch (rc_test.cmd_id[1])
+                // Check that the command matches a valid throttle command. If it does then update 
+                // the thruster command. 
+
+                cmd_value = (int16_t)rc_cmd_data.cmd_value; 
+
+                if (rc_cmd_data.cmd_id[0] == RC_RIGHT_MOTOR)
                 {
-                    case RC_FWD_THRUST: 
-                        right_throttle += (cmd_value - right_throttle) >> SHIFT_3; 
-                        esc_readytosky_send(DEVICE_ONE, right_throttle); 
-                        break; 
-                    case RC_REV_THRUST: 
-                        right_throttle += ((~cmd_value + 1) - right_throttle) >> SHIFT_3; 
-                        esc_readytosky_send(DEVICE_ONE, right_throttle); 
-                        break; 
-                    case RC_NEUTRAL: 
-                        if (cmd_value == RC_NO_THRUST)
-                        {
-                            right_throttle = RC_NO_THRUST; 
+                    switch (rc_cmd_data.cmd_id[1])
+                    {
+                        case RC_FWD_THRUST: 
+                            right_throttle += (cmd_value - right_throttle) >> SHIFT_3; 
                             esc_readytosky_send(DEVICE_ONE, right_throttle); 
-                        }
-                        break; 
-                    default: 
-                        break; 
+                            break; 
+                        case RC_REV_THRUST: 
+                            right_throttle += ((~cmd_value + 1) - right_throttle) >> SHIFT_3; 
+                            esc_readytosky_send(DEVICE_ONE, right_throttle); 
+                            break; 
+                        case RC_NEUTRAL: 
+                            if (cmd_value == RC_NO_THRUST)
+                            {
+                                right_throttle = RC_NO_THRUST; 
+                                esc_readytosky_send(DEVICE_ONE, right_throttle); 
+                            }
+                            break; 
+                        default: 
+                            break; 
+                    }
                 }
-            }
-            else if (rc_test.cmd_id[0] == RC_LEFT_MOTOR)
-            {
-                switch (rc_test.cmd_id[1])
+                else if (rc_cmd_data.cmd_id[0] == RC_LEFT_MOTOR)
                 {
-                    case RC_FWD_THRUST: 
-                        left_throttle += (cmd_value - left_throttle) >> SHIFT_3; 
-                        esc_readytosky_send(DEVICE_TWO, left_throttle); 
-                        break; 
-                    case RC_REV_THRUST: 
-                        left_throttle += ((~cmd_value + 1) - left_throttle) >> SHIFT_3; 
-                        esc_readytosky_send(DEVICE_TWO, left_throttle); 
-                        break; 
-                    case RC_NEUTRAL: 
-                        if (cmd_value == RC_NO_THRUST)
-                        {
-                            left_throttle = RC_NO_THRUST; 
+                    switch (rc_cmd_data.cmd_id[1])
+                    {
+                        case RC_FWD_THRUST: 
+                            left_throttle += (cmd_value - left_throttle) >> SHIFT_3; 
                             esc_readytosky_send(DEVICE_TWO, left_throttle); 
-                        }
-                        break; 
-                    default: 
-                        break; 
+                            break; 
+                        case RC_REV_THRUST: 
+                            left_throttle += ((~cmd_value + 1) - left_throttle) >> SHIFT_3; 
+                            esc_readytosky_send(DEVICE_TWO, left_throttle); 
+                            break; 
+                        case RC_NEUTRAL: 
+                            if (cmd_value == RC_NO_THRUST)
+                            {
+                                left_throttle = RC_NO_THRUST; 
+                                esc_readytosky_send(DEVICE_TWO, left_throttle); 
+                            }
+                            break; 
+                        default: 
+                            break; 
+                    }
                 }
             }
+
+            memset((void *)rc_test.read_buff, CLEAR, sizeof(rc_test.read_buff)); 
         }
 
-        memset((void *)rc_test.read_buff, CLEAR, sizeof(rc_test.read_buff)); 
-    }
-
 #endif 
+    }
 }
 
 
@@ -983,8 +1004,3 @@ void rc_motor_test_loop(void)
 //=======================================================================================
 
 #endif 
-
-
-//=======================================================================================
-// Test functions 
-//=======================================================================================
