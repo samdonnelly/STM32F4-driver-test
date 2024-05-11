@@ -15,6 +15,10 @@
 #ifndef _ESC_READYTOSKY_TEST_H_ 
 #define _ESC_READYTOSKY_TEST_H_ 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //=======================================================================================
 // Includes 
 
@@ -59,5 +63,9 @@ void esc_readytosky_test_app(void);
 int16_t esc_test_adc_mapping(uint16_t adc_val); 
 
 //=======================================================================================
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif   // _ESC_READYTOSKY_TEST_H_ 

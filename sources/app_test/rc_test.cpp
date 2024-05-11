@@ -41,7 +41,7 @@
 #define RC_MOTOR_TEST 1 
 
 // Hardware 
-#define RC_TEST_SCREEN 0        // HD44780U screen in the system - shuts screen off 
+#define RC_TEST_SCREEN 1        // HD44780U screen in the system - shuts screen off 
 
 //==================================================
 
@@ -634,28 +634,38 @@ void rc_test_pop_callback(
 #elif RC_MOTOR_TEST 
 
 //=======================================================================================
-// Multi SPI test 
+// Remote control motor test 
 
 // Description 
-// - 
+// - System 1 reads two ADC values, one for each motor in system 2. The ADC values get 
+//   converted to a throttle command and a message gets sent to system 2 that indicates 
+//   the motor, direction and throttle to apply. 
+// - System 2 looks for messages from system 1 that contain commands for the throttle to 
+//   apply to each motor. The messages get decoded and the motor speed updated. If the 
+//   system loses radio connection (i.e. no message/command is received after a period 
+//   of time) then the motor speed is set to zero. 
 
 //==================================================
 // Macros 
 
-// Commands 
-#define RC_LEFT_MOTOR 0x4C      // "L" character that indicates left motor 
-#define RC_RIGHT_MOTOR 0x52     // "R" character that indicates right motor 
-#define RC_FWD_THRUST 0x50      // "P" (plus) - indicates forward thrust 
-#define RC_REV_THRUST 0x4D      // "M" (minus) - indicates reverse thrust 
-#define RC_NEUTRAL 0x4E         // "N" (neutral) - indicates neutral gear or zero thrust 
-#define RC_NO_THRUST 0          // Force thruster output to zero 
-#define RC_TEST_ADC_NUM 2       // Number of ADCs used for throttle command 
-#define RC_MOTOR_PERIOD 50000   // Time between throttle command sends (us) 
+// Command IDs 
+#define RC_MOTOR_LEFT_MOTOR 0x4C          // "L" character that indicates left motor 
+#define RC_MOTOR_RIGHT_MOTOR 0x52         // "R" character that indicates right motor 
+#define RC_MOTOR_FWD_THRUST 0x50          // "P" (plus) - indicates forward thrust 
+#define RC_MOTOR_REV_THRUST 0x4D          // "M" (minus) - indicates reverse thrust 
+#define RC_MOTOR_NEUTRAL 0x4E             // "N" (neutral) - indicates zero thrust 
+#define RC_MOTOR_NO_THRUST 0              // Force thruster output to zero 
 
-// ESC Parameters 
-#define RC_ESC_PERIOD 20000            // ESC PWM timer period (auto-reload register) 
-#define RC_ESC_FWD_SPEED_LIM 1600      // Forward PWM pulse time limit (us) 
-#define RC_ESC_REV_SPEED_LIM 1440      // Reverse PWM pulse time limit (us) 
+// Timing 
+#define RC_MOTOR_TIMEOUT 20               // No radio connection timeout counter 
+#define RC_MOTOR_SEND_PERIOD 100000       // Time between throttle command sends (us) 
+#define RC_MOTOR_RECEIVE_PERIOD 50000     // Time between throttle command sends (us) 
+
+// System parameters 
+#define RC_MOTOR_TEST_ADC_NUM 2           // Number of ADCs used for throttle command 
+#define RC_MOTOR_ESC_PERIOD 20000         // ESC PWM timer period (auto-reload register) 
+#define RC_MOTOR_ESC_FWD_SPEED_LIM 1600   // Forward PWM pulse time limit (us) 
+#define RC_MOTOR_ESC_REV_SPEED_LIM 1440   // Reverse PWM pulse time limit (us) 
 
 //==================================================
 
@@ -665,8 +675,8 @@ void rc_test_pop_callback(
 
 #if RC_SYSTEM_1 
 
-// ADC storage 
-static uint16_t adc_data[RC_TEST_ADC_NUM];  // Location for the DMA to store ADC values 
+// ADC storage - Location for the DMA to store ADC values 
+static uint16_t adc_data[RC_MOTOR_TEST_ADC_NUM]; 
 
 #elif RC_SYSTEM_2 
 
@@ -680,6 +690,32 @@ static nrf24l01_cmd_data_t rc_cmd_data;
 
 //==================================================
 // Prototypes 
+
+#if RC_SYSTEM_1 
+#elif RC_SYSTEM_2 
+
+/**
+ * @brief Thruster output 
+ * 
+ * @param timer : radio connection timeout counter 
+ * @param device : device number (left vs right thruster) 
+ * @param throttle : throttle command 
+ */
+void rc_test_thruster_output(
+    uint8_t *timer, 
+    device_number_t device, 
+    int16_t throttle); 
+
+
+/**
+ * @brief Radio connection check 
+ * 
+ * @param timer : radio connection timeout counter 
+ */
+void rc_test_no_radio(uint8_t *timer); 
+
+#endif 
+
 //==================================================
 
 
@@ -700,15 +736,16 @@ void rc_motor_test_init(void)
         ADC1_COMMON, 
         ADC_PCLK2_4, 
         ADC_RES_8, 
-        ADC_PARAM_ENABLE, 
-        ADC_PARAM_ENABLE, 
-        ADC_PARAM_ENABLE, 
-        ADC_PARAM_ENABLE, 
-        ADC_PARAM_ENABLE, 
-        ADC_PARAM_DISABLE, 
-        ADC_PARAM_DISABLE); 
+        ADC_PARAM_ENABLE,      // ADC_EOC_EACH 
+        ADC_PARAM_DISABLE,     // ADC_EOC_INT_DISABLE 
+        ADC_PARAM_ENABLE,      // ADC_SCAN_ENABLE 
+        ADC_PARAM_ENABLE,      // ADC_CONT_ENABLE 
+        ADC_PARAM_ENABLE,      // ADC_DMA_ENABLE 
+        ADC_PARAM_ENABLE,      // ADC_DDS_ENABLE 
+        ADC_PARAM_DISABLE);    // ADC_OVR_INT_DISABLE 
 
     // Initialize the ADC pins and channels (called for each pin/channel) 
+    // Right and left thruster control (potentiometer) in manual control mode 
     adc_pin_init(ADC1, GPIOA, PIN_6, ADC_CHANNEL_6, ADC_SMP_15); 
     adc_pin_init(ADC1, GPIOA, PIN_7, ADC_CHANNEL_7, ADC_SMP_15); 
 
@@ -735,7 +772,7 @@ void rc_motor_test_init(void)
         DMA_DIR_PM, 
         DMA_CM_ENABLE,
         DMA_PRIOR_VHI, 
-        DMA_ADDR_INCREMENT, 
+        DMA_ADDR_INCREMENT,   // Increment the buffer pointer to fill the buffer 
         DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
         DMA_DATA_SIZE_HALF, 
         DMA_DATA_SIZE_HALF); 
@@ -745,7 +782,7 @@ void rc_motor_test_init(void)
         DMA2_Stream0, 
         (uint32_t)(&ADC1->DR), 
         (uint32_t)adc_data, 
-        (uint16_t)RC_TEST_ADC_NUM); 
+        (uint16_t)RC_MOTOR_TEST_ADC_NUM); 
 
     // Enable the DMA stream for the ADC 
     dma_stream_enable(DMA2_Stream0); 
@@ -760,7 +797,7 @@ void rc_motor_test_init(void)
 #elif RC_SYSTEM_2 
 
     //==================================================
-    // 
+    // ESC/motor setup 
 
     // ESC driver setup 
     esc_readytosky_init(
@@ -770,9 +807,9 @@ void rc_motor_test_init(void)
         GPIOB, 
         PIN_1, 
         TIM_84MHZ_1US_PSC, 
-        RC_ESC_PERIOD, 
-        RC_ESC_FWD_SPEED_LIM, 
-        RC_ESC_REV_SPEED_LIM); 
+        RC_MOTOR_ESC_PERIOD, 
+        RC_MOTOR_ESC_FWD_SPEED_LIM, 
+        RC_MOTOR_ESC_REV_SPEED_LIM); 
 
     esc_readytosky_init(
         DEVICE_TWO, 
@@ -781,9 +818,9 @@ void rc_motor_test_init(void)
         GPIOB, 
         PIN_0, 
         TIM_84MHZ_1US_PSC, 
-        RC_ESC_PERIOD, 
-        RC_ESC_FWD_SPEED_LIM, 
-        RC_ESC_REV_SPEED_LIM); 
+        RC_MOTOR_ESC_PERIOD, 
+        RC_MOTOR_ESC_FWD_SPEED_LIM, 
+        RC_MOTOR_ESC_REV_SPEED_LIM); 
 
     // Enable the PWM timer 
     tim_enable(TIM3); 
@@ -795,6 +832,14 @@ void rc_motor_test_init(void)
     memset((void *)rc_cmd_data.cmd_buff, CLEAR, sizeof(rc_cmd_data.cmd_buff)); 
     memset((void *)rc_cmd_data.cmd_id, CLEAR, sizeof(rc_cmd_data.cmd_id)); 
     rc_cmd_data.cmd_value = CLEAR; 
+
+    //==================================================
+    // Temp 
+
+    uart_send_new_line(USART2); 
+    uart_send_new_line(USART2); 
+
+    //==================================================
 
 #endif 
 }
@@ -812,46 +857,35 @@ void rc_motor_test_loop(void)
     static gpio_pin_state_t led_state = GPIO_LOW; 
     static uint8_t thruster = CLEAR; 
     char side = CLEAR; 
-    char sign = RC_FWD_THRUST; 
+    char sign = RC_MOTOR_FWD_THRUST; 
     int16_t throttle = CLEAR; 
 
-#elif RC_SYSTEM_2 
-
-    static int16_t right_throttle = CLEAR; 
-    static int16_t left_throttle = CLEAR; 
-    int16_t cmd_value = CLEAR; 
-
-#endif 
-
-    // Periodically send the throttle command - alternate between left and right side throttle 
-    // commands for each send. 
     if (tim_compare(rc_test.timer_nonblocking, 
                     rc_test.delay_timer.clk_freq, 
-                    RC_MOTOR_PERIOD, 
+                    RC_MOTOR_SEND_PERIOD, 
                     &rc_test.delay_timer.time_cnt_total, 
                     &rc_test.delay_timer.time_cnt, 
                     &rc_test.delay_timer.time_start))
     {
         // time_start flag does not need to be set again because this timer runs 
         // continuously. 
-        
-#if RC_SYSTEM_1 
 
         // Choose between right and left thruster 
-        side = (thruster) ? RC_LEFT_MOTOR : RC_RIGHT_MOTOR; 
+        side = (thruster) ? RC_MOTOR_LEFT_MOTOR : RC_MOTOR_RIGHT_MOTOR; 
 
         // Read the ADC input and format the value for writing to the payload 
         throttle = esc_test_adc_mapping(adc_data[thruster]); 
-        if (throttle == RC_NO_THRUST)
+
+        if (throttle == RC_MOTOR_NO_THRUST)
         {
-            sign = RC_NEUTRAL; 
+            sign = RC_MOTOR_NEUTRAL; 
         }
-        else if (throttle < RC_NO_THRUST)
+        else if (throttle < RC_MOTOR_NO_THRUST)
         {
             // If the throttle is negative then change the value to positive and set the sign 
             // in the payload as negative. This helps on the receiving end. 
             throttle = ~throttle + 1; 
-            sign = RC_REV_THRUST; 
+            sign = RC_MOTOR_REV_THRUST; 
         }
 
         // Format the payload with the thruster specifier and the throttle then send the 
@@ -859,7 +893,7 @@ void rc_motor_test_loop(void)
         snprintf(
             (char *)rc_test.write_buff, 
             NRF24L01_MAX_PAYLOAD_LEN, 
-            "%c%c%d", 
+            "%c%c %d", 
             side, sign, throttle); 
 
         if (nrf24l01_send_payload(rc_test.write_buff) == NRF24L01_OK)
@@ -870,135 +904,133 @@ void rc_motor_test_loop(void)
 
         // Toggle the thruster flag 
         thruster = SET_BIT - thruster; 
+    }
 
 #elif RC_SYSTEM_2 
 
-        //==================================================
-        // Note 
-        // - Bit shifting works on signed integers - the sign bit is respected. 
-        //==================================================
+    static uint8_t timeout = CLEAR; 
+
+    if (tim_compare(rc_test.timer_nonblocking, 
+                    rc_test.delay_timer.clk_freq, 
+                    RC_MOTOR_RECEIVE_PERIOD, 
+                    &rc_test.delay_timer.time_cnt_total, 
+                    &rc_test.delay_timer.time_cnt, 
+                    &rc_test.delay_timer.time_start))
+    {
+        // time_start flag does not need to be set again because this timer runs 
+        // continuously. 
 
         // Check if a payload has been received 
         if (nrf24l01_data_ready_status() == rc_test.pipe)
         {
             // Payload has been received. Read the payload from the device RX FIFO. 
-            nrf24l01_receive_payload(rc_test.read_buff); 
+            nrf24l01_receive_payload(rc_cmd_data.cmd_buff); 
 
             // Validate the payload format 
-            // if (rc_test_parse_cmd(&rc_test.read_buff[1]))
             if (nrf24l01_test_parse_cmd(&rc_cmd_data, NRF24L01_CMD_ARG_VALUE))
             {
                 // Check that the command matches a valid throttle command. If it does then update 
-                // the thruster command. 
+                // the thruster command. Throttle command filtering is done by system 1. 
 
-                cmd_value = (int16_t)rc_cmd_data.cmd_value; 
+                int16_t cmd_value = (int16_t)rc_cmd_data.cmd_value; 
+                int16_t throttle = RC_MOTOR_NO_THRUST; 
+                uint8_t motor = rc_cmd_data.cmd_id[0]; 
+                uint8_t direction = rc_cmd_data.cmd_id[1]; 
 
-                if (rc_cmd_data.cmd_id[0] == RC_RIGHT_MOTOR)
+                // Determine the throttle command 
+                if (direction == RC_MOTOR_FWD_THRUST)
                 {
-                    switch (rc_cmd_data.cmd_id[1])
-                    {
-                        case RC_FWD_THRUST: 
-                            right_throttle += (cmd_value - right_throttle) >> SHIFT_3; 
-                            esc_readytosky_send(DEVICE_ONE, right_throttle); 
-                            break; 
-                        case RC_REV_THRUST: 
-                            right_throttle += ((~cmd_value + 1) - right_throttle) >> SHIFT_3; 
-                            esc_readytosky_send(DEVICE_ONE, right_throttle); 
-                            break; 
-                        case RC_NEUTRAL: 
-                            if (cmd_value == RC_NO_THRUST)
-                            {
-                                right_throttle = RC_NO_THRUST; 
-                                esc_readytosky_send(DEVICE_ONE, right_throttle); 
-                            }
-                            break; 
-                        default: 
-                            break; 
-                    }
+                    throttle = cmd_value; 
                 }
-                else if (rc_cmd_data.cmd_id[0] == RC_LEFT_MOTOR)
+                else if (direction == RC_MOTOR_REV_THRUST)
                 {
-                    switch (rc_cmd_data.cmd_id[1])
-                    {
-                        case RC_FWD_THRUST: 
-                            left_throttle += (cmd_value - left_throttle) >> SHIFT_3; 
-                            esc_readytosky_send(DEVICE_TWO, left_throttle); 
-                            break; 
-                        case RC_REV_THRUST: 
-                            left_throttle += ((~cmd_value + 1) - left_throttle) >> SHIFT_3; 
-                            esc_readytosky_send(DEVICE_TWO, left_throttle); 
-                            break; 
-                        case RC_NEUTRAL: 
-                            if (cmd_value == RC_NO_THRUST)
-                            {
-                                left_throttle = RC_NO_THRUST; 
-                                esc_readytosky_send(DEVICE_TWO, left_throttle); 
-                            }
-                            break; 
-                        default: 
-                            break; 
-                    }
+                    throttle = ~cmd_value + 1; 
+                }
+
+                // Determine the motor 
+                if (motor == RC_MOTOR_RIGHT_MOTOR)
+                {
+                    rc_test_thruster_output(&timeout, DEVICE_ONE, throttle); 
+                }
+                else if (motor == RC_MOTOR_LEFT_MOTOR)
+                {
+                    rc_test_thruster_output(&timeout, DEVICE_TWO, throttle); 
                 }
             }
-
-            memset((void *)rc_test.read_buff, CLEAR, sizeof(rc_test.read_buff)); 
+            else 
+            {
+                rc_test_no_radio(&timeout); 
+            }
         }
+        else 
+        {
+            rc_test_no_radio(&timeout); 
+        }
+    }
 
 #endif 
-    }
 }
-
-
-//     static uint8_t timeout_count = CLEAR; 
-
-//     // Increment the timeout counter periodically 
-//     if (tim_compare(rc_test.timer_nonblocking, 
-//                     rc_test.delay_timer.clk_freq, 
-//                     HB_PERIOD, 
-//                     &rc_test.delay_timer.time_cnt_total, 
-//                     &rc_test.delay_timer.time_cnt, 
-//                     &rc_test.delay_timer.time_start))
-//     {
-//         // time_start flag does not need to be set again because this timer runs 
-//         // continuously. 
-
-//         // Increment the timeout count until it's at the threshold at which point hold 
-//         // the count and clear the connection status. 
-//         if (timeout_count >= NRF24L01_HB_TIMEOUT)
-//         {
-//             rc_test.conn_status = CLEAR_BIT; 
-//         }
-//         else 
-//         {
-//             timeout_count++; 
-//         }
-//     }
-    
-//     // Check if a payload has been received 
-//     if (nrf24l01_data_ready_status())
-//     {
-//         // Payload has been received. Read the payload from the device RX FIFO. 
-//         nrf24l01_receive_payload(rc_test.read_buff); 
-
-//         // Check to see if the received payload matches the heartbeat message 
-//         if (str_compare((char *)rc_test.hb_msg, 
-//                         (char *)rc_test.read_buff, 
-//                         BYTE_1))
-//         {
-//             // Heartbeat message received - reset the timeout and set the connection status 
-//             timeout_count = CLEAR; 
-//             rc_test.conn_status = SET_BIT; 
-//         }
-
-//         memset((void *)rc_test.read_buff, CLEAR, 
-//                sizeof(rc_test.read_buff)); 
-//     }
 
 //==================================================
 
 
 //==================================================
 // Test functions 
+
+#if RC_SYSTEM_1 
+#elif RC_SYSTEM_2 
+
+// Thruster output 
+void rc_test_thruster_output(
+    uint8_t *timer, 
+    device_number_t device, 
+    int16_t throttle)
+{
+    // Radio connected - clear timeout 
+    *timer = CLEAR; 
+    // esc_readytosky_send(device, throttle); 
+
+    //==================================================
+    // Temp 
+
+    static uint8_t display_timer = CLEAR; 
+    static char throttle_str[30]; 
+    static int16_t left_throttle = CLEAR, right_throttle = CLEAR; 
+
+    if (++display_timer >= 5)
+    {
+        display_timer = CLEAR; 
+
+        if (device == DEVICE_ONE)
+        {
+            left_throttle = throttle; 
+        }
+        else 
+        {
+            right_throttle = throttle; 
+        }
+
+        snprintf(throttle_str, 30, "L: %d   \r\nR: %d   ", left_throttle, right_throttle); 
+        uart_sendstring(USART2, "\033[1A\r"); 
+        uart_sendstring(USART2, throttle_str); 
+    }
+
+    //==================================================
+}
+
+
+// Radio connection check 
+void rc_test_no_radio(uint8_t *timer)
+{
+    if (++*timer > RC_MOTOR_TIMEOUT)
+    {
+        rc_test_thruster_output(timer, DEVICE_ONE, RC_MOTOR_NO_THRUST); 
+        rc_test_thruster_output(timer, DEVICE_TWO, RC_MOTOR_NO_THRUST); 
+    }
+}
+
+#endif 
+
 //==================================================
 
 //=======================================================================================
