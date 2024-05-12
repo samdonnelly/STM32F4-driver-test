@@ -53,11 +53,6 @@
 
 //=======================================================================================
 // Classes 
-//=======================================================================================
-
-
-//=======================================================================================
-// Variables 
 
 // Device tracker data record 
 class rc_test_trackers 
@@ -213,7 +208,7 @@ void rc_test_init(void)
         TIM9,                    // General purpose timer port 
         NRF24L01_RF_FREQ,        // Initial RF channel frequency 
         NRF24L01_DR_2MBPS,       // Initial data rate to communicate at 
-        NRF24L01_RF_PWR_0DBM);   // Initial power output to us 
+        NRF24L01_RF_PWR_0DBM);   // Initial power output to use 
 
     // Configure the PTX and PRX settings depending on the devices role/purpose. 
     nrf24l01_init_status |= nrf24l01_ptx_config(nrf24l01_pipe_addr); 
@@ -822,7 +817,6 @@ void rc_motor_test_init(void)
         RC_MOTOR_ESC_FWD_SPEED_LIM, 
         RC_MOTOR_ESC_REV_SPEED_LIM); 
 
-    // Enable the PWM timer 
     tim_enable(TIM3); 
     
     //==================================================
@@ -833,13 +827,13 @@ void rc_motor_test_init(void)
     memset((void *)rc_cmd_data.cmd_id, CLEAR, sizeof(rc_cmd_data.cmd_id)); 
     rc_cmd_data.cmd_value = CLEAR; 
 
-    //==================================================
-    // Temp 
+    // //==================================================
+    // // Temp 
 
-    uart_send_new_line(USART2); 
-    uart_send_new_line(USART2); 
+    // uart_send_new_line(USART2); 
+    // uart_send_new_line(USART2); 
 
-    //==================================================
+    // //==================================================
 
 #endif 
 }
@@ -988,34 +982,34 @@ void rc_test_thruster_output(
 {
     // Radio connected - clear timeout 
     *timer = CLEAR; 
-    // esc_readytosky_send(device, throttle); 
+    esc_readytosky_send(device, throttle); 
 
-    //==================================================
-    // Temp 
+    // //==================================================
+    // // Temp 
 
-    static uint8_t display_timer = CLEAR; 
-    static char throttle_str[30]; 
-    static int16_t left_throttle = CLEAR, right_throttle = CLEAR; 
+    // static uint8_t display_timer = CLEAR; 
+    // static char throttle_str[30]; 
+    // static int16_t left_throttle = CLEAR, right_throttle = CLEAR; 
 
-    if (++display_timer >= 5)
-    {
-        display_timer = CLEAR; 
+    // if (++display_timer >= 5)
+    // {
+    //     display_timer = CLEAR; 
 
-        if (device == DEVICE_ONE)
-        {
-            left_throttle = throttle; 
-        }
-        else 
-        {
-            right_throttle = throttle; 
-        }
+    //     if (device == DEVICE_ONE)
+    //     {
+    //         left_throttle = throttle; 
+    //     }
+    //     else 
+    //     {
+    //         right_throttle = throttle; 
+    //     }
 
-        snprintf(throttle_str, 30, "L: %d   \r\nR: %d   ", left_throttle, right_throttle); 
-        uart_sendstring(USART2, "\033[1A\r"); 
-        uart_sendstring(USART2, throttle_str); 
-    }
+    //     snprintf(throttle_str, 30, "L: %d   \r\nR: %d   ", left_throttle, right_throttle); 
+    //     uart_sendstring(USART2, "\033[1A\r"); 
+    //     uart_sendstring(USART2, throttle_str); 
+    // }
 
-    //==================================================
+    // //==================================================
 }
 
 
