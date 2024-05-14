@@ -32,8 +32,6 @@
 void project_app(void)
 {
     // Project application code here 
-
-    rc_test_app(); 
 }
 
 //=======================================================================================

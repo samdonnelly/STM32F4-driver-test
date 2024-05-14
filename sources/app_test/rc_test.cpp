@@ -33,15 +33,15 @@
 // Conditional compilation 
 
 // Devices 
-#define RC_SYSTEM_1 0 
-#define RC_SYSTEM_2 1 
+#define RC_SYSTEM_1 1 
+#define RC_SYSTEM_2 0 
 
 // Test code 
 #define RC_SD_CARD_TEST 0 
 #define RC_MOTOR_TEST 1 
 
 // Hardware 
-#define RC_TEST_SCREEN 1        // HD44780U screen in the system - shuts screen off 
+#define RC_TEST_SCREEN 0        // HD44780U screen in the system - shuts screen off 
 
 //==================================================
 
@@ -827,14 +827,6 @@ void rc_motor_test_init(void)
     memset((void *)rc_cmd_data.cmd_id, CLEAR, sizeof(rc_cmd_data.cmd_id)); 
     rc_cmd_data.cmd_value = CLEAR; 
 
-    // //==================================================
-    // // Temp 
-
-    // uart_send_new_line(USART2); 
-    // uart_send_new_line(USART2); 
-
-    // //==================================================
-
 #endif 
 }
 
@@ -983,33 +975,6 @@ void rc_test_thruster_output(
     // Radio connected - clear timeout 
     *timer = CLEAR; 
     esc_readytosky_send(device, throttle); 
-
-    // //==================================================
-    // // Temp 
-
-    // static uint8_t display_timer = CLEAR; 
-    // static char throttle_str[30]; 
-    // static int16_t left_throttle = CLEAR, right_throttle = CLEAR; 
-
-    // if (++display_timer >= 5)
-    // {
-    //     display_timer = CLEAR; 
-
-    //     if (device == DEVICE_ONE)
-    //     {
-    //         left_throttle = throttle; 
-    //     }
-    //     else 
-    //     {
-    //         right_throttle = throttle; 
-    //     }
-
-    //     snprintf(throttle_str, 30, "L: %d   \r\nR: %d   ", left_throttle, right_throttle); 
-    //     uart_sendstring(USART2, "\033[1A\r"); 
-    //     uart_sendstring(USART2, throttle_str); 
-    // }
-
-    // //==================================================
 }
 
 
