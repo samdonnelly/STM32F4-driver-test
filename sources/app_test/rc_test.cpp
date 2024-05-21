@@ -39,6 +39,7 @@
 // Test code 
 #define RC_SD_CARD_TEST 0 
 #define RC_MOTOR_TEST 1 
+#define RC_GROUND_STATION 0 
 
 // Hardware 
 #define RC_TEST_SCREEN 0        // HD44780U screen in the system - shuts screen off 
@@ -83,6 +84,8 @@ void rc_sd_card_test_init(void);
 void rc_sd_card_test_loop(void); 
 void rc_motor_test_init(void); 
 void rc_motor_test_loop(void); 
+void rc_ground_station_test_init(void); 
+void rc_ground_station_test_loop(void); 
 
 //=======================================================================================
 
@@ -988,6 +991,154 @@ void rc_test_no_radio(uint8_t *timer)
     }
 }
 
+#endif 
+
+//==================================================
+
+//=======================================================================================
+
+
+#elif RC_GROUND_STATION 
+
+//=======================================================================================
+// Ground station test 
+
+// Description 
+// - Simple radio ground station that sends out inputs from the user and looks for 
+//   responses. Inputs come from the serial terminal and responses are output to the 
+//   serial terminal. This is not a two way test, but rather used to test any system 
+//   that is controlled by a radio ground station. 
+
+//==================================================
+// Macros 
+
+// Timing 
+#define RC_GS_RECEIVE_PERIOD 50000     // Time between throttle command sends (us) 
+
+//==================================================
+
+
+//==================================================
+// Variables 
+
+#if RC_SYSTEM_1 
+#elif RC_SYSTEM_2 
+#endif 
+
+//==================================================
+
+
+//==================================================
+// Prototypes 
+
+#if RC_SYSTEM_1 
+
+/**
+ * @brief User terminal prompt 
+ */
+void nrf24l01_test_user_prompt(void); 
+
+#elif RC_SYSTEM_2 
+#endif 
+
+//==================================================
+
+
+//==================================================
+// Setup 
+
+void rc_ground_station_test_init(void)
+{
+#if RC_SYSTEM_1 
+
+    //==================================================
+    // UART DMA - further configure the UART for DMA input 
+
+    // Enable the IDLE line interrupt 
+    uart_interrupt_init(
+        USART2, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_ENABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE); 
+
+    // Initialize the DMA stream for the UART 
+    dma_stream_init(
+        DMA1, 
+        DMA1_Stream5, 
+        DMA_CHNL_4, 
+        DMA_DIR_PM, 
+        DMA_CM_ENABLE,
+        DMA_PRIOR_VHI, 
+        DMA_ADDR_INCREMENT,   // Increment the buffer pointer to fill the buffer 
+        DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
+        DMA_DATA_SIZE_BYTE, 
+        DMA_DATA_SIZE_BYTE); 
+
+    // Configure the DMA stream for the UART 
+    dma_stream_config(
+        DMA1_Stream5, 
+        (uint32_t)(&USART2->DR), 
+        (uint32_t)mc_cmd_data.cb, 
+        (uint16_t)NRF24L01_TEST_MAX_INPUT); 
+
+    // Enable the DMA stream for the UART 
+    dma_stream_enable(DMA1_Stream5); 
+
+    // Initialize interrupt handler flags (called once) 
+    int_handler_init(); 
+
+    // Enable the interrupt handlers (called for each interrupt) - for USART2_RX 
+    nvic_config(USART2_IRQn, EXTI_PRIORITY_0); 
+
+    //==================================================
+
+    nrf24l01_test_user_prompt(); 
+
+#elif RC_SYSTEM_2 
+#endif 
+}
+
+//==================================================
+
+
+//==================================================
+// Loop 
+
+void rc_ground_station_test_loop(void)
+{
+#if RC_SYSTEM_1 
+
+    // Check for user serial terminal input 
+    if (handler_flags.usart2_flag)
+    {
+        handler_flags.usart2_flag = CLEAR; 
+
+        // Send string 
+    }
+
+#elif RC_SYSTEM_2 
+#endif 
+}
+
+//==================================================
+
+
+//==================================================
+// Test functions 
+
+#if RC_SYSTEM_1 
+
+// User terminal prompt 
+void nrf24l01_test_user_prompt(void)
+{
+    uart_sendstring(USART2, "\r\n\n>>> "); 
+}
+
+#elif RC_SYSTEM_2 
 #endif 
 
 //==================================================
