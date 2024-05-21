@@ -38,8 +38,8 @@
 
 // Test code 
 #define RC_SD_CARD_TEST 0 
-#define RC_MOTOR_TEST 1 
-#define RC_GROUND_STATION 0 
+#define RC_MOTOR_TEST 0 
+#define RC_GROUND_STATION_TEST 1 
 
 // Hardware 
 #define RC_TEST_SCREEN 0        // HD44780U screen in the system - shuts screen off 
@@ -201,7 +201,7 @@ void rc_test_init(void)
 
     NRF24L01_STATUS nrf24l01_init_status = NRF24L01_OK; 
 
-    // General setup common to all device - must be called once during setup 
+    // General setup common to all devices - must be called once during setup 
     nrf24l01_init_status |= nrf24l01_init(
         SPI2,                    // SPI port to use 
         GPIOC,                   // Slave select pin GPIO port 
@@ -237,6 +237,8 @@ void rc_test_init(void)
     rc_sd_card_test_init(); 
 #elif RC_MOTOR_TEST 
     rc_motor_test_init(); 
+#elif RC_GROUND_STATION_TEST 
+    rc_ground_station_test_init(); 
 #endif 
 }
 
@@ -253,6 +255,8 @@ void rc_test_app(void)
     rc_sd_card_test_loop(); 
 #elif RC_MOTOR_TEST 
     rc_motor_test_loop(); 
+#elif RC_GROUND_STATION_TEST 
+    rc_ground_station_test_loop(); 
 #endif 
 }
 
@@ -998,7 +1002,7 @@ void rc_test_no_radio(uint8_t *timer)
 //=======================================================================================
 
 
-#elif RC_GROUND_STATION 
+#elif RC_GROUND_STATION_TEST 
 
 //=======================================================================================
 // Ground station test 
@@ -1013,7 +1017,7 @@ void rc_test_no_radio(uint8_t *timer)
 // Macros 
 
 // Timing 
-#define RC_GS_RECEIVE_PERIOD 50000     // Time between throttle command sends (us) 
+#define RC_GS_RECEIVE_PERIOD 100000     // Time between throttle command sends (us) 
 
 //==================================================
 
@@ -1022,6 +1026,10 @@ void rc_test_no_radio(uint8_t *timer)
 // Variables 
 
 #if RC_SYSTEM_1 
+
+// Command data 
+static nrf24l01_cmd_data_t rc_gs_cmd_data; 
+
 #elif RC_SYSTEM_2 
 #endif 
 
@@ -1036,7 +1044,7 @@ void rc_test_no_radio(uint8_t *timer)
 /**
  * @brief User terminal prompt 
  */
-void nrf24l01_test_user_prompt(void); 
+void rc_ground_station_user_prompt(void); 
 
 #elif RC_SYSTEM_2 
 #endif 
@@ -1082,7 +1090,7 @@ void rc_ground_station_test_init(void)
     dma_stream_config(
         DMA1_Stream5, 
         (uint32_t)(&USART2->DR), 
-        (uint32_t)mc_cmd_data.cb, 
+        (uint32_t)rc_gs_cmd_data.cb, 
         (uint16_t)NRF24L01_TEST_MAX_INPUT); 
 
     // Enable the DMA stream for the UART 
@@ -1096,7 +1104,14 @@ void rc_ground_station_test_init(void)
 
     //==================================================
 
-    nrf24l01_test_user_prompt(); 
+    memset((void *)rc_gs_cmd_data.cb, CLEAR, sizeof(rc_gs_cmd_data.cb)); 
+    rc_gs_cmd_data.cb_index = CLEAR; 
+    memset((void *)rc_gs_cmd_data.cmd_buff, CLEAR, sizeof(rc_gs_cmd_data.cmd_buff)); 
+    memset((void *)rc_gs_cmd_data.cmd_id, CLEAR, sizeof(rc_gs_cmd_data.cmd_id)); 
+    rc_gs_cmd_data.cmd_value = CLEAR; 
+    memset((void *)rc_gs_cmd_data.cmd_str, CLEAR, sizeof(rc_gs_cmd_data.cmd_str)); 
+
+    rc_ground_station_user_prompt(); 
 
 #elif RC_SYSTEM_2 
 #endif 
@@ -1117,7 +1132,39 @@ void rc_ground_station_test_loop(void)
     {
         handler_flags.usart2_flag = CLEAR; 
 
+        // Copy the new contents in the circular buffer to the user input buffer 
+        cb_parse(
+            rc_gs_cmd_data.cb, 
+            rc_gs_cmd_data.cmd_buff, 
+            &rc_gs_cmd_data.cb_index, 
+            NRF24L01_TEST_MAX_INPUT); 
+
         // Send string 
+        nrf24l01_send_payload(rc_gs_cmd_data.cmd_buff); 
+
+        rc_ground_station_user_prompt(); 
+    }
+
+    // Periodically check for action items 
+    if (tim_compare(rc_test.timer_nonblocking, 
+                    rc_test.delay_timer.clk_freq, 
+                    RC_GS_RECEIVE_PERIOD, 
+                    &rc_test.delay_timer.time_cnt_total, 
+                    &rc_test.delay_timer.time_cnt, 
+                    &rc_test.delay_timer.time_start))
+    {
+        // time_start flag does not need to be set again because this timer runs 
+        // continuously. 
+
+        // Look for a heartbeat message 
+        if (nrf24l01_data_ready_status() == rc_test.pipe)
+        {
+            nrf24l01_receive_payload(rc_test.read_buff); 
+
+            uart_sendstring(USART2, "\033[1A\033[1A\r"); 
+            uart_sendstring(USART2, (char *)rc_test.read_buff); 
+            rc_ground_station_user_prompt(); 
+        }
     }
 
 #elif RC_SYSTEM_2 
@@ -1133,7 +1180,7 @@ void rc_ground_station_test_loop(void)
 #if RC_SYSTEM_1 
 
 // User terminal prompt 
-void nrf24l01_test_user_prompt(void)
+void rc_ground_station_user_prompt(void)
 {
     uart_sendstring(USART2, "\r\n\n>>> "); 
 }
