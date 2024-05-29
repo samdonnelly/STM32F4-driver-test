@@ -272,7 +272,6 @@ void hc05_test_app()
     // Local variables 
 
     // General purpose arguments array - holds arguments during user input 
-    // TODO should be able to index this based on argument number - see arg_convert 
     static char user_args[HC05_MAX_SETTER_ARGS][STATE_USER_TEST_INPUT]; 
 
     // Control flags 
@@ -383,7 +382,6 @@ void hc05_test_app()
 
     // Driver test 
 
-    // Local variables 
     static uint8_t function = HC05_DATA_MODE; 
 
 #if HC05_AT_ENABLE 
@@ -391,7 +389,6 @@ void hc05_test_app()
     //==================================================
     // User button input - mode selection 
 
-    // Local variables 
     static uint8_t btn_block = CLEAR; 
 
     // Update user input button status 
@@ -411,7 +408,8 @@ void hc05_test_app()
         switch (function)
         {
             case HC05_DATA_MODE: 
-                // TODO read the baud rate while in AT mode and use it here 
+                // Read the baud rate while in AT mode and use it here 
+
                 hc05_change_mode(HC05_DATA_MODE, UART_BAUD_115200, UART_CLOCK_84); 
                 uart_send_new_line(USART2); 
                 uart_send_new_line(USART2); 

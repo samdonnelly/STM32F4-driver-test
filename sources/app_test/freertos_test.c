@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief FreeRTOS practice implementation 
+ * @brief FreeRTOS practice 
  * 
  * @details The examples/tests implemented here are from the "Introduction to RTOS" video 
  *          playlist by DigiKey: 

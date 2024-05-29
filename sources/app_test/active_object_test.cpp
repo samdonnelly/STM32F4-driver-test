@@ -416,9 +416,9 @@ void SerialOutEvent(char *output_buff);
 /**
  * @brief Event: Serial Input 
  * 
- * @param circular_buff 
- * @param circular_buff_index 
- * @param input_buff 
+ * @param circular_buff : circular buffer 
+ * @param circular_buff_index : circular buffer index - keeps track of data location 
+ * @param input_buff : buffer to store user input from circular buffer 
  */
 void SerialInEvent(
     uint8_t *circular_buff, 
@@ -428,9 +428,9 @@ void SerialInEvent(
 /**
  * @brief Event: Pin Toggle (used to toggle the board LED) 
  * 
- * @param pin_gpio 
- * @param pin_num 
- * @param pin_state 
+ * @param pin_gpio : pin GPIO port 
+ * @param pin_num : pin number 
+ * @param pin_state : state of the pin (high/low) 
  */
 void PinToggleEvent(
     GPIO_TypeDef *pin_gpio, 

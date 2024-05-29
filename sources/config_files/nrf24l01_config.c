@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief nRF24L01 RF module configuration file implementation 
+ * @brief nRF24L01 RF module configuration file 
  * 
  * @version 0.1
  * @date 2024-03-01

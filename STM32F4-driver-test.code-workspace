@@ -98,7 +98,8 @@
 			"dma_driver.h": "c",
 			"active_object_framework.h": "c",
 			"i2c_comm_mock.h": "c",
-			"spi_comm_mock.h": "c"
+			"spi_comm_mock.h": "c",
+			"project_interface.h": "c"
 		}
 	}
 }

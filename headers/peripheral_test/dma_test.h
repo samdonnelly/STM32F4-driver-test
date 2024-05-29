@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief DMA test code header 
+ * @brief DMA test code interface 
  * 
  * @version 0.1
  * @date 2022-08-28

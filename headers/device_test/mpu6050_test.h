@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief MPU6050 test code header 
+ * @brief MPU-6050 test code interface 
  * 
  * @version 0.1
  * @date 2022-08-28
@@ -51,8 +51,7 @@ typedef enum {
  *           - mpu6050_set_read_flag 
  *           - mpu6050_set_reset_flag 
  */
-typedef void (*mpu6050_setter_ptr_1)(
-    device_number_t device_num); 
+typedef void (*mpu6050_setter_ptr_1)(device_number_t device_num); 
 
 
 /**
@@ -83,8 +82,7 @@ typedef void (*mpu6050_setter_ptr_3)(void);
  * @details The following getters are called with this function pointer: 
  *           - mpu6050_get_state 
  */
-typedef MPU6050_STATE (*mpu6050_getter_ptr_1)(
-    device_number_t device_num); 
+typedef MPU6050_STATE (*mpu6050_getter_ptr_1)(device_number_t device_num); 
 
 
 /**
@@ -93,8 +91,7 @@ typedef MPU6050_STATE (*mpu6050_getter_ptr_1)(
  * @details The following getters are called with this function pointer: 
  *           - mpu6050_get_fault_code 
  */
-typedef MPU6050_FAULT_CODE (*mpu6050_getter_ptr_2)(
-    device_number_t device_num); 
+typedef MPU6050_FAULT_CODE (*mpu6050_getter_ptr_2)(device_number_t device_num); 
 
 
 /**
@@ -117,8 +114,7 @@ typedef void (*mpu6050_getter_ptr_3)(
  * @details The following getters are called with this function pointer: 
  *           - mpu6050_get_temp_raw 
  */
-typedef int16_t (*mpu6050_getter_ptr_4)(
-    device_number_t device_num); 
+typedef int16_t (*mpu6050_getter_ptr_4)(device_number_t device_num); 
 
 
 /**
@@ -141,8 +137,7 @@ typedef void (*mpu6050_getter_ptr_5)(
  * @details The following getters are called with this function pointer: 
  *           - mpu6050_get_temp 
  */
-typedef float (*mpu6050_getter_ptr_6)(
-    device_number_t device_num); 
+typedef float (*mpu6050_getter_ptr_6)(device_number_t device_num); 
 
 //=======================================================================================
 
@@ -174,13 +169,13 @@ mpu6050_func_ptrs_t;
 // Prototypes 
 
 /**
- * @brief MPU6050 test initialization and setup code 
+ * @brief MPU-6050 test initialization and setup code 
  */
 void mpu6050_test_init(void); 
 
 
 /**
- * @brief MPU6050 test application code 
+ * @brief MPU-6050 test application code 
  */
 void mpu6050_test_app(void); 
 

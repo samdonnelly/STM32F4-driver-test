@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief HC05 test code header 
+ * @brief HC05 test code interface 
  * 
  * @version 0.1
  * @date 2022-08-28

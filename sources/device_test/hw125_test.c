@@ -352,7 +352,6 @@ void hw125_test_init()
 // Test code 
 void hw125_test_app()
 {
-    // Local variables 
     hw125_test_record.cmd_index = 0xFF; 
 
 #if HW125_CONTROLLER_TEST 
@@ -409,7 +408,7 @@ void hw125_test_app()
         hw125_test_record.cmd_buff, CMD_SIZE, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
 
     // Compare the input to the defined user commands 
-    for (uint8_t i = 0; i < HW125_NUM_DRIVER_CMDS; i++) 
+    for (uint8_t i = CLEAR; i < HW125_NUM_DRIVER_CMDS; i++) 
     {
         if (str_compare(hw125_test_record.cmd_buff, cmd_table[i].user_cmds, BYTE_0)) 
         {
@@ -660,11 +659,14 @@ void hw125_cont_test_file_end(void)
 void mount_card(void) 
 {
 #if FORMAT_EXFAT
-    // TODO test to see if this will erase existing data 
+    
+    // Test to see if this will erase existing data 
+    
     // Format the drive 
     fresult = f_mkfs("", FM_EXFAT, 0, work, sizeof work); 
     if (fresult != FR_OK) uart_sendstring(USART2, "Error in formatting the SD Card.\r\n");
     else uart_sendstring(USART2, "SD Card formatted successfully.\r\n"); 
+
 #endif
 
     hw125_test_record.fresult = f_mount(&hw125_test_record.file_sys, "", HW125_MOUNT_NOW); 
@@ -1016,7 +1018,10 @@ uint8_t format_input(
 {
     uint8_t result = FALSE; 
 
-    if (buff == NULL) return result; 
+    if (buff == NULL) 
+    {
+        return result; 
+    }
 
     switch (op)
     {

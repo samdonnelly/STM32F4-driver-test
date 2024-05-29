@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief GPS navigation testing implementation 
+ * @brief GPS navigation testing 
  * 
  * @details The purpose of this code is to test navigation between predefined waypoints 
  *          using a compass (magnetometer) and a GNSS module. Once the GNSS device has a 

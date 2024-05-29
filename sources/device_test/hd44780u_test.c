@@ -230,13 +230,10 @@ void hd44780u_test_app()
     //==================================================
     // Controller test code 
 
-    // Local variables 
-
     // General purpose arguments array 
     static char user_args[HD44780U_MAX_FUNC_PTR_ARGS][STATE_USER_TEST_INPUT]; 
 
     // Arguments for the hd44780u_state_data_tester function pointer 
-    // static char line_input[HD44780U_NUM_LINES][STATE_USER_TEST_INPUT]; 
     static hd44780u_lines_t line[2]; 
     static char line_input[2][STATE_USER_TEST_INPUT]; 
     static uint8_t line_offset[2]; 

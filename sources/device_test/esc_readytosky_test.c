@@ -395,8 +395,6 @@ void esc_readytosky_test_init(void)
 
 void esc_readytosky_test_app(void)
 {
-    // Local variables 
-
 #if ESC_CONTROLLER_MODE 
 
     //===================================================
@@ -514,7 +512,6 @@ void esc_readytosky_test_app(void)
 // ADC to ESC command mapping 
 int16_t esc_test_adc_mapping(uint16_t adc_val)
 {
-    // Local variables 
     int16_t throttle_cmd = CLEAR;   // Assume 0% throttle and change if different 
 
     // Check if there is a forward or reverse throttle command 

@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief nRF24L01 RF module test code header 
+ * @brief nRF24L01 RF module test code interface 
  * 
  * @version 0.1
  * @date 2023-08-23

@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief LSM303AGR test code header 
+ * @brief LSM303AGR test code interface 
  * 
  * @version 0.1
  * @date 2023-06-11

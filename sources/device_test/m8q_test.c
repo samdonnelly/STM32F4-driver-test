@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief SAM-M8Q driver and controller hardware test code implementation 
+ * @brief SAM-M8Q driver and controller test code 
  * 
  * @version 0.1
  * @date 2022-08-28
@@ -289,7 +289,6 @@ void m8q_test_config_init(void)
 // Test 0 code - default config, read raw data stream, don't use additional pins 
 void m8q_test_0(void)
 {
-    // Local variables 
     M8Q_STATUS driver_status; 
     uint16_t data_size = CLEAR; 
 

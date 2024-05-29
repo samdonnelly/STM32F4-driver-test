@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Switch debounce driver test implementation 
+ * @brief Switch debounce driver test 
  * 
  * @version 0.1
  * @date 2023-11-29

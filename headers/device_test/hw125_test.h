@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief HW125 test code header 
+ * @brief HW125 test code interface 
  * 
  * @version 0.1
  * @date 2022-08-28
@@ -19,10 +19,6 @@
 // Includes 
 
 #include "includes_drivers.h"
-
-// Libraries 
-#include <stdio.h>
-#include <stdlib.h> 
 
 //=======================================================================================
 

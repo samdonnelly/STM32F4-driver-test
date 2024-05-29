@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Project application code implementation 
+ * @brief Project application code 
  * 
  * @version 0.1
  * @date 2023-07-20
@@ -32,7 +32,6 @@
 void project_app(void)
 {
     // Project application code here 
-    rc_test_app(); 
 }
 
 //=======================================================================================

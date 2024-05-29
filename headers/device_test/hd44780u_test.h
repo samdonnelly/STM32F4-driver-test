@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief HD44780U LCD screen test code header 
+ * @brief HD44780U LCD screen test code interface 
  * 
  * @version 0.1
  * @date 2022-08-28
@@ -22,10 +22,6 @@
 
 // Test code 
 #include "state_machine_test.h" 
-
-// Standard libraries 
-#include <string.h>
-#include <stdlib.h>
 
 //=======================================================================================
 
@@ -75,8 +71,7 @@ typedef void (*hd44780u_set_ptr_1)(
  * @details This function pointer is used for calling the following setters: 
  *          - hd44780u_line_clear 
  */
-typedef void (*hd44780u_set_ptr_2)(
-    hd44780u_lines_t line); 
+typedef void (*hd44780u_set_ptr_2)(hd44780u_lines_t line); 
 
 
 /**
@@ -85,8 +80,7 @@ typedef void (*hd44780u_set_ptr_2)(
  * @details This function pointer is used for calling the following setters: 
  *          - hd44780u_send_string 
  */
-typedef void (*hd44780u_set_ptr_3)(
-    char *print_string); 
+typedef void (*hd44780u_set_ptr_3)(char *print_string); 
 
 
 /**

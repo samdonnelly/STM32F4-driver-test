@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief MSP Initialization and de-Initialization implementation 
+ * @brief MSP Initialization and de-Initialization 
  * 
  * @version 0.1
  * @date 2024-02-25

@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief MPU6050 test code 
+ * @brief MPU-6050 test code 
  * 
  * @version 0.1
  * @date 2022-08-28
@@ -198,8 +198,14 @@ void mpu6050_test_init()
         MPU6050_FS_SEL_500);
 
     // Return the status of the accelerometer WHO_AM_I register 
-    if (!mpu6050_get_status(DEVICE_ONE)) uart_sendstring(USART2, "Device seen\r\n");
-    else uart_sendstring(USART2, "Device not seen\r\n");
+    if (!mpu6050_get_status(DEVICE_ONE)) 
+    {
+        uart_sendstring(USART2, "Device seen\r\n");
+    }
+    else 
+    {
+        uart_sendstring(USART2, "Device not seen\r\n");
+    }
 
     
     #if MPU6050_SECOND_DEVICE 

@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief LSM303AGR 6-axis magnetometer and accelerometer configuration file implementation 
+ * @brief LSM303AGR IMU configuration file 
  * 
  * @version 0.1
  * @date 2024-01-23
