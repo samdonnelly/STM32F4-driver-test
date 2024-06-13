@@ -33,7 +33,8 @@ void project_app(void)
 {
     // Project application code here 
 
-    rc_test_app(); 
+    // rc_test_app(); 
+    nrf24l01_test_app(); 
 }
 
 //=======================================================================================

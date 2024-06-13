@@ -39,11 +39,11 @@
 #define NRF24L01_SYSTEM_2 0           // Enable device 2 code 
 
 // Test code 
-#define NRF24L01_HEARTBEAT 0          // Heartbeat 
-#define NRF24L01_MANUAL_CONTROL 1     // SD card on same SPI bus but different pins 
+#define NRF24L01_HEARTBEAT 1          // Heartbeat 
+#define NRF24L01_MANUAL_CONTROL 0     // Perform actions based on user input 
 
 // Hardware 
-#define NRF24L01_TEST_SCREEN 0        // HD44780U screen in the system - shuts screen off 
+#define NRF24L01_TEST_SCREEN 1        // HD44780U screen in the system - shuts screen off 
 
 //==================================================
 
