@@ -33,8 +33,7 @@ void project_init(void)
 {
     // Project initialization code here 
 
-    // rc_test_init(); 
-    nrf24l01_test_init(); 
+    rc_test_init(); 
 }
 
 //=======================================================================================

@@ -43,7 +43,7 @@
 #define NRF24L01_MANUAL_CONTROL 0     // Perform actions based on user input 
 
 // Hardware 
-#define NRF24L01_TEST_SCREEN 1        // HD44780U screen in the system - shuts screen off 
+#define NRF24L01_TEST_SCREEN 0        // HD44780U screen in the system - shuts screen off 
 
 //==================================================
 

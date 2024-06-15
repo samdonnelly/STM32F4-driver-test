@@ -1017,7 +1017,9 @@ void rc_test_no_radio(uint8_t *timer)
 // Macros 
 
 // Timing 
-#define RC_GS_RECEIVE_PERIOD 100000     // Time between throttle command sends (us) 
+#define RC_GS_ACTION_PERIOD 100000     // Time between throttle command sends (us) 
+#define RC_GS_HB_SEND_COUNTER 20       // This * RC_GS_ACTION_PERIOD gives HB send period 
+#define RC_GS_HB_TIMEOUT_COUNTER 100   // This * RC_GS_ACTION_PERIOD gives HB timeout 
 
 //==================================================
 
@@ -1029,6 +1031,10 @@ void rc_test_no_radio(uint8_t *timer)
 
 // Command data 
 static nrf24l01_cmd_data_t rc_gs_cmd_data; 
+static const char 
+ping_msg[] = "ping", 
+ping_response[] = "pong", 
+lost_connection[] = "Radio lost\033[1A"; 
 
 #elif RC_SYSTEM_2 
 #endif 
@@ -1127,6 +1133,9 @@ void rc_ground_station_test_loop(void)
 {
 #if RC_SYSTEM_1 
 
+    static uint8_t hb_send_counter = CLEAR; 
+    static uint8_t hb_timeout_counter = CLEAR; 
+
     // Check for user serial terminal input 
     if (handler_flags.usart2_flag)
     {
@@ -1148,7 +1157,7 @@ void rc_ground_station_test_loop(void)
     // Periodically check for action items 
     if (tim_compare(rc_test.timer_nonblocking, 
                     rc_test.delay_timer.clk_freq, 
-                    RC_GS_RECEIVE_PERIOD, 
+                    RC_GS_ACTION_PERIOD, 
                     &rc_test.delay_timer.time_cnt_total, 
                     &rc_test.delay_timer.time_cnt, 
                     &rc_test.delay_timer.time_start))
@@ -1156,14 +1165,39 @@ void rc_ground_station_test_loop(void)
         // time_start flag does not need to be set again because this timer runs 
         // continuously. 
 
-        // Look for a heartbeat message 
+        // Look for an incoming message from the remote system 
         if (nrf24l01_data_ready_status() == rc_test.pipe)
         {
             nrf24l01_receive_payload(rc_test.read_buff); 
 
-            uart_sendstring(USART2, "\033[1A\033[1A\r"); 
-            uart_sendstring(USART2, (char *)rc_test.read_buff); 
+            // Clear the timeout for any message received 
+            hb_timeout_counter = CLEAR; 
+
+            if (strcmp((char *)rc_test.read_buff, ping_response) != 0)
+            {
+                // Display the message for the ground station to see 
+                uart_sendstring(USART2, "\033[1A\033[1A\r"); 
+                uart_sendstring(USART2, (char *)rc_test.read_buff); 
+                rc_ground_station_user_prompt(); 
+            }
+        }
+
+        // Check if the radio connection had been lost for too long 
+        if (hb_timeout_counter++ >= RC_GS_HB_TIMEOUT_COUNTER)
+        {
+            hb_timeout_counter = CLEAR; 
+            
+            // Display a lost connection message 
+            uart_sendstring(USART2, "\033[1A\r"); 
+            uart_sendstring(USART2, lost_connection); 
             rc_ground_station_user_prompt(); 
+        }
+
+        // Send a heartbeat message to the remote system periodically 
+        if (hb_send_counter++ >= RC_GS_HB_SEND_COUNTER)
+        {
+            hb_send_counter = CLEAR; 
+            nrf24l01_send_payload((uint8_t *)ping_msg); 
         }
     }
 
