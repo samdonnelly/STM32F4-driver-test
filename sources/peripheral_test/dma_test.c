@@ -183,6 +183,7 @@ void dma_test_init()
         DMA_DIR_PM, 
         DMA_CM_ENABLE,
         DMA_PRIOR_VHI, 
+        DMA_DBM_DISABLE, 
 #if DMA_TEST_MODE_3   // Memeory increment 
         DMA_ADDR_FIXED, 
 #else 
@@ -197,6 +198,7 @@ void dma_test_init()
         DMA2_Stream0, 
         (uint32_t)(&ADC1->DR), 
         (uint32_t)adc_data, 
+        (uint32_t)NULL, 
         (uint16_t)ADC_BUFF_SIZE); 
 
     // Enable the DMA stream 

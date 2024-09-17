@@ -15,6 +15,10 @@
 #ifndef _HW125_TEST_H_
 #define _HW125_TEST_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //=======================================================================================
 // Includes 
 
@@ -62,5 +66,9 @@ void hw125_test_init(void);
 void hw125_test_app(void); 
 
 //=======================================================================================
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // _HW125_TEST_H_ 

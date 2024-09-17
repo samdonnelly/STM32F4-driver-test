@@ -266,6 +266,7 @@ void esc_readytosky_test_init(void)
         DMA_DIR_PM, 
         DMA_CM_ENABLE,
         DMA_PRIOR_VHI, 
+        DMA_DBM_DISABLE, 
 #if ESC_SECOND_DEVICE   // Memeory increment 
         DMA_ADDR_INCREMENT, 
 #else 
@@ -280,6 +281,7 @@ void esc_readytosky_test_init(void)
         DMA2_Stream0, 
         (uint32_t)(&ADC1->DR), 
         (uint32_t)adc_data, 
+        (uint32_t)NULL, 
         (uint16_t)ESC_ADC_BUFF_LEN); 
 
     // Enable the DMA stream 

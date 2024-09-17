@@ -32,8 +32,6 @@
 void project_init(void)
 {
     // Project initialization code here 
-
-    rc_test_init(); 
 }
 
 //=======================================================================================

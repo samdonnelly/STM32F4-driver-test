@@ -1087,6 +1087,7 @@ void rc_ground_station_test_init(void)
         DMA_DIR_PM, 
         DMA_CM_ENABLE,
         DMA_PRIOR_VHI, 
+        DMA_DBM_DISABLE, 
         DMA_ADDR_INCREMENT,   // Increment the buffer pointer to fill the buffer 
         DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
         DMA_DATA_SIZE_BYTE, 
@@ -1097,6 +1098,7 @@ void rc_ground_station_test_init(void)
         DMA1_Stream5, 
         (uint32_t)(&USART2->DR), 
         (uint32_t)rc_gs_cmd_data.cb, 
+        (uint32_t)NULL, 
         (uint16_t)NRF24L01_TEST_MAX_INPUT); 
 
     // Enable the DMA stream for the UART 
