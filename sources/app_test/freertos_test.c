@@ -47,8 +47,8 @@
 #define MEMORY_MANAGEMENT_TEST 0 
 #define QUEUE_TEST 0 
 #define MUTEX_TEST 0 
-#define SEMAPHORE_TEST 0 
-#define SOFTWARE_TIMER_TEST_0 1 
+#define SEMAPHORE_TEST 1 
+#define SOFTWARE_TIMER_TEST_0 0 
 #define SOFTWARE_TIMER_TEST_1 0 
 #define HARDWARE_INTERRUPT_TEST 0 
 #define DEADLOCK_STARVATION_TEST 0 
@@ -182,6 +182,7 @@ void freertos_test_init(void)
         DMA_DIR_PM, 
         DMA_CM_ENABLE,
         DMA_PRIOR_VHI, 
+        DMA_DBM_DISABLE, 
         DMA_ADDR_INCREMENT,   // Increment the buffer pointer to fill the buffer 
         DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
         DMA_DATA_SIZE_BYTE, 
@@ -192,6 +193,7 @@ void freertos_test_init(void)
         DMA1_Stream5, 
         (uint32_t)(&USART2->DR), 
         (uint32_t)uart_dma_buff, 
+        (uint32_t)NULL, 
         (uint16_t)SERIAL_INPUT_MAX_LEN); 
     dma_stream_enable(DMA1_Stream5); 
 
@@ -712,7 +714,7 @@ void TaskMsg02(void *argument)
 // input from the serial terminal. Once the end of the input is seen (new line or 
 // carriage return), all the input up to that point gets stored in allocated heap memory 
 // and informs the second task that there is new data. The second task prints the input 
-// message back to there terminal when it becomes available and frees the memory used to 
+// message back to the terminal when it becomes available and frees the memory used to 
 // store the message. 
 
 //=======================================================================================
