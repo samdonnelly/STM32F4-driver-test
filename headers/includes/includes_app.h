@@ -19,7 +19,8 @@
 // Includes 
 
 // Application test code 
-#include "freertos_test.h"
+#include "freertos_test.h" 
+#include "rpm_test.h" 
 
 // Device test code 
 #include "esc_readytosky_test.h"

@@ -12,13 +12,13 @@
  * 
  */
 
-//================================================================================
+//=======================================================================================
 // Includes 
 
 #include "interrupt_test.h" 
 #include "stm32f4xx_it.h" 
 
-//================================================================================
+//=======================================================================================
 
 
 //=======================================================================================
@@ -26,24 +26,26 @@
 
 // Conditional compilation 
 #define INT_EXTI 1            // External interrupt code 
-#define INT_ADC_ENABLE 0      // ADC interrupt code (EXTI0 must be included as well) 
-#define INT_DMA_ENABLE 0      // DMA interrupt code (EXTI0 & ADC must be included as well) 
-
-// Data 
-#define INT_ADC_NUM_CONV 2    // Number of ADC conversions to keep track of 
+#define INT_INTERNAL 0        // Internal interrupt code 
+#define INT_PERIODIC 0        // Periodic interrupt code 
 
 //=======================================================================================
 
 
 //=======================================================================================
-// Globals 
+// Prototypes 
 
-#if INT_ADC_ENABLE 
+// External interrupt code 
+void int_test_external_init(void); 
+void int_test_external_app(void); 
 
-// Location for the DMA to store ADC values 
-static uint16_t adc_conversion[INT_ADC_NUM_CONV]; 
+// Internal interrupt code 
+void int_test_internal_init(void); 
+void int_test_internal_app(void); 
 
-#endif   // INT_ADC_ENABLE 
+// Periodic interrupt code 
+void int_test_periodic_init(void); 
+void int_test_periodic_app(void); 
 
 //=======================================================================================
 
@@ -81,13 +83,83 @@ void int_test_init()
     // Initialize interrupt handler flags (called once) 
     int_handler_init(); 
 
+#if INT_EXTI 
+    int_test_external_init(); 
+#elif INT_INTERNAL 
+    int_test_internal_init(); 
+#elif INT_PERIODIC 
+    int_test_periodic_init(); 
+#endif 
+}
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Test code 
+
+void int_test_app()
+{
+    // Test code for interrupt_test here 
+
+#if INT_EXTI 
+    int_test_external_app(); 
+#elif INT_INTERNAL 
+    int_test_internal_app(); 
+#elif INT_PERIODIC 
+    int_test_periodic_app(); 
+#endif   // INT_EXTI 
+}
+
+//=======================================================================================
+
+
+#if INT_EXTI 
+
+// 
+
+//=======================================================================================
+// Macros 
+
+// Conditional compilation 
+#define INT_ADC_ENABLE 0      // ADC interrupt code (EXTI0 must be included as well) 
+#define INT_DMA_ENABLE 0      // DMA interrupt code (EXTI0 & ADC must be included as well) 
+
+// Data 
+#define INT_ADC_NUM_CONV 2    // Number of ADC conversions to keep track of 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Variables 
+
+#if INT_ADC_ENABLE 
+
+// Location for the DMA to store ADC values 
+static uint16_t adc_conversion[INT_ADC_NUM_CONV]; 
+
+#endif   // INT_ADC_ENABLE 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Prototypes 
+//=======================================================================================
+
+
+//=======================================================================================
+// Setup 
+
+// External interrupt test init 
+void int_test_external_init(void)
+{
     //==================================================
     // External interrupt initialization 
 
     // Enable external interrupts (called once) 
     exti_init(); 
-
-#if INT_EXTI 
 
     // The external interrupt was tested by associating it with a hall effect sensor 
     // that would change state in the presence of a magnetic field. 
@@ -105,8 +177,6 @@ void int_test_init()
 
     // Enable the interrupt handlers (called for each interrupt) 
     nvic_config(EXTI0_IRQn, EXTI_PRIORITY_0); 
-
-#endif   // INT_EXTI 
 
     //==================================================
 
@@ -191,24 +261,17 @@ void int_test_init()
 #endif   // INT_DMA_ENABLE 
 
 #endif   // INT_ADC_ENABLE 
-
 }
 
 //=======================================================================================
 
 
 //=======================================================================================
-// Test code 
+// Loop 
 
-void int_test_app()
+// External interrupt test app 
+void int_test_external_app(void)
 {
-    // Test code for interrupt_test here 
-
-    //==================================================
-    // External Interrupt  
-
-#if INT_EXTI 
-
     // Check for the external interrupt from the user 
     if (handler_flags.exti0_flag)
     {
@@ -249,12 +312,108 @@ void int_test_app()
         uart_send_new_line(USART2); 
 
 #endif   // INT_ADC_ENABLE 
-
     }
-
-#endif   // INT_EXTI 
-
-    //==================================================
 }
 
 //=======================================================================================
+
+
+//=======================================================================================
+// Test functions 
+//=======================================================================================
+
+
+#elif INT_INTERNAL 
+
+// 
+
+//=======================================================================================
+// Macros 
+//=======================================================================================
+
+
+//=======================================================================================
+// Variables 
+//=======================================================================================
+
+
+//=======================================================================================
+// Prototypes 
+//=======================================================================================
+
+//=======================================================================================
+// Setup 
+
+// Internal interrupt test init 
+void int_test_internal_init(void)
+{
+    // 
+}
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Loop 
+
+// Internal interrupt test app 
+void int_test_internal_app(void)
+{
+    // 
+}
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Test functions 
+//=======================================================================================
+
+
+#elif INT_PERIODIC 
+
+// 
+
+//=======================================================================================
+// Macros 
+//=======================================================================================
+
+
+//=======================================================================================
+// Variables 
+//=======================================================================================
+
+
+//=======================================================================================
+// Prototypes 
+//=======================================================================================
+
+//=======================================================================================
+// Setup 
+
+// Periodic interrupt test init 
+void int_test_periodic_init(void)
+{
+    // 
+}
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Loop 
+
+// Periodic interrupt test app 
+void int_test_periodic_app(void)
+{
+    // 
+}
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Test functions 
+//=======================================================================================
+
+#endif 

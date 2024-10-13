@@ -1,39 +1,50 @@
 /**
- * @file project_app.cpp
+ * @file rpm_test.h
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Project application code 
+ * @brief RPM (revolutions per minute) test interface 
  * 
  * @version 0.1
- * @date 2023-07-20
+ * @date 2024-10-12
  * 
- * @copyright Copyright (c) 2023
+ * @copyright Copyright (c) 2024
  * 
  */
+
+#ifndef _RPM_TEST_H_ 
+#define _RPM_TEST_H_ 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 //=======================================================================================
 // Includes 
 
-#include "project_interface.h" 
-
-#include "includes_app.h"
-#include "includes_cpp_app.h"
-#include "includes_drivers.h"
-#include "includes_cpp_drivers.h"
+#include "includes_drivers.h" 
 
 //=======================================================================================
 
 
 //=======================================================================================
-// Functions 
+// Function prototypes 
 
-// Project application code - called repeatedly 
-void project_app(void)
-{
-    // Project application code here 
+/**
+ * @brief RPM test setup code 
+ */
+void rpm_test_init(void); 
 
-    rpm_test_app(); 
+
+/**
+ * @brief RPM test application code 
+ */
+void rpm_test_app(void); 
+
+//=======================================================================================
+
+#ifdef __cplusplus
 }
+#endif
 
-//=======================================================================================
+#endif   // _RPM_TEST_H_ 
