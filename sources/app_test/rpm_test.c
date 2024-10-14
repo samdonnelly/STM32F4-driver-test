@@ -25,7 +25,9 @@
 // Macros 
 
 #define RPM_SAMPLE_BUFF_SIZE 4    // Number of samples for RPM calculation 
-#define RPM_OUTPUT_BUFF_SIZE 10   // 
+#define RPM_OUTPUT_BUFF_SIZE 10   // Output string buffer size 
+#define PRM_SAMPLE_PERIOD 0.5     // Time between samples (seconds) 
+#define RPM_SEC_TO_MIN 60         // 60 seconds / minute 
 
 //=======================================================================================
 
@@ -42,8 +44,8 @@ typedef struct rpm_test_data_s
     uint8_t rev_sum;                            // Revolution summation for RPM calc 
 
     // User data 
-    uint8_t rpm;                                // Calculated RPM 
-    char rpm_buff[RPM_OUTPUT_BUFF_SIZE]; 
+    uint16_t rpm;                               // Calculated RPM 
+    char rpm_buff[RPM_OUTPUT_BUFF_SIZE];        // Serial string to show RPM 
 }
 rpm_test_data_t; 
 
@@ -64,11 +66,12 @@ void rpm_test_init(void)
     // Initialize interrupt handler flags 
     int_handler_init(); 
 
-    // Periodic (counter update) interrupt timer for RPM calculation 
+    // Periodic (counter update) interrupt timer for RPM calculation. If the counter 
+    // reload value changes, make sure to update the PRM_SAMPLE_PERIOD macro. 
     tim_9_to_11_counter_init(
         TIM10, 
         TIM_84MHZ_100US_PSC, 
-        0x0032,  // ARR=50, (50 counts)*(100us/count) = 5ms 
+        0x1388,  // ARR=5000, (5000 counts)*(100us/count) = 500ms 
         TIM_UP_INT_ENABLE); 
     tim_enable(TIM10); 
 
@@ -102,9 +105,10 @@ void rpm_test_init(void)
 
     // Initialize data 
     rpm_test_data.rev_count = CLEAR; 
-    rpm_test_data.rev_sum = CLEAR; 
     rpm_test_data.rev_buff_index = CLEAR; 
     memset((void *)rpm_test_data.rev_buff, CLEAR, sizeof(rpm_test_data.rev_buff)); 
+    rpm_test_data.rev_sum = CLEAR; 
+    rpm_test_data.rpm = CLEAR; 
     memset((void *)rpm_test_data.rpm_buff, CLEAR, sizeof(rpm_test_data.rpm_buff)); 
 }
 
@@ -127,12 +131,18 @@ void rpm_test_app(void)
     {
         handler_flags.exti4_flag = CLEAR; 
         rpm_test_data.rev_count++; 
-    }  
+    }
 
     // Periodic interrupt - RPM calculation 
     if (handler_flags.tim1_up_tim10_glbl_flag)
     {
         handler_flags.tim1_up_tim10_glbl_flag = CLEAR; 
+
+        // Record the revolution count from the most recent invertal, update the circular 
+        // buffer index and total the revolutions over the last RPM_SAMPLE_BUFF_SIZE 
+        // intervals before calculating the RPM and outputting the result to the serial 
+        // terminal for the user to see. 
+
         rpm_test_data.rev_buff[rpm_test_data.rev_buff_index++] = rpm_test_data.rev_count; 
         rpm_test_data.rev_count = CLEAR; 
 
@@ -148,12 +158,15 @@ void rpm_test_app(void)
             rpm_test_data.rev_sum += rpm_test_data.rev_buff[i]; 
         }
 
-        // Output the most recent RPM to the serial terminal for the user to see. 
+        rpm_test_data.rpm = (uint16_t)((double)rpm_test_data.rev_sum * RPM_SEC_TO_MIN / 
+                                       (RPM_SAMPLE_BUFF_SIZE * PRM_SAMPLE_PERIOD)); 
+
         snprintf(
             rpm_test_data.rpm_buff, 
             RPM_OUTPUT_BUFF_SIZE, 
-            "RPM: %u\r", 
+            "\rRPM: %u", 
             rpm_test_data.rpm); 
+        uart_sendstring(USART2, rpm_test_data.rpm_buff); 
     }
 }
 
