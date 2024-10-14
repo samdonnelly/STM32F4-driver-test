@@ -22,6 +22,37 @@
 
 
 //=======================================================================================
+// Macros 
+
+#define RPM_SAMPLE_BUFF_SIZE 4    // Number of samples for RPM calculation 
+#define RPM_OUTPUT_BUFF_SIZE 10   // 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Global data 
+
+typedef struct rpm_test_data_s 
+{
+    // Wheel revolution data 
+    uint8_t rev_count;                          // Revolution counter 
+    uint8_t rev_buff_index;                     // Revolution circular buffer index 
+    uint8_t rev_buff[RPM_SAMPLE_BUFF_SIZE];     // Revolution circular buffer 
+    uint8_t rev_sum;                            // Revolution summation for RPM calc 
+
+    // User data 
+    uint8_t rpm;                                // Calculated RPM 
+    char rpm_buff[RPM_OUTPUT_BUFF_SIZE]; 
+}
+rpm_test_data_t; 
+
+static rpm_test_data_t rpm_test_data; 
+
+//=======================================================================================
+
+
+//=======================================================================================
 // Setup code 
 
 // RPM test setup code 
@@ -30,8 +61,16 @@ void rpm_test_init(void)
     // Initialize GPIO ports 
     gpio_port_init(); 
 
-    // Initialize interrupt handler flags (called once) 
+    // Initialize interrupt handler flags 
     int_handler_init(); 
+
+    // Periodic (counter update) interrupt timer for RPM calculation 
+    tim_9_to_11_counter_init(
+        TIM10, 
+        TIM_84MHZ_100US_PSC, 
+        0x0032,  // ARR=50, (50 counts)*(100us/count) = 5ms 
+        TIM_UP_INT_ENABLE); 
+    tim_enable(TIM10); 
 
     // Initialize UART - used to show the user the calculated RPM 
     uart_init(
@@ -44,7 +83,29 @@ void rpm_test_init(void)
         UART_DMA_DISABLE, 
         UART_DMA_DISABLE); 
 
-    // External interrupt setup 
+    // External interrupt (rev count) setup 
+    exti_init(); 
+    exti_config(
+        GPIOC, 
+        EXTI_PC, 
+        PIN_4, 
+        PUPDR_PU, 
+        EXTI_L4, 
+        EXTI_INT_NOT_MASKED, 
+        EXTI_EVENT_MASKED, 
+        EXTI_RISE_TRIG_DISABLE, 
+        EXTI_FALL_TRIG_ENABLE); 
+
+    // Enable interrupts 
+    nvic_config(EXTI4_IRQn, EXTI_PRIORITY_0);           // External - rev counter 
+    nvic_config(TIM1_UP_TIM10_IRQn, EXTI_PRIORITY_1);   // Timer - PRM calc 
+
+    // Initialize data 
+    rpm_test_data.rev_count = CLEAR; 
+    rpm_test_data.rev_sum = CLEAR; 
+    rpm_test_data.rev_buff_index = CLEAR; 
+    memset((void *)rpm_test_data.rev_buff, CLEAR, sizeof(rpm_test_data.rev_buff)); 
+    memset((void *)rpm_test_data.rpm_buff, CLEAR, sizeof(rpm_test_data.rpm_buff)); 
 }
 
 //=======================================================================================
@@ -56,7 +117,44 @@ void rpm_test_init(void)
 // RPM test application code 
 void rpm_test_app(void)
 {
-    // 
+    // The interrupt handler for the external interrupt is not used directly because the 
+    // code loops quicker than there can be successive revolutions (for this test setup). 
+    // The interrupt handler for the periodic interrpt is not used directly because a 
+    // calculation needs to be done which is better suited to be handled here. 
+
+    // External interrupt - revolution counter 
+    if (handler_flags.exti4_flag)
+    {
+        handler_flags.exti4_flag = CLEAR; 
+        rpm_test_data.rev_count++; 
+    }  
+
+    // Periodic interrupt - RPM calculation 
+    if (handler_flags.tim1_up_tim10_glbl_flag)
+    {
+        handler_flags.tim1_up_tim10_glbl_flag = CLEAR; 
+        rpm_test_data.rev_buff[rpm_test_data.rev_buff_index++] = rpm_test_data.rev_count; 
+        rpm_test_data.rev_count = CLEAR; 
+
+        if (rpm_test_data.rev_buff_index >= RPM_SAMPLE_BUFF_SIZE)
+        {
+            rpm_test_data.rev_buff_index = CLEAR; 
+        }
+
+        rpm_test_data.rev_sum = CLEAR; 
+
+        for (uint8_t i = CLEAR; i < RPM_SAMPLE_BUFF_SIZE; i++)
+        {
+            rpm_test_data.rev_sum += rpm_test_data.rev_buff[i]; 
+        }
+
+        // Output the most recent RPM to the serial terminal for the user to see. 
+        snprintf(
+            rpm_test_data.rpm_buff, 
+            RPM_OUTPUT_BUFF_SIZE, 
+            "RPM: %u\r", 
+            rpm_test_data.rpm); 
+    }
 }
 
 //=======================================================================================
