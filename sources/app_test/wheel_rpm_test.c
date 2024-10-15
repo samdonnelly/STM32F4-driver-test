@@ -1,9 +1,12 @@
 /**
- * @file rpm_test.c
+ * @file wheel_rpm_test.c
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief RPM (revolutions per minute) test 
+ * @brief Wheel RPM (revolutions per minute) test 
+ * 
+ * @details This test determines the RPM of a wheel using a Hall Effect sensor and a 
+ *          magnet. 
  * 
  * @version 0.1
  * @date 2024-10-12
@@ -15,7 +18,7 @@
 //=======================================================================================
 // Includes 
 
-#include "rpm_test.h" 
+#include "wheel_rpm_test.h" 
 #include "stm32f4xx_it.h" 
 
 //=======================================================================================
@@ -25,8 +28,8 @@
 // Macros 
 
 #define RPM_SAMPLE_BUFF_SIZE 4    // Number of samples for RPM calculation 
-#define RPM_OUTPUT_BUFF_SIZE 10   // Output string buffer size 
-#define PRM_SAMPLE_PERIOD 0.5     // Time between samples (seconds) 
+#define RPM_OUTPUT_BUFF_SIZE 12   // Output string buffer size 
+#define PRM_SAMPLE_PERIOD 500     // Time between samples (ms) 
 #define RPM_SEC_TO_MIN 60         // 60 seconds / minute 
 
 //=======================================================================================
@@ -41,7 +44,7 @@ typedef struct rpm_test_data_s
     uint8_t rev_count;                          // Revolution counter 
     uint8_t rev_buff_index;                     // Revolution circular buffer index 
     uint8_t rev_buff[RPM_SAMPLE_BUFF_SIZE];     // Revolution circular buffer 
-    uint8_t rev_sum;                            // Revolution summation for RPM calc 
+    uint16_t rev_sum;                           // Revolution summation for RPM calc 
 
     // User data 
     uint16_t rpm;                               // Calculated RPM 
@@ -57,8 +60,8 @@ static rpm_test_data_t rpm_test_data;
 //=======================================================================================
 // Setup code 
 
-// RPM test setup code 
-void rpm_test_init(void)
+// Wheel RPM test setup code 
+void wheel_rpm_test_init(void)
 {
     // Initialize GPIO ports 
     gpio_port_init(); 
@@ -118,8 +121,8 @@ void rpm_test_init(void)
 //=======================================================================================
 // Test code 
 
-// RPM test application code 
-void rpm_test_app(void)
+// Wheel RPM test application code 
+void wheel_rpm_test_app(void)
 {
     // The interrupt handler for the external interrupt is not used directly because the 
     // code loops quicker than there can be successive revolutions (for this test setup). 
@@ -158,8 +161,9 @@ void rpm_test_app(void)
             rpm_test_data.rev_sum += rpm_test_data.rev_buff[i]; 
         }
 
-        rpm_test_data.rpm = (uint16_t)((double)rpm_test_data.rev_sum * RPM_SEC_TO_MIN / 
-                                       (RPM_SAMPLE_BUFF_SIZE * PRM_SAMPLE_PERIOD)); 
+        // RPM = (revolutions / (num_samples * sample_period[ms] / 1000[ms/s])) * 60[s/min] 
+        rpm_test_data.rpm = (uint16_t)(rpm_test_data.rev_sum * RPM_SEC_TO_MIN * SCALE_1000 / 
+                                      (RPM_SAMPLE_BUFF_SIZE * PRM_SAMPLE_PERIOD)); 
 
         snprintf(
             rpm_test_data.rpm_buff, 

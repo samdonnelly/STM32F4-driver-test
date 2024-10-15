@@ -33,7 +33,7 @@ void project_app(void)
 {
     // Project application code here 
 
-    rpm_test_app(); 
+    wheel_rpm_test_app(); 
 }
 
 //=======================================================================================

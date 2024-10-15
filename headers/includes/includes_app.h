@@ -20,7 +20,7 @@
 
 // Application test code 
 #include "freertos_test.h" 
-#include "rpm_test.h" 
+#include "wheel_rpm_test.h" 
 
 // Device test code 
 #include "esc_readytosky_test.h"
