@@ -27,10 +27,12 @@
 //=======================================================================================
 // Macros 
 
-#define RPM_SAMPLE_BUFF_SIZE 4    // Number of samples for RPM calculation 
-#define RPM_OUTPUT_BUFF_SIZE 12   // Output string buffer size 
-#define PRM_SAMPLE_PERIOD 500     // Time between samples (ms) 
+#define RPM_SAMPLE_BUFF_SIZE 20   // Number of samples for RPM calculation 
+#define RPM_OUTPUT_BUFF_SIZE 20   // Output string buffer size 
+#define PRM_SAMPLE_PERIOD 200     // Time between samples (ms) 
 #define RPM_SEC_TO_MIN 60         // 60 seconds / minute 
+
+// Note: Time over which RPM is determined == PRM_SAMPLE_PERIOD * RPM_SAMPLE_BUFF_SIZE
 
 //=======================================================================================
 
@@ -44,10 +46,10 @@ typedef struct rpm_test_data_s
     uint8_t rev_count;                          // Revolution counter 
     uint8_t rev_buff_index;                     // Revolution circular buffer index 
     uint8_t rev_buff[RPM_SAMPLE_BUFF_SIZE];     // Revolution circular buffer 
-    uint16_t rev_sum;                           // Revolution summation for RPM calc 
+    uint32_t rev_sum;                           // Revolution summation for RPM calc 
 
     // User data 
-    uint16_t rpm;                               // Calculated RPM 
+    uint32_t rpm;                               // Calculated RPM 
     char rpm_buff[RPM_OUTPUT_BUFF_SIZE];        // Serial string to show RPM 
 }
 rpm_test_data_t; 
@@ -74,7 +76,7 @@ void wheel_rpm_test_init(void)
     tim_9_to_11_counter_init(
         TIM10, 
         TIM_84MHZ_100US_PSC, 
-        0x1388,  // ARR=5000, (5000 counts)*(100us/count) = 500ms 
+        0x07D0,  // ARR=2000, (2000 counts)*(100us/count) = 200ms 
         TIM_UP_INT_ENABLE); 
     tim_enable(TIM10); 
 
@@ -162,13 +164,26 @@ void wheel_rpm_test_app(void)
         }
 
         // RPM = (revolutions / (num_samples * sample_period[ms] / 1000[ms/s])) * 60[s/min] 
-        rpm_test_data.rpm = (uint16_t)(rpm_test_data.rev_sum * RPM_SEC_TO_MIN * SCALE_1000 / 
+        rpm_test_data.rpm = (uint32_t)(rpm_test_data.rev_sum * RPM_SEC_TO_MIN * SCALE_1000 / 
                                       (RPM_SAMPLE_BUFF_SIZE * PRM_SAMPLE_PERIOD)); 
+        
+        // Note: Resolution for the RPM is dependent on the sample period (time between 
+        //       revolution count checks) and sample buffer size (amount of past time to 
+        //       look at when counting revolutions). These two values are multiplied 
+        //       together and make up the denominator of the equation above. A higher 
+        //       value of this multiplication gives a better/finer resolution whereas 
+        //       a lower value gives a worse resolution. These two values work against 
+        //       each other as more samples is better but increases time (i.e. the RPM 
+        //       reading will lag in time) and shorter period is better but brings down 
+        //       denominator value. You will have to pick a balance that works for you 
+        //       but the ideal scenario is to have many samples and a short period while 
+        //       still keeping the denominator large (i.e. sample number outweighs the 
+        //       period length). 
 
         snprintf(
             rpm_test_data.rpm_buff, 
             RPM_OUTPUT_BUFF_SIZE, 
-            "\rRPM: %u", 
+            "\rRPM: %lu  ", 
             rpm_test_data.rpm); 
         uart_sendstring(USART2, rpm_test_data.rpm_buff); 
     }

@@ -32,8 +32,6 @@
 void project_init(void)
 {
     // Project initialization code here 
-
-    wheel_rpm_test_init(); 
 }
 
 //=======================================================================================
