@@ -15,9 +15,16 @@
 #ifndef _PROJECT_INTERFACE_H_ 
 #define _PROJECT_INTERFACE_H_ 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+//=======================================================================================
+// Includes 
+
+#include "includes_app.h"
+#include "includes_cpp_app.h"
+#include "includes_drivers.h"
+#include "includes_cpp_drivers.h"
+
+//=======================================================================================
+
 
 //=======================================================================================
 // Prototypes 
@@ -25,18 +32,14 @@ extern "C" {
 /**
  * @brief Project initialization code - called once 
  */
-void project_init(void); 
+void ProjectInit(void); 
 
 
 /**
  * @brief Project application code - called repeatedly 
  */
-void project_app(void); 
+void ProjectApp(void); 
 
 //=======================================================================================
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif   // _PROJECT_INTERFACE_H_ 

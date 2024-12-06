@@ -15,10 +15,6 @@
 #ifndef _INCLUDES_CPP_APP_H_ 
 #define _INCLUDES_CPP_APP_H_ 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 //=======================================================================================
 // Includes 
 
@@ -28,9 +24,5 @@ extern "C" {
 #include "rc_test.h" 
 
 //=======================================================================================
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif   // _INCLUDES_CPP_APP_H_ 

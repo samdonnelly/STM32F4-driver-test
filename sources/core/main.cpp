@@ -1,5 +1,5 @@
 /**
- * @file main.c
+ * @file main.cpp
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
@@ -16,8 +16,8 @@
 // Includes 
 
 // Library 
-#include "stm32f4xx_hal.h"
-#include "fatfs.h"
+#include "stm32f4xx_hal.h" 
+#include "tools.h" 
 
 // Application 
 #include "project_interface.h" 
@@ -69,11 +69,7 @@ void Error_Handler(void);
 //=======================================================================================
 // Main 
 
-/**
- * @brief Application entry point 
- * 
- * @return int 
- */
+// Application entry point 
 int main(void)
 {
     // The order of the below function calls is important. Some stuff needs to be set up 
@@ -86,8 +82,8 @@ int main(void)
     // Configure the system clock 
     SystemClock_Config(); 
 
-    // Run application setup code
-    project_init(); 
+    // Run application setup code 
+    ProjectInit(); 
 
     // Initialize all configured peripherals 
     MX_GPIO_Init(); 
@@ -96,7 +92,7 @@ int main(void)
     // Infinite loop 
     while (1)
     {
-        project_app(); 
+        ProjectApp(); 
     }
 }
 
@@ -109,8 +105,10 @@ int main(void)
 // System Clock Configuration 
 void SystemClock_Config(void)
 {
-    RCC_OscInitTypeDef RCC_OscInitStruct = {0}; 
-    RCC_ClkInitTypeDef RCC_ClkInitStruct = {0}; 
+    RCC_OscInitTypeDef RCC_OscInitStruct; 
+    RCC_ClkInitTypeDef RCC_ClkInitStruct; 
+    memset((void *)&RCC_OscInitStruct, CLEAR, sizeof(RCC_OscInitTypeDef)); 
+    memset((void *)&RCC_ClkInitStruct, CLEAR, sizeof(RCC_ClkInitTypeDef)); 
 
     // Configure the main internal regulator output voltage 
     __HAL_RCC_PWR_CLK_ENABLE(); 
@@ -151,7 +149,8 @@ void SystemClock_Config(void)
 // GPIO Initialization Function 
 static void MX_GPIO_Init(void)
 {
-    GPIO_InitTypeDef GPIO_InitStruct = {0}; 
+    GPIO_InitTypeDef GPIO_InitStruct; 
+    memset((void *)&GPIO_InitStruct, CLEAR, sizeof(GPIO_InitTypeDef)); 
 
     // GPIO Ports Clock Enable 
     __HAL_RCC_GPIOC_CLK_ENABLE(); 

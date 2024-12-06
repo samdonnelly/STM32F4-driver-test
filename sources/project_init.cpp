@@ -17,11 +17,6 @@
 
 #include "project_interface.h" 
 
-#include "includes_app.h"
-#include "includes_cpp_app.h"
-#include "includes_drivers.h"
-#include "includes_cpp_drivers.h"
-
 //=======================================================================================
 
 
@@ -29,7 +24,7 @@
 // Functions 
 
 // Project initialization code - called once 
-void project_init(void)
+void ProjectInit(void)
 {
     // Project initialization code here 
 }

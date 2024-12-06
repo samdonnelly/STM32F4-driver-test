@@ -17,11 +17,6 @@
 
 #include "project_interface.h" 
 
-#include "includes_app.h"
-#include "includes_cpp_app.h"
-#include "includes_drivers.h"
-#include "includes_cpp_drivers.h"
-
 //=======================================================================================
 
 
@@ -29,7 +24,7 @@
 // Functions 
 
 // Project application code - called repeatedly 
-void project_app(void)
+void ProjectApp(void)
 {
     // Project application code here 
 }

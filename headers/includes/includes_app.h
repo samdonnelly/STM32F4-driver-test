@@ -15,6 +15,10 @@
 #ifndef _INCLUDES_APP_H_
 #define _INCLUDES_APP_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //=======================================================================================
 // Includes 
 
@@ -46,5 +50,9 @@
 #include "switch_debounce_test.h" 
 
 //=======================================================================================
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // _INCLUDES_APP_H_
