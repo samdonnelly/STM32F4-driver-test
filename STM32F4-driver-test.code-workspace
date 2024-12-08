@@ -100,7 +100,9 @@
 			"i2c_comm_mock.h": "c",
 			"spi_comm_mock.h": "c",
 			"project_interface.h": "c",
-			"rpm_test.h": "c"
+			"rpm_test.h": "c",
+			"sik_radio_driver.h": "c",
+			"stdint.h": "c"
 		}
 	}
 }
