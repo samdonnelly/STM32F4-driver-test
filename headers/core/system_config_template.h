@@ -48,8 +48,8 @@
 #define INTERRUPT_OVERRIDE 0 
 #endif   // INTERRUPT_OVERRIDE 
 
-// The below list allows for choosing which STM32F4 board to use. You can define only 
-// what you need in the "system_config.h" file. 
+// The below list allows for choosing which STM32F4 board to use. Redefine each of the 
+// following in the "system_config.h" file and change your selected board to 1. 
 #ifndef STM32F4_05xx 
 #define STM32F4_05xx 0 
 #endif   // STM32F4_05xx 
