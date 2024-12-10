@@ -22,7 +22,7 @@
 #include "freertos_test.h" 
 #include "includes_drivers.h" 
 #include "stm32f4xx_it.h" 
-#include "system_settings.h" 
+#include "system_config.h" 
 
 #include "FreeRTOS.h"
 #include "task.h"

@@ -18,7 +18,7 @@
 #include "active_object_test.h" 
 #include "includes_drivers.h" 
 #include "stm32f4xx_it.h" 
-#include "system_settings.h" 
+#include "system_config.h" 
 
 // FreeRTOS 
 #include "FreeRTOS.h"
