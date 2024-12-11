@@ -23,6 +23,9 @@
 #include "gps_nav_test.h" 
 #include "rc_test.h" 
 
+// Device test code 
+#include "sik_radio_test.h" 
+
 //=======================================================================================
 
 #endif   // _INCLUDES_CPP_APP_H_ 

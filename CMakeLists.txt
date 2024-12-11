@@ -40,7 +40,7 @@ set(RTOS_ENABLE 0)
 ###############################################################################
 # Headers 
 
-# STM 
+# STM code 
 set(STM32CUBEMX_INCLUDE_DIRECTORIES
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/FATFS/Target
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/FATFS/App
@@ -53,7 +53,7 @@ set(STM32CUBEMX_INCLUDE_DIRECTORIES
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/STM32F4xx_HAL_Driver/Inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy)
 
-# Library 
+# Project and driver code 
 set(PROJECT_INCLUDE_DIRECTORIES 
     ${CMAKE_CURRENT_SOURCE_DIR}/headers
     ${CMAKE_CURRENT_SOURCE_DIR}/headers/core
@@ -69,12 +69,17 @@ set(PROJECT_INCLUDE_DIRECTORIES
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/headers/peripherals
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/headers/tools)
 
+# External library code 
+set(LIBRARY_INCLUDE_DIRECTORIES 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../mavlink/c_library_v2
+    ${CMAKE_CURRENT_SOURCE_DIR}/../mavlink/c_library_v2/standard)
+
 ###############################################################################
 
 ###############################################################################
 # Sources 
 
-# STM 
+# STM code 
 if (RTOS_ENABLE EQUAL 1) 
 file(GLOB_RECURSE STM32CUBEMX_SOURCES CONFIGURE_DEPENDS
 # file(GLOB_RECURSE STM32CUBEMX_SOURCES
@@ -131,7 +136,7 @@ file(GLOB_RECURSE STM32CUBEMX_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stmcode/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c)
 endif() 
 
-# Library 
+# Project and driver code 
 file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
 # file(GLOB_RECURSE PROJECT_SOURCES FOLLOW_SYMLINKS
     ${CMAKE_CURRENT_SOURCE_DIR}/sources/*.c
@@ -174,6 +179,8 @@ target_include_directories(${EXECUTABLE} SYSTEM PRIVATE
     ${STM32CUBEMX_INCLUDE_DIRECTORIES})
 target_include_directories(${EXECUTABLE} PRIVATE
     ${PROJECT_INCLUDE_DIRECTORIES})
+target_include_directories(${EXECUTABLE} PRIVATE
+    ${LIBRARY_INCLUDE_DIRECTORIES})
 
 ###############################################################################
 
@@ -189,6 +196,10 @@ target_compile_options(${EXECUTABLE} PRIVATE
         -Wundef
         -fno-common
         -Wno-unused-parameter
+        #######################################
+        # Added by me 
+        -Wno-pedantic   # Due to mavlink library inclusion 
+        #######################################
         $<$<COMPILE_LANGUAGE:CXX>:
             # -Wconversion # STM libraries!
             -Wno-volatile
