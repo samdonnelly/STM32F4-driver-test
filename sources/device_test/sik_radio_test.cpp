@@ -16,9 +16,11 @@
 // Includes 
 
 #include "sik_radio_test.h" 
+#include "stm32f4xx_it.h" 
 
 extern "C"
 {
+    // For C headers without C++ guards 
     #include "standard/mavlink.h" 
 }
 
@@ -62,7 +64,13 @@ void sik_radio_test_init(void)
     memset((void *)mavlink_data.msg_buff, CLEAR, SIK_TEST_MSG_BUFF_SIZE); 
     mavlink_data.msg_buff_index = CLEAR; 
 
-    // UART1 - SiK radio module 
+    // Initialize GPIO ports 
+    gpio_port_init(); 
+
+    //==================================================
+    // UART init 
+
+    // UART1 init - SiK radio module 
     uart_init(
         USART1, 
         GPIOA, 
@@ -71,9 +79,20 @@ void sik_radio_test_init(void)
         UART_FRAC_84_115200, 
         UART_MANT_84_115200, 
         UART_DMA_DISABLE, 
-        UART_DMA_DISABLE); 
+        UART_DMA_ENABLE); 
 
-    // UART2 - Serial terminal 
+    // UART1 interrupt init - SiK radio module - IDLE line interrupts 
+    uart_interrupt_init(
+        USART1, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_ENABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE); 
+
+    // UART2 init - Serial terminal 
     uart_init(
         USART2, 
         GPIOA, 
@@ -82,11 +101,63 @@ void sik_radio_test_init(void)
         UART_FRAC_42_9600, 
         UART_MANT_42_9600, 
         UART_DMA_DISABLE, 
-        UART_DMA_ENABLE);   // DMA enabled so it can be configured later 
+        UART_DMA_ENABLE); 
+
+    // UART2 interrupt init - Serial terminal - IDLE line interrupts 
+    uart_interrupt_init(
+        USART2, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_ENABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE); 
+    
+    //==================================================
+
+    //==================================================
+    // DMA 
 
     // DMA - UART1 
 
-    // DMA - UART2 
+    // DMA stream init - UART2 
+    dma_stream_init(
+        DMA1, 
+        DMA1_Stream5, 
+        DMA_CHNL_4, 
+        DMA_DIR_PM, 
+        DMA_CM_ENABLE,
+        DMA_PRIOR_VHI, 
+        DMA_DBM_DISABLE, 
+        DMA_ADDR_INCREMENT,   // Increment the buffer pointer to fill the buffer 
+        DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
+        DMA_DATA_SIZE_BYTE, 
+        DMA_DATA_SIZE_BYTE); 
+
+    // DMA stream config - UART2 
+    // dma_stream_config(
+    //     DMA1_Stream5, 
+    //     (uint32_t)(&USART2->DR), 
+    //     (uint32_t)uart_dma_buff, 
+    //     (uint32_t)NULL, 
+    //     (uint16_t)UART_TEST_MAX_INPUT); 
+
+    // Enable DMA streams 
+    dma_stream_enable(DMA1_Stream5); 
+
+    //==================================================
+    
+    //==================================================
+    // Initialize interrupts 
+
+    // Initialize interrupt handler flags 
+    int_handler_init(); 
+
+    // Enable the interrupt handlers (called for each interrupt) - for USART2_RX 
+    nvic_config(USART2_IRQn, EXTI_PRIORITY_0); 
+
+    //==================================================
 }
 
 //=======================================================================================
