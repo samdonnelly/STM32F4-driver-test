@@ -38,8 +38,20 @@ extern "C"
 //=======================================================================================
 // Global data 
 
+// User data 
+typedef struct sik_user_data_s 
+{
+    uint8_t uart_dma_buff[SIK_TEST_MSG_BUFF_SIZE];     // Circular buffer for uart inputs 
+    uint8_t user_input_buff[SIK_TEST_MSG_BUFF_SIZE];   // Stores latest user input 
+    uint8_t buff_index;                                // Circular buffer index 
+}
+sik_user_data_t; 
+
+static sik_user_data_t user_data; 
+
+
 // Mavlink data 
-typedef struct mavlink_data_s 
+typedef struct sik_mavlink_data_s 
 {
     int channel; 
     mavlink_message_t msg; 
@@ -47,9 +59,9 @@ typedef struct mavlink_data_s
     uint16_t msg_buff_index; 
     mavlink_status_t status; 
 }
-mavlink_data_t; 
+sik_mavlink_data_t; 
 
-static mavlink_data_t mavlink_data; 
+static sik_mavlink_data_t mavlink_data; 
 
 //=======================================================================================
 
@@ -60,6 +72,9 @@ static mavlink_data_t mavlink_data;
 void sik_radio_test_init(void)
 {
     // Initialize data 
+    memset((void *)user_data.uart_dma_buff, CLEAR, SIK_TEST_MSG_BUFF_SIZE); 
+    memset((void *)user_data.user_input_buff, CLEAR, SIK_TEST_MSG_BUFF_SIZE); 
+    user_data.buff_index = CLEAR; 
     mavlink_data.channel = MAVLINK_COMM_0; 
     memset((void *)mavlink_data.msg_buff, CLEAR, SIK_TEST_MSG_BUFF_SIZE); 
     mavlink_data.msg_buff_index = CLEAR; 
