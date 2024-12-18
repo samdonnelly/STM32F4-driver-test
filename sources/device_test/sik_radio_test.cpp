@@ -39,15 +39,16 @@ extern "C"
 // Global data 
 
 // User data 
-typedef struct sik_user_data_s 
+typedef struct sik_serial_data_s 
 {
     uint8_t uart_dma_buff[SIK_TEST_MSG_BUFF_SIZE];     // Circular buffer for uart inputs 
-    uint8_t user_input_buff[SIK_TEST_MSG_BUFF_SIZE];   // Stores latest user input 
+    uint8_t user_data_buff[SIK_TEST_MSG_BUFF_SIZE];    // Stores latest uart input 
     uint8_t buff_index;                                // Circular buffer index 
 }
-sik_user_data_t; 
+sik_serial_data_t; 
 
-static sik_user_data_t user_data; 
+static sik_serial_data_t user_data; 
+static sik_serial_data_t radio_data; 
 
 
 // Mavlink data 
@@ -73,8 +74,11 @@ void sik_radio_test_init(void)
 {
     // Initialize data 
     memset((void *)user_data.uart_dma_buff, CLEAR, SIK_TEST_MSG_BUFF_SIZE); 
-    memset((void *)user_data.user_input_buff, CLEAR, SIK_TEST_MSG_BUFF_SIZE); 
+    memset((void *)user_data.user_data_buff, CLEAR, SIK_TEST_MSG_BUFF_SIZE); 
     user_data.buff_index = CLEAR; 
+    memset((void *)radio_data.uart_dma_buff, CLEAR, SIK_TEST_MSG_BUFF_SIZE); 
+    memset((void *)radio_data.user_data_buff, CLEAR, SIK_TEST_MSG_BUFF_SIZE); 
+    radio_data.buff_index = CLEAR; 
     mavlink_data.channel = MAVLINK_COMM_0; 
     memset((void *)mavlink_data.msg_buff, CLEAR, SIK_TEST_MSG_BUFF_SIZE); 
     mavlink_data.msg_buff_index = CLEAR; 
@@ -134,12 +138,10 @@ void sik_radio_test_init(void)
     //==================================================
     // DMA 
 
-    // DMA - UART1 
-
-    // DMA stream init - UART2 
+    // DMA2 stream init - UART1 - SiK radio module 
     dma_stream_init(
-        DMA1, 
-        DMA1_Stream5, 
+        DMA2, 
+        DMA2_Stream2, 
         DMA_CHNL_4, 
         DMA_DIR_PM, 
         DMA_CM_ENABLE,
@@ -150,16 +152,39 @@ void sik_radio_test_init(void)
         DMA_DATA_SIZE_BYTE, 
         DMA_DATA_SIZE_BYTE); 
 
-    // DMA stream config - UART2 
-    // dma_stream_config(
-    //     DMA1_Stream5, 
-    //     (uint32_t)(&USART2->DR), 
-    //     (uint32_t)uart_dma_buff, 
-    //     (uint32_t)NULL, 
-    //     (uint16_t)UART_TEST_MAX_INPUT); 
+    // DMA2 stream config - UART1 - SiK radio module 
+    dma_stream_config(
+        DMA2_Stream2, 
+        (uint32_t)(&USART1->DR), 
+        (uint32_t)radio_data.uart_dma_buff, 
+        (uint32_t)NULL, 
+        (uint16_t)SIK_TEST_MSG_BUFF_SIZE); 
+
+    // DMA1 stream init - UART2 - Serial terminal 
+    dma_stream_init(
+        DMA1, 
+        DMA1_Stream5, 
+        DMA_CHNL_4, 
+        DMA_DIR_PM, 
+        DMA_CM_ENABLE,
+        DMA_PRIOR_HI, 
+        DMA_DBM_DISABLE, 
+        DMA_ADDR_INCREMENT,   // Increment the buffer pointer to fill the buffer 
+        DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
+        DMA_DATA_SIZE_BYTE, 
+        DMA_DATA_SIZE_BYTE); 
+
+    // DMA1 stream config - UART2 - Serial terminal 
+    dma_stream_config(
+        DMA1_Stream5, 
+        (uint32_t)(&USART2->DR), 
+        (uint32_t)user_data.uart_dma_buff, 
+        (uint32_t)NULL, 
+        (uint16_t)SIK_TEST_MSG_BUFF_SIZE); 
 
     // Enable DMA streams 
-    dma_stream_enable(DMA1_Stream5); 
+    dma_stream_enable(DMA1_Stream5);   // UART1 - Sik radio 
+    dma_stream_enable(DMA2_Stream2);   // UART2 - Serial terminal 
 
     //==================================================
     
@@ -169,8 +194,9 @@ void sik_radio_test_init(void)
     // Initialize interrupt handler flags 
     int_handler_init(); 
 
-    // Enable the interrupt handlers (called for each interrupt) - for USART2_RX 
-    nvic_config(USART2_IRQn, EXTI_PRIORITY_0); 
+    // Enable the interrupt handlers 
+    nvic_config(USART1_IRQn, EXTI_PRIORITY_0);   // UART1 - SiK radio 
+    nvic_config(USART2_IRQn, EXTI_PRIORITY_0);   // UART2 - Serial terminal (user input) 
 
     //==================================================
 }
@@ -183,7 +209,40 @@ void sik_radio_test_init(void)
 
 void sik_radio_test_app(void)
 {
-    // Read data somehow. Could be polling, interrupt or DMA. 
+    // This test program reads data from both the SiK radio module and the serial 
+    // terminal (user input). Both streams of data are connected to their own UART port. 
+    // Both UART ports are configured to automatically store incoming data (RX line) 
+    // in a data buffer using DMA. When the UART RX line goes IDLE after having data 
+    // on it, it will trigger and interrupt which indicates new data has been fully 
+    // received and is ready for processing. Data received from the SiK radio module 
+    // will be processed and relayed to the serial terminal. Data received from the 
+    // serial terminal will be processed and sent to the radio module as needed. 
+
+    // Note that two radio modules are needed for this test to work. They don't have 
+    // to be the same module but they must be able to communicate for data to be seen 
+    // on this end. One module is connected to this controller and it must be either 
+    // a generic SiK telemetry radio or an RFD900 modem as per the SiK radio driver 
+    // being tested. It's recommended to have the other module connected to a device 
+    // running Mission Planner. Doing this will simulate communication between a 
+    // vehicle and ground station setup. The data that passes through this module 
+    // (both incoming and outgoing) is assumed to be formatted following the MAVLINK 
+    // protocol. For this reason, the mavlink v2 library is included and used. 
+
+    // If the user inputs the prompt/command for AT command mode, then the device 
+    // will enter AT command mode and stop relaying data from a remote radio module. 
+
+    // New SiK radio module data received 
+    if (handler_flags.usart1_flag)
+    {
+        handler_flags.usart1_flag = CLEAR_BIT; 
+    }
+
+
+    // New serial terminal (user input) data received 
+    if (handler_flags.usart2_flag)
+    {
+        handler_flags.usart2_flag = CLEAR_BIT; 
+    }
 
     if (1)   // If new data has been read 
     {
