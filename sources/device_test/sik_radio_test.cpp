@@ -42,7 +42,7 @@ extern "C"
 typedef struct sik_serial_data_s 
 {
     uint8_t uart_dma_buff[SIK_TEST_MSG_BUFF_SIZE];     // Circular buffer for uart inputs 
-    uint8_t user_data_buff[SIK_TEST_MSG_BUFF_SIZE];    // Stores latest uart input 
+    uint8_t data_buff[SIK_TEST_MSG_BUFF_SIZE];         // Stores latest uart input 
     uint8_t buff_index;                                // Circular buffer index 
 }
 sik_serial_data_t; 
@@ -74,10 +74,10 @@ void sik_radio_test_init(void)
 {
     // Initialize data 
     memset((void *)user_data.uart_dma_buff, CLEAR, SIK_TEST_MSG_BUFF_SIZE); 
-    memset((void *)user_data.user_data_buff, CLEAR, SIK_TEST_MSG_BUFF_SIZE); 
+    memset((void *)user_data.data_buff, CLEAR, SIK_TEST_MSG_BUFF_SIZE); 
     user_data.buff_index = CLEAR; 
     memset((void *)radio_data.uart_dma_buff, CLEAR, SIK_TEST_MSG_BUFF_SIZE); 
-    memset((void *)radio_data.user_data_buff, CLEAR, SIK_TEST_MSG_BUFF_SIZE); 
+    memset((void *)radio_data.data_buff, CLEAR, SIK_TEST_MSG_BUFF_SIZE); 
     radio_data.buff_index = CLEAR; 
     mavlink_data.channel = MAVLINK_COMM_0; 
     memset((void *)mavlink_data.msg_buff, CLEAR, SIK_TEST_MSG_BUFF_SIZE); 
@@ -235,6 +235,30 @@ void sik_radio_test_app(void)
     if (handler_flags.usart1_flag)
     {
         handler_flags.usart1_flag = CLEAR_BIT; 
+
+        // Parse the new radio message from the circular buffer to the data buffer 
+        cb_parse(
+            radio_data.uart_dma_buff, 
+            radio_data.data_buff, 
+            &radio_data.buff_index, 
+            SIK_TEST_MSG_BUFF_SIZE); 
+
+        // Loop until the mavlink library is done parsing 
+        while (0)
+        {
+            // This does only a single byte at a time. 
+            if (mavlink_parse_char(
+                    mavlink_data.channel, 
+                    mavlink_data.msg_buff[mavlink_data.msg_buff_index], 
+                    &mavlink_data.msg, 
+                    &mavlink_data.status))
+            {
+                // Message received 
+                // Decode the message 
+            }
+
+            // When do we increment in the index? 
+        }
     }
 
 
@@ -242,22 +266,9 @@ void sik_radio_test_app(void)
     if (handler_flags.usart2_flag)
     {
         handler_flags.usart2_flag = CLEAR_BIT; 
-    }
 
-    if (1)   // If new data has been read 
-    {
-        // This does only a single byte at a time. 
-        if (mavlink_parse_char(
-                mavlink_data.channel, 
-                mavlink_data.msg_buff[mavlink_data.msg_buff_index], 
-                &mavlink_data.msg, 
-                &mavlink_data.status))
-        {
-            // Message received 
-            // Decode the message 
-        }
-
-        // When do we increment in the index? 
+        // Check for AT command mode request 
+        // Check for mavlink message to send 
     }
 }
 
