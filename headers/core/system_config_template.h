@@ -34,6 +34,9 @@
  *       "system_config.h" is not tracked so it can be changed for each system. 
  */
 
+//==================================================
+// System settings 
+
 // This needs to be set if using FreeRTOS as it includes additional files and alters 
 // some core code that's used with FreeRTOS. Note that the 'RTOS_ENABLE' variable in 
 // CMakeLists must be updated to match this macro. 
@@ -47,6 +50,11 @@
 #ifndef INTERRUPT_OVERRIDE 
 #define INTERRUPT_OVERRIDE 0 
 #endif   // INTERRUPT_OVERRIDE 
+
+//==================================================
+
+//==================================================
+// Board settings 
 
 // The below list allows for choosing which STM32F4 board to use. Redefine each of the 
 // following in the "system_config.h" file and change your selected board to 1. 
@@ -141,6 +149,15 @@
 #ifndef STM32F4_23xx 
 #define STM32F4_23xx 0 
 #endif   // STM32F4_23xx 
+
+//==================================================
+
+//==================================================
+// Test modes 
+
+// Toggle the mode for each device/peripheral/tool test 
+
+//==================================================
 
 //=======================================================================================
 
