@@ -152,10 +152,39 @@
 
 //==================================================
 
-//==================================================
+//=======================================================================================
+
+
+//=======================================================================================
 // Test modes 
 
 // Toggle the mode for each device/peripheral/tool test 
+
+//==================================================
+// nRF24L01 driver test 
+
+// Device 
+#ifndef NRF24L01_SYSTEM_1 
+#define NRF24L01_SYSTEM_1 0           // Enable device 1 code 
+#endif   // NRF24L01_SYSTEM_1 
+
+#ifndef NRF24L01_SYSTEM_2 
+#define NRF24L01_SYSTEM_2 0           // Enable device 2 code 
+#endif   // NRF24L01_SYSTEM_2 
+
+// Test code 
+#ifndef NRF24L01_HEARTBEAT 
+#define NRF24L01_HEARTBEAT 0          // Heartbeat 
+#endif   // NRF24L01_HEARTBEAT 
+
+#ifndef NRF24L01_MANUAL_CONTROL 
+#define NRF24L01_MANUAL_CONTROL 0     // Perform actions based on user input 
+#endif   // NRF24L01_MANUAL_CONTROL 
+
+// Hardware 
+#ifndef NRF24L01_TEST_SCREEN 
+#define NRF24L01_TEST_SCREEN 0        // HD44780U screen in the system - shuts screen off 
+#endif   // NRF24L01_TEST_SCREEN 
 
 //==================================================
 

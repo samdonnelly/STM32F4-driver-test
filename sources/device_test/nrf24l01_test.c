@@ -31,22 +31,6 @@
 //=======================================================================================
 // Macros 
 
-//==================================================
-// Conditional compilation 
-
-// Device 
-#define NRF24L01_SYSTEM_1 1           // Enable device 1 code 
-#define NRF24L01_SYSTEM_2 0           // Enable device 2 code 
-
-// Test code 
-#define NRF24L01_HEARTBEAT 1          // Heartbeat 
-#define NRF24L01_MANUAL_CONTROL 0     // Perform actions based on user input 
-
-// Hardware 
-#define NRF24L01_TEST_SCREEN 0        // HD44780U screen in the system - shuts screen off 
-
-//==================================================
-
 // Configuration 
 #define NRF24L01_RF_FREQ 10           // Comm frequency: 2400 MHz + this value (MHz) 
 
