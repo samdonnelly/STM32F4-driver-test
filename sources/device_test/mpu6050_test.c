@@ -23,12 +23,6 @@
 //=======================================================================================
 // Macros 
 
-// Test control 
-#define MPU6050_CONTROLLER_TEST 1        // Switch between driver and controller testing 
-#define MPU6050_SECOND_DEVICE 0          // Include the test code for a second device 
-#define MPU6050_INT_PIN 0                // Interrupt pin enable 
-#define MPU6050_LCD_ON_BUS 1             // HD44780U LCD on the same I2C bus as mpu6050 
-
 // Data 
 #define MPU6050_DEV1_STBY_MASK 0x00      // Device 1 axis standby status mask 
 #define MPU6050_DEV2_STBY_MASK 0x00      // Device 2 axis standby status mask 
