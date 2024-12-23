@@ -38,9 +38,6 @@
 //=======================================================================================
 // Macros 
 
-// Conditional compilation 
-#define M8Q_TEST_SCREEN_ON_BUS 1     // HD44780U screen on I2C bus 
-
 // Test 0 
 #define M8Q_TEST_0_DATA_BUFF_LIM 400 
 #define M8Q_TEST_0_READ_COUNT_LIM 90 

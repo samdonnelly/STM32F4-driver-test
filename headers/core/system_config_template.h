@@ -161,6 +161,24 @@
 // Toggle the mode for each device/peripheral/tool test 
 
 //==================================================
+// General 
+
+#ifndef HD44780U_ON_I2C_BUS 
+#define HD44780U_ON_I2C_BUS 0 
+#endif   // HD44780U_ON_I2C_BUS 
+
+//==================================================
+
+//==================================================
+// M8Q 
+
+#ifndef M8Q_TEST_SCREEN_ON_BUS 
+#define M8Q_TEST_SCREEN_ON_BUS 0         // HD44780U screen on I2C bus 
+#endif   // M8Q_TEST_SCREEN_ON_BUS 
+
+//==================================================
+
+//==================================================
 // MPU-6050 driver test 
 
 // Test control 
