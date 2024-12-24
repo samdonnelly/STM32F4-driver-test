@@ -170,6 +170,34 @@
 //==================================================
 
 //==================================================
+// LSM303AGR 
+
+// Only one mode is meant to be used at a time. The first macro under each mode is the 
+// main/parent mode setter. Subsequent macros under the same mode are only used once the 
+// mode is active. 
+
+// Magnetometer axis data mode 
+#ifndef LSM303AGR_TEST_AXIS 
+#define LSM303AGR_TEST_AXIS 0             // Magnetometer axis data read 
+#endif   // LSM303AGR_TEST_AXIS 
+
+// Magnetometer heading mode 
+#ifndef LSM303AGR_TEST_HEADING 
+#define LSM303AGR_TEST_HEADING 1          // Magnetometer heading read (compass) 
+#endif   // LSM303AGR_TEST_HEADING 
+
+#ifndef LSM303AGR_TEST_CALIBRATION 
+#define LSM303AGR_TEST_CALIBRATION 0      // Magnetometer heading calibration 
+#endif   // LSM303AGR_TEST_CALIBRATION 
+
+// Configurations - mode independent 
+#ifndef LSM303AGR_TEST_SCREEN_ON_BUS 
+#define LSM303AGR_TEST_SCREEN_ON_BUS 1    // HD44780U screen on same I2C bus as device 
+#endif   // LSM303AGR_TEST_SCREEN_ON_BUS 
+
+//==================================================
+
+//==================================================
 // M8Q 
 
 #ifndef M8Q_TEST_SCREEN_ON_BUS 
