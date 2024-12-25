@@ -170,6 +170,31 @@
 //==================================================
 
 //==================================================
+// HD44780U 
+
+#ifndef HD44780U_CONTROLLER_TEST 
+#define HD44780U_CONTROLLER_TEST 1        // For switching between driver and controller testing 
+#endif   // HD44780U_CONTROLLER_TEST 
+
+#ifndef HD44780U_BACKLIGHT_TEST 
+#define HD44780U_BACKLIGHT_TEST 1         // Backlight control test 
+#endif   // HD44780U_BACKLIGHT_TEST 
+
+#ifndef HD44780U_DISPLAY_TEST 
+#define HD44780U_DISPLAY_TEST 0           // Display on/off test 
+#endif   // HD44780U_DISPLAY_TEST 
+
+#ifndef HD44780U_CURSOR_TEST 
+#define HD44780U_CURSOR_TEST 0            // Cursor visibility test 
+#endif   // HD44780U_CURSOR_TEST 
+
+#ifndef HD44780U_BLINK_TEST 
+#define HD44780U_BLINK_TEST 0             // Cursor blink test 
+#endif   // HD44780U_BLINK_TEST 
+
+//==================================================
+
+//==================================================
 // LSM303AGR 
 
 // Only one mode is meant to be used at a time. The first macro under each mode is the 
