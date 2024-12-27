@@ -5,12 +5,15 @@
  * 
  * @brief System configuration template 
  * 
- * @details This file is not to be altered unless there is a system configuration setting 
- *          being added or removed. This means these settings should not be used to 
- *          configure your system. Instead, create a "system_config.h" file in the same 
- *          folder as this file and define the macros below in there and use those to 
- *          configure your system. "system_config.h" is not tracked so it's specific to 
- *          your use case. 
+ * @details This file is a template and is not to be altered unless there is a system 
+ *          configuration setting being added or removed. This means these settings should 
+ *          not be used to configure your system. Instead, create a "system_config.h" file 
+ *          in the same folder as this file and redefine each of the macros below (i.e. 
+ *          copy the contents of this file) and change those to configure your system. 
+ *          For example, if you're using FreeRTOS, then change FREERTOS_ENABLE to 1 in 
+ *          "system_config.h". "system_config.h" is not tracked so it's specific to your 
+ *          use case, but it's included in the build path. This file is tracked but 
+ *          excluded from the build path. 
  * 
  * @version 0.1
  * @date 2024-02-25
@@ -24,15 +27,6 @@
 
 //=======================================================================================
 // System configuration 
-
-/**
- * NOTE: Do not change the setting below to configure your system. This file should only 
- *       be modified if settings are being added or removed. The settings below are 
- *       meant to be overwritten so you can configure your system to your specifc use 
- *       case. To do this, create a "system_config.h" file in the same folder as this 
- *       file and define each of the below settings without the "ifndef" guards. 
- *       "system_config.h" is not tracked so it can be changed for each system. 
- */
 
 //==================================================
 // System settings 
@@ -163,9 +157,8 @@
 //==================================================
 // General 
 
-#ifndef HD44780U_ON_I2C_BUS 
-#define HD44780U_ON_I2C_BUS 0 
-#endif   // HD44780U_ON_I2C_BUS 
+#define HD44780U_ON_I2C_BUS 0             // Turn HD44780U screen off if on the same I2C 
+                                          // bus as another device and not being used. 
 
 //==================================================
 
@@ -257,27 +250,12 @@
 // nRF24L01 driver test 
 
 // Device 
-#ifndef NRF24L01_SYSTEM_1 
-#define NRF24L01_SYSTEM_1 0           // Enable device 1 code 
-#endif   // NRF24L01_SYSTEM_1 
-
-#ifndef NRF24L01_SYSTEM_2 
-#define NRF24L01_SYSTEM_2 0           // Enable device 2 code 
-#endif   // NRF24L01_SYSTEM_2 
+#define NRF24L01_SYSTEM_1 0              // Enable device 1 code 
+#define NRF24L01_SYSTEM_2 0              // Enable device 2 code 
 
 // Test code 
-#ifndef NRF24L01_HEARTBEAT 
-#define NRF24L01_HEARTBEAT 0          // Heartbeat 
-#endif   // NRF24L01_HEARTBEAT 
-
-#ifndef NRF24L01_MANUAL_CONTROL 
-#define NRF24L01_MANUAL_CONTROL 0     // Perform actions based on user input 
-#endif   // NRF24L01_MANUAL_CONTROL 
-
-// Hardware 
-#ifndef NRF24L01_TEST_SCREEN 
-#define NRF24L01_TEST_SCREEN 0        // HD44780U screen in the system - shuts screen off 
-#endif   // NRF24L01_TEST_SCREEN 
+#define NRF24L01_HEARTBEAT 0             // Heartbeat 
+#define NRF24L01_MANUAL_CONTROL 0        // Perform actions based on user input 
 
 //==================================================
 

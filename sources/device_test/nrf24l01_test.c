@@ -128,7 +128,7 @@ void nrf24l01_test_init(void)
     //==================================================
     // Initialize I2C / screen 
 
-#if NRF24L01_TEST_SCREEN 
+#if HD44780U_ON_I2C_BUS 
 
     // Initialize the screen so it can be turned off 
 
@@ -148,7 +148,7 @@ void nrf24l01_test_init(void)
     hd44780u_clear(); 
     hd44780u_backlight_off(); 
 
-#endif   // NRF24L01_TEST_SCREEN 
+#endif   // HD44780U_ON_I2C_BUS 
 
     //==================================================
 
