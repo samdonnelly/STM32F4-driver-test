@@ -165,25 +165,11 @@
 //==================================================
 // HD44780U 
 
-#ifndef HD44780U_CONTROLLER_TEST 
-#define HD44780U_CONTROLLER_TEST 1        // For switching between driver and controller testing 
-#endif   // HD44780U_CONTROLLER_TEST 
-
-#ifndef HD44780U_BACKLIGHT_TEST 
-#define HD44780U_BACKLIGHT_TEST 1         // Backlight control test 
-#endif   // HD44780U_BACKLIGHT_TEST 
-
-#ifndef HD44780U_DISPLAY_TEST 
+#define HD44780U_CONTROLLER_TEST 0        // For switching between driver and controller testing 
+#define HD44780U_BACKLIGHT_TEST 0         // Backlight control test 
 #define HD44780U_DISPLAY_TEST 0           // Display on/off test 
-#endif   // HD44780U_DISPLAY_TEST 
-
-#ifndef HD44780U_CURSOR_TEST 
 #define HD44780U_CURSOR_TEST 0            // Cursor visibility test 
-#endif   // HD44780U_CURSOR_TEST 
-
-#ifndef HD44780U_BLINK_TEST 
 #define HD44780U_BLINK_TEST 0             // Cursor blink test 
-#endif   // HD44780U_BLINK_TEST 
 
 //==================================================
 
@@ -195,33 +181,16 @@
 // mode is active. 
 
 // Magnetometer axis data mode 
-#ifndef LSM303AGR_TEST_AXIS 
 #define LSM303AGR_TEST_AXIS 0             // Magnetometer axis data read 
-#endif   // LSM303AGR_TEST_AXIS 
 
 // Magnetometer heading mode 
-#ifndef LSM303AGR_TEST_HEADING 
-#define LSM303AGR_TEST_HEADING 1          // Magnetometer heading read (compass) 
-#endif   // LSM303AGR_TEST_HEADING 
-
-#ifndef LSM303AGR_TEST_CALIBRATION 
+#define LSM303AGR_TEST_HEADING 0          // Magnetometer heading read (compass) 
 #define LSM303AGR_TEST_CALIBRATION 0      // Magnetometer heading calibration 
-#endif   // LSM303AGR_TEST_CALIBRATION 
-
-// Configurations - mode independent 
-#ifndef LSM303AGR_TEST_SCREEN_ON_BUS 
-#define LSM303AGR_TEST_SCREEN_ON_BUS 1    // HD44780U screen on same I2C bus as device 
-#endif   // LSM303AGR_TEST_SCREEN_ON_BUS 
 
 //==================================================
 
 //==================================================
 // M8Q 
-
-#ifndef M8Q_TEST_SCREEN_ON_BUS 
-#define M8Q_TEST_SCREEN_ON_BUS 0         // HD44780U screen on I2C bus 
-#endif   // M8Q_TEST_SCREEN_ON_BUS 
-
 //==================================================
 
 //==================================================

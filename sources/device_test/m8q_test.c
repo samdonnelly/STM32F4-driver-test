@@ -235,12 +235,12 @@ void m8q_test_general_init(void)
     nvic_config(TIM1_UP_TIM10_IRQn, EXTI_PRIORITY_0); 
 
     // Screen initialization 
-#if M8Q_TEST_SCREEN_ON_BUS 
+#if HD44780U_ON_I2C_BUS 
     hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH); 
     hd44780u_clear(); 
     hd44780u_display_off(); 
     hd44780u_backlight_off(); 
-#endif   // M8Q_TEST_SCREEN_ON_BUS 
+#endif   // HD44780U_ON_I2C_BUS 
 
     // Initialize variables 
     memset((void *)&test_data, CLEAR, sizeof(test_data)); 
