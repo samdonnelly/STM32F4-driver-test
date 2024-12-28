@@ -228,21 +228,9 @@
 // MPU-6050 driver test 
 
 // Test control 
-#ifndef MPU6050_CONTROLLER_TEST 
 #define MPU6050_CONTROLLER_TEST 0        // Switch between driver and controller testing 
-#endif   // MPU6050_CONTROLLER_TEST 
-
-#ifndef MPU6050_SECOND_DEVICE 
 #define MPU6050_SECOND_DEVICE 0          // Include the test code for a second device 
-#endif   // MPU6050_SECOND_DEVICE 
-
-#ifndef MPU6050_INT_PIN 
 #define MPU6050_INT_PIN 0                // Interrupt pin enable 
-#endif   // MPU6050_INT_PIN 
-
-#ifndef MPU6050_LCD_ON_BUS 
-#define MPU6050_LCD_ON_BUS 0             // HD44780U LCD on the same I2C bus as mpu6050 
-#endif   // MPU6050_LCD_ON_BUS 
 
 //==================================================
 
