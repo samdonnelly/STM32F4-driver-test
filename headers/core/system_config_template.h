@@ -47,104 +47,32 @@
 
 //==================================================
 
-//==================================================
-// Board settings 
-
+// Board selection 
 // The below list allows for choosing which STM32F4 board to use. Redefine each of the 
 // following in the "system_config.h" file and change your selected board to 1. 
-#ifndef STM32F4_05xx 
 #define STM32F4_05xx 0 
-#endif   // STM32F4_05xx 
-
-#ifndef STM32F4_15xx 
 #define STM32F4_15xx 0 
-#endif   // STM32F4_15xx 
-
-#ifndef STM32F4_07xx 
 #define STM32F4_07xx 0 
-#endif   // STM32F4_07xx 
-
-#ifndef STM32F4_17xx 
 #define STM32F4_17xx 0 
-#endif   // STM32F4_17xx 
-
-#ifndef STM32F4_27xx 
 #define STM32F4_27xx 0 
-#endif   // STM32F4_27xx 
-
-#ifndef STM32F4_37xx 
 #define STM32F4_37xx 0 
-#endif   // STM32F4_37xx 
-
-#ifndef STM32F4_29xx 
 #define STM32F4_29xx 0 
-#endif   // STM32F4_29xx 
-
-#ifndef STM32F4_39xx 
 #define STM32F4_39xx 0 
-#endif   // STM32F4_39xx 
-
-#ifndef STM32F4_01xC 
 #define STM32F4_01xC 0 
-#endif   // STM32F4_01xC 
-
-#ifndef STM32F4_01xE 
 #define STM32F4_01xE 0 
-#endif   // STM32F4_01xE 
-
-#ifndef STM32F4_10Tx 
 #define STM32F4_10Tx 0 
-#endif   // STM32F4_10Tx 
-
-#ifndef STM32F4_10Cx 
 #define STM32F4_10Cx 0 
-#endif   // STM32F4_10Cx 
-
-#ifndef STM32F4_10Rx 
 #define STM32F4_10Rx 0 
-#endif   // STM32F4_10Rx 
-
-#ifndef STM32F4_11xE 
 #define STM32F4_11xE 0 
-#endif   // STM32F4_11xE 
-
-#ifndef STM32F4_46xx 
 #define STM32F4_46xx 0 
-#endif   // STM32F4_46xx 
-
-#ifndef STM32F4_69xx 
 #define STM32F4_69xx 0 
-#endif   // STM32F4_69xx 
-
-#ifndef STM32F4_79xx 
 #define STM32F4_79xx 0 
-#endif   // STM32F4_79xx 
-
-#ifndef STM32F4_12Cx 
 #define STM32F4_12Cx 0 
-#endif   // STM32F4_12Cx 
-
-#ifndef STM32F4_12Zx 
 #define STM32F4_12Zx 0 
-#endif   // STM32F4_12Zx 
-
-#ifndef STM32F4_12Rx 
 #define STM32F4_12Rx 0 
-#endif   // STM32F4_12Rx 
-
-#ifndef STM32F4_12Vx 
 #define STM32F4_12Vx 0 
-#endif   // STM32F4_12Vx 
-
-#ifndef STM32F4_13xx 
 #define STM32F4_13xx 0 
-#endif   // STM32F4_13xx 
-
-#ifndef STM32F4_23xx 
 #define STM32F4_23xx 0 
-#endif   // STM32F4_23xx 
-
-//==================================================
 
 //=======================================================================================
 
