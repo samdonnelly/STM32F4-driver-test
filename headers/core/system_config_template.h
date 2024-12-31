@@ -34,16 +34,12 @@
 // This needs to be set if using FreeRTOS as it includes additional files and alters 
 // some core code that's used with FreeRTOS. Note that the 'RTOS_ENABLE' variable in 
 // CMakeLists must be updated to match this macro. 
-#ifndef FREERTOS_ENABLE 
 #define FREERTOS_ENABLE 0 
-#endif   // FREERTOS_ENABLE 
 
 // This includes interrupt handler definitions that override defaults. Overrides will 
 // be used for specific tests. If interrupts are used for a test but the test has no 
 // specific override then this should be cleared. 
-#ifndef INTERRUPT_OVERRIDE 
 #define INTERRUPT_OVERRIDE 0 
-#endif   // INTERRUPT_OVERRIDE 
 
 //==================================================
 

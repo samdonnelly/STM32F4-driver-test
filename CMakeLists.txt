@@ -5,6 +5,15 @@ cmake_minimum_required(VERSION 3.12)
 
 include(./arm-none-eabi-gcc.cmake)
 
+# A "SystemConfig.txt" file must be created in the root of this project and 
+# within it the RTOS_ENABLE must be defined as "set(RTOS_ENABLE X)" where "X" 
+# is either 0 or 1 depending on how you configure your system. A 1 will include 
+# FreeRTOS in the project. 
+# "SystemConfig.txt" is not tracked so users can configure their system without 
+# making changes to the project. The value of this variable must match the 
+# value of "FREERTOS_ENABLE" from the "system_config.h" file 
+include(${CMAKE_CURRENT_SOURCE_DIR}/SystemConfig.txt)
+
 # Set project name and source code folder location
 project(STM32F4-driver-test)
 
@@ -34,8 +43,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
 ###############################################################################
-
-set(RTOS_ENABLE 0) 
 
 ###############################################################################
 # Headers 

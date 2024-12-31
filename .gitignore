@@ -12,13 +12,21 @@ build/
 
 #==================================================
 
+
+#==================================================
+# Configuration 
+
+# System configuration 
+headers/core/system_config.h
+SystemConfig.txt
+
+#==================================================
+
+
 #==================================================
 # Code files 
 
 # M8Q test coordinates - Use-case specific so made as a local file 
 sources/test_data/gps_coordinates.cpp 
-
-# System configuration 
-headers/core/system_config.h
 
 #==================================================
