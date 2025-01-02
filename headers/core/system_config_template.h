@@ -98,6 +98,14 @@
 //==================================================
 
 //==================================================
+// HW125 (SD card) 
+
+#define FORMAT_EXFAT 0 
+#define HW125_CONTROLLER_TEST 0           // For switching between driver and controller testing 
+
+//==================================================
+
+//==================================================
 // LSM303AGR 
 
 // Only one mode is meant to be used at a time. The first macro under each mode is the 

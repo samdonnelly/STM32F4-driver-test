@@ -23,10 +23,6 @@
 //=======================================================================================
 // Macros 
 
-// Conditional compilation 
-#define FORMAT_EXFAT 0 
-#define HW125_CONTROLLER_TEST 0     // For switching between driver and controller testing 
-
 // File system 
 #define BUFF_SIZE 255 
 
