@@ -87,6 +87,13 @@
 //==================================================
 
 //==================================================
+// HC-05 
+
+#define HC05_CONTROLLER_TEST 0            // For switching between driver and controller testing 
+
+//==================================================
+
+//==================================================
 // HD44780U 
 
 #define HD44780U_CONTROLLER_TEST 0        // For switching between driver and controller testing 
