@@ -40,9 +40,6 @@
 //=======================================================================================
 // Macros 
 
-// Conditional compilation 
-#define GPS_NAV_TEST_SCREEN_ON_BUS 1    // HD44780U screen on same I2C bus as device 
-
 // Configuration 
 #define COORDINATE_LPF_GAIN 0.5   // Coordinate low pass filter gain 
 #define HEADING_LPF_GAIN 0.2      // Heading low pass filter gain 
@@ -234,14 +231,14 @@ void gps_nav_test_init(void)
         I2C_TRISE_1000_42);
 
     // HD44780U screen initialization 
-#if GPS_NAV_TEST_SCREEN_ON_BUS 
+#if HD44780U_ON_I2C_BUS 
     // If the HD44780U screen is on the same I2C bus as the LSM303AGR then the screen 
     // must be set up first to prevent it from interfering with the bus. 
     hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH); 
     hd44780u_clear(); 
     hd44780u_display_off(); 
     hd44780u_backlight_off(); 
-#endif   // GPS_NAV_TEST_SCREEN_ON_BUS 
+#endif   // HD44780U_ON_I2C_BUS 
 
     // M8Q setup 
     gps_nav_test_m8q_init(); 

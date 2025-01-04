@@ -28,9 +28,6 @@
 //=======================================================================================
 // System configuration 
 
-//==================================================
-// System settings 
-
 // This needs to be set if using FreeRTOS as it includes additional files and alters 
 // some core code that's used with FreeRTOS. Note that the 'RTOS_ENABLE' variable in 
 // CMakeLists must be updated to match this macro. 
@@ -40,8 +37,6 @@
 // be used for specific tests. If interrupts are used for a test but the test has no 
 // specific override then this should be cleared. 
 #define INTERRUPT_OVERRIDE 0 
-
-//==================================================
 
 // Board selection 
 // The below list allows for choosing which STM32F4 board to use. Redefine each of the 
@@ -74,7 +69,12 @@
 
 
 //=======================================================================================
-// Test modes (conditional compilation) 
+// Application test modes 
+//=======================================================================================
+
+
+//=======================================================================================
+// Device test modes 
 
 // Toggle the mode for each device/peripheral/tool test 
 

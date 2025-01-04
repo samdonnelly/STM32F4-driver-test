@@ -41,9 +41,6 @@
 #define RC_MOTOR_TEST 0 
 #define RC_GROUND_STATION_TEST 1 
 
-// Hardware 
-#define RC_TEST_SCREEN 0        // HD44780U screen in the system - shuts screen off 
-
 //==================================================
 
 // Configuration 
@@ -137,7 +134,7 @@ void rc_test_init(void)
     //==================================================
     // Initialize I2C / screen 
 
-#if RC_TEST_SCREEN 
+#if HD44780U_ON_I2C_BUS 
 
     // Initialize the screen so it can be turned off 
 
@@ -157,7 +154,7 @@ void rc_test_init(void)
     hd44780u_clear(); 
     hd44780u_backlight_off(); 
 
-#endif   // RC_TEST_SCREEN 
+#endif   // HD44780U_ON_I2C_BUS 
 
     //==================================================
 
