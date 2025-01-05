@@ -29,20 +29,6 @@
 //=======================================================================================
 // Macros 
 
-//==================================================
-// Conditional compilation 
-
-// Devices 
-#define RC_SYSTEM_1 1 
-#define RC_SYSTEM_2 0 
-
-// Test code 
-#define RC_SD_CARD_TEST 0 
-#define RC_MOTOR_TEST 0 
-#define RC_GROUND_STATION_TEST 1 
-
-//==================================================
-
 // Configuration 
 #define NRF24L01_RF_FREQ 10           // Comm frequency: 2400 MHz + this value (MHz) 
 
