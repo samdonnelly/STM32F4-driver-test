@@ -37,10 +37,6 @@
 //=======================================================================================
 // Macros 
 
-// Conditional compilation 
-#define AO_CPP_TEST 1 
-#define AO_C_TEST 0 
-
 // Memory 
 #define MIN_STACK_MULTIPLE 8 
 #define THREAD_LOW_STACK_SIZE configMINIMAL_STACK_SIZE * MIN_STACK_MULTIPLE 
