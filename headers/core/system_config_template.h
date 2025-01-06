@@ -72,6 +72,24 @@
 // Application test modes 
 
 //==================================================
+// FreeRTOS test 
+
+#define PERIODIC_BLINK_TEST 0        // Highest priority test 
+#define MANUAL_BLINK_TEST 0 
+#define TASK_SCHEDULING_TEST 0 
+#define MEMORY_MANAGEMENT_TEST 0 
+#define QUEUE_TEST 0 
+#define MUTEX_TEST 0 
+#define SEMAPHORE_TEST 0 
+#define SOFTWARE_TIMER_TEST_0 0 
+#define SOFTWARE_TIMER_TEST_1 0 
+#define HARDWARE_INTERRUPT_TEST 0 
+#define DEADLOCK_STARVATION_TEST 0 
+#define PRIORITY_INVERSION_TEST 0    // Lowest priority test 
+
+//==================================================
+
+//==================================================
 // RC Test 
 
 // Devices 
