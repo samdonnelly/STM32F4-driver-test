@@ -361,22 +361,22 @@ void hd44780u_test_app()
         // its declaration in the header defaults to an int type. 
 
         case HD44780U_L1:
-            hd44780u_cursor_pos(HD44780U_START_L1, HD44780U_CURSOR_OFFSET_10);
+            hd44780u_cursor_pos(HD44780U_START_L1, 10);
             hd44780u_send_string((char *)(hd44780u_test_text[HD44780U_L1]));
             break;
         
         case HD44780U_L2:
-            hd44780u_cursor_pos(HD44780U_START_L2, HD44780U_CURSOR_OFFSET_8);
+            hd44780u_cursor_pos(HD44780U_START_L2, 8);
             hd44780u_send_string((char *)(hd44780u_test_text[HD44780U_L2])); 
             break;
         
         case HD44780U_L3:
-            hd44780u_cursor_pos(HD44780U_START_L3, HD44780U_CURSOR_OFFSET_6);
+            hd44780u_cursor_pos(HD44780U_START_L3, 6);
             hd44780u_send_string((char *)(hd44780u_test_text[HD44780U_L3])); 
             break;
         
         case HD44780U_L4:
-            hd44780u_cursor_pos(HD44780U_START_L4, HD44780U_CURSOR_OFFSET_4);
+            hd44780u_cursor_pos(HD44780U_START_L4, 4);
             hd44780u_send_string((char *)(hd44780u_test_text[HD44780U_L4])); 
             break;
 

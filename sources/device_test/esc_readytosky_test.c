@@ -23,11 +23,6 @@
 //=======================================================================================
 // Macros 
 
-// Conditional compilation 
-#define ESC_CONTROLLER_MODE 1       // Code to control the ESC via a controller - knobs 
-#define ESC_PARAM_ID 0              // Parameter identification code - no driver just timers 
-#define ESC_SECOND_DEVICE 1         // Second device code 
-
 // Parameters 
 #define ESC_PERIOD 20000            // ESC PWM timer period (auto-reload register) 
 #define ESC_FWD_SPEED_LIM 1600      // Forward PWM pulse time limit (us) 
