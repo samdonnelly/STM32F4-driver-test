@@ -21,16 +21,6 @@
 
 
 //=======================================================================================
-// Macros 
-
-// Conditional compilation 
-#define ADC_MODE_0 0   // Single read mode, scan mode disabled 
-#define ADC_MODE_1 1   // Single read mode, scan mode enabled 
-
-//=======================================================================================
-
-
-//=======================================================================================
 // Setup code
 
 void analog_test_init()

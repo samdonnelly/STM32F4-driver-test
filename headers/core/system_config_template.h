@@ -130,9 +130,9 @@
 //==================================================
 // ESC 
 
-#define ESC_CONTROLLER_MODE 0       // Code to control the ESC via a controller - knobs 
-#define ESC_PARAM_ID 0              // Parameter identification code - no driver just timers 
-#define ESC_SECOND_DEVICE 0         // Second device code 
+#define ESC_CONTROLLER_MODE 0             // Code to control the ESC via a controller - knobs 
+#define ESC_PARAM_ID 0                    // Parameter identification code - no driver just timers 
+#define ESC_SECOND_DEVICE 0               // Second device code 
 
 //==================================================
 
@@ -211,7 +211,13 @@
 //=======================================================================================
 // Peripheral test mode 
 
+//==================================================
 // Analog 
+
+#define ADC_MODE_0 0                     // Single read mode, scan mode disabled 
+#define ADC_MODE_1 0                     // Single read mode, scan mode enabled 
+
+//==================================================
 
 // DMA 
 
