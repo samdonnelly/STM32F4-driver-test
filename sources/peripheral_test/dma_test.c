@@ -23,13 +23,6 @@
 //=======================================================================================
 // Macros 
 
-// Conditional compilation 
-#define ADC_DMA_SECOND_CHANNEL 1      // Enables test code for second ADC channel 
-#define ADC_DMA_THIRD_CHANNEL 1       // Enables test code for third ADC channel 
-#define DMA_TEST_MODE_1 0             // Mode 1 test code control (see source file) 
-#define DMA_TEST_MODE_2 1             // Mode 2 test code control (see source file) 
-#define DMA_TEST_MODE_3 0             // Mode 3 test code control (see source file) 
-
 // Data 
 #define ADC_BUFF_SIZE 3               // Size according to the number of ADCs used 
 

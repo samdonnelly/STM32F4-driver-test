@@ -5,6 +5,23 @@
  * 
  * @brief SiK radio driver test 
  * 
+ * @details Test setup: 
+ *          - Hardware: 
+ *            * STM32F4 microcontroller with a serial connection to a PC 
+ *            * Two SiK telemetry radios: 
+ *              1. One connected to the STM32F4 via UART 
+ *              2. Another connected to a PC running Mission Planner 
+ *          - Software: 
+ *            * Mission Planner on a PC with an established USB connection to one of the 
+ *              telemetry radios. 
+ *            * Serial monitor on a PC to allow the exchange of info with the STM32F4. 
+ *          - Notes: 
+ *            * A single PC connected to the STM32F4 and running Mission Planner can be 
+ *              used or it can be two separate computers. 
+ *            * Certain communication (AT/RT) settings must match between both telemetry 
+ *              radios in order for them to work together. See the SiK radio documentation 
+ *              for more details. 
+ * 
  * @version 0.1
  * @date 2024-12-11
  * 
