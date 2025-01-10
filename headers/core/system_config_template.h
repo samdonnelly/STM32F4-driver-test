@@ -230,7 +230,14 @@
 
 //==================================================
 
-// Interrupt 
+//==================================================
+// Interrupts 
+
+#define INT_EXTI 0                       // External interrupt code 
+#define INT_INTERNAL 0                   // Internal interrupt code 
+#define INT_PERIODIC 0                   // Periodic interrupt code 
+
+//==================================================
 
 // Timers 
 

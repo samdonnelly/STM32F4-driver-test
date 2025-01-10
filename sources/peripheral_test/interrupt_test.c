@@ -22,17 +22,6 @@
 
 
 //=======================================================================================
-// Macros 
-
-// Conditional compilation 
-#define INT_EXTI 1            // External interrupt code 
-#define INT_INTERNAL 0        // Internal interrupt code 
-#define INT_PERIODIC 0        // Periodic interrupt code 
-
-//=======================================================================================
-
-
-//=======================================================================================
 // Prototypes 
 
 // External interrupt code 
