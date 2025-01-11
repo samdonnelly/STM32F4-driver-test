@@ -21,6 +21,26 @@
  *            * Certain communication (AT/RT) settings must match between both telemetry 
  *              radios in order for them to work together. See the SiK radio documentation 
  *              for more details. 
+ *          
+ *          Test: 
+ *          This test program reads data from both the SiK radio module and the serial 
+ *          terminal (user input). Both streams of data are connected to their own UART port. 
+ *          Both UART ports are configured to automatically store incoming data (RX line) 
+ *          in a data buffer using DMA. When the UART RX line goes IDLE after having data 
+ *          on it, it will trigger an interrupt which indicates new data has been fully 
+ *          received and is ready for processing. Data received from the SiK radio module 
+ *          will be processed and relayed to the serial terminal. Data received from the 
+ *          serial terminal will be processed and sent to the radio module as needed. 
+
+ *          Note that two radio modules are needed for this test to work. They don't have 
+ *          to be the same module but they must be able to communicate for data to be seen 
+ *          on this end. One module is connected to this controller and it must be either 
+ *          a generic SiK telemetry radio or an RFD900 modem as per the SiK radio driver 
+ *          being tested. It's recommended to have the other module connected to a device 
+ *          running Mission Planner. Doing this will simulate communication between a 
+ *          vehicle and ground station setup. The data that passes through this module 
+ *          (both incoming and outgoing) is assumed to be formatted following the MAVLINK 
+ *          protocol. For this reason, the mavlink v2 library is included and used. 
  * 
  * @version 0.1
  * @date 2024-12-11
@@ -38,7 +58,7 @@
 extern "C"
 {
     // For C headers without C++ guards 
-    #include "standard/mavlink.h" 
+    #include "common/mavlink.h" 
 }
 
 //=======================================================================================
@@ -64,8 +84,8 @@ typedef struct sik_serial_data_s
 }
 sik_serial_data_t; 
 
-static sik_serial_data_t user_data; 
 static sik_serial_data_t radio_data; 
+static sik_serial_data_t user_data; 
 
 
 // Mavlink data 
@@ -73,7 +93,7 @@ typedef struct sik_mavlink_data_s
 {
     int channel; 
     mavlink_message_t msg; 
-    char msg_buff[SIK_TEST_MSG_BUFF_SIZE];   // Should this be a circular buffer 
+    // char msg_buff[SIK_TEST_MSG_BUFF_SIZE];   // Should this be a circular buffer 
     uint16_t msg_buff_index; 
     mavlink_status_t status; 
 }
@@ -97,7 +117,7 @@ void sik_radio_test_init(void)
     memset((void *)radio_data.data_buff, CLEAR, SIK_TEST_MSG_BUFF_SIZE); 
     radio_data.buff_index = CLEAR; 
     mavlink_data.channel = MAVLINK_COMM_0; 
-    memset((void *)mavlink_data.msg_buff, CLEAR, SIK_TEST_MSG_BUFF_SIZE); 
+    // memset((void *)mavlink_data.msg_buff, CLEAR, SIK_TEST_MSG_BUFF_SIZE); 
     mavlink_data.msg_buff_index = CLEAR; 
 
     // Initialize GPIO ports 
@@ -117,7 +137,7 @@ void sik_radio_test_init(void)
         UART_DMA_DISABLE, 
         UART_DMA_ENABLE); 
 
-    // UART1 interrupt init - SiK radio module - IDLE line interrupts 
+    // UART1 interrupt init - SiK radio module - IDLE line (RX) interrupts 
     uart_interrupt_init(
         USART1, 
         UART_INT_DISABLE, 
@@ -139,7 +159,7 @@ void sik_radio_test_init(void)
         UART_DMA_DISABLE, 
         UART_DMA_ENABLE); 
 
-    // UART2 interrupt init - Serial terminal - IDLE line interrupts 
+    // UART2 interrupt init - Serial terminal - IDLE line (RX) interrupts 
     uart_interrupt_init(
         USART2, 
         UART_INT_DISABLE, 
@@ -213,7 +233,7 @@ void sik_radio_test_init(void)
 
     // Enable the interrupt handlers 
     nvic_config(USART1_IRQn, EXTI_PRIORITY_0);   // UART1 - SiK radio 
-    nvic_config(USART2_IRQn, EXTI_PRIORITY_0);   // UART2 - Serial terminal (user input) 
+    nvic_config(USART2_IRQn, EXTI_PRIORITY_1);   // UART2 - Serial terminal (user input) 
 
     //==================================================
 }
@@ -226,25 +246,6 @@ void sik_radio_test_init(void)
 
 void sik_radio_test_app(void)
 {
-    // This test program reads data from both the SiK radio module and the serial 
-    // terminal (user input). Both streams of data are connected to their own UART port. 
-    // Both UART ports are configured to automatically store incoming data (RX line) 
-    // in a data buffer using DMA. When the UART RX line goes IDLE after having data 
-    // on it, it will trigger and interrupt which indicates new data has been fully 
-    // received and is ready for processing. Data received from the SiK radio module 
-    // will be processed and relayed to the serial terminal. Data received from the 
-    // serial terminal will be processed and sent to the radio module as needed. 
-
-    // Note that two radio modules are needed for this test to work. They don't have 
-    // to be the same module but they must be able to communicate for data to be seen 
-    // on this end. One module is connected to this controller and it must be either 
-    // a generic SiK telemetry radio or an RFD900 modem as per the SiK radio driver 
-    // being tested. It's recommended to have the other module connected to a device 
-    // running Mission Planner. Doing this will simulate communication between a 
-    // vehicle and ground station setup. The data that passes through this module 
-    // (both incoming and outgoing) is assumed to be formatted following the MAVLINK 
-    // protocol. For this reason, the mavlink v2 library is included and used. 
-
     // If the user inputs the prompt/command for AT command mode, then the device 
     // will enter AT command mode and stop relaying data from a remote radio module. 
 
@@ -252,8 +253,9 @@ void sik_radio_test_app(void)
     if (handler_flags.usart1_flag)
     {
         handler_flags.usart1_flag = CLEAR_BIT; 
+        mavlink_data.msg_buff_index = CLEAR; 
 
-        // Parse the new radio message from the circular buffer to the data buffer 
+        // Parse the new radio message from the circular buffer into the data buffer 
         cb_parse(
             radio_data.uart_dma_buff, 
             radio_data.data_buff, 
@@ -261,20 +263,38 @@ void sik_radio_test_app(void)
             SIK_TEST_MSG_BUFF_SIZE); 
 
         // Loop until the mavlink library is done parsing 
-        while (0)
+        while (radio_data.data_buff[mavlink_data.msg_buff_index] != NULL_CHAR)
         {
             // This does only a single byte at a time. 
             if (mavlink_parse_char(
                     mavlink_data.channel, 
-                    mavlink_data.msg_buff[mavlink_data.msg_buff_index], 
+                    // mavlink_data.msg_buff[mavlink_data.msg_buff_index], 
+                    radio_data.data_buff[mavlink_data.msg_buff_index++], 
                     &mavlink_data.msg, 
                     &mavlink_data.status))
             {
                 // Message received 
-                // Decode the message 
-            }
 
-            // When do we increment in the index? 
+                // Decode the message 
+                switch (mavlink_data.msg.msgid)
+                {
+                    case MAVLINK_MSG_ID_HEARTBEAT: 
+                        break; 
+
+                    case MAVLINK_MSG_ID_GLOBAL_POSITION_INT: 
+                        mavlink_global_position_int_cov_t global_position; 
+                        mavlink_msg_global_position_int_cov_decode(
+                            &mavlink_data.msg, 
+                            &global_position); 
+                        break; 
+
+                    case MAVLINK_MSG_ID_GPS_STATUS: 
+                        break; 
+                    
+                    default: 
+                        break; 
+                }
+            }
         }
     }
 
@@ -283,6 +303,13 @@ void sik_radio_test_app(void)
     if (handler_flags.usart2_flag)
     {
         handler_flags.usart2_flag = CLEAR_BIT; 
+
+        // Parse the new user message from the circular buffer into the data buffer 
+        cb_parse(
+            user_data.uart_dma_buff, 
+            user_data.data_buff, 
+            &user_data.buff_index, 
+            SIK_TEST_MSG_BUFF_SIZE); 
 
         // Check for AT command mode request 
         // Check for mavlink message to send 
