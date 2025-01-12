@@ -205,7 +205,9 @@ target_compile_options(${EXECUTABLE} PRIVATE
         -Wno-unused-parameter
         #######################################
         # Added by me 
-        -Wno-pedantic   # Due to mavlink library inclusion 
+        # Due to mavlink library inclusion: 
+        -Wno-pedantic 
+        -Wno-address-of-packed-member
         #######################################
         $<$<COMPILE_LANGUAGE:CXX>:
             # -Wconversion # STM libraries!
