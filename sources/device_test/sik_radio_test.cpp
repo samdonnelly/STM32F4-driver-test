@@ -5,7 +5,7 @@
  * 
  * @brief SiK radio driver test 
  * 
- * @details Test setup: 
+ * @details Setup: 
  *          - Hardware: 
  *            * STM32F4 microcontroller with a serial connection to a PC 
  *            * Two SiK telemetry radios: 
@@ -22,25 +22,25 @@
  *              radios in order for them to work together. See the SiK radio documentation 
  *              for more details. 
  *          
- *          Test: 
- *          This test program reads data from both the SiK radio module and the serial 
- *          terminal (user input). Both streams of data are connected to their own UART port. 
- *          Both UART ports are configured to automatically store incoming data (RX line) 
- *          in a data buffer using DMA. When the UART RX line goes IDLE after having data 
- *          on it, it will trigger an interrupt which indicates new data has been fully 
- *          received and is ready for processing. Data received from the SiK radio module 
- *          will be processed and relayed to the serial terminal. Data received from the 
- *          serial terminal will be processed and sent to the radio module as needed. 
-
- *          Note that two radio modules are needed for this test to work. They don't have 
- *          to be the same module but they must be able to communicate for data to be seen 
- *          on this end. One module is connected to this controller and it must be either 
- *          a generic SiK telemetry radio or an RFD900 modem as per the SiK radio driver 
- *          being tested. It's recommended to have the other module connected to a device 
- *          running Mission Planner. Doing this will simulate communication between a 
- *          vehicle and ground station setup. The data that passes through this module 
- *          (both incoming and outgoing) is assumed to be formatted following the MAVLINK 
- *          protocol. For this reason, the mavlink v2 library is included and used. 
+ *          Procedure: 
+ *          - This test program reads data from both the SiK radio module and the serial 
+ *            terminal (user input). Both streams of data are connected to their own UART port. 
+ *            Both UART ports are configured to automatically store incoming data (RX line) 
+ *            in a data buffer using DMA. When the UART RX line goes IDLE after having data 
+ *            on it, it will trigger an interrupt which indicates new data has been fully 
+ *            received and is ready for processing. Data received from the SiK radio module 
+ *            will be processed and relayed to the serial terminal. Data received from the 
+ *            serial terminal will be processed and sent to the radio module as needed. 
+ *            
+ *          - Note that two radio modules are needed for this test to work. They don't have 
+ *            to be the same module but they must be able to communicate for data to be seen 
+ *            on this end. One module is connected to this controller and it must be either 
+ *            a generic SiK telemetry radio or an RFD900 modem as per the SiK radio driver 
+ *            being tested. It's recommended to have the other module connected to a device 
+ *            running Mission Planner. Doing this will simulate communication between a 
+ *            vehicle and ground station setup. The data that passes through this module 
+ *            (both incoming and outgoing) is assumed to be formatted following the MAVLINK 
+ *            protocol. For this reason, the mavlink v2 library is included and used. 
  * 
  * @version 0.1
  * @date 2024-12-11
