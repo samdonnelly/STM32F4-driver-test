@@ -93,7 +93,6 @@ typedef struct sik_mavlink_data_s
 {
     int channel; 
     mavlink_message_t msg; 
-    // char msg_buff[SIK_TEST_MSG_BUFF_SIZE];   // Should this be a circular buffer 
     uint16_t msg_buff_index; 
     mavlink_status_t status; 
 }
@@ -117,7 +116,6 @@ void sik_radio_test_init(void)
     memset((void *)radio_data.data_buff, CLEAR, SIK_TEST_MSG_BUFF_SIZE); 
     radio_data.buff_index = CLEAR; 
     mavlink_data.channel = MAVLINK_COMM_0; 
-    // memset((void *)mavlink_data.msg_buff, CLEAR, SIK_TEST_MSG_BUFF_SIZE); 
     mavlink_data.msg_buff_index = CLEAR; 
 
     // Initialize GPIO ports 
@@ -268,7 +266,6 @@ void sik_radio_test_app(void)
             // This does only a single byte at a time. 
             if (mavlink_parse_char(
                     mavlink_data.channel, 
-                    // mavlink_data.msg_buff[mavlink_data.msg_buff_index], 
                     radio_data.data_buff[mavlink_data.msg_buff_index++], 
                     &mavlink_data.msg, 
                     &mavlink_data.status))
