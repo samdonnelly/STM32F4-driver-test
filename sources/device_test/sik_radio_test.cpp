@@ -5,42 +5,60 @@
  * 
  * @brief SiK radio driver test 
  * 
- * @details Setup: 
- *          - Hardware: 
+ * @details Setup 
+ *          - Hardware 
  *            * STM32F4 microcontroller with a serial connection to a PC 
- *            * Two SiK telemetry radios: 
- *              1. One connected to the STM32F4 via UART 
+ *            * Two SiK telemetry radios (or RFD900): 
+ *              1. One connected to the STM32F4 
  *              2. Another connected to a PC running Mission Planner 
- *          - Software: 
+ *          - Software 
  *            * Mission Planner on a PC with an established USB connection to one of the 
- *              telemetry radios. 
+ *              telemetry radios and using the MAVLINK protocol. 
  *            * Serial monitor on a PC to allow the exchange of info with the STM32F4. 
- *          - Notes: 
+ *          - Notes 
  *            * A single PC connected to the STM32F4 and running Mission Planner can be 
  *              used or it can be two separate computers. 
  *            * Certain communication (AT/RT) settings must match between both telemetry 
  *              radios in order for them to work together. See the SiK radio documentation 
  *              for more details. 
+ *            * A connection between both radios must be established before any 
+ *              meaningful work can be done by this code. 
+ *          
+ *          Configuration 
+ *          - UART 
+ *            * Two UART ports must be configured, one for the serial terminal connection 
+ *              and another for the SiK radio. 
+ *          - DMA 
+ *            * Since data can be sent to the STM32F4 via UART from either the serial 
+ *              terminal or the SiK radio without the STM32F4 requesting it, DMA is 
+ *              configured for both UART ports so the data automatically gets stored 
+ *              in a buffer. This prevents and loss of data. 
+ *          - Interrupts 
+ *            * Interrupts are configured for both UART ports for when an RX line is 
+ *              detected to have gone idle. This indicates that there was data being 
+ *              received and that the data is now done being received. The test code 
+ *              won't perform any actions unless and interrupt occurs. 
+ *          
+ *          Dependencies 
+ *          - STM32F4 driver library 
+ *            - This library provides an easy interface to the SiK radio device driver 
+ *              as well as UART, DMA and interrupt drivers. 
+ *          - MAVLINK V2 C library 
+ *            - The SiK radios and Mission Planner are designed to work with the MAVLINK 
+ *              protocol. This code uses the library to decode and encode MAVLINK 
+ *              messages. 
+ *            - There are pre-built C and Python libraries but specific library versions 
+ *              can be built manually. The pre-built C library works for this 
+ *              application. 
  *          
  *          Procedure: 
- *          - This test program reads data from both the SiK radio module and the serial 
- *            terminal (user input). Both streams of data are connected to their own UART port. 
- *            Both UART ports are configured to automatically store incoming data (RX line) 
- *            in a data buffer using DMA. When the UART RX line goes IDLE after having data 
- *            on it, it will trigger an interrupt which indicates new data has been fully 
- *            received and is ready for processing. Data received from the SiK radio module 
- *            will be processed and relayed to the serial terminal. Data received from the 
- *            serial terminal will be processed and sent to the radio module as needed. 
- *            
- *          - Note that two radio modules are needed for this test to work. They don't have 
- *            to be the same module but they must be able to communicate for data to be seen 
- *            on this end. One module is connected to this controller and it must be either 
- *            a generic SiK telemetry radio or an RFD900 modem as per the SiK radio driver 
- *            being tested. It's recommended to have the other module connected to a device 
- *            running Mission Planner. Doing this will simulate communication between a 
- *            vehicle and ground station setup. The data that passes through this module 
- *            (both incoming and outgoing) is assumed to be formatted following the MAVLINK 
- *            protocol. For this reason, the mavlink v2 library is included and used. 
+ *          - This code looks for data received from both the SiK telemetry radio and 
+ *            the serial terminal. If data is received by the radio then the code will 
+ *            attempt to decode a pre-defined MAVLINK message. A valid message will be 
+ *            sent to the serial terminal for the user to see. If data is received from 
+ *            the serial terminal then the code will process the input and perform the 
+ *            needed action which can be to either encode and send a MAVLINK message or 
+ *            put the SiK radio into AT command mode. 
  * 
  * @version 0.1
  * @date 2024-12-11
@@ -242,6 +260,9 @@ void sik_radio_test_init(void)
 //=======================================================================================
 // Test code 
 
+// TODO 
+// - Can multiple MAVLINK messages/packets come at once? 
+
 void sik_radio_test_app(void)
 {
     // If the user inputs the prompt/command for AT command mode, then the device 
@@ -276,6 +297,10 @@ void sik_radio_test_app(void)
                 switch (mavlink_data.msg.msgid)
                 {
                     case MAVLINK_MSG_ID_HEARTBEAT: 
+                        mavlink_heartbeat_t heartbeat; 
+                        mavlink_msg_heartbeat_decode(
+                            &mavlink_data.msg, 
+                            &heartbeat); 
                         break; 
 
                     case MAVLINK_MSG_ID_GLOBAL_POSITION_INT: 
