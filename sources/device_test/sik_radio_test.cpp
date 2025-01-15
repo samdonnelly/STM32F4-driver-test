@@ -122,6 +122,21 @@ static sik_mavlink_data_t mavlink_data;
 
 
 //=======================================================================================
+// Prototypes 
+
+/**
+ * @brief MAVLink message payload decode 
+ * 
+ * @details This function provides a means to decode any desired messages. Messages can 
+ *          be added and removed as needed. A piece of code like this is needed for any 
+ *          MAVLink application to define which messages to handle. 
+ */
+void sik_radio_test_mavlink_payload_decode(void); 
+
+//=======================================================================================
+
+
+//=======================================================================================
 // Setup code 
 
 void sik_radio_test_init(void)
@@ -262,60 +277,37 @@ void sik_radio_test_init(void)
 
 // TODO 
 // - Can multiple MAVLINK messages/packets come at once? 
+// - Transition to AT command mode. 
 
 void sik_radio_test_app(void)
 {
-    // If the user inputs the prompt/command for AT command mode, then the device 
-    // will enter AT command mode and stop relaying data from a remote radio module. 
-
     // New SiK radio module data received 
     if (handler_flags.usart1_flag)
     {
         handler_flags.usart1_flag = CLEAR_BIT; 
         mavlink_data.msg_buff_index = CLEAR; 
 
-        // Parse the new radio message from the circular buffer into the data buffer 
+        // Parse the new radio data from the circular buffer into the data buffer. 
         cb_parse(
             radio_data.uart_dma_buff, 
             radio_data.data_buff, 
             &radio_data.buff_index, 
             SIK_TEST_MSG_BUFF_SIZE); 
 
-        // Loop until the mavlink library is done parsing 
+        // Look at each byte of the received data and try to decode MAVLink messages 
+        // until there is no more data to check. 
         while (radio_data.data_buff[mavlink_data.msg_buff_index] != NULL_CHAR)
         {
-            // This does only a single byte at a time. 
             if (mavlink_parse_char(
                     mavlink_data.channel, 
                     radio_data.data_buff[mavlink_data.msg_buff_index++], 
                     &mavlink_data.msg, 
                     &mavlink_data.status))
             {
-                // Message received 
-
-                // Decode the message 
-                switch (mavlink_data.msg.msgid)
-                {
-                    case MAVLINK_MSG_ID_HEARTBEAT: 
-                        mavlink_heartbeat_t heartbeat; 
-                        mavlink_msg_heartbeat_decode(
-                            &mavlink_data.msg, 
-                            &heartbeat); 
-                        break; 
-
-                    case MAVLINK_MSG_ID_GLOBAL_POSITION_INT: 
-                        mavlink_global_position_int_cov_t global_position; 
-                        mavlink_msg_global_position_int_cov_decode(
-                            &mavlink_data.msg, 
-                            &global_position); 
-                        break; 
-
-                    case MAVLINK_MSG_ID_GPS_STATUS: 
-                        break; 
-                    
-                    default: 
-                        break; 
-                }
+                // If a MAVLink message has been decoded then proceed to decode the 
+                // message payload. This can happen more than once if multiple messages 
+                // are in the received data. 
+                sik_radio_test_mavlink_payload_decode(); 
             }
         }
     }
@@ -335,6 +327,47 @@ void sik_radio_test_app(void)
 
         // Check for AT command mode request 
         // Check for mavlink message to send 
+    }
+}
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Helper functions 
+
+// MAVLink message payload decode 
+void sik_radio_test_mavlink_payload_decode(void)
+{
+    switch (mavlink_data.msg.msgid)
+    {
+        case MAVLINK_MSG_ID_HEARTBEAT: 
+            mavlink_heartbeat_t heartbeat; 
+            mavlink_msg_heartbeat_decode(
+                &mavlink_data.msg, 
+                &heartbeat); 
+            break; 
+
+        case MAVLINK_MSG_ID_GLOBAL_POSITION_INT: 
+            mavlink_global_position_int_cov_t global_position; 
+            mavlink_msg_global_position_int_cov_decode(
+                &mavlink_data.msg, 
+                &global_position); 
+            break; 
+
+        case MAVLINK_MSG_ID_GPS_STATUS: 
+            break; 
+        
+        case MAVLINK_MSG_ID_COMMAND_INT: 
+            // Call a separate function to decode mavlink_command_int_t.command 
+            break; 
+        
+        case MAVLINK_MSG_ID_COMMAND_LONG: 
+            // Call a separate function to decode mavlink_command_long_t.command 
+            break; 
+        
+        default: 
+            break; 
     }
 }
 
