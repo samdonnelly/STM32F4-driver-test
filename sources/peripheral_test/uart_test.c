@@ -32,12 +32,30 @@
 //=======================================================================================
 // Global variables 
 
-// A circular buffer is used to store a continuous stream of UART (serial terminal) inputs 
-// and is also used to parse the most recent user input which gets stored in a user input 
-// buffer. 
-static uint8_t uart_dma_buff[UART_TEST_MAX_INPUT];     // Circular buffer for uart inputs 
-static uint8_t user_input_buff[UART_TEST_MAX_INPUT];   // Stores latest user input 
-static uint8_t buff_index;                             // Circular buffer index 
+// Data structure to hold UART circular buffer data. The circular buffer gets populated 
+// by DMA when UART data is received and that UART data is then parsed into a separate 
+// buffer to make it available for the application. 
+typedef struct uart_dma_cb_s
+{
+    USART_TypeDef *uart; 
+    DMA_TypeDef *dma_stream; 
+    uint8_t cb[UART_TEST_MAX_INPUT];          // Circular buffer populated by DMA 
+    cb_index_t cb_index;                      // Circular buffer indexing info 
+    dma_index_t dma_index;                    // DMA transfer indexing info 
+    uint8_t data_buff[UART_TEST_MAX_INPUT];   // Buffer that stores latest UART input 
+}
+uart_dma_cb_t; 
+
+static uart_dma_cb_t cb; 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Prototypes 
+
+// User prompt 
+void uart_test_user_prompt(void); 
 
 //=======================================================================================
 
@@ -101,7 +119,7 @@ void uart_test_init(void)
     dma_stream_config(
         DMA1_Stream5, 
         (uint32_t)(&USART2->DR), 
-        (uint32_t)uart_dma_buff, 
+        (uint32_t)cb.cb, 
         (uint32_t)NULL, 
         (uint16_t)UART_TEST_MAX_INPUT); 
 
@@ -122,16 +140,22 @@ void uart_test_init(void)
     //==================================================
 
     //==================================================
-    // Initialize variables 
+    // Initialize data 
 
-    memset((void *)uart_dma_buff, CLEAR, sizeof(uart_dma_buff)); 
-    memset((void *)user_input_buff, CLEAR, sizeof(user_input_buff)); 
-    buff_index = CLEAR; 
+    cb.uart = USART2; 
+    cb.dma_stream = DMA1_Stream5; 
+    memset((void *)cb.cb, CLEAR, sizeof(cb.cb)); 
+    cb.cb_index.cb_size = UART_TEST_MAX_INPUT; 
+    cb.cb_index.head = CLEAR; 
+    cb.cb_index.tail = CLEAR; 
+    cb.dma_index.data_size = CLEAR; 
+    cb.dma_index.ndt_old = dma_ndt_read(cb.dma_stream); 
+    cb.dma_index.ndt_new = CLEAR; 
+    memset((void *)cb.data_buff, CLEAR, sizeof(cb.data_buff)); 
 
     //==================================================
 
-    uart_sendstring(USART2, "\r\n>>> "); 
-
+    uart_test_user_prompt(); 
 } 
 
 //=======================================================================================
@@ -142,33 +166,35 @@ void uart_test_init(void)
 
 void uart_test_app(void)
 {
-    // This interrupt flag will be set when an idle line is detected on UART RX after 
-    // receiving new data. This new data gets echoed back over the UART. 
+    // When an idle line interrupt occurs (i.e. UART RX line goes idle for too long) 
+    // indicating the end of the received serial terminal data, the data will be parsed 
+    // and echoed back to the serial terminal to verify that it has been parsed 
+    // correctly. The number of data items transferred by DMA is first found before 
+    // the circular buffer can be parsed. 
     if (handler_flags.usart2_flag)
     {
-        // Reset the USART2 interrupt flag 
         handler_flags.usart2_flag = CLEAR; 
+        
+        dma_cb_index(cb.dma_stream, &cb.dma_index, &cb.cb_index); 
+        cb_parse_v2(cb.cb, &cb.cb_index, cb.data_buff); 
 
-        // Copy the new contents in the circular buffer to the user input buffer 
-        cb_parse(uart_dma_buff, user_input_buff, &buff_index, UART_TEST_MAX_INPUT); 
-
-        // Echo the user input back to the terminal 
-        // uart_send_new_line(USART2); 
-        // uart_sendstring(USART2, (char *)user_input_buff); 
-        // uart_send_new_line(USART2); 
-        // uart_sendstring(USART2, "\r\n>>> "); 
-
-        uart_send_new_line(USART2); 
-        uart_sendstring(USART2, "buff_index: "); 
-        uart_send_integer(USART2, (int16_t)buff_index); 
-        uart_send_new_line(USART2); 
-        uart_sendstring(USART2, "Remaining items: "); 
-        uart_send_integer(USART2, (int16_t)dma_ndt_read(DMA1_Stream5)); 
-        uart_send_new_line(USART2); 
-        uart_sendstring(USART2, (char *)user_input_buff); 
-        uart_send_new_line(USART2); 
-        uart_sendstring(USART2, "\r\n>>> "); 
+        uart_send_new_line(cb.uart); 
+        uart_sendstring(cb.uart, (char *)cb.data_buff); 
+        uart_send_new_line(cb.uart); 
+        uart_test_user_prompt(); 
     }
+}
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Helper functions 
+
+// User prompt 
+void uart_test_user_prompt(void)
+{
+    uart_sendstring(cb.uart, "\r\n>>> "); 
 }
 
 //=======================================================================================
