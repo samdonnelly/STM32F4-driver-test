@@ -27,7 +27,8 @@
 void ProjectInit(void)
 {
     // Project initialization code here 
-    sik_radio_test_app(); 
+    // sik_radio_test_app(); 
+    uart_test_init(); 
 }
 
 //=======================================================================================

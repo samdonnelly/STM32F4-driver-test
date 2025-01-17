@@ -153,6 +153,17 @@ void uart_test_app(void)
         cb_parse(uart_dma_buff, user_input_buff, &buff_index, UART_TEST_MAX_INPUT); 
 
         // Echo the user input back to the terminal 
+        // uart_send_new_line(USART2); 
+        // uart_sendstring(USART2, (char *)user_input_buff); 
+        // uart_send_new_line(USART2); 
+        // uart_sendstring(USART2, "\r\n>>> "); 
+
+        uart_send_new_line(USART2); 
+        uart_sendstring(USART2, "buff_index: "); 
+        uart_send_integer(USART2, (int16_t)buff_index); 
+        uart_send_new_line(USART2); 
+        uart_sendstring(USART2, "Remaining items: "); 
+        uart_send_integer(USART2, (int16_t)dma_ndt_read(DMA1_Stream5)); 
         uart_send_new_line(USART2); 
         uart_sendstring(USART2, (char *)user_input_buff); 
         uart_send_new_line(USART2); 
