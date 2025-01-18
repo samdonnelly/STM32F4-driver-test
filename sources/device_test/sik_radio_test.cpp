@@ -96,9 +96,12 @@ extern "C"
 // User data 
 typedef struct sik_serial_data_s 
 {
-    uint8_t uart_dma_buff[SIK_TEST_MSG_BUFF_SIZE];     // Circular buffer for uart inputs 
-    uint8_t data_buff[SIK_TEST_MSG_BUFF_SIZE];         // Stores latest uart input 
-    uint8_t buff_index;                                // Circular buffer index 
+    USART_TypeDef *uart; 
+    DMA_TypeDef *dma_stream; 
+    uint8_t cb[SIK_TEST_MSG_BUFF_SIZE];          // Circular buffer populated by DMA 
+    cb_index_t cb_index;                         // Circular buffer indexing info 
+    dma_index_t dma_index;                       // DMA transfer indexing info 
+    uint8_t data_buff[SIK_TEST_MSG_BUFF_SIZE];   // Buffer that stores latest UART input 
 }
 sik_serial_data_t; 
 
@@ -141,16 +144,6 @@ void sik_radio_test_mavlink_payload_decode(void);
 
 void sik_radio_test_init(void)
 {
-    // Initialize data 
-    memset((void *)user_data.uart_dma_buff, CLEAR, SIK_TEST_MSG_BUFF_SIZE); 
-    memset((void *)user_data.data_buff, CLEAR, SIK_TEST_MSG_BUFF_SIZE); 
-    user_data.buff_index = CLEAR; 
-    memset((void *)radio_data.uart_dma_buff, CLEAR, SIK_TEST_MSG_BUFF_SIZE); 
-    memset((void *)radio_data.data_buff, CLEAR, SIK_TEST_MSG_BUFF_SIZE); 
-    radio_data.buff_index = CLEAR; 
-    mavlink_data.channel = MAVLINK_COMM_0; 
-    mavlink_data.msg_buff_index = CLEAR; 
-
     // Initialize GPIO ports 
     gpio_port_init(); 
 
@@ -224,7 +217,7 @@ void sik_radio_test_init(void)
     dma_stream_config(
         DMA2_Stream2, 
         (uint32_t)(&USART1->DR), 
-        (uint32_t)radio_data.uart_dma_buff, 
+        (uint32_t)radio_data.cb, 
         (uint32_t)NULL, 
         (uint16_t)SIK_TEST_MSG_BUFF_SIZE); 
 
@@ -246,13 +239,13 @@ void sik_radio_test_init(void)
     dma_stream_config(
         DMA1_Stream5, 
         (uint32_t)(&USART2->DR), 
-        (uint32_t)user_data.uart_dma_buff, 
+        (uint32_t)user_data.cb, 
         (uint32_t)NULL, 
         (uint16_t)SIK_TEST_MSG_BUFF_SIZE); 
 
     // Enable DMA streams 
-    dma_stream_enable(DMA1_Stream5);   // UART1 - Sik radio 
-    dma_stream_enable(DMA2_Stream2);   // UART2 - Serial terminal 
+    dma_stream_enable(DMA2_Stream2);   // UART1 - Sik radio 
+    dma_stream_enable(DMA1_Stream5);   // UART2 - Serial terminal 
 
     //==================================================
     
@@ -265,6 +258,39 @@ void sik_radio_test_init(void)
     // Enable the interrupt handlers 
     nvic_config(USART1_IRQn, EXTI_PRIORITY_0);   // UART1 - SiK radio 
     nvic_config(USART2_IRQn, EXTI_PRIORITY_1);   // UART2 - Serial terminal (user input) 
+
+    //==================================================
+
+    //==================================================
+    // Initialize data 
+
+    // Radio data 
+    radio_data.uart = USART1; 
+    radio_data.dma_stream = DMA2_Stream2; 
+    memset((void *)radio_data.cb, CLEAR, sizeof(radio_data.cb)); 
+    radio_data.cb_index.cb_size = SIK_TEST_MSG_BUFF_SIZE; 
+    radio_data.cb_index.head = CLEAR; 
+    radio_data.cb_index.tail = CLEAR; 
+    radio_data.dma_index.data_size = CLEAR; 
+    radio_data.dma_index.ndt_old = dma_ndt_read(radio_data.dma_stream); 
+    radio_data.dma_index.ndt_new = CLEAR; 
+    memset((void *)radio_data.data_buff, CLEAR, sizeof(radio_data.data_buff)); 
+
+    // User data 
+    user_data.uart = USART2; 
+    user_data.dma_stream = DMA1_Stream5; 
+    memset((void *)user_data.cb, CLEAR, sizeof(user_data.cb)); 
+    user_data.cb_index.cb_size = SIK_TEST_MSG_BUFF_SIZE; 
+    user_data.cb_index.head = CLEAR; 
+    user_data.cb_index.tail = CLEAR; 
+    user_data.dma_index.data_size = CLEAR; 
+    user_data.dma_index.ndt_old = dma_ndt_read(user_data.dma_stream); 
+    user_data.dma_index.ndt_new = CLEAR; 
+    memset((void *)user_data.data_buff, CLEAR, sizeof(user_data.data_buff)); 
+
+    // MAVLink data 
+    mavlink_data.channel = MAVLINK_COMM_0; 
+    mavlink_data.msg_buff_index = CLEAR; 
 
     //==================================================
 }
@@ -288,11 +314,8 @@ void sik_radio_test_app(void)
         mavlink_data.msg_buff_index = CLEAR; 
 
         // Parse the new radio data from the circular buffer into the data buffer. 
-        cb_parse(
-            radio_data.uart_dma_buff, 
-            radio_data.data_buff, 
-            &radio_data.buff_index, 
-            SIK_TEST_MSG_BUFF_SIZE); 
+        dma_cb_index(radio_data.dma_stream, &radio_data.dma_index, &radio_data.cb_index); 
+        cb_parse(radio_data.cb, &radio_data.cb_index, radio_data.data_buff); 
 
         // Look at each byte of the received data and try to decode MAVLink messages 
         // until there is no more data to check. 
@@ -319,11 +342,8 @@ void sik_radio_test_app(void)
         handler_flags.usart2_flag = CLEAR_BIT; 
 
         // Parse the new user message from the circular buffer into the data buffer 
-        cb_parse(
-            user_data.uart_dma_buff, 
-            user_data.data_buff, 
-            &user_data.buff_index, 
-            SIK_TEST_MSG_BUFF_SIZE); 
+        dma_cb_index(user_data.dma_stream, &user_data.dma_index, &user_data.cb_index); 
+        cb_parse(user_data.cb, &user_data.cb_index, user_data.data_buff); 
 
         // Check for AT command mode request 
         // Check for mavlink message to send 

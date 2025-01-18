@@ -1095,12 +1095,25 @@ void rc_ground_station_test_init(void)
 
     //==================================================
 
+    //==================================================
+    // Initialize data 
+
+    rc_gs_cmd_data.uart = USART2; 
+    rc_gs_cmd_data.dma_stream = DMA1_Stream5; 
     memset((void *)rc_gs_cmd_data.cb, CLEAR, sizeof(rc_gs_cmd_data.cb)); 
-    rc_gs_cmd_data.cb_index = CLEAR; 
-    memset((void *)rc_gs_cmd_data.cmd_buff, CLEAR, sizeof(rc_gs_cmd_data.cmd_buff)); 
+    rc_gs_cmd_data.cb_index.cb_size = NRF24L01_TEST_MAX_INPUT; 
+    rc_gs_cmd_data.cb_index.head = CLEAR; 
+    rc_gs_cmd_data.cb_index.tail = CLEAR; 
+    rc_gs_cmd_data.dma_index.data_size = CLEAR; 
+    rc_gs_cmd_data.dma_index.ndt_old = dma_ndt_read(rc_gs_cmd_data.dma_stream); 
+    rc_gs_cmd_data.dma_index.ndt_new = CLEAR; 
+    memset((void *)rc_gs_cmd_data.data_buff, CLEAR, sizeof(rc_gs_cmd_data.data_buff)); 
+
     memset((void *)rc_gs_cmd_data.cmd_id, CLEAR, sizeof(rc_gs_cmd_data.cmd_id)); 
     rc_gs_cmd_data.cmd_value = CLEAR; 
     memset((void *)rc_gs_cmd_data.cmd_str, CLEAR, sizeof(rc_gs_cmd_data.cmd_str)); 
+
+    //==================================================
 
     rc_ground_station_user_prompt(); 
 
@@ -1127,11 +1140,8 @@ void rc_ground_station_test_loop(void)
         handler_flags.usart2_flag = CLEAR; 
 
         // Copy the new contents in the circular buffer to the user input buffer 
-        cb_parse(
-            rc_gs_cmd_data.cb, 
-            rc_gs_cmd_data.cmd_buff, 
-            &rc_gs_cmd_data.cb_index, 
-            NRF24L01_TEST_MAX_INPUT); 
+        dma_cb_index(rc_gs_cmd_data.dma_stream, &rc_gs_cmd_data.dma_index, &rc_gs_cmd_data.cb_index); 
+        cb_parse(rc_gs_cmd_data.cb, &rc_gs_cmd_data.cb_index, rc_gs_cmd_data.data_buff); 
 
         // Send string 
         nrf24l01_send_payload(rc_gs_cmd_data.cmd_buff); 

@@ -67,9 +67,22 @@ const osThreadAttr_t main_loop_attributes =
 }; 
 
 // Serial terminal data 
-static uint8_t uart_dma_buff[SERIAL_INPUT_MAX_LEN];   // Circular buffer 
-static uint8_t buff_index;                            // Circular buffer index 
-static uint8_t user_in_buff[SERIAL_INPUT_MAX_LEN];    // Stores latest user input 
+// static uint8_t uart_dma_buff[SERIAL_INPUT_MAX_LEN];   // Circular buffer 
+// static uint8_t buff_index;                            // Circular buffer index 
+// static uint8_t user_in_buff[SERIAL_INPUT_MAX_LEN];    // Stores latest user input 
+
+typedef struct freertos_cb_s
+{
+    USART_TypeDef *uart; 
+    DMA_TypeDef *dma_stream; 
+    uint8_t cb[SERIAL_INPUT_MAX_LEN];          // Circular buffer populated by DMA 
+    cb_index_t cb_index;                       // Circular buffer indexing info 
+    dma_index_t dma_index;                     // DMA transfer indexing info 
+    uint8_t data_buff[SERIAL_INPUT_MAX_LEN];   // Buffer that stores latest UART input 
+}
+freertos_cb_t; 
+
+static freertos_cb_t cb; 
 
 //=======================================================================================
 
@@ -178,7 +191,7 @@ void freertos_test_init(void)
     dma_stream_config(
         DMA1_Stream5, 
         (uint32_t)(&USART2->DR), 
-        (uint32_t)uart_dma_buff, 
+        (uint32_t)cb.cb, 
         (uint32_t)NULL, 
         (uint16_t)SERIAL_INPUT_MAX_LEN); 
     dma_stream_enable(DMA1_Stream5); 
@@ -194,9 +207,20 @@ void freertos_test_init(void)
     mainLoopHandle = osThreadNew(TaskLoop, NULL, &main_loop_attributes); 
 
     // Initialize data 
-    memset((void *)uart_dma_buff, CLEAR, sizeof(uart_dma_buff)); 
-    memset((void *)&buff_index, CLEAR, sizeof(buff_index)); 
-    memset((void *)user_in_buff, CLEAR, sizeof(user_in_buff)); 
+    // memset((void *)uart_dma_buff, CLEAR, sizeof(uart_dma_buff)); 
+    // memset((void *)&buff_index, CLEAR, sizeof(buff_index)); 
+    // memset((void *)user_in_buff, CLEAR, sizeof(user_in_buff)); 
+
+    cb.uart = USART2; 
+    cb.dma_stream = DMA1_Stream5; 
+    memset((void *)cb.cb, CLEAR, sizeof(cb.cb)); 
+    cb.cb_index.cb_size = SERIAL_INPUT_MAX_LEN; 
+    cb.cb_index.head = CLEAR; 
+    cb.cb_index.tail = CLEAR; 
+    cb.dma_index.data_size = CLEAR; 
+    cb.dma_index.ndt_old = dma_ndt_read(cb.dma_stream); 
+    cb.dma_index.ndt_new = CLEAR; 
+    memset((void *)cb.data_buff, CLEAR, sizeof(cb.data_buff)); 
 
     //==================================================
 
@@ -497,8 +521,9 @@ void manual_blink_loop(void)
         handler_flags.usart2_flag = CLEAR; 
 
         // Get the user input and update the LED blink rate 
-        cb_parse(uart_dma_buff, user_in_buff, &buff_index, SERIAL_INPUT_MAX_LEN); 
-        mb_ticks = (uint32_t)strtol((char *)user_in_buff, NULL, 10); 
+        dma_cb_index(cb.dma_stream, &cb.dma_index, &cb.cb_index); 
+        cb_parse(cb.cb, &cb.cb_index, cb.data_buff); 
+        mb_ticks = (uint32_t)strtol((char *)cb.data_buff, NULL, 10); 
 
         // Make sure rate can't go below a certain threshold to prevent this task 
         // from never running. 
@@ -777,7 +802,8 @@ void memory_management_loop(void)
         uint8_t mem_info[MM_STR_MAX_LEN]; 
 
         // Get the user input from the circular buffer 
-        cb_parse(uart_dma_buff, user_in_buff_local, &buff_index, SERIAL_INPUT_MAX_LEN); 
+        dma_cb_index(cb.dma_stream, &cb.dma_index, &cb.cb_index); 
+        cb_parse(cb.cb, &cb.cb_index, user_in_buff_local); 
 
         snprintf(
             (char *)mem_info, 
@@ -923,12 +949,13 @@ void queue_loop(void)
         handler_flags.usart2_flag = CLEAR; 
 
         // Get the user input from the circular buffer 
-        cb_parse(uart_dma_buff, user_in_buff, &buff_index, SERIAL_INPUT_MAX_LEN); 
+        dma_cb_index(cb.dma_stream, &cb.dma_index, &cb.cb_index); 
+        cb_parse(cb.cb, &cb.cb_index, cb.data_buff); 
         
         // Check for a valid delay command. If found then updated the LED delay rate. 
-        if (str_compare("delay ", (char *)user_in_buff, BYTE_0))
+        if (str_compare("delay ", (char *)cb.data_buff, BYTE_0))
         {
-            char *delay_value_cmd = (char *)(user_in_buff + BYTE_6); 
+            char *delay_value_cmd = (char *)(cb.data_buff + BYTE_6); 
             uint32_t delay_value = (uint32_t)strtol(delay_value_cmd, NULL, 10); 
 
             if (delay_value != 0)
@@ -1811,14 +1838,15 @@ void hardware_interrupt_loop(void)
         handler_flags.usart2_flag = CLEAR; 
 
         // Get the user input from the circular buffer 
-        cb_parse(uart_dma_buff, user_in_buff, &buff_index, SERIAL_INPUT_MAX_LEN); 
+        dma_cb_index(cb.dma_stream, &cb.dma_index, &cb.cb_index); 
+        cb_parse(cb.cb, &cb.cb_index, cb.data_buff); 
 
         // Check for the average command by checking that the input is exactly "avg". 
-        if (strlen((char *)user_in_buff) == 3)
+        if (strlen((char *)cb.data_buff) == 3)
         {
             char avg_str[SERIAL_INPUT_MAX_LEN]; 
 
-            if (str_compare("avg", (char *)user_in_buff, BYTE_0))
+            if (str_compare("avg", (char *)cb.data_buff, BYTE_0))
             {
                 // Display the average and protect 'avg' so it cannot be updated during 
                 // the serial output process. 

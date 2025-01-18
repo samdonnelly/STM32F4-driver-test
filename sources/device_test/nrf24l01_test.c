@@ -617,12 +617,25 @@ void nrf24l01_manual_control_test_init(void)
 
     //==================================================
 
+    //==================================================
+    // Initialize data 
+
+    mc_cmd_data.uart = USART2; 
+    mc_cmd_data.dma_stream = DMA1_Stream5; 
     memset((void *)mc_cmd_data.cb, CLEAR, sizeof(mc_cmd_data.cb)); 
-    mc_cmd_data.cb_index = CLEAR; 
-    memset((void *)mc_cmd_data.cmd_buff, CLEAR, sizeof(mc_cmd_data.cmd_buff)); 
+    mc_cmd_data.cb_index.cb_size = NRF24L01_TEST_MAX_INPUT; 
+    mc_cmd_data.cb_index.head = CLEAR; 
+    mc_cmd_data.cb_index.tail = CLEAR; 
+    mc_cmd_data.dma_index.data_size = CLEAR; 
+    mc_cmd_data.dma_index.ndt_old = dma_ndt_read(mc_cmd_data.dma_stream); 
+    mc_cmd_data.dma_index.ndt_new = CLEAR; 
+    memset((void *)mc_cmd_data.data_buff, CLEAR, sizeof(mc_cmd_data.data_buff)); 
+
     memset((void *)mc_cmd_data.cmd_id, CLEAR, sizeof(mc_cmd_data.cmd_id)); 
     mc_cmd_data.cmd_value = CLEAR; 
     memset((void *)mc_cmd_data.cmd_str, CLEAR, sizeof(mc_cmd_data.cmd_str)); 
+    
+    //==================================================
 
     nrf24l01_test_user_prompt(); 
     
@@ -818,11 +831,8 @@ void nrf24l01_test_user_input(
         handler_flags.usart2_flag = CLEAR; 
 
         // Copy the new contents in the circular buffer to the user input buffer 
-        cb_parse(
-            cmd_data->cb, 
-            cmd_data->cmd_buff, 
-            &cmd_data->cb_index, 
-            NRF24L01_TEST_MAX_INPUT); 
+        dma_cb_index(cmd_data->dma_stream, &cmd_data->dma_index, &cmd_data->cb_index); 
+        cb_parse(cmd_data->cb, &cmd_data->cb_index, cmd_data->data_buff); 
 
         // Validate the input - parse into an ID and value if valid 
         if (nrf24l01_test_parse_cmd(cmd_data, cmd_arg_type))
@@ -851,7 +861,7 @@ uint8_t nrf24l01_test_parse_cmd(
 {
     nrf24l01_cmd_arg_t cmd_arg_flag = NRF24L01_CMD_ARG_NONE; 
     uint8_t id_index = CLEAR; 
-    uint8_t data = cmd_data->cmd_buff[0]; 
+    uint8_t data = cmd_data->data_buff[0]; 
     uint8_t cmd_value[NRF24L01_TEST_MAX_INPUT]; 
     uint8_t value_size = CLEAR; 
 
@@ -916,7 +926,7 @@ uint8_t nrf24l01_test_parse_cmd(
                 break; 
         }
 
-        data = cmd_data->cmd_buff[i+1]; 
+        data = cmd_data->data_buff[i+1]; 
     }
 
     // Calculate the cmd value 

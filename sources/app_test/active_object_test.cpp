@@ -148,9 +148,12 @@ private:   // Private members
     gpio_pin_state_t led_state; 
 
     // Serial terminal data 
-    uint8_t uart_dma_buff[SERIAL_INPUT_MAX_LEN];   // Circular buffer 
-    uint8_t buff_index;                            // Circular buffer index 
-    uint8_t user_in_buff[SERIAL_INPUT_MAX_LEN];    // Stores latest user input 
+    USART_TypeDef *uart; 
+    DMA_TypeDef *dma_stream; 
+    uint8_t cb[SERIAL_INPUT_MAX_LEN];          // Circular buffer populated by DMA 
+    cb_index_t cb_index;                       // Circular buffer indexing info 
+    dma_index_t dma_index;                     // DMA transfer indexing info 
+    uint8_t data_buff[SERIAL_INPUT_MAX_LEN];   // Buffer that stores latest UART input 
 
     //==================================================
 
@@ -277,9 +280,12 @@ struct ThreadLowTrackers
     ThreadLowStates state; 
 
     // Serial terminal data 
-    uint8_t uart_dma_buff[SERIAL_INPUT_MAX_LEN];   // Circular buffer 
-    uint8_t buff_index;                            // Circular buffer index 
-    uint8_t user_in_buff[SERIAL_INPUT_MAX_LEN];    // Stores latest user input 
+    USART_TypeDef *uart; 
+    DMA_TypeDef *dma_stream; 
+    uint8_t cb[SERIAL_INPUT_MAX_LEN];          // Circular buffer populated by DMA 
+    cb_index_t cb_index;                      // Circular buffer indexing info 
+    dma_index_t dma_index;                    // DMA transfer indexing info 
+    uint8_t data_buff[SERIAL_INPUT_MAX_LEN];   // Buffer that stores latest UART input 
 
     // State flags 
     uint8_t state_entry : 1; 
@@ -412,14 +418,18 @@ void SerialOutEvent(char *output_buff);
 /**
  * @brief Event: Serial Input 
  * 
- * @param circular_buff : circular buffer 
- * @param circular_buff_index : circular buffer index - keeps track of data location 
- * @param input_buff : buffer to store user input from circular buffer 
+ * @param dma_stream : DMA stream to use 
+ * @param dma_index : dma transfer index info 
+ * @param cb_index : circular buffer index info 
+ * @param cb : circular buffer 
+ * @param data_buff : buffer to store parsed circular buffer input 
  */
 void SerialInEvent(
-    uint8_t *circular_buff, 
-    uint8_t *circular_buff_index, 
-    uint8_t *input_buff); 
+    DMA_TypeDef *dma_stream, 
+    dma_index_t *dma_index, 
+    cb_index_t *cb_index, 
+    uint8_t *cb, 
+    uint8_t *data_buff); 
 
 /**
  * @brief Event: Pin Toggle (used to toggle the board LED) 
@@ -476,15 +486,6 @@ void SystemData::SystemDataInit(void)
     //==================================================
     // Low Priority Thread 
 
-    // Initialize general data 
-    thread_low_state = ThreadLowStates::SERIAL_OUT_STATE; 
-    memset((void *)uart_dma_buff, CLEAR, sizeof(uart_dma_buff)); 
-    buff_index = CLEAR; 
-    memset((void *)user_in_buff, CLEAR, sizeof(user_in_buff)); 
-    thread_low_flags.state_entry = SET_BIT; 
-    thread_low_flags.serial_out = SET_BIT; 
-    thread_low_flags.serial_in = CLEAR_BIT; 
-
     // Initialize UART 
     uart_init(
         USART2, 
@@ -525,7 +526,7 @@ void SystemData::SystemDataInit(void)
     dma_stream_config(
         DMA1_Stream5, 
         (uint32_t)(&USART2->DR), 
-        (uint32_t)uart_dma_buff, 
+        (uint32_t)cb, 
         (uint32_t)NULL, 
         (uint16_t)SERIAL_INPUT_MAX_LEN); 
     dma_stream_enable(DMA1_Stream5); 
@@ -533,6 +534,24 @@ void SystemData::SystemDataInit(void)
     // Initialize interrupt handler flags and enable the interrupt handler 
     int_handler_init(); 
     nvic_config(USART2_IRQn, EXTI_PRIORITY_15); 
+
+    // Initialize general data 
+    thread_low_state = ThreadLowStates::SERIAL_OUT_STATE; 
+
+    uart = USART2; 
+    dma_stream = DMA1_Stream5; 
+    memset((void *)cb, CLEAR, sizeof(cb)); 
+    cb_index.cb_size = SERIAL_INPUT_MAX_LEN; 
+    cb_index.head = CLEAR; 
+    cb_index.tail = CLEAR; 
+    dma_index.data_size = CLEAR; 
+    dma_index.ndt_old = dma_ndt_read(dma_stream); 
+    dma_index.ndt_new = CLEAR; 
+    memset((void *)data_buff, CLEAR, sizeof(data_buff)); 
+    
+    thread_low_flags.state_entry = SET_BIT; 
+    thread_low_flags.serial_out = SET_BIT; 
+    thread_low_flags.serial_in = CLEAR_BIT; 
 
     // Thread definition, queue handle creation and dispatch function assignment 
     thread_low_event_data = 
@@ -641,17 +660,6 @@ void AOSystemInit(void)
     //==================================================
     // Low Priority Thread 
 
-    // Initialize general data 
-    thread_low_trackers.state = THREAD_LOW_SERIAL_OUT_STATE; 
-    memset((void *)thread_low_trackers.uart_dma_buff, CLEAR, 
-           sizeof(thread_low_trackers.uart_dma_buff)); 
-    thread_low_trackers.buff_index = CLEAR; 
-    memset((void *)thread_low_trackers.user_in_buff, CLEAR, 
-           sizeof(thread_low_trackers.user_in_buff)); 
-    thread_low_trackers.state_entry = SET_BIT; 
-    thread_low_trackers.serial_out = SET_BIT; 
-    thread_low_trackers.serial_in = CLEAR_BIT; 
-
     // Initialize UART 
     uart_init(
         USART2, 
@@ -691,13 +699,31 @@ void AOSystemInit(void)
     dma_stream_config(
         DMA1_Stream5, 
         (uint32_t)(&USART2->DR), 
-        (uint32_t)thread_low_trackers.uart_dma_buff, 
+        (uint32_t)thread_low_trackers.cb, 
         (uint16_t)SERIAL_INPUT_MAX_LEN); 
     dma_stream_enable(DMA1_Stream5); 
 
     // Initialize interrupt handler flags and enable the interrupt handler 
     int_handler_init(); 
     nvic_config(USART2_IRQn, EXTI_PRIORITY_15); 
+
+    // Initialize general data 
+    thread_low_trackers.state = THREAD_LOW_SERIAL_OUT_STATE; 
+
+    thread_low_trackers.uart = USART2; 
+    thread_low_trackers.dma_stream = DMA1_Stream5; 
+    memset((void *)thread_low_trackers.cb, CLEAR, sizeof(thread_low_trackers.cb)); 
+    thread_low_trackers.cb_index.cb_size = SERIAL_INPUT_MAX_LEN; 
+    thread_low_trackers.cb_index.head = CLEAR; 
+    thread_low_trackers.cb_index.tail = CLEAR; 
+    thread_low_trackers.dma_index.data_size = CLEAR; 
+    thread_low_trackers.dma_index.ndt_old = dma_ndt_read(thread_low_trackers.dma_stream); 
+    thread_low_trackers.dma_index.ndt_new = CLEAR; 
+    memset((void *)thread_low_trackers.data_buff, CLEAR, sizeof(thread_low_trackers.data_buff)); 
+    
+    thread_low_trackers.state_entry = SET_BIT; 
+    thread_low_trackers.serial_out = SET_BIT; 
+    thread_low_trackers.serial_in = CLEAR_BIT; 
 
     // Thread definition, queue handle creation and dispatch function assignment 
     thread_low_trackers.event_data = 
@@ -897,9 +923,11 @@ void SystemData::ThreadLowState1(
     {
         case ThreadLowEvents::SERIAL_IN_EVENT: 
             SerialInEvent(
-                data->uart_dma_buff, 
-                &data->buff_index, 
-                data->user_in_buff); 
+                data->dma_stream, 
+                &data->dma_index, 
+                &data->cb_index, 
+                data->cb, 
+                data->data_buff); 
 
             // Toggle the high priority thread state 
             data->thread_high_flags.state_change = SET_BIT; 
@@ -1022,9 +1050,11 @@ void ThreadLowState1(
     {
         case THREAD_LOW_SERIAL_IN_EVENT: 
             SerialInEvent(
-                thread_low_trackers.uart_dma_buff, 
-                &thread_low_trackers.buff_index, 
-                thread_low_trackers.user_in_buff); 
+                thread_low_trackers->dma_stream, 
+                &thread_low_trackers->dma_index, 
+                &thread_low_trackers->cb_index, 
+                thread_low_trackers->cb, 
+                thread_low_trackers->data_buff); 
 
             // Toggle the high priority thread state 
             ThreadHighStateToggle(); 
@@ -1440,18 +1470,17 @@ void SerialOutEvent(char *output_buff)
 
 // Event: Serial Input 
 void SerialInEvent(
-    uint8_t *circular_buff, 
-    uint8_t *circular_buff_index, 
-    uint8_t *input_buff)
+    DMA_TypeDef *dma_stream, 
+    dma_index_t *dma_index, 
+    cb_index_t *cb_index, 
+    uint8_t *cb, 
+    uint8_t *data_buff)
 {
     handler_flags.usart2_flag = CLEAR; 
 
     // Get the user input from the circular buffer 
-    cb_parse(
-        circular_buff, 
-        input_buff, 
-        circular_buff_index, 
-        SERIAL_INPUT_MAX_LEN); 
+    dma_cb_index(dma_stream, dma_index, &cb_index); 
+    cb_parse(cb, cb_index, data_buff); 
 }
 
 

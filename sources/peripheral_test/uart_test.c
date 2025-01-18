@@ -176,7 +176,7 @@ void uart_test_app(void)
         handler_flags.usart2_flag = CLEAR; 
         
         dma_cb_index(cb.dma_stream, &cb.dma_index, &cb.cb_index); 
-        cb_parse_v2(cb.cb, &cb.cb_index, cb.data_buff); 
+        cb_parse(cb.cb, &cb.cb_index, cb.data_buff); 
 
         uart_send_new_line(cb.uart); 
         uart_sendstring(cb.uart, (char *)cb.data_buff); 

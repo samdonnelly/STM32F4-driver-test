@@ -62,12 +62,16 @@ nrf24l01_cmds_t;
 // User command data 
 typedef struct nrf24l01_cmd_data_s 
 {
-    uint8_t cb[NRF24L01_TEST_MAX_INPUT];         // Circular buffer (CB) for user inputs 
-    uint8_t cb_index;                            // CB index used for parsing commands 
-    uint8_t cmd_buff[NRF24L01_TEST_MAX_INPUT];   // User command parsed from the CB 
-    uint8_t cmd_id[NRF24L01_TEST_MAX_INPUT];     // ID from the user command 
-    uint8_t cmd_value;                           // Value from the user command 
-    uint8_t cmd_str[NRF24L01_TEST_MAX_INPUT];    // String from the user command 
+    USART_TypeDef *uart; 
+    DMA_TypeDef *dma_stream; 
+    uint8_t cb[NRF24L01_TEST_MAX_INPUT];          // Circular buffer populated by DMA 
+    cb_index_t cb_index;                          // Circular buffer indexing info 
+    dma_index_t dma_index;                        // DMA transfer indexing info 
+    uint8_t data_buff[NRF24L01_TEST_MAX_INPUT];   // Buffer that stores latest UART input 
+
+    uint8_t cmd_id[NRF24L01_TEST_MAX_INPUT];      // ID from the user command 
+    uint8_t cmd_value;                            // Value from the user command 
+    uint8_t cmd_str[NRF24L01_TEST_MAX_INPUT];     // String from the user command 
 }
 nrf24l01_cmd_data_t; 
 
