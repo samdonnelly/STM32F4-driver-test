@@ -413,11 +413,11 @@ void esc_readytosky_test_app(void)
     //===================================================
     // Get and format info from the user 
 
-    uart_sendstring(USART2, "\r\n>>> "); 
+    uart_send_str(USART2, "\r\n>>> "); 
     while(!uart_data_ready(USART2)); 
 
     // Retrieve and format the input 
-    uart_getstr(USART2, cmd_buff, ESC_INPUT_BUF_LEN, UART_STR_TERM_CARRIAGE); 
+    uart_get_str(USART2, cmd_buff, ESC_INPUT_BUF_LEN, UART_STR_TERM_CARRIAGE); 
     
     //===================================================
 
@@ -444,7 +444,7 @@ void esc_readytosky_test_app(void)
     }
     else 
     {
-        uart_sendstring(USART2, "\r\nInvalid input\r\n"); 
+        uart_send_str(USART2, "\r\nInvalid input\r\n"); 
     }
     
     //===================================================
@@ -479,14 +479,14 @@ void esc_readytosky_test_app(void)
 
         if (!cmd_match_flag)
         {
-            uart_sendstring(USART2, "\r\nInvalid input\r\n"); 
+            uart_send_str(USART2, "\r\nInvalid input\r\n"); 
         }
 
         cmd_match_flag = CLEAR;
 
 #else   // ESC_SECOND_DEVICE 
 
-        uart_sendstring(USART2, "\r\nInvalid input\r\n"); 
+        uart_send_str(USART2, "\r\nInvalid input\r\n"); 
 
 #endif   // ESC_SECOND_DEVICE 
     }

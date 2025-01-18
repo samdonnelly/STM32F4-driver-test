@@ -332,7 +332,7 @@ void hw125_test_init()
 #if HW125_CONTROLLER_TEST 
 
     // action = SET; 
-    uart_sendstring(USART2, "\r\nOperation >>> "); 
+    uart_send_str(USART2, "\r\nOperation >>> "); 
 
 #else   // HW125_CONTROLLER_TEST
 
@@ -355,7 +355,7 @@ void hw125_test_app()
     if (action)
     {
         action = CLEAR; 
-        uart_sendstring(USART2, "\r\nOperation >>> "); 
+        uart_send_str(USART2, "\r\nOperation >>> "); 
     }
     else
     {
@@ -365,7 +365,7 @@ void hw125_test_app()
             action = SET; 
 
             // Retrieve and format the input 
-            uart_getstr(USART2, hw125_test_record.cmd_buff, UART_STR_TERM_CARRIAGE); 
+            uart_get_str(USART2, hw125_test_record.cmd_buff, UART_STR_TERM_CARRIAGE); 
 
             // Format the input and check for validity 
             if (format_input(hw125_test_record.cmd_buff, 
@@ -566,7 +566,7 @@ void hw125_cont_test_state(void)
     HW125_STATE state = hw125_get_state(); 
 
     // Show the state 
-    uart_sendstring(USART2, "state: "); 
+    uart_send_str(USART2, "state: "); 
     uart_send_integer(USART2, (int16_t)state); 
     uart_send_new_line(USART2); 
 }
@@ -577,7 +577,7 @@ void hw125_cont_test_fault_code(void)
 {
     HW125_FAULT_CODE code = hw125_get_fault_code(); 
 
-    uart_sendstring(USART2, "fault code: "); 
+    uart_send_str(USART2, "fault code: "); 
     uart_send_integer(USART2, (int16_t)code); 
     uart_send_new_line(USART2); 
 }
@@ -588,7 +588,7 @@ void hw125_cont_test_fault_mode(void)
 {
     HW125_FAULT_MODE mode = hw125_get_fault_mode(); 
 
-    uart_sendstring(USART2, "fault mode: "); 
+    uart_send_str(USART2, "fault mode: "); 
     uart_send_integer(USART2, (int16_t)mode); 
     uart_send_new_line(USART2); 
 }
@@ -600,7 +600,7 @@ void hw125_cont_test_file_status(void)
     HW125_FILE_STATUS status = hw125_get_file_status(); 
 
     // Show open file flag setpoint 
-    uart_sendstring(USART2, "open flag: "); 
+    uart_send_str(USART2, "open flag: "); 
     uart_send_integer(USART2, (int16_t)status); 
     uart_send_new_line(USART2); 
 }
@@ -644,7 +644,7 @@ void hw125_cont_test_file_end(void)
     int8_t eof_return = hw125_eof(); 
 
     // Display if end of file has been reached 
-    uart_sendstring(USART2, "eof return: "); 
+    uart_send_str(USART2, "eof return: "); 
     uart_send_integer(USART2, (int16_t)eof_return); 
     uart_send_new_line(USART2); 
 }
@@ -660,8 +660,8 @@ void mount_card(void)
     
     // Format the drive 
     fresult = f_mkfs("", FM_EXFAT, 0, work, sizeof work); 
-    if (fresult != FR_OK) uart_sendstring(USART2, "Error in formatting the SD Card.\r\n");
-    else uart_sendstring(USART2, "SD Card formatted successfully.\r\n"); 
+    if (fresult != FR_OK) uart_send_str(USART2, "Error in formatting the SD Card.\r\n");
+    else uart_send_str(USART2, "SD Card formatted successfully.\r\n"); 
 
 #endif
 
@@ -669,31 +669,31 @@ void mount_card(void)
 
     if (hw125_test_record.fresult == FR_OK) 
     {
-        uart_sendstring(USART2, "\nMounted successfully. Volume type: "); 
+        uart_send_str(USART2, "\nMounted successfully. Volume type: "); 
 
         // Check the volume type 
         switch (hw125_get_card_type())
         {
             case HW125_CT_MMC: 
-                uart_sendstring(USART2, "MMC V3\r\n");
+                uart_send_str(USART2, "MMC V3\r\n");
                 break;
             case HW125_CT_SDC1: 
-                uart_sendstring(USART2, "SDC V1\r\n");
+                uart_send_str(USART2, "SDC V1\r\n");
                 break;
             case HW125_CT_SDC2_BLOCK: 
-                uart_sendstring(USART2, "SDC V2 block\r\n");
+                uart_send_str(USART2, "SDC V2 block\r\n");
                 break;
             case HW125_CT_SDC2_BYTE: 
-                uart_sendstring(USART2, "SDC V2 byte\r\n");
+                uart_send_str(USART2, "SDC V2 byte\r\n");
                 break;
             default: 
-                uart_sendstring(USART2, "Unknown\r\n");
+                uart_send_str(USART2, "Unknown\r\n");
                 break;
         }
     }
     else 
     {
-        uart_sendstring(USART2, "\nError in mounting volume.\r\n");
+        uart_send_str(USART2, "\nError in mounting volume.\r\n");
     }
 }
 
@@ -709,11 +709,11 @@ void unmount_card(void)
 
     if (hw125_test_record.fresult == FR_OK) 
     {
-        uart_sendstring(USART2, "\nVolume unmounted successfully.\r\n"); 
+        uart_send_str(USART2, "\nVolume unmounted successfully.\r\n"); 
     }
     else 
     {
-        uart_sendstring(USART2, "\nError in unmounting volume.\r\n");
+        uart_send_str(USART2, "\nError in unmounting volume.\r\n");
     }
 }
 
@@ -732,7 +732,7 @@ void card_capacity(void)
     sprintf(hw125_test_record.buffer, 
             "\nSD CARD Total Size: \t%lu KB\r\n", 
             hw125_test_record.total);
-    uart_sendstring(USART2, hw125_test_record.buffer);
+    uart_send_str(USART2, hw125_test_record.buffer);
     
     // Calculate the free space 
     hw125_test_record.free_space = (uint32_t)(hw125_test_record.fre_clust * 
@@ -740,7 +740,7 @@ void card_capacity(void)
     sprintf(hw125_test_record.buffer, 
             "SD CARD Free Space: \t%lu KB\r\n", 
             hw125_test_record.free_space);
-    uart_sendstring(USART2, hw125_test_record.buffer);
+    uart_send_str(USART2, hw125_test_record.buffer);
 }
 
 
@@ -755,7 +755,7 @@ void file_check(void)
         &hw125_test_record.read_len, 
         FORMAT_FILE_STRING); 
     
-    uart_sendstring(USART2, "\nFiles in path: \r\n"); 
+    uart_send_str(USART2, "\nFiles in path: \r\n"); 
 
     // Start to search for files 
     hw125_test_record.fresult = f_findfirst(&hw125_test_record.dj, 
@@ -765,8 +765,8 @@ void file_check(void)
 
     while ((hw125_test_record.fresult == FR_OK) && hw125_test_record.fno.fname[0]) 
     {
-        uart_sendstring(USART2, "\t- "); 
-        uart_sendstring(USART2, hw125_test_record.fno.fname); 
+        uart_send_str(USART2, "\t- "); 
+        uart_send_str(USART2, hw125_test_record.fno.fname); 
         uart_send_new_line(USART2); 
         hw125_test_record.fresult = f_findnext(&hw125_test_record.dj, 
                                                &hw125_test_record.fno); 
@@ -883,7 +883,7 @@ void file_printf(void)
                  hw125_test_record.buffer, 
                  (uint16_t)fmt_value) < 0) 
     {
-        uart_sendstring(USART2, "\nfailure\r\n"); 
+        uart_send_str(USART2, "\nfailure\r\n"); 
     }
 }
 
@@ -977,8 +977,8 @@ void file_remove(void)
 
     if (hw125_test_record.fresult != FR_OK) 
     {
-        uart_sendstring(USART2, "\r\nFailed to remove "); 
-        uart_sendstring(USART2, hw125_test_record.file_name_buff); 
+        uart_send_str(USART2, "\r\nFailed to remove "); 
+        uart_send_str(USART2, hw125_test_record.file_name_buff); 
         uart_send_new_line(USART2); 
     }
 }
@@ -996,11 +996,11 @@ void get_input(
     do 
     {
         // Get the info from the user 
-        uart_sendstring(USART2, str); 
+        uart_send_str(USART2, str); 
         while(!uart_data_ready(USART2)); 
 
         // Retrieve and format the input 
-        uart_getstr(USART2, buff, buff_len, UART_STR_TERM_CARRIAGE); 
+        uart_get_str(USART2, buff, buff_len, UART_STR_TERM_CARRIAGE); 
     }
     while (!format_input(buff, data, op)); 
 }
@@ -1094,8 +1094,8 @@ uint8_t format_input(
 // Display the contents of 'buffer' 
 void display_buffer(void)
 {
-    uart_sendstring(USART2, "\r\nbuffer: \r\n\t"); 
-    uart_sendstring(USART2, hw125_test_record.buffer); 
+    uart_send_str(USART2, "\r\nbuffer: \r\n\t"); 
+    uart_send_str(USART2, hw125_test_record.buffer); 
     uart_send_new_line(USART2); 
 }
 

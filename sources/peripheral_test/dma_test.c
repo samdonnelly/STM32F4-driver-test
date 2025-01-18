@@ -248,19 +248,19 @@ void dma_test_app()
     //==================================================
 
     // Display the result to the serial terminal 
-    uart_sendstring(USART2, "First ADC: "); 
+    uart_send_str(USART2, "First ADC: "); 
     uart_send_integer(USART2, (int16_t)adc_data[FIRST_ADC]); 
 
 #if ADC_DMA_SECOND_CHANNEL 
 
     uart_send_spaces(USART2, ADC_PRINT_SPACES); 
-    uart_sendstring(USART2, "Second ADC: "); 
+    uart_send_str(USART2, "Second ADC: "); 
     uart_send_integer(USART2, (int16_t)adc_data[SECOND_ADC]); 
 
 #if ADC_DMA_THIRD_CHANNEL 
 
     uart_send_spaces(USART2, ADC_PRINT_SPACES); 
-    uart_sendstring(USART2, "Third ADC: "); 
+    uart_send_str(USART2, "Third ADC: "); 
     uart_send_integer(USART2, (int16_t)adc_data[THIRD_ADC]); 
 
 #endif   // ADC_DMA_THIRD_CHANNEL 

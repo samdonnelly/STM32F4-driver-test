@@ -279,7 +279,7 @@ void hd44780u_test_app()
 
                     case HD44780U_GET_PTR_1: 
                         state = (state_func[i].get1)(); 
-                        uart_sendstring(USART2, "\nState: "); 
+                        uart_send_str(USART2, "\nState: "); 
                         uart_send_integer(USART2, (int16_t)state); 
                         uart_send_new_line(USART2); 
 

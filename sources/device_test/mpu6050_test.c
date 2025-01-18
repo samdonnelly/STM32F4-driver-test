@@ -194,11 +194,11 @@ void mpu6050_test_init()
     // Return the status of the accelerometer WHO_AM_I register 
     if (!mpu6050_get_status(DEVICE_ONE)) 
     {
-        uart_sendstring(USART2, "Device seen\r\n");
+        uart_send_str(USART2, "Device seen\r\n");
     }
     else 
     {
-        uart_sendstring(USART2, "Device not seen\r\n");
+        uart_send_str(USART2, "Device not seen\r\n");
     }
 
     
@@ -216,8 +216,8 @@ void mpu6050_test_init()
         MPU6050_FS_SEL_500);
 
     // Return the status of the accelerometer WHO_AM_I register 
-    if (!mpu6050_get_status(DEVICE_TWO)) uart_sendstring(USART2, "Second device seen\r\n");
-    else uart_sendstring(USART2, "Second device not seen\r\n");
+    if (!mpu6050_get_status(DEVICE_TWO)) uart_send_str(USART2, "Second device seen\r\n");
+    else uart_send_str(USART2, "Second device not seen\r\n");
 
     #endif   // MPU6050_SECOND_DEVICE 
 
@@ -255,7 +255,7 @@ void mpu6050_test_init()
 
     // MPU6050 self-test 
     uint8_t mpu_self_test_result = mpu6050_self_test(DEVICE_ONE);
-    uart_sendstring(USART2, "MPU6050 Self-Test Result = ");
+    uart_send_str(USART2, "MPU6050 Self-Test Result = ");
     uart_send_integer(USART2, (int16_t)(mpu_self_test_result));
     uart_send_new_line(USART2); 
 
@@ -278,7 +278,7 @@ void mpu6050_test_init()
 
     // MPU6050 self-test - second device 
     mpu_self_test_result = mpu6050_self_test(DEVICE_TWO);
-    uart_sendstring(USART2, "MPU6050 Second Self-Test Result = ");
+    uart_send_str(USART2, "MPU6050 Second Self-Test Result = ");
     uart_send_integer(USART2, (int16_t)(mpu_self_test_result));
     uart_send_new_line(USART2); 
 
@@ -378,11 +378,11 @@ void mpu6050_test_app()
                             &imu_data_int[MPU6050_Y_AXIS], 
                             &imu_data_int[MPU6050_Z_AXIS]); 
                         uart_send_new_line(USART2); 
-                        uart_sendstring(USART2, "X: ");
+                        uart_send_str(USART2, "X: ");
                         uart_send_integer(USART2, imu_data_int[MPU6050_X_AXIS]); 
-                        uart_sendstring(USART2, "  Y: ");
+                        uart_send_str(USART2, "  Y: ");
                         uart_send_integer(USART2, imu_data_int[MPU6050_Y_AXIS]); 
-                        uart_sendstring(USART2, "  Z: ");
+                        uart_send_str(USART2, "  Z: ");
                         uart_send_integer(USART2, imu_data_int[MPU6050_Z_AXIS]); 
                         uart_send_new_line(USART2); 
                         break; 
@@ -402,13 +402,13 @@ void mpu6050_test_app()
                             &imu_data_float[MPU6050_Y_AXIS], 
                             &imu_data_float[MPU6050_Z_AXIS]); 
                         uart_send_new_line(USART2); 
-                        uart_sendstring(USART2, "X: ");
+                        uart_send_str(USART2, "X: ");
                         uart_send_integer(USART2, 
                             (int16_t)(imu_data_float[MPU6050_X_AXIS] * SCALE_100)); 
-                        uart_sendstring(USART2, "  Y: ");
+                        uart_send_str(USART2, "  Y: ");
                         uart_send_integer(USART2, 
                             (int16_t)(imu_data_float[MPU6050_Y_AXIS] * SCALE_100)); 
-                        uart_sendstring(USART2, "  Z: ");
+                        uart_send_str(USART2, "  Z: ");
                         uart_send_integer(USART2, 
                             (int16_t)(imu_data_float[MPU6050_Z_AXIS] * SCALE_100)); 
                         uart_send_new_line(USART2); 
@@ -476,31 +476,31 @@ void mpu6050_test_app()
         &mpu6050_gyro[MPU6050_Z_AXIS]); 
 
     // Display the first device results - values are scaled to remove decimal 
-    uart_sendstring(USART2, "temp1 = ");
+    uart_send_str(USART2, "temp1 = ");
     uart_send_integer(USART2, mpu6050_temp_sensor);
     uart_send_spaces(USART2, UART_SPACE_2);
 
-    uart_sendstring(USART2, "ax1 = ");
+    uart_send_str(USART2, "ax1 = ");
     uart_send_integer(USART2, (int16_t)(mpu6050_accel[MPU6050_X_AXIS] * SCALE_100)); 
     uart_send_spaces(USART2, UART_SPACE_2);
 
-    uart_sendstring(USART2, "ay1 = ");
+    uart_send_str(USART2, "ay1 = ");
     uart_send_integer(USART2, (int16_t)(mpu6050_accel[MPU6050_Y_AXIS] * SCALE_100));
     uart_send_spaces(USART2, UART_SPACE_2);
 
-    uart_sendstring(USART2, "az1 = ");
+    uart_send_str(USART2, "az1 = ");
     uart_send_integer(USART2, (int16_t)(mpu6050_accel[MPU6050_Z_AXIS] * SCALE_100));
     uart_send_spaces(USART2, UART_SPACE_2);
 
-    uart_sendstring(USART2, "gx1 = ");
+    uart_send_str(USART2, "gx1 = ");
     uart_send_integer(USART2, (int16_t)(mpu6050_gyro[MPU6050_X_AXIS] * SCALE_100)); 
     uart_send_spaces(USART2, UART_SPACE_2);
 
-    uart_sendstring(USART2, "gy1 = ");
+    uart_send_str(USART2, "gy1 = ");
     uart_send_integer(USART2, (int16_t)(mpu6050_gyro[MPU6050_Y_AXIS] * SCALE_100));
     uart_send_spaces(USART2, UART_SPACE_2);
 
-    uart_sendstring(USART2, "gz1 = ");
+    uart_send_str(USART2, "gz1 = ");
     uart_send_integer(USART2, (int16_t)(mpu6050_gyro[MPU6050_Z_AXIS] * SCALE_100));
     uart_send_spaces(USART2, UART_SPACE_2);
 
@@ -527,36 +527,36 @@ void mpu6050_test_app()
         &mpu6050_gyro[MPU6050_Z_AXIS]); 
 
     // Display the second device results 
-    uart_sendstring(USART2, "temp2 = ");
+    uart_send_str(USART2, "temp2 = ");
     uart_send_integer(USART2, mpu6050_temp_sensor);
     uart_send_spaces(USART2, UART_SPACE_2);
 
-    uart_sendstring(USART2, "ax2 = ");
+    uart_send_str(USART2, "ax2 = ");
     uart_send_integer(USART2, (int16_t)(mpu6050_accel[MPU6050_X_AXIS] * SCALE_100)); 
     uart_send_spaces(USART2, UART_SPACE_2);
 
-    uart_sendstring(USART2, "ay2 = ");
+    uart_send_str(USART2, "ay2 = ");
     uart_send_integer(USART2, (int16_t)(mpu6050_accel[MPU6050_Y_AXIS] * SCALE_100));
     uart_send_spaces(USART2, UART_SPACE_2);
 
-    uart_sendstring(USART2, "az2 = ");
+    uart_send_str(USART2, "az2 = ");
     uart_send_integer(USART2, (int16_t)(mpu6050_accel[MPU6050_Z_AXIS] * SCALE_100));
     uart_send_spaces(USART2, UART_SPACE_2);
 
-    uart_sendstring(USART2, "gx2 = ");
+    uart_send_str(USART2, "gx2 = ");
     uart_send_integer(USART2, (int16_t)(mpu6050_gyro[MPU6050_X_AXIS] * SCALE_100)); 
     uart_send_spaces(USART2, UART_SPACE_2);
 
-    uart_sendstring(USART2, "gy2 = ");
+    uart_send_str(USART2, "gy2 = ");
     uart_send_integer(USART2, (int16_t)(mpu6050_gyro[MPU6050_Y_AXIS] * SCALE_100));
     uart_send_spaces(USART2, UART_SPACE_2);
 
-    uart_sendstring(USART2, "gz2 = ");
+    uart_send_str(USART2, "gz2 = ");
     uart_send_integer(USART2, (int16_t)(mpu6050_gyro[MPU6050_Z_AXIS] * SCALE_100));
     uart_send_spaces(USART2, UART_SPACE_2);
 
     // Go up a line in the terminal to overwrite old data 
-    uart_sendstring(USART2, "\033[1A"); 
+    uart_send_str(USART2, "\033[1A"); 
 
 #endif   // MPU6050_SECOND_DEVICE 
 
@@ -564,7 +564,7 @@ void mpu6050_test_app()
     tim_delay_ms(TIM9, MPU6050_DRIVER_LOOP_DELAY);
 
     // Go to a the start of the line in the terminal 
-    uart_sendstring(USART2, "\r"); 
+    uart_send_str(USART2, "\r"); 
 
     //==================================================
 

@@ -74,7 +74,7 @@ const osThreadAttr_t main_loop_attributes =
 typedef struct freertos_cb_s
 {
     USART_TypeDef *uart; 
-    DMA_TypeDef *dma_stream; 
+    DMA_Stream_TypeDef *dma_stream; 
     uint8_t cb[SERIAL_INPUT_MAX_LEN];          // Circular buffer populated by DMA 
     cb_index_t cb_index;                       // Circular buffer indexing info 
     dma_index_t dma_index;                     // DMA transfer indexing info 
@@ -503,7 +503,7 @@ void manual_blink_init(void)
     // Create the thread(s) 
     MB01Handle = osThreadNew(TaskMB01, NULL, &MB01_attributes); 
 
-    uart_sendstring(USART2, "\r\n>>> "); 
+    uart_send_str(USART2, "\r\n>>> "); 
 }
 
 //=======================================================================================
@@ -532,7 +532,7 @@ void manual_blink_loop(void)
             mb_ticks = MB_MIN_LED_RATE; 
         }
 
-        uart_sendstring(USART2, "\r\n>>> "); 
+        uart_send_str(USART2, "\r\n>>> "); 
     }
 }
 
@@ -695,7 +695,7 @@ void TaskMsg01(void *argument)
     while (1)
     {
         uart_send_new_line(USART2); 
-        uart_sendstring(USART2, msg); 
+        uart_send_str(USART2, msg); 
         uart_send_new_line(USART2); 
         osDelay(TS_DELAY_2); 
     }
@@ -709,7 +709,7 @@ void TaskMsg02(void *argument)
 {
     while (1)
     {
-        uart_sendchar(USART2, AST_CHAR); 
+        uart_send_char(USART2, AST_CHAR); 
         osDelay(TS_DELAY_3); 
     }
 
@@ -780,7 +780,7 @@ void memory_management_init(void)
     MM01Handle = osThreadNew(TaskMM01, NULL, &MM01_attributes); 
     osThreadSuspend(MM01Handle);   // Suspend to prevent running right away 
 
-    uart_sendstring(USART2, "\r\n>>> "); 
+    uart_send_str(USART2, "\r\n>>> "); 
 }
 
 //=======================================================================================
@@ -811,7 +811,7 @@ void memory_management_loop(void)
             "Free task stack (words): %lu\r\nFree heap before malloc (bytes): %lu\r\n", 
             (uint32_t)uxTaskGetStackHighWaterMark(NULL), 
             (uint32_t)xPortGetFreeHeapSize()); 
-        uart_sendstring(USART2, (char *)mem_info); 
+        uart_send_str(USART2, (char *)mem_info); 
 
         // Store the input in heap memory. 'input_len' is made one longer than strlen 
         // provides so that the null termination of 'user_in_buff_local' will be 
@@ -829,7 +829,7 @@ void memory_management_loop(void)
             MM_STR_MAX_LEN, 
             "Free heap after malloc (bytes): %lu\r\n", 
             (uint32_t)xPortGetFreeHeapSize()); 
-        uart_sendstring(USART2, (char *)mem_info); 
+        uart_send_str(USART2, (char *)mem_info); 
 
         osThreadResume(MM01Handle); 
     }
@@ -847,9 +847,9 @@ void TaskMM01(void *argument)
     while (1)
     {
         // Echo the user input back to the serial terminal 
-        uart_sendstring(USART2, "Echo: "); 
-        uart_sendstring(USART2, user_msg); 
-        uart_sendstring(USART2, "\r\n\n>>> "); 
+        uart_send_str(USART2, "Echo: "); 
+        uart_send_str(USART2, user_msg); 
+        uart_send_str(USART2, "\r\n\n>>> "); 
 
         // Free the heap memory and suspend the task 
         vPortFree(user_msg); 
@@ -929,7 +929,7 @@ void queue_init(void)
     msg_queue_0 = xQueueCreate(msg_queue_len, sizeof(uint32_t)); 
     msg_queue_1 = xQueueCreate(msg_queue_len, sizeof(uint32_t)); 
 
-    uart_sendstring(USART2, "\r\n>>> "); 
+    uart_send_str(USART2, "\r\n>>> "); 
 }
 
 //=======================================================================================
@@ -974,18 +974,18 @@ void queue_loop(void)
                         SERIAL_INPUT_MAX_LEN, 
                         "Blink delay (ms): %lu", 
                         delay_value); 
-                    uart_sendstring(USART2, delay_value_str); 
+                    uart_send_str(USART2, delay_value_str); 
                     uart_send_new_line(USART2); 
                 }
                 else 
                 {
-                    uart_sendstring(USART2, "Queue full.\n"); 
+                    uart_send_str(USART2, "Queue full.\n"); 
                 }
 
             }
         }
 
-        uart_sendstring(USART2, "\r\n>>> "); 
+        uart_send_str(USART2, "\r\n>>> "); 
     }
 
     // Print new messages from queue 1 
@@ -997,8 +997,8 @@ void queue_loop(void)
             SERIAL_INPUT_MAX_LEN, 
             "\rBlink count (x100): %lu\n", 
             blink_count); 
-        uart_sendstring(USART2, blink_count_str); 
-        uart_sendstring(USART2, "\r\n>>> "); 
+        uart_send_str(USART2, blink_count_str); 
+        uart_send_str(USART2, "\r\n>>> "); 
     }
 }
 
@@ -1185,7 +1185,7 @@ void increment_counter(uint16_t delay)
 
         char num_str[SERIAL_INPUT_MAX_LEN]; 
         snprintf(num_str, SERIAL_INPUT_MAX_LEN, "%u\r\n", counter_shared); 
-        uart_sendstring(USART2, num_str); 
+        uart_send_str(USART2, num_str); 
 
         // Give mutex back after critical section 
         xSemaphoreGive(mutex); 
@@ -1502,12 +1502,12 @@ void software_timer_0_init(void)
     // Check that the timers were created properly 
     if ((one_shot_timer == NULL) || (auto_reload_timer == NULL))
     {
-        uart_sendstring(USART2, "Couldn't create at least one of the timers.\r\n"); 
+        uart_send_str(USART2, "Couldn't create at least one of the timers.\r\n"); 
     }
     else 
     {
         tim_delay_ms(TIM9, SOFTWARE_TIMER_0_DELAY_1); 
-        uart_sendstring(USART2, "Starting timers...\r\n"); 
+        uart_send_str(USART2, "Starting timers...\r\n"); 
 
         // Start timers (max block time if command queue is full). 
         // Essentially says to wait forever if the queue is full. 
@@ -1554,13 +1554,13 @@ void myTimerCallback(TimerHandle_t xTimer)
     // Print message if timer 0 expired 
     if ((uint32_t)pvTimerGetTimerID(xTimer) == 0)
     {
-        uart_sendstring(USART2, "One-shot timer expired.\r\n"); 
+        uart_send_str(USART2, "One-shot timer expired.\r\n"); 
     }
 
     // Print message if timer 1 expired 
     if ((uint32_t)pvTimerGetTimerID(xTimer) == 1)
     {
-        uart_sendstring(USART2, "Auto-reload timer expired. Reloading...\r\n"); 
+        uart_send_str(USART2, "Auto-reload timer expired. Reloading...\r\n"); 
     }
 }
 
@@ -1658,7 +1658,7 @@ void software_timer_1_loop(void)
     if (handler_flags.usart2_flag)
     {
         handler_flags.usart2_flag = CLEAR; 
-        uart_sendstring(USART2, ">>> "); 
+        uart_send_str(USART2, ">>> "); 
 
         // Restart the display timeout and turn the board LED on 
         xTimerStart(display_timer, portMAX_DELAY); 
@@ -1680,12 +1680,12 @@ void TaskSoftwareTimer(void *argument)
 {
     if (display_timer == NULL)
     {
-        uart_sendstring(USART2, "Couldn't create timer.\r\n"); 
+        uart_send_str(USART2, "Couldn't create timer.\r\n"); 
     }
     else 
     {
         tim_delay_ms(TIM9, SOFTWARE_TIMER_1_DELAY_1); 
-        uart_sendstring(USART2, "Starting interface...\r\n>>> "); 
+        uart_send_str(USART2, "Starting interface...\r\n>>> "); 
 
         // Turn the board LED on 
         gpio_write(GPIOA, GPIOX_PIN_5, GPIO_HIGH); 
@@ -1820,7 +1820,7 @@ void hardware_interrupt_init(void)
     // between updating the double buffer index and averaging the first sample of 10. 
     xSemaphoreGive(binary_sem_1); 
 
-    uart_sendstring(USART2, ">>> "); 
+    uart_send_str(USART2, ">>> "); 
 }
 
 //=======================================================================================
@@ -1858,11 +1858,11 @@ void hardware_interrupt_loop(void)
                     (uint16_t)avg, 
                     (uint16_t)(avg * SCALE_10) % DIVIDE_10); 
                 xSemaphoreGive(mutex); 
-                uart_sendstring(USART2, avg_str); 
+                uart_send_str(USART2, avg_str); 
             }
         }
 
-        uart_sendstring(USART2, ">>> "); 
+        uart_send_str(USART2, ">>> "); 
     }
 }
 
@@ -2120,7 +2120,7 @@ void TaskDeadlockStarvationSetup(void *argument)
     }
 
     // Indicate that all philosophers ate without deadlock 
-    uart_sendstring(USART2, "Done! No deadlock.\r\n"); 
+    uart_send_str(USART2, "Done! No deadlock.\r\n"); 
 
     // Delete the task 
     vTaskDelete(NULL); 
@@ -2232,7 +2232,7 @@ void TaskPhilosopherEat(void *argument)
 void philosopher_output(char *buff)
 {
     xSemaphoreTake(serial_mutex, portMAX_DELAY); 
-    uart_sendstring(USART2, buff); 
+    uart_send_str(USART2, buff); 
     xSemaphoreGive(serial_mutex); 
 }
 
@@ -2535,7 +2535,7 @@ void TaskHighPriority(void *argument)
 void task_priority_output(char *buff)
 {
     xSemaphoreTake(serial_mutex, portMAX_DELAY); 
-    uart_sendstring(USART2, buff); 
+    uart_send_str(USART2, buff); 
     xSemaphoreGive(serial_mutex); 
 }
 

@@ -169,9 +169,9 @@ void lsm303agr_test_init(void)
 
     // Set the initial serial terminal message 
 #if LSM303AGR_TEST_AXIS 
-    uart_sendstring(USART2, "Axis data [x,y,z] (digital output, mgauss):"); 
+    uart_send_str(USART2, "Axis data [x,y,z] (digital output, mgauss):"); 
 #elif LSM303AGR_TEST_HEADING 
-    uart_sendstring(USART2, "Heading (deg*10):"); 
+    uart_send_str(USART2, "Heading (deg*10):"); 
 #endif 
     uart_send_new_line(USART2); 
 } 
@@ -215,8 +215,8 @@ void lsm303agr_test_app(void)
                 test_data.m_field_data[Y_AXIS], 
                 test_data.m_axis_data[Z_AXIS], 
                 test_data.m_field_data[Z_AXIS]); 
-            uart_sendstring(USART2, test_data.output_str); 
-            uart_sendstring(USART2, "\033[1A\033[1A\033[1A"); 
+            uart_send_str(USART2, test_data.output_str); 
+            uart_send_str(USART2, "\033[1A\033[1A\033[1A"); 
         }
 
 #elif LSM303AGR_TEST_HEADING 
@@ -228,7 +228,7 @@ void lsm303agr_test_app(void)
         if (test_data.schedule_counter >= LSM303AGR_TEST_DISPLAY_COUNT)
         {
             test_data.schedule_counter = CLEAR; 
-            uart_sendstring(USART2, "\r"); 
+            uart_send_str(USART2, "\r"); 
             uart_send_integer(USART2, test_data.m_heading); 
             uart_send_spaces(USART2, UART_SPACE_3); 
         }
@@ -264,7 +264,7 @@ const int16_t* lsm303agr_test_offset_select(void)
 // Outputs the driver status and stops program execution 
 void lasm303agr_test_fault_state(void)
 {
-    uart_sendstring(USART2, "\r\nMagnetometer init status: "); 
+    uart_send_str(USART2, "\r\nMagnetometer init status: "); 
     uart_send_integer(USART2, (int16_t)test_data.driver_status); 
     tim_disable(TIM10); 
     while (TRUE); 

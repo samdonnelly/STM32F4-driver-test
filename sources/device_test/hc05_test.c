@@ -307,7 +307,7 @@ void hc05_test_app()
 
                     case SMT_STATE_FUNC_PTR_3: 
                         return_val = (state_func[i].func3)(); 
-                        uart_sendstring(USART2, "\nReturn value: "); 
+                        uart_send_str(USART2, "\nReturn value: "); 
                         uart_send_integer(USART2, (int16_t)return_val); 
                         uart_send_new_line(USART2); 
 
@@ -348,26 +348,26 @@ void hc05_test_app()
     switch (hc05_get_state())
     {
         case HC05_INIT_STATE: 
-            uart_sendstring(USART2, "\r\n\ninit state\r\n\n"); 
-            uart_sendstring(USART2, "cmd >>> "); 
+            uart_send_str(USART2, "\r\n\ninit state\r\n\n"); 
+            uart_send_str(USART2, "cmd >>> "); 
             break; 
 
         case HC05_SEND_STATE: 
-            uart_sendstring(USART2, "\r\nsend state\r\n"); 
+            uart_send_str(USART2, "\r\nsend state\r\n"); 
             break; 
 
         case HC05_READ_STATE: 
             // Requires updating if the read data command index changes in state_cmds 
             if ((set_get_status >> SHIFT_8) & SET_BIT)
             {
-                uart_sendstring(USART2, "\r\nRead data: "); 
-                uart_sendstring(USART2, hc05_wr_buff[1]); 
+                uart_send_str(USART2, "\r\nRead data: "); 
+                uart_send_str(USART2, hc05_wr_buff[1]); 
                 uart_send_new_line(USART2); 
             }
             break; 
 
         case HC05_RESET_STATE: 
-            uart_sendstring(USART2, "\r\nreset state\r\n"); 
+            uart_send_str(USART2, "\r\nreset state\r\n"); 
             break; 
 
         default: 
@@ -411,14 +411,14 @@ void hc05_test_app()
                 hc05_change_mode(HC05_DATA_MODE, UART_BAUD_115200, UART_CLOCK_84); 
                 uart_send_new_line(USART2); 
                 uart_send_new_line(USART2); 
-                uart_sendstring(USART2, "Data mode\r\n\n"); 
+                uart_send_str(USART2, "Data mode\r\n\n"); 
                 break; 
             
             case HC05_AT_CMD_MODE: 
                 hc05_change_mode(HC05_AT_CMD_MODE, UART_BAUD_38400, UART_CLOCK_84); 
                 uart_send_new_line(USART2); 
                 uart_send_new_line(USART2); 
-                uart_sendstring(USART2, "AT mode\r\n\n"); 
+                uart_send_str(USART2, "AT mode\r\n\n"); 
                 break; 
             
             default: 
@@ -445,7 +445,7 @@ void hc05_test_app()
     // Check if there is user input 
     if (uart_data_ready(USART2))
     {
-        uart_getstr(USART2, buffer, HC05_AT_CMD_LEN, UART_STR_TERM_CARRIAGE); 
+        uart_get_str(USART2, buffer, HC05_AT_CMD_LEN, UART_STR_TERM_CARRIAGE); 
 
         switch (function)
         {
@@ -504,15 +504,15 @@ void hc05_test_app()
 // Print user prompt 
 void print_usr_prompt(void)
 {
-    uart_sendstring(USART2, ">>> "); 
+    uart_send_str(USART2, ">>> "); 
 }
 
 
 // Print the Bluetooth input 
 void print_bt_input(void)
 {
-    uart_sendstring(USART2, "Bluetooth input: "); 
-    uart_sendstring(USART2, bt_input); 
+    uart_send_str(USART2, "Bluetooth input: "); 
+    uart_send_str(USART2, bt_input); 
     uart_send_new_line(USART2); 
     uart_send_new_line(USART2); 
 }
@@ -535,12 +535,12 @@ void clear_params(void)
 // Setup text 
 void print_setup(void)
 {
-    uart_sendstring(USART2, "AT Command Test\r\n\n"); 
-    uart_sendstring(USART2, "Legend: \r\n"); 
-    uart_sendstring(USART2, "- Format: <command> <operation> <parameter>\r\n"); 
-    uart_sendstring(USART2, "- Command: 0-34 --> See documentation\r\n"); 
-    uart_sendstring(USART2, "- Operation: 0-None, 1-Set, 2-Check\r\n"); 
-    uart_sendstring(USART2, "- Parameter: See documentation\r\n\n"); 
+    uart_send_str(USART2, "AT Command Test\r\n\n"); 
+    uart_send_str(USART2, "Legend: \r\n"); 
+    uart_send_str(USART2, "- Format: <command> <operation> <parameter>\r\n"); 
+    uart_send_str(USART2, "- Command: 0-34 --> See documentation\r\n"); 
+    uart_send_str(USART2, "- Operation: 0-None, 1-Set, 2-Check\r\n"); 
+    uart_send_str(USART2, "- Parameter: See documentation\r\n\n"); 
 }
 
 
@@ -626,8 +626,8 @@ void parse_input(void)
 // Print the AT command response 
 void print_at_cmd_resp(void)
 {
-    uart_sendstring(USART2, ">>> AT cmd response: "); 
-    uart_sendstring(USART2, cmd_resp); 
+    uart_send_str(USART2, ">>> AT cmd response: "); 
+    uart_send_str(USART2, cmd_resp); 
     uart_send_new_line(USART2); 
     uart_send_new_line(USART2); 
 }

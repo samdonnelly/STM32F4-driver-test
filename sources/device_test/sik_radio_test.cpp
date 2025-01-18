@@ -51,7 +51,7 @@
  *              can be built manually. The pre-built C library works for this 
  *              application. 
  *          
- *          Procedure: 
+ *          Procedure 
  *          - This code looks for data received from both the SiK telemetry radio and 
  *            the serial terminal. If data is received by the radio then the code will 
  *            attempt to decode a pre-defined MAVLINK message. A valid message will be 
@@ -97,7 +97,7 @@ extern "C"
 typedef struct sik_serial_data_s 
 {
     USART_TypeDef *uart; 
-    DMA_TypeDef *dma_stream; 
+    DMA_Stream_TypeDef *dma_stream; 
     uint8_t cb[SIK_TEST_MSG_BUFF_SIZE];          // Circular buffer populated by DMA 
     cb_index_t cb_index;                         // Circular buffer indexing info 
     dma_index_t dma_index;                       // DMA transfer indexing info 

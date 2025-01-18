@@ -1,21 +1,58 @@
 /**
- * @file uart_test.c
+ * @file circular_buffer_test.cpp
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief UART test code 
+ * @brief Circular buffer test 
+ * 
+ * @details Setup 
+ *          - Hardware 
+ *            * STM32F4 microcontroller with a serial connection to a PC 
+ *          - Software 
+ *            * Serial monitor on a PC to allow the exchange of info with the STM32F4. 
+ *          
+ *          Configuration 
+ *          - UART 
+ *            * One UART port must be configured for the serial terminal connection. 
+ *          - DMA 
+ *            * DMA is configured for the RX line so data from the serial terminal 
+ *              will automatically be stored to prevent any loss of data. 
+ *          - Interrupts 
+ *            * An idle line interrupt is configured for the RX line meaning an interrupt 
+ *              will be triggered when the RX line goes from receiving data to no longer 
+ *              receiving data. This interrupt triggers the start of input processing. 
+ *          
+ *          Dependencies 
+ *          - STM32F4 driver library 
+ *            * UART, DMA and interrupt drivers are used along with some functions for 
+ *              circular buffer handling. 
+ *          
+ *          Procedure 
+ *          - A prompt is initially provided to the serial terminal where the user can 
+ *            input data. After this the code won't do anything until the UART RX idle 
+ *            line interrupt is triggered. Once triggered, serial terminal data that 
+ *            was placed into a circular buffer by the DMA will be parsed to retreive 
+ *            the provided input. This input is then echoed back to the serial terminal 
+ *            so the user can see that the circular buffer system works. 
+ *          - Two functions are called after data is received. One is a DMA indexing 
+ *            function that identifies the numbers of data items that were transferred 
+ *            and updated the circular buffer head index. The second is a circular 
+ *            buffer parsing function to extract the input into another buffer. These 
+ *            are the main pieces of code being tested here aside from the functionality 
+ *            of UART + DMA + interrupts. 
+ *          - Note that serial terminal inputs should be less than UART_TEST_MAX_INPUT. 
  * 
  * @version 0.1
- * @date 2023-09-20
+ * @date 2025-01-17
  * 
- * @copyright Copyright (c) 2023
+ * @copyright Copyright (c) 2025
  * 
  */
 
 //=======================================================================================
 // Includes 
 
-#include "uart_test.h" 
+#include "circular_buffer_test.h" 
 #include "stm32f4xx_it.h" 
 
 //=======================================================================================
@@ -35,7 +72,7 @@
 // Data structure to hold UART circular buffer data. The circular buffer gets populated 
 // by DMA when UART data is received and that UART data is then parsed into a separate 
 // buffer to make it available for the application. 
-typedef struct uart_dma_cb_s
+struct uart_dma_cb 
 {
     USART_TypeDef *uart; 
     DMA_Stream_TypeDef *dma_stream; 
@@ -43,10 +80,9 @@ typedef struct uart_dma_cb_s
     cb_index_t cb_index;                      // Circular buffer indexing info 
     dma_index_t dma_index;                    // DMA transfer indexing info 
     uint8_t data_buff[UART_TEST_MAX_INPUT];   // Buffer that stores latest UART input 
-}
-uart_dma_cb_t; 
+};
 
-static uart_dma_cb_t cb; 
+static uart_dma_cb cb; 
 
 //=======================================================================================
 
@@ -63,7 +99,7 @@ void uart_test_user_prompt(void);
 //=======================================================================================
 // Setup code
 
-void uart_test_init(void)
+void cb_test_init(void)
 {
     // Initialize GPIO ports 
     gpio_port_init(); 
@@ -164,7 +200,7 @@ void uart_test_init(void)
 //=======================================================================================
 // Test code 
 
-void uart_test_app(void)
+void cb_test_app(void)
 {
     // When an idle line interrupt occurs (i.e. UART RX line goes idle for too long) 
     // indicating the end of the received serial terminal data, the data will be parsed 

@@ -213,12 +213,12 @@ void nrf24l01_test_init(void)
     // Check init status 
     if (nrf24l01_init_status)
     {
-        uart_sendstring(USART2, "nRF24L01 init failed."); 
+        uart_send_str(USART2, "nRF24L01 init failed."); 
         while(1); 
     }
     else 
     {
-        uart_sendstring(USART2, "nRF24L01 init success."); 
+        uart_send_str(USART2, "nRF24L01 init success."); 
     }
 
     //==================================================
@@ -357,8 +357,8 @@ void nrf24l01_heartbeat_test_loop(void)
 
                 // Show the heartbeat message 
                 uart_send_new_line(USART2); 
-                uart_sendstring(USART2, hb_test.hb_msg); 
-                uart_sendstring(USART2, "... "); 
+                uart_send_str(USART2, hb_test.hb_msg); 
+                uart_send_str(USART2, "... "); 
             }
         }
 
@@ -376,7 +376,7 @@ void nrf24l01_heartbeat_test_loop(void)
             if (!strcmp((char *)nrf24l01_test.read_buff, hb_test.hb_res))
             {
                 // Display the response and update the heatbeat message and response 
-                uart_sendstring(USART2, (char *)nrf24l01_test.read_buff); 
+                uart_send_str(USART2, (char *)nrf24l01_test.read_buff); 
                 hb_test.msg_counter++; 
                 snprintf(hb_test.hb_msg, NRF24L01_MAX_PAYLOAD_LEN, 
                          hb_message, hb_test.msg_counter); 
@@ -796,7 +796,7 @@ void nrf24l01_test_update_feedback(uint8_t status)
 // Display a message for the user in the serial terminal 
 void nrf24l01_test_user_feedback(const char *user_msg)
 {
-    uart_sendstring(USART2, user_msg); 
+    uart_send_str(USART2, user_msg); 
 }
 
 #endif 
@@ -814,7 +814,7 @@ void nrf24l01_test_user_feedback(const char *user_msg)
 // User terminal prompt 
 void nrf24l01_test_user_prompt(void)
 {
-    uart_sendstring(USART2, "\r\n\n>>> "); 
+    uart_send_str(USART2, "\r\n\n>>> "); 
 }
 
 

@@ -45,7 +45,7 @@ extern "C" {
 #include "timers_test.h"
 #include "uart_test.h"
 
-// Tool test code 
+// Tools test code 
 #include "state_machine_test.h" 
 #include "switch_debounce_test.h" 
 

@@ -202,13 +202,13 @@ void timers_test_init()
     uint32_t pclk2_frq = (rcc_get_pclk2_frq() / DIVIDE_1000) / DIVIDE_1000; 
     uint32_t hclk_frq  = (rcc_get_hclk_frq()  / DIVIDE_1000) / DIVIDE_1000; 
 
-    uart_sendstring(USART2, "PCLK1 Freq: "); 
+    uart_send_str(USART2, "PCLK1 Freq: "); 
     uart_send_integer(USART2, (int16_t)pclk1_frq); 
     uart_send_new_line(USART2); 
-    uart_sendstring(USART2, "PCLK2 Freq: "); 
+    uart_send_str(USART2, "PCLK2 Freq: "); 
     uart_send_integer(USART2, (int16_t)pclk2_frq); 
     uart_send_new_line(USART2); 
-    uart_sendstring(USART2, "HCLK Freq:  "); 
+    uart_send_str(USART2, "HCLK Freq:  "); 
     uart_send_integer(USART2, (int16_t)hclk_frq); 
     uart_send_new_line(USART2); 
 
@@ -330,7 +330,7 @@ void timers_test_app()
 #if TIM_PERIODIC_COUNT 
 
         // Print the counter to the terminal 
-        uart_sendstring(USART2, "Counter: "); 
+        uart_send_str(USART2, "Counter: "); 
         uart_send_integer(USART2, (int16_t)counter); 
         uart_send_new_line(USART2); 
         counter++; 
@@ -433,7 +433,7 @@ void timers_test_app()
     if (delay_status)
     {
         // Print to the terminal to verify that the delay works 
-        uart_sendstring(USART2, "Delay!"); 
+        uart_send_str(USART2, "Delay!"); 
         uart_send_new_line(USART2);
 
         // Reset the start bit 

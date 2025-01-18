@@ -185,7 +185,7 @@ void wheel_rpm_test_app(void)
             RPM_OUTPUT_BUFF_SIZE, 
             "\rRPM: %lu  ", 
             rpm_test_data.rpm); 
-        uart_sendstring(USART2, rpm_test_data.rpm_buff); 
+        uart_send_str(USART2, rpm_test_data.rpm_buff); 
     }
 }
 

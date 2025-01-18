@@ -109,10 +109,10 @@ void analog_test_app()
 #endif 
 
     // Display the result to the serial terminal 
-    uart_sendstring(USART2, "ADC1_10: "); 
+    uart_send_str(USART2, "ADC1_10: "); 
     uart_send_integer(USART2, (int16_t)adc_result[0]); 
     uart_send_spaces(USART2, 5); 
-    uart_sendstring(USART2, "ADC1_11: "); 
+    uart_send_str(USART2, "ADC1_11: "); 
     uart_send_integer(USART2, (int16_t)adc_result[1]); 
     uart_send_new_line(USART2); 
 

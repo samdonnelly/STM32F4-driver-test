@@ -160,7 +160,7 @@ void m8q_test_0_init(void)
     // to the serial terminal and halt to program. 
     if (init_check)
     {
-        uart_sendstring(USART2, "\r\nDevice init status: "); 
+        uart_send_str(USART2, "\r\nDevice init status: "); 
         uart_send_integer(USART2, (int16_t)init_check); 
 
         while (TRUE); 
@@ -266,11 +266,11 @@ void m8q_test_config_init(void)
     // to the serial terminal and halt to program. 
     if (init_check || low_pwr_init_check || txr_init_check)
     {
-        uart_sendstring(USART2, "\r\nDevice init status: "); 
+        uart_send_str(USART2, "\r\nDevice init status: "); 
         uart_send_integer(USART2, (int16_t)init_check); 
-        uart_sendstring(USART2, "\r\nLow power pin init status: "); 
+        uart_send_str(USART2, "\r\nLow power pin init status: "); 
         uart_send_integer(USART2, (int16_t)low_pwr_init_check); 
-        uart_sendstring(USART2, "\r\nTX Ready pin init status: "); 
+        uart_send_str(USART2, "\r\nTX Ready pin init status: "); 
         uart_send_integer(USART2, (int16_t)txr_init_check); 
 
         while (TRUE); 
@@ -310,7 +310,7 @@ void m8q_test_0(void)
                     case M8Q_OK: 
                         // Output the data stream 
                         uart_send_new_line(USART2); 
-                        uart_sendstring(USART2, (char *)test_data.data_stream); 
+                        uart_send_str(USART2, (char *)test_data.data_stream); 
                         break; 
 
                     case M8Q_NO_DATA_AVAILABLE: 
@@ -319,12 +319,12 @@ void m8q_test_0(void)
 
                     case M8Q_DATA_BUFF_OVERFLOW: 
                         // Indicate an overflow (data stream larger than max allowed buffer size) 
-                        uart_sendstring(USART2, "\r\nBuffer overflow. Stream cleared.\r\n"); 
+                        uart_send_str(USART2, "\r\nBuffer overflow. Stream cleared.\r\n"); 
                         break; 
 
                     default:   // Everything else 
                         // Output the fault status 
-                        uart_sendstring(USART2, "\r\nDriver fault: "); 
+                        uart_send_str(USART2, "\r\nDriver fault: "); 
                         uart_send_integer(USART2, (int16_t)driver_status); 
                         uart_send_new_line(USART2); 
                         break; 
@@ -332,7 +332,7 @@ void m8q_test_0(void)
             }
             else if (test_data.schedule_counter == M8Q_TEST_0_OVERFLOW_COUNT_LO)
             {
-                uart_sendstring(USART2, "\r\nRead pause.\r\n"); 
+                uart_send_str(USART2, "\r\nRead pause.\r\n"); 
             }
             else 
             {
@@ -508,51 +508,51 @@ void m8q_test_1_print(
             // Go to the top of the output block in the serial terminal 
             for (uint8_t i = CLEAR; i < M8Q_TEST_1_NUM_PARAMS; i++)
             {
-                uart_sendstring(USART2, "\033[1A"); 
+                uart_send_str(USART2, "\033[1A"); 
             }
 
             // Output all the data to the serial terminal for viewing 
             sprintf(latitude_str, "Latitude: %d.%ld", lat_int, lat_frac); 
-            uart_sendstring(USART2, latitude_str); 
-            uart_sendstring(USART2, "\r\nLatitude string: "); 
-            uart_sendstring(USART2, (char *)test_data.lat_str); 
-            uart_sendstring(USART2, "\r\nNS: "); 
+            uart_send_str(USART2, latitude_str); 
+            uart_send_str(USART2, "\r\nLatitude string: "); 
+            uart_send_str(USART2, (char *)test_data.lat_str); 
+            uart_send_str(USART2, "\r\nNS: "); 
             uart_send_integer(USART2, (int16_t)test_data.NS); 
             sprintf(longitude_str, "\r\nLongitude: %d.%ld", lon_int, lon_frac); 
-            uart_sendstring(USART2, longitude_str); 
-            uart_sendstring(USART2, "\r\nLongitude string: "); 
-            uart_sendstring(USART2, (char *)test_data.lon_str); 
-            uart_sendstring(USART2, "\r\nEW: "); 
+            uart_send_str(USART2, longitude_str); 
+            uart_send_str(USART2, "\r\nLongitude string: "); 
+            uart_send_str(USART2, (char *)test_data.lon_str); 
+            uart_send_str(USART2, "\r\nEW: "); 
             uart_send_integer(USART2, (int16_t)test_data.EW); 
-            uart_sendstring(USART2, "\r\nNAVSTAT: "); 
+            uart_send_str(USART2, "\r\nNAVSTAT: "); 
             uart_send_integer(USART2, (int16_t)test_data.navstat); 
-            uart_sendstring(USART2, "\r\nNAVSTAT lock: "); 
+            uart_send_str(USART2, "\r\nNAVSTAT lock: "); 
             uart_send_integer(USART2, (int16_t)test_data.navstat_lock); 
-            uart_sendstring(USART2, "\r\nUTC time: "); 
-            uart_sendstring(USART2, (char *)test_data.utc_time); 
-            uart_sendstring(USART2, "\r\nUTC date: "); 
-            uart_sendstring(USART2, (char *)test_data.utc_date); 
-            uart_sendstring(USART2, "\r\nLP state: "); 
+            uart_send_str(USART2, "\r\nUTC time: "); 
+            uart_send_str(USART2, (char *)test_data.utc_time); 
+            uart_send_str(USART2, "\r\nUTC date: "); 
+            uart_send_str(USART2, (char *)test_data.utc_date); 
+            uart_send_str(USART2, "\r\nLP state: "); 
             uart_send_integer(USART2, (int16_t)lp_pin_state); 
-            uart_sendstring(USART2, "\r\nDriver status: "); 
+            uart_send_str(USART2, "\r\nDriver status: "); 
             uart_send_integer(USART2, (int16_t)driver_status); 
             uart_send_new_line(USART2); 
 
             break; 
 
         case M8Q_TEST_STATE_1: 
-            uart_sendstring(USART2, "\033[1A"); 
-            uart_sendstring(USART2, "\rDriver status: "); 
+            uart_send_str(USART2, "\033[1A"); 
+            uart_send_str(USART2, "\rDriver status: "); 
             uart_send_integer(USART2, (int16_t)driver_status); 
             uart_send_new_line(USART2); 
 
             break; 
 
         case M8Q_TEST_STATE_2: 
-            uart_sendstring(USART2, "\033[1A\033[1A"); 
-            uart_sendstring(USART2, "\rLP state: "); 
+            uart_send_str(USART2, "\033[1A\033[1A"); 
+            uart_send_str(USART2, "\rLP state: "); 
             uart_send_integer(USART2, (int16_t)lp_pin_state); 
-            uart_sendstring(USART2, "\r\n\n"); 
+            uart_send_str(USART2, "\r\n\n"); 
 
             break; 
 
@@ -585,19 +585,19 @@ void m8q_test_2_print(void)
     // Go to the top of the output block in the serial terminal 
     for (uint8_t i = CLEAR; i < 6; i++)
     {
-        uart_sendstring(USART2, "\033[1A"); 
+        uart_send_str(USART2, "\033[1A"); 
     }
 
     // Output all the data to the serial terminal for viewing 
-    uart_sendstring(USART2, "\r\nState: "); 
+    uart_send_str(USART2, "\r\nState: "); 
     uart_send_integer(USART2, (int16_t)m8q_get_state()); 
-    uart_sendstring(USART2, "\r\nLP flag: "); 
+    uart_send_str(USART2, "\r\nLP flag: "); 
     uart_send_integer(USART2, (int16_t)m8q_get_lp_flag()); 
     sprintf(latitude_str, "\r\nLatitude: %d.%ld", lat_int, lat_frac); 
-    uart_sendstring(USART2, latitude_str); 
+    uart_send_str(USART2, latitude_str); 
     sprintf(longitude_str, "\r\nLongitude: %d.%ld", lon_int, lon_frac); 
-    uart_sendstring(USART2, longitude_str); 
-    uart_sendstring(USART2, "\r\nFault code = "); 
+    uart_send_str(USART2, longitude_str); 
+    uart_send_str(USART2, "\r\nFault code = "); 
     uart_send_integer(USART2, (int16_t)m8q_get_fault_code()); 
     uart_send_new_line(USART2); 
 }

@@ -268,7 +268,7 @@ void int_test_external_app(void)
         handler_flags.exti0_flag = CLEAR; 
 
         // Do something to show the interrupt works 
-        uart_sendstring(USART2, "got it!"); 
+        uart_send_str(USART2, "got it!"); 
         uart_send_new_line(USART2); 
 
 #if INT_ADC_ENABLE 
@@ -293,10 +293,10 @@ void int_test_external_app(void)
 #endif   // INT_DMA_ENABLE 
 
         // Display the ADC results to the serial terminal 
-        uart_sendstring(USART2, "ADC1_10: "); 
+        uart_send_str(USART2, "ADC1_10: "); 
         uart_send_integer(USART2, (int16_t)adc_conversion[0]); 
         uart_send_spaces(USART2, 5); 
-        uart_sendstring(USART2, "ADC1_11: "); 
+        uart_send_str(USART2, "ADC1_11: "); 
         uart_send_integer(USART2, (int16_t)adc_conversion[1]); 
         uart_send_new_line(USART2); 
 

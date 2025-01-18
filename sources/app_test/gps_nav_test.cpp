@@ -270,11 +270,11 @@ void gps_nav_test_m8q_init(void)
     // to the serial terminal and halt to program. 
     if (m8q_init_check || low_pwr_init_check || txr_init_check)
     {
-        uart_sendstring(USART2, "\r\nM8Q init status: "); 
+        uart_send_str(USART2, "\r\nM8Q init status: "); 
         uart_send_integer(USART2, (int16_t)m8q_init_check); 
-        uart_sendstring(USART2, "\r\nM8Q low power pin init status: "); 
+        uart_send_str(USART2, "\r\nM8Q low power pin init status: "); 
         uart_send_integer(USART2, (int16_t)low_pwr_init_check); 
-        uart_sendstring(USART2, "\r\nM8Q TX ready pin init status: "); 
+        uart_send_str(USART2, "\r\nM8Q TX ready pin init status: "); 
         uart_send_integer(USART2, (int16_t)txr_init_check); 
 
         while (TRUE); 
@@ -302,7 +302,7 @@ void gps_nav_test_lsm303agr_init(void)
 
     if (lsm303agr_init_check)
     {
-        uart_sendstring(USART2, "\r\nLSM303AGR init status: "); 
+        uart_send_str(USART2, "\r\nLSM303AGR init status: "); 
         uart_send_integer(USART2, (int16_t)lsm303agr_init_check); 
         while (TRUE); 
     }
@@ -432,8 +432,8 @@ void gps_nav_test::nav_info_output(void)
         navstat, radius, error_heading); 
 
     // Overwrite the old navigation data 
-    uart_sendstring(USART2, "\033[1A\033[1A\033[1A"); 
-    uart_sendstring(USART2, output_buff); 
+    uart_send_str(USART2, "\033[1A\033[1A\033[1A"); 
+    uart_send_str(USART2, output_buff); 
 }
 
 
@@ -443,9 +443,9 @@ void gps_nav_test::nav_status_check(void)
     if ((m8q_get_state() == M8Q_FAULT_STATE) || lsm303agr_status)
     {
         uart_send_new_line(USART2); 
-        uart_sendstring(USART2, "\r\nM8Q state: "); 
+        uart_send_str(USART2, "\r\nM8Q state: "); 
         uart_send_integer(USART2, (int16_t)m8q_get_state()); 
-        uart_sendstring(USART2, "\r\nLSM303AGR status: "); 
+        uart_send_str(USART2, "\r\nLSM303AGR status: "); 
         uart_send_integer(USART2, (int16_t)lsm303agr_status); 
         while (TRUE); 
     }

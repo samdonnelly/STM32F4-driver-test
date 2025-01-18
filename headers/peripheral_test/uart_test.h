@@ -24,7 +24,7 @@
 
 
 //=======================================================================================
-// Function prototypes 
+// Prototypes 
 
 /**
  * @brief UART test setup code 

@@ -206,12 +206,12 @@ void rc_test_init(void)
     // Check init status 
     if (nrf24l01_init_status)
     {
-        uart_sendstring(USART2, "nRF24L01 init failed."); 
+        uart_send_str(USART2, "nRF24L01 init failed."); 
         while(1); 
     }
     else 
     {
-        uart_sendstring(USART2, "nRF24L01 init success."); 
+        uart_send_str(USART2, "nRF24L01 init success."); 
     }
 
     //==================================================
@@ -406,7 +406,7 @@ void rc_sd_card_test_init(void)
     rc_cmd_data.cmd_value = CLEAR; 
 
     // Provide an initial prompt for the user 
-    uart_sendstring(USART2, "\r\n\n>>> "); 
+    uart_send_str(USART2, "\r\n\n>>> "); 
 
 #elif RC_SYSTEM_2 
 
@@ -503,7 +503,7 @@ void rc_test_push_callback(
     nrf24l01_send_payload((uint8_t *)push_cmd); 
 
     // Provide user feedback 
-    uart_sendstring(USART2, push_status); 
+    uart_send_str(USART2, push_status); 
 
     // Check repeatedly for a push confirmation message. If the confirmation is received 
     // within the time limit then send the message to system 2. 
@@ -536,7 +536,7 @@ void rc_test_push_callback(
                         if (!strcmp(msg_confirm, (char *)rc_test.read_buff))
                         {
                             // Output a confirmation 
-                            uart_sendstring(USART2, push_success); 
+                            uart_send_str(USART2, push_success); 
                             break; 
                         }
                     }
@@ -584,7 +584,7 @@ void rc_test_pop_callback(
     nrf24l01_send_payload((uint8_t *)pop_cmd); 
 
     // Provide user feedback 
-    uart_sendstring(USART2, pop_status); 
+    uart_send_str(USART2, pop_status); 
 
     // Check repeatedly for a message from system 2. If a message is received then 
     // output it for the user to see. 
@@ -595,7 +595,7 @@ void rc_test_pop_callback(
         if (nrf24l01_data_ready_status() == rc_test.pipe)
         {
             nrf24l01_receive_payload(rc_test.read_buff); 
-            uart_sendstring(USART2, (char *)rc_test.read_buff); 
+            uart_send_str(USART2, (char *)rc_test.read_buff); 
             break; 
         }
     }
@@ -1144,7 +1144,7 @@ void rc_ground_station_test_loop(void)
         cb_parse(rc_gs_cmd_data.cb, &rc_gs_cmd_data.cb_index, rc_gs_cmd_data.data_buff); 
 
         // Send string 
-        nrf24l01_send_payload(rc_gs_cmd_data.cmd_buff); 
+        nrf24l01_send_payload(rc_gs_cmd_data.data_buff); 
 
         rc_ground_station_user_prompt(); 
     }
@@ -1171,8 +1171,8 @@ void rc_ground_station_test_loop(void)
             if (strcmp((char *)rc_test.read_buff, ping_response) != 0)
             {
                 // Display the message for the ground station to see 
-                uart_sendstring(USART2, "\033[1A\033[1A\r"); 
-                uart_sendstring(USART2, (char *)rc_test.read_buff); 
+                uart_send_str(USART2, "\033[1A\033[1A\r"); 
+                uart_send_str(USART2, (char *)rc_test.read_buff); 
                 rc_ground_station_user_prompt(); 
             }
         }
@@ -1183,8 +1183,8 @@ void rc_ground_station_test_loop(void)
             hb_timeout_counter = CLEAR; 
             
             // Display a lost connection message 
-            uart_sendstring(USART2, "\033[1A\r"); 
-            uart_sendstring(USART2, lost_connection); 
+            uart_send_str(USART2, "\033[1A\r"); 
+            uart_send_str(USART2, lost_connection); 
             rc_ground_station_user_prompt(); 
         }
 
@@ -1211,7 +1211,7 @@ void rc_ground_station_test_loop(void)
 // User terminal prompt 
 void rc_ground_station_user_prompt(void)
 {
-    uart_sendstring(USART2, "\r\n\n>>> "); 
+    uart_send_str(USART2, "\r\n\n>>> "); 
 }
 
 #elif RC_SYSTEM_2 

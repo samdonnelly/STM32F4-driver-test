@@ -26,6 +26,9 @@
 // Device test code 
 #include "sik_radio_test.h" 
 
+// Tools test code 
+#include "circular_buffer_test.h" 
+
 //=======================================================================================
 
 #endif   // _INCLUDES_CPP_APP_H_ 

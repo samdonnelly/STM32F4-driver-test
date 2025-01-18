@@ -118,7 +118,7 @@ void state_machine_test(
     if (uart_data_ready(USART2))
     {
         // Read the input 
-        uart_getstr(
+        uart_get_str(
             USART2, 
             test_params.user_input, 
             STATE_USER_TEST_INPUT, 
@@ -230,7 +230,7 @@ void state_machine_test(
 void smt_cmd_prompt(void)
 {
     uart_send_new_line(USART2); 
-    uart_sendstring(USART2, "cmd >>> "); 
+    uart_send_str(USART2, "cmd >>> "); 
 }
 
 
@@ -238,7 +238,7 @@ void smt_cmd_prompt(void)
 void smt_arg_prompt(void)
 {
     uart_send_new_line(USART2); 
-    uart_sendstring(USART2, "arg >>> "); 
+    uart_send_str(USART2, "arg >>> "); 
 }
 
 //=======================================================================================

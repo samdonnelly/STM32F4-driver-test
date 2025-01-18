@@ -149,7 +149,7 @@ private:   // Private members
 
     // Serial terminal data 
     USART_TypeDef *uart; 
-    DMA_TypeDef *dma_stream; 
+    DMA_Stream_TypeDef *dma_stream; 
     uint8_t cb[SERIAL_INPUT_MAX_LEN];          // Circular buffer populated by DMA 
     cb_index_t cb_index;                       // Circular buffer indexing info 
     dma_index_t dma_index;                     // DMA transfer indexing info 
@@ -281,7 +281,7 @@ struct ThreadLowTrackers
 
     // Serial terminal data 
     USART_TypeDef *uart; 
-    DMA_TypeDef *dma_stream; 
+    DMA_Stream_TypeDef *dma_stream; 
     uint8_t cb[SERIAL_INPUT_MAX_LEN];          // Circular buffer populated by DMA 
     cb_index_t cb_index;                      // Circular buffer indexing info 
     dma_index_t dma_index;                    // DMA transfer indexing info 
@@ -425,7 +425,7 @@ void SerialOutEvent(char *output_buff);
  * @param data_buff : buffer to store parsed circular buffer input 
  */
 void SerialInEvent(
-    DMA_TypeDef *dma_stream, 
+    DMA_Stream_TypeDef *dma_stream, 
     dma_index_t *dma_index, 
     cb_index_t *cb_index, 
     uint8_t *cb, 
@@ -578,7 +578,7 @@ void SystemData::SystemDataInit(void)
         &thread_low_event_data.attr); 
     // Check that the thread creation worked 
 
-    uart_sendstring(USART2, "\r\n>>> "); 
+    uart_send_str(USART2, "\r\n>>> "); 
 
     //==================================================
 
@@ -750,7 +750,7 @@ void AOSystemInit(void)
         &thread_low_trackers.event_data.attr); 
     // Check that the thread creation worked 
 
-    uart_sendstring(USART2, "\r\n>>> "); 
+    uart_send_str(USART2, "\r\n>>> "); 
 
     //==================================================
 
@@ -1461,16 +1461,16 @@ void SerialOutEvent(char *output_buff)
     if (output_buff != NULL)
     {
         // Output the latest content of the circular buffer to the serial terminal 
-        uart_sendstring(USART2, "Echo: "); 
-        uart_sendstring(USART2, output_buff); 
-        uart_sendstring(USART2, "\r\n>>> "); 
+        uart_send_str(USART2, "Echo: "); 
+        uart_send_str(USART2, output_buff); 
+        uart_send_str(USART2, "\r\n>>> "); 
     }
 }
 
 
 // Event: Serial Input 
 void SerialInEvent(
-    DMA_TypeDef *dma_stream, 
+    DMA_Stream_TypeDef *dma_stream, 
     dma_index_t *dma_index, 
     cb_index_t *cb_index, 
     uint8_t *cb, 

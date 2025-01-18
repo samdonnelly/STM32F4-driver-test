@@ -63,7 +63,7 @@ nrf24l01_cmds_t;
 typedef struct nrf24l01_cmd_data_s 
 {
     USART_TypeDef *uart; 
-    DMA_TypeDef *dma_stream; 
+    DMA_Stream_TypeDef *dma_stream; 
     uint8_t cb[NRF24L01_TEST_MAX_INPUT];          // Circular buffer populated by DMA 
     cb_index_t cb_index;                          // Circular buffer indexing info 
     dma_index_t dma_index;                        // DMA transfer indexing info 
