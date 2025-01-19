@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief UART test code interface 
+ * @brief UART test interface 
  * 
  * @version 0.1
  * @date 2023-09-20
