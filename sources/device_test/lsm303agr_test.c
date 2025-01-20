@@ -30,6 +30,8 @@
 #define LSM303AGR_TEST_DISPLAY_COUNT 5 
 #define LSM303AGR_TEST_MAX_STR_SIZE 60 
 
+#define LSM303AGR_TEST_DATA_OUTPUT_SPACES 3 
+
 //=======================================================================================
 
 
@@ -230,7 +232,7 @@ void lsm303agr_test_app(void)
             test_data.schedule_counter = CLEAR; 
             uart_send_str(USART2, "\r"); 
             uart_send_integer(USART2, test_data.m_heading); 
-            uart_send_spaces(USART2, UART_SPACE_3); 
+            uart_send_spaces(USART2, LSM303AGR_TEST_DATA_OUTPUT_SPACES); 
         }
 
 #endif   // LSM303AGR_TEST_HEADING 

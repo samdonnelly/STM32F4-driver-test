@@ -365,7 +365,7 @@ void hw125_test_app()
             action = SET; 
 
             // Retrieve and format the input 
-            uart_get_str(USART2, hw125_test_record.cmd_buff, UART_STR_TERM_CARRIAGE); 
+            uart_get_data(USART2, hw125_test_record.cmd_buff); 
 
             // Format the input and check for validity 
             if (format_input(hw125_test_record.cmd_buff, 
@@ -998,9 +998,7 @@ void get_input(
         // Get the info from the user 
         uart_send_str(USART2, str); 
         while(!uart_data_ready(USART2)); 
-
-        // Retrieve and format the input 
-        uart_get_str(USART2, buff, buff_len, UART_STR_TERM_CARRIAGE); 
+        uart_get_data(USART2, buff); 
     }
     while (!format_input(buff, data, op)); 
 }

@@ -445,7 +445,7 @@ void hc05_test_app()
     // Check if there is user input 
     if (uart_data_ready(USART2))
     {
-        uart_get_str(USART2, buffer, HC05_AT_CMD_LEN, UART_STR_TERM_CARRIAGE); 
+        uart_get_data(USART2, buffer); 
 
         switch (function)
         {

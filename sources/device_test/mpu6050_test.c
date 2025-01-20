@@ -24,18 +24,19 @@
 // Macros 
 
 // Data 
-#define MPU6050_DEV1_STBY_MASK 0x00      // Device 1 axis standby status mask 
-#define MPU6050_DEV2_STBY_MASK 0x00      // Device 2 axis standby status mask 
-#define MPU6050_SMPLRT_DIV 0             // Sample Rate Divider 
+#define MPU6050_DEV1_STBY_MASK 0x00         // Device 1 axis standby status mask 
+#define MPU6050_DEV2_STBY_MASK 0x00         // Device 2 axis standby status mask 
+#define MPU6050_SMPLRT_DIV 0                // Sample Rate Divider 
 
 // Driver test 
-#define MPU6050_DRIVER_LOOP_DELAY 100    // Delay (blocking) between code loops (ms) 
-#define MPU6050_DRIVER_ST_DELAY 10       // Delay (blocking) after self test (ms) 
+#define MPU6050_DRIVER_LOOP_DELAY 100       // Delay (blocking) between code loops (ms) 
+#define MPU6050_DRIVER_ST_DELAY 10          // Delay (blocking) after self test (ms) 
 
 // Controller test 
-#define MPU6050_NUM_TEST_CMDS 17         // Number of controller test commands for the user 
-#define MPU6050_DEV1_RATE 250000         // Device 1 time between reading new data (us) 
-#define MPU6050_DEV2_RATE 250000         // Device 2 time between reading new data (us) 
+#define MPU6050_NUM_TEST_CMDS 17            // Number of controller test commands for the user 
+#define MPU6050_DEV1_RATE 250000            // Device 1 time between reading new data (us) 
+#define MPU6050_DEV2_RATE 250000            // Device 2 time between reading new data (us) 
+#define MPU6050_TEST_DATA_OUTPUT_SPACES 2   // Spaces between data when outputing 
 
 //=======================================================================================
 
@@ -478,31 +479,31 @@ void mpu6050_test_app()
     // Display the first device results - values are scaled to remove decimal 
     uart_send_str(USART2, "temp1 = ");
     uart_send_integer(USART2, mpu6050_temp_sensor);
-    uart_send_spaces(USART2, UART_SPACE_2);
+    uart_send_spaces(USART2, MPU6050_TEST_DATA_OUTPUT_SPACES);
 
     uart_send_str(USART2, "ax1 = ");
     uart_send_integer(USART2, (int16_t)(mpu6050_accel[MPU6050_X_AXIS] * SCALE_100)); 
-    uart_send_spaces(USART2, UART_SPACE_2);
+    uart_send_spaces(USART2, MPU6050_TEST_DATA_OUTPUT_SPACES);
 
     uart_send_str(USART2, "ay1 = ");
     uart_send_integer(USART2, (int16_t)(mpu6050_accel[MPU6050_Y_AXIS] * SCALE_100));
-    uart_send_spaces(USART2, UART_SPACE_2);
+    uart_send_spaces(USART2, MPU6050_TEST_DATA_OUTPUT_SPACES);
 
     uart_send_str(USART2, "az1 = ");
     uart_send_integer(USART2, (int16_t)(mpu6050_accel[MPU6050_Z_AXIS] * SCALE_100));
-    uart_send_spaces(USART2, UART_SPACE_2);
+    uart_send_spaces(USART2, MPU6050_TEST_DATA_OUTPUT_SPACES);
 
     uart_send_str(USART2, "gx1 = ");
     uart_send_integer(USART2, (int16_t)(mpu6050_gyro[MPU6050_X_AXIS] * SCALE_100)); 
-    uart_send_spaces(USART2, UART_SPACE_2);
+    uart_send_spaces(USART2, MPU6050_TEST_DATA_OUTPUT_SPACES);
 
     uart_send_str(USART2, "gy1 = ");
     uart_send_integer(USART2, (int16_t)(mpu6050_gyro[MPU6050_Y_AXIS] * SCALE_100));
-    uart_send_spaces(USART2, UART_SPACE_2);
+    uart_send_spaces(USART2, MPU6050_TEST_DATA_OUTPUT_SPACES);
 
     uart_send_str(USART2, "gz1 = ");
     uart_send_integer(USART2, (int16_t)(mpu6050_gyro[MPU6050_Z_AXIS] * SCALE_100));
-    uart_send_spaces(USART2, UART_SPACE_2);
+    uart_send_spaces(USART2, MPU6050_TEST_DATA_OUTPUT_SPACES);
 
 
 #if MPU6050_SECOND_DEVICE 
@@ -529,31 +530,31 @@ void mpu6050_test_app()
     // Display the second device results 
     uart_send_str(USART2, "temp2 = ");
     uart_send_integer(USART2, mpu6050_temp_sensor);
-    uart_send_spaces(USART2, UART_SPACE_2);
+    uart_send_spaces(USART2, MPU6050_TEST_DATA_OUTPUT_SPACES);
 
     uart_send_str(USART2, "ax2 = ");
     uart_send_integer(USART2, (int16_t)(mpu6050_accel[MPU6050_X_AXIS] * SCALE_100)); 
-    uart_send_spaces(USART2, UART_SPACE_2);
+    uart_send_spaces(USART2, MPU6050_TEST_DATA_OUTPUT_SPACES);
 
     uart_send_str(USART2, "ay2 = ");
     uart_send_integer(USART2, (int16_t)(mpu6050_accel[MPU6050_Y_AXIS] * SCALE_100));
-    uart_send_spaces(USART2, UART_SPACE_2);
+    uart_send_spaces(USART2, MPU6050_TEST_DATA_OUTPUT_SPACES);
 
     uart_send_str(USART2, "az2 = ");
     uart_send_integer(USART2, (int16_t)(mpu6050_accel[MPU6050_Z_AXIS] * SCALE_100));
-    uart_send_spaces(USART2, UART_SPACE_2);
+    uart_send_spaces(USART2, MPU6050_TEST_DATA_OUTPUT_SPACES);
 
     uart_send_str(USART2, "gx2 = ");
     uart_send_integer(USART2, (int16_t)(mpu6050_gyro[MPU6050_X_AXIS] * SCALE_100)); 
-    uart_send_spaces(USART2, UART_SPACE_2);
+    uart_send_spaces(USART2, MPU6050_TEST_DATA_OUTPUT_SPACES);
 
     uart_send_str(USART2, "gy2 = ");
     uart_send_integer(USART2, (int16_t)(mpu6050_gyro[MPU6050_Y_AXIS] * SCALE_100));
-    uart_send_spaces(USART2, UART_SPACE_2);
+    uart_send_spaces(USART2, MPU6050_TEST_DATA_OUTPUT_SPACES);
 
     uart_send_str(USART2, "gz2 = ");
     uart_send_integer(USART2, (int16_t)(mpu6050_gyro[MPU6050_Z_AXIS] * SCALE_100));
-    uart_send_spaces(USART2, UART_SPACE_2);
+    uart_send_spaces(USART2, MPU6050_TEST_DATA_OUTPUT_SPACES);
 
     // Go up a line in the terminal to overwrite old data 
     uart_send_str(USART2, "\033[1A"); 

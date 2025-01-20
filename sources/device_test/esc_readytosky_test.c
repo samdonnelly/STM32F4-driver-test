@@ -415,9 +415,7 @@ void esc_readytosky_test_app(void)
 
     uart_send_str(USART2, "\r\n>>> "); 
     while(!uart_data_ready(USART2)); 
-
-    // Retrieve and format the input 
-    uart_get_str(USART2, cmd_buff, ESC_INPUT_BUF_LEN, UART_STR_TERM_CARRIAGE); 
+    uart_get_data(USART2, cmd_buff); 
     
     //===================================================
 

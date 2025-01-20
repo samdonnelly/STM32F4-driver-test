@@ -118,11 +118,7 @@ void state_machine_test(
     if (uart_data_ready(USART2))
     {
         // Read the input 
-        uart_get_str(
-            USART2, 
-            test_params.user_input, 
-            STATE_USER_TEST_INPUT, 
-            UART_STR_TERM_CARRIAGE);
+        uart_get_data(USART2, test_params.user_input); 
 
         // Looking for an argument and not a command 
         if (test_params.arg_flag) 
