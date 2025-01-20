@@ -34,7 +34,6 @@
 // Includes 
 
 #include "uart_test.h" 
-#include "stm32f4xx_it.h" 
 
 //=======================================================================================
 
@@ -50,21 +49,15 @@
 //=======================================================================================
 // Global variables 
 
-// Data structure to hold UART circular buffer data. The circular buffer gets populated 
-// by DMA when UART data is received and that UART data is then parsed into a separate 
-// buffer to make it available for the application. 
-typedef struct uart_dma_cb_s
+// UART information 
+typedef struct uart_data_s
 {
     USART_TypeDef *uart; 
-    DMA_Stream_TypeDef *dma_stream; 
-    uint8_t cb[UART_TEST_MAX_INPUT];          // Circular buffer populated by DMA 
-    cb_index_t cb_index;                      // Circular buffer indexing info 
-    dma_index_t dma_index;                    // DMA transfer indexing info 
-    uint8_t data_buff[UART_TEST_MAX_INPUT];   // Buffer that stores latest UART input 
+    uint8_t data_buff[UART_TEST_MAX_INPUT];   // Buffer to store serial terminal input 
 }
-uart_dma_cb_t; 
+uart_data_t; 
 
-static uart_dma_cb_t cb; 
+static uart_data_t uart_data; 
 
 //=======================================================================================
 
@@ -98,16 +91,8 @@ void uart_test_init(void)
         UART_DMA_DISABLE); 
 
     // Initialize data 
-    cb.uart = USART2; 
-    cb.dma_stream = DMA1_Stream5; 
-    memset((void *)cb.cb, CLEAR, sizeof(cb.cb)); 
-    cb.cb_index.cb_size = UART_TEST_MAX_INPUT; 
-    cb.cb_index.head = CLEAR; 
-    cb.cb_index.tail = CLEAR; 
-    cb.dma_index.data_size = CLEAR; 
-    cb.dma_index.ndt_old = dma_ndt_read(cb.dma_stream); 
-    cb.dma_index.ndt_new = CLEAR; 
-    memset((void *)cb.data_buff, CLEAR, sizeof(cb.data_buff)); 
+    uart_data.uart = USART2; 
+    memset((void *)uart_data.data_buff, CLEAR, sizeof(uart_data.data_buff)); 
 
     // Provide an initial prompt to the user 
     uart_test_user_prompt(); 
@@ -121,8 +106,17 @@ void uart_test_init(void)
 
 void uart_test_app(void)
 {
-    // Look for data 
-    uart_get_data(cb.uart, cb.data_buff); 
+    // Wait until there is data available to be read. The code poles for received data 
+    // because it will come at an unknown time and if the data is not read fast enough 
+    // then some data will be lost. Once data is available then it gets read. 
+    while(!uart_data_ready(uart_data.uart)); 
+    uart_get_data(uart_data.uart, uart_data.data_buff); 
+
+    // Echo the received data back to the serial terminal to show the user that the data 
+    // was successfully read. Also provide some additional information to demonstrate 
+    // other driver functions. 
+
+    uart_test_user_prompt(); 
 }
 
 //=======================================================================================
@@ -134,7 +128,7 @@ void uart_test_app(void)
 // User prompt 
 void uart_test_user_prompt(void)
 {
-    uart_send_str(cb.uart, "\r\n>>> "); 
+    uart_send_str(uart_data.uart, "\r\n>>> "); 
 }
 
 //=======================================================================================
