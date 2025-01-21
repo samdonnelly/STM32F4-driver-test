@@ -1023,9 +1023,9 @@ uint8_t format_input(
             // Replace carriage return from input with a null character 
             for (uint8_t i = 0; i < CMD_SIZE; i++)
             {
-                if (*buff == UART_STR_TERM_CARRIAGE)
+                if (*buff == CR_CHAR)
                 {
-                    *buff = UART_STR_TERM_NULL; 
+                    *buff = NULL_CHAR; 
                     break; 
                 }
                 buff++; 
@@ -1067,13 +1067,13 @@ uint8_t format_input(
         case FORMAT_FILE_NUM: ; 
             char *buff_copy = buff; 
 
-            while (*buff_copy != UART_STR_TERM_CARRIAGE) 
+            while (*buff_copy != CR_CHAR) 
             {
                 if (!((*buff_copy >= ZERO_CHAR) && (*buff_copy <= NINE_CHAR))) break; 
                 buff_copy++; 
             }
 
-            if (*buff_copy == UART_STR_TERM_CARRIAGE) 
+            if (*buff_copy == CR_CHAR) 
             {
                 *data = atoi(buff); 
                 result = TRUE; 
