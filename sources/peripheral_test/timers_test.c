@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Timers test code 
+ * @brief Timers test 
  * 
  * @version 0.1
  * @date 2022-08-28
