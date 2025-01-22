@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief WS2812 (neopixels) test code interface 
+ * @brief WS2812 (neopixels) test interface 
  * 
  * @version 0.1
  * @date 2023-03-28

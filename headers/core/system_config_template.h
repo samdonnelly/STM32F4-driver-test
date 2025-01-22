@@ -205,6 +205,13 @@
 
 //==================================================
 
+//==================================================
+// WS2812 driver test 
+
+#define WS2812_SECOND_DEVICE 0           // Enable second device code 
+
+//==================================================
+
 //=======================================================================================
 
 
@@ -236,22 +243,6 @@
 #define INT_EXTI 0                       // External interrupt code 
 #define INT_INTERNAL 0                   // Internal interrupt code 
 #define INT_PERIODIC 0                   // Periodic interrupt code 
-
-//==================================================
-
-//==================================================
-// Timers 
-
-#define TIM_PERIODIC 0                   // Periodic interrupt code 
-#define TIM_PERIODIC_COUNT 0             // Periodic interrupt counter printout code 
-#define TIM_PWM_OUTPUT 0                 // PWM output code (requires periodic interrupt code) 
-#define TIM_WS2812 0                     // WS2812 device code 
-#define TIM_SWITCH_1 0                   // User switch 1 (requires periodic interrupt code) 
-#define TIM_SWITCH_2 0                   // User switch 2 (requires user switch 0 code) 
-#define TIM_SWITCH_3 0                   // User switch 3 (requires user switch 2 code) 
-#define TIM_SWITCH_4 0                   // User switch 4 (requires user switch 3 code) 
-#define TIM_CLK_FREQ 0                   // Code for checking system clock frequencies 
-#define TIM_NON_BLOCKING 0               // Non-blocking delay code 
 
 //==================================================
 
