@@ -116,19 +116,19 @@ void dma_test_init()
         ADC_PCLK2_4, 
         ADC_RES_8, 
         ADC_PARAM_ENABLE, 
-#if DMA_TEST_MODE_3   // For ADC scan mode 
+        ADC_PARAM_DISABLE, 
+#if DMA_TEST_MODE_3   // ADC scan mode 
         ADC_PARAM_DISABLE, 
 #else 
         ADC_PARAM_ENABLE, 
 #endif 
-#if DMA_TEST_MODE_1  // For ADC continuous mode 
+#if DMA_TEST_MODE_1  // ADC continuous mode 
         ADC_PARAM_DISABLE, 
 #else 
         ADC_PARAM_ENABLE, 
 #endif 
         ADC_PARAM_ENABLE, 
         ADC_PARAM_ENABLE, 
-        ADC_PARAM_DISABLE, 
         ADC_PARAM_DISABLE); 
 
     // Initialize the first ADC pin and channel (called for each pin/channel) 

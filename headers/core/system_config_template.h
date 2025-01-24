@@ -130,9 +130,7 @@
 //==================================================
 // ESC 
 
-#define ESC_CONTROLLER_MODE 0             // Code to control the ESC via a controller - knobs 
-#define ESC_PARAM_ID 0                    // Parameter identification code - no driver just timers 
-#define ESC_SECOND_DEVICE 0               // Second device code 
+#define ESC_SECOND_DEVICE 0               // Add a second device 
 
 //==================================================
 
