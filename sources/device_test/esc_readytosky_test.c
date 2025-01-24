@@ -3,7 +3,28 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Readytosky ESC test code 
+ * @brief Readytosky ESC test 
+ * 
+ * @details Setup 
+ *          - Hardware 
+ *            * STM32F4 microcontroller 
+ *          - Notes 
+ *            * 
+ *          
+ *          Configuration 
+ *          - UART 
+ *            * 
+ *          - DMA 
+ *            * 
+ *          - Interrupts 
+ *            * 
+ *          
+ *          Dependencies 
+ *          - STM32F4 driver library 
+ *            - 
+ *          
+ *          Procedure 
+ *          - 
  * 
  * @version 0.1
  * @date 2023-09-06
