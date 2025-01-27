@@ -86,6 +86,7 @@ extern "C"
 // Macros 
 
 #define SIK_TEST_MSG_BUFF_SIZE 200 
+#define SIK_TEST_SYS_ID 1            // GCS IDs start at 255, systems start at 1 
 
 //=======================================================================================
 
@@ -93,15 +94,16 @@ extern "C"
 //=======================================================================================
 // Global data 
 
-// User data 
+// User & device data 
 typedef struct sik_serial_data_s 
 {
     USART_TypeDef *uart; 
     DMA_Stream_TypeDef *dma_stream; 
-    uint8_t cb[SIK_TEST_MSG_BUFF_SIZE];          // Circular buffer populated by DMA 
-    cb_index_t cb_index;                         // Circular buffer indexing info 
-    dma_index_t dma_index;                       // DMA transfer indexing info 
-    uint8_t data_buff[SIK_TEST_MSG_BUFF_SIZE];   // Buffer that stores latest UART input 
+    uint8_t cb[SIK_TEST_MSG_BUFF_SIZE];              // Circular buffer populated by DMA 
+    cb_index_t cb_index;                             // Circular buffer indexing info 
+    dma_index_t dma_index;                           // DMA transfer indexing info 
+    uint8_t data_in_buff[SIK_TEST_MSG_BUFF_SIZE];    // Buffer that stores latest UART input 
+    uint8_t data_out_buff[SIK_TEST_MSG_BUFF_SIZE];   // Buffer that stores outgoing data 
 }
 sik_serial_data_t; 
 
@@ -109,13 +111,20 @@ static sik_serial_data_t radio_data;
 static sik_serial_data_t user_data; 
 
 
-// Mavlink data 
+// System MAVLink data 
 typedef struct sik_mavlink_data_s 
 {
     int channel; 
     mavlink_message_t msg; 
     uint16_t msg_buff_index; 
     mavlink_status_t status; 
+
+    uint8_t system_id; 
+    uint8_t component_id; 
+
+    // Messages 
+    mavlink_heartbeat_t heartbeat; 
+    mavlink_global_position_int_cov_t global_position; 
 }
 sik_mavlink_data_t; 
 
@@ -274,7 +283,8 @@ void sik_radio_test_init(void)
     radio_data.dma_index.data_size = CLEAR; 
     radio_data.dma_index.ndt_old = dma_ndt_read(radio_data.dma_stream); 
     radio_data.dma_index.ndt_new = CLEAR; 
-    memset((void *)radio_data.data_buff, CLEAR, sizeof(radio_data.data_buff)); 
+    memset((void *)radio_data.data_in_buff, CLEAR, sizeof(radio_data.data_in_buff)); 
+    memset((void *)radio_data.data_out_buff, CLEAR, sizeof(radio_data.data_out_buff)); 
 
     // User data 
     user_data.uart = USART2; 
@@ -286,11 +296,19 @@ void sik_radio_test_init(void)
     user_data.dma_index.data_size = CLEAR; 
     user_data.dma_index.ndt_old = dma_ndt_read(user_data.dma_stream); 
     user_data.dma_index.ndt_new = CLEAR; 
-    memset((void *)user_data.data_buff, CLEAR, sizeof(user_data.data_buff)); 
+    memset((void *)user_data.data_in_buff, CLEAR, sizeof(user_data.data_in_buff)); 
+    memset((void *)user_data.data_out_buff, CLEAR, sizeof(user_data.data_out_buff)); 
 
     // MAVLink data 
     mavlink_data.channel = MAVLINK_COMM_0; 
     mavlink_data.msg_buff_index = CLEAR; 
+    mavlink_data.system_id = SIK_TEST_SYS_ID; 
+    mavlink_data.component_id = MAV_COMP_ID_TELEMETRY_RADIO; 
+    mavlink_data.heartbeat.custom_mode = CLEAR; 
+    mavlink_data.heartbeat.type = MAV_TYPE_SURFACE_BOAT; 
+    mavlink_data.heartbeat.autopilot = MAV_AUTOPILOT_GENERIC_MISSION_FULL; 
+    mavlink_data.heartbeat.base_mode = MAV_MODE_FLAG_GUIDED_ENABLED; 
+    mavlink_data.heartbeat.system_status = MAV_STATE_ACTIVE; 
 
     //==================================================
 }
@@ -315,15 +333,15 @@ void sik_radio_test_app(void)
 
         // Parse the new radio data from the circular buffer into the data buffer. 
         dma_cb_index(radio_data.dma_stream, &radio_data.dma_index, &radio_data.cb_index); 
-        cb_parse(radio_data.cb, &radio_data.cb_index, radio_data.data_buff); 
+        cb_parse(radio_data.cb, &radio_data.cb_index, radio_data.data_in_buff); 
 
         // Look at each byte of the received data and try to decode MAVLink messages 
         // until there is no more data to check. 
-        while (radio_data.data_buff[mavlink_data.msg_buff_index] != NULL_CHAR)
+        while (radio_data.data_in_buff[mavlink_data.msg_buff_index] != NULL_CHAR)
         {
             if (mavlink_parse_char(
                     mavlink_data.channel, 
-                    radio_data.data_buff[mavlink_data.msg_buff_index++], 
+                    radio_data.data_in_buff[mavlink_data.msg_buff_index++], 
                     &mavlink_data.msg, 
                     &mavlink_data.status))
             {
@@ -343,7 +361,7 @@ void sik_radio_test_app(void)
 
         // Parse the new user message from the circular buffer into the data buffer 
         dma_cb_index(user_data.dma_stream, &user_data.dma_index, &user_data.cb_index); 
-        cb_parse(user_data.cb, &user_data.cb_index, user_data.data_buff); 
+        cb_parse(user_data.cb, &user_data.cb_index, user_data.data_in_buff); 
 
         // Check for AT command mode request 
         // Check for mavlink message to send 
@@ -362,17 +380,23 @@ void sik_radio_test_mavlink_payload_decode(void)
     switch (mavlink_data.msg.msgid)
     {
         case MAVLINK_MSG_ID_HEARTBEAT: 
-            mavlink_heartbeat_t heartbeat; 
             mavlink_msg_heartbeat_decode(
                 &mavlink_data.msg, 
-                &heartbeat); 
+                &mavlink_data.heartbeat); 
+            // Respond to the heatbeat message 
+            mavlink_msg_heartbeat_encode(
+                mavlink_data.system_id, 
+                mavlink_data.component_id, 
+                &mavlink_data.msg, 
+                &mavlink_data.heartbeat); 
+            mavlink_msg_to_send_buffer(radio_data.data_out_buff, mavlink_data.msg); 
+            uart_send_str(radio_data.uart, (char *)radio_data.data_out_buff); 
             break; 
 
         case MAVLINK_MSG_ID_GLOBAL_POSITION_INT: 
-            mavlink_global_position_int_cov_t global_position; 
-            mavlink_msg_global_position_int_cov_decode(
+            mavlink_msg_global_position_int_decode(
                 &mavlink_data.msg, 
-                &global_position); 
+                &mavlink_data.global_position); 
             break; 
 
         case MAVLINK_MSG_ID_GPS_STATUS: 
