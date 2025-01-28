@@ -11,9 +11,13 @@
  *          
  *          Configuration 
  *          - UART 
- *            * 
+ *            * A UART port is configured for a serial terminal connection which 
+ *              allows the display of analog data for the user to see. 
  *          - ADC 
- *            * 
+ *            * Two analog pins are configured for ADC. 
+ *          - Timers 
+ *            * A general pupose timer is configured to provide blocking delays between 
+ *              ADC reads. 
  *          
  *          Dependencies 
  *          - STM32F4 driver library 
