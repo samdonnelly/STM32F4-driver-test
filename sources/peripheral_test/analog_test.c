@@ -145,7 +145,7 @@ void analog_test_init()
     // This only has an effect when scan mode is enabled 
     adc_seq_len_set(analog_data.adc, ADC_SEQ_2); 
 
-    // Turn the ADC on 
+    // Turn the ADC on (must be called to use ADC) 
     adc_on(analog_data.adc); 
 
     //================================================== 

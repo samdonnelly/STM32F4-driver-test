@@ -216,33 +216,16 @@
 //=======================================================================================
 // Peripheral test mode 
 
-//==================================================
 // Analog 
-
 #define ADC_MODE_0 0                     // Single read mode, scan mode disabled 
 #define ADC_MODE_1 0                     // Single read mode, scan mode enabled 
 
-//==================================================
-
-//==================================================
 // DMA 
-
 #define ADC_DMA_SECOND_CHANNEL 0         // Enables test code for second ADC channel 
 #define ADC_DMA_THIRD_CHANNEL 0          // Enables test code for third ADC channel 
 #define DMA_TEST_MODE_1 0                // Mode 1 test code control (see source file) 
 #define DMA_TEST_MODE_2 0                // Mode 2 test code control (see source file) 
 #define DMA_TEST_MODE_3 0                // Mode 3 test code control (see source file) 
-
-//==================================================
-
-//==================================================
-// Interrupts 
-
-#define INT_TEST_EXTI 0                  // External interrupt code 
-#define INT_TEST_ADC_ENABLE 0      // ADC interrupt code (EXTI0 must be included as well) 
-#define INT_TEST_DMA_ENABLE 0      // DMA interrupt code (EXTI0 & ADC must be included as well) 
-
-//==================================================
 
 //=======================================================================================
 
