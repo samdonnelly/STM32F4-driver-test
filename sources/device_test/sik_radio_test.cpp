@@ -127,7 +127,7 @@ typedef struct sik_mavlink_data_s
 
     // Messages 
     mavlink_heartbeat_t heartbeat; 
-    mavlink_global_position_int_cov_t global_position; 
+    mavlink_global_position_int_t global_position; 
 
     // Timers 
     uint8_t heartbeat_timer; 
@@ -421,7 +421,7 @@ void sik_radio_test_mavlink_payload_decode(void)
                 mavlink_data.mavlink_component_id, 
                 &mavlink_data.msg, 
                 &mavlink_data.heartbeat); 
-            mavlink_msg_to_send_buffer(radio_data.data_out_buff, mavlink_data.msg); 
+            mavlink_msg_to_send_buffer(radio_data.data_out_buff, &mavlink_data.msg); 
             uart_send_str(radio_data.uart, (char *)radio_data.data_out_buff); 
             break; 
 

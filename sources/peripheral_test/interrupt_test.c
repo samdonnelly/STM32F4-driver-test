@@ -3,7 +3,33 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Interrupt test code 
+ * @brief Interrupt test 
+ * 
+ * @details Setup 
+ *          - Hardware 
+ *            * 
+ *          - Software 
+ *            * 
+ *          
+ *          Configuration 
+ *          - Timers 
+ *            * 
+ *          - Interrupts 
+ *            * 
+ *          - UART 
+ *            * 
+ *          
+ *          Dependencies 
+ *          - STM32F4 driver library 
+ *            * 
+ *          
+ *          Procedure 
+ *          - 
+ *          
+ *          Other tests demonstrating the interrupt driver: 
+ *          - esc_readytosky_test.c 
+ *          - wheel_rpm_test.c 
+ *          - circular_buffer_test.cpp 
  * 
  * @version 0.1
  * @date 2022-11-06
@@ -22,106 +48,15 @@
 
 
 //=======================================================================================
-// Prototypes 
-
-// External interrupt code 
-void int_test_external_init(void); 
-void int_test_external_app(void); 
-
-// Internal interrupt code 
-void int_test_internal_init(void); 
-void int_test_internal_app(void); 
-
-// Periodic interrupt code 
-void int_test_periodic_init(void); 
-void int_test_periodic_app(void); 
-
-//=======================================================================================
-
-
-//=======================================================================================
-// Setup code 
-
-void int_test_init()
-{
-    // Interrupt initialization code goes here 
-
-    // Initialize GPIO ports 
-    gpio_port_init(); 
-
-    // Initialize UART
-    uart_init(
-        USART2, 
-        GPIOA, 
-        PIN_3, 
-        PIN_2, 
-        UART_FRAC_42_9600, 
-        UART_MANT_42_9600, 
-        UART_DMA_DISABLE, 
-        UART_DMA_DISABLE); 
-    
-    // Initialize timers 
-    tim_9_to_11_counter_init(
-        TIM9, 
-        TIM_84MHZ_1US_PSC, 
-        0xFFFF,  // Max ARR value 
-        TIM_UP_INT_DISABLE); 
-    
-    tim_enable(TIM9); 
-
-    // Initialize interrupt handler flags (called once) 
-    int_handler_init(); 
-
-#if INT_EXTI 
-    int_test_external_init(); 
-#elif INT_INTERNAL 
-    int_test_internal_init(); 
-#elif INT_PERIODIC 
-    int_test_periodic_init(); 
-#endif 
-}
-
-//=======================================================================================
-
-
-//=======================================================================================
-// Test code 
-
-void int_test_app()
-{
-    // Test code for interrupt_test here 
-
-#if INT_EXTI 
-    int_test_external_app(); 
-#elif INT_INTERNAL 
-    int_test_internal_app(); 
-#elif INT_PERIODIC 
-    int_test_periodic_app(); 
-#endif   // INT_EXTI 
-}
-
-//=======================================================================================
-
-
-#if INT_EXTI 
-
-// 
-
-//=======================================================================================
 // Macros 
 
-// Conditional compilation 
-#define INT_ADC_ENABLE 0      // ADC interrupt code (EXTI0 must be included as well) 
-#define INT_DMA_ENABLE 0      // DMA interrupt code (EXTI0 & ADC must be included as well) 
-
-// Data 
 #define INT_ADC_NUM_CONV 2    // Number of ADC conversions to keep track of 
 
 //=======================================================================================
 
 
 //=======================================================================================
-// Variables 
+// Global variables 
 
 #if INT_ADC_ENABLE 
 
@@ -139,11 +74,28 @@ static uint16_t adc_conversion[INT_ADC_NUM_CONV];
 
 
 //=======================================================================================
-// Setup 
+// Setup code 
 
-// External interrupt test init 
-void int_test_external_init(void)
+void int_test_init()
 {
+    // Initialize GPIO ports 
+    gpio_port_init(); 
+
+    // Initialize UART
+    uart_init(
+        USART2, 
+        GPIOA, 
+        PIN_3, 
+        PIN_2, 
+        UART_FRAC_42_9600, 
+        UART_MANT_42_9600, 
+        UART_DMA_DISABLE, 
+        UART_DMA_DISABLE); 
+
+    // Initialize interrupt handler flags (called once) 
+    int_handler_init(); 
+
+
     //==================================================
     // External interrupt initialization 
 
@@ -243,23 +195,28 @@ void int_test_external_init(void)
     
     //==================================================
 
-    // Enable the interrupt handlers (called for each interrupt) 
-    nvic_config(ADC_IRQn, EXTI_PRIORITY_1);           // ADC 
-    nvic_config(DMA2_Stream0_IRQn, EXTI_PRIORITY_0);  // DMA2 Stream 0 
 
 #endif   // INT_DMA_ENABLE 
 
 #endif   // INT_ADC_ENABLE 
+
+    //==================================================
+    // Interrups 
+
+    // Enable the interrupt handlers (called for each interrupt) 
+    nvic_config(ADC_IRQn, EXTI_PRIORITY_1);           // ADC 
+    nvic_config(DMA2_Stream0_IRQn, EXTI_PRIORITY_0);  // DMA2 Stream 0 
+    
+    //==================================================
 }
 
 //=======================================================================================
 
 
 //=======================================================================================
-// Loop 
+// Test code 
 
-// External interrupt test app 
-void int_test_external_app(void)
+void int_test_app()
 {
     // Check for the external interrupt from the user 
     if (handler_flags.exti0_flag)
@@ -308,101 +265,37 @@ void int_test_external_app(void)
 
 
 //=======================================================================================
-// Test functions 
-//=======================================================================================
+// Interrupt handlers 
 
+// These override the weak handler definitions in "stm32f4xx_it.c". When this test is not 
+// in use INTERRUPT_OVERRIDE should be set to zero so other tests don't use this version 
+// of the handler. 
 
-#elif INT_INTERNAL 
+#if INTERRUPT_OVERRIDE 
 
-// 
-
-//=======================================================================================
-// Macros 
-//=======================================================================================
-
-
-//=======================================================================================
-// Variables 
-//=======================================================================================
-
-
-//=======================================================================================
-// Prototypes 
-//=======================================================================================
-
-//=======================================================================================
-// Setup 
-
-// Internal interrupt test init 
-void int_test_internal_init(void)
+// EXTI Line 0 
+void EXTI0_IRQHandler(void)
 {
-    // 
+    handler_flags.exti0_flag = SET_BIT; 
+    exti_pr_clear(EXTI_L0); 
 }
 
-//=======================================================================================
 
-
-//=======================================================================================
-// Loop 
-
-// Internal interrupt test app 
-void int_test_internal_app(void)
+// Timer 1 break + timer 9 global 
+void TIM1_BRK_TIM9_IRQHandler(void)
 {
-    // 
+    handler_flags.tim1_brk_tim9_glbl_flag = SET_BIT; 
+    tim_uif_clear(TIM1); 
+    tim_uif_clear(TIM9); 
 }
 
-//=======================================================================================
 
-
-//=======================================================================================
-// Test functions 
-//=======================================================================================
-
-
-#elif INT_PERIODIC 
-
-// 
-
-//=======================================================================================
-// Macros 
-//=======================================================================================
-
-
-//=======================================================================================
-// Variables 
-//=======================================================================================
-
-
-//=======================================================================================
-// Prototypes 
-//=======================================================================================
-
-//=======================================================================================
-// Setup 
-
-// Periodic interrupt test init 
-void int_test_periodic_init(void)
+// ADC1 
+void ADC_IRQHandler(void)
 {
-    // 
+    handler_flags.adc_flag = SET_BIT;  
 }
 
-//=======================================================================================
-
-
-//=======================================================================================
-// Loop 
-
-// Periodic interrupt test app 
-void int_test_periodic_app(void)
-{
-    // 
-}
+#endif   // INTERRUPT_OVERRIDE 
 
 //=======================================================================================
-
-
-//=======================================================================================
-// Test functions 
-//=======================================================================================
-
-#endif 

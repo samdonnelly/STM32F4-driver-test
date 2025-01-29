@@ -238,9 +238,9 @@
 //==================================================
 // Interrupts 
 
-#define INT_EXTI 0                       // External interrupt code 
-#define INT_INTERNAL 0                   // Internal interrupt code 
-#define INT_PERIODIC 0                   // Periodic interrupt code 
+#define INT_TEST_EXTI 0                  // External interrupt code 
+#define INT_TEST_ADC_ENABLE 0      // ADC interrupt code (EXTI0 must be included as well) 
+#define INT_TEST_DMA_ENABLE 0      // DMA interrupt code (EXTI0 & ADC must be included as well) 
 
 //==================================================
 
