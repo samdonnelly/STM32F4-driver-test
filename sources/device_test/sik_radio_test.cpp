@@ -114,14 +114,14 @@ static sik_serial_data_t user_data;
 
 
 // System MAVLink data 
-typedef struct sik_mavlink_data_s 
+typedef struct sik_system_data_s 
 {
     // MAVLink identification 
     int channel; 
-    uint8_t mavlink_system_id; 
-    uint8_t mavlink_component_id; 
+    uint8_t system_id; 
+    uint8_t component_id; 
 
-    // Packet handling 
+    // MAVLink packet handling 
     mavlink_message_t msg; 
     mavlink_status_t status; 
 
@@ -131,16 +131,33 @@ typedef struct sik_mavlink_data_s
 
     // Timers 
     uint8_t heartbeat_timer; 
-}
-sik_mavlink_data_t; 
 
-static sik_mavlink_data_t mavlink_data; 
+    // Status 
+    uint8_t at_mode   : 1;   // AT command mode flag 
+    uint8_t connected : 1;   // Radio connected flag 
+}
+sik_system_data_t; 
+
+static sik_system_data_t system_data; 
+
+
+const char 
+sik_user_prompt[] = "\r\n>>> ", 
+sik_user_hb[] = "Heartbeat\r\n"; 
 
 //=======================================================================================
 
 
 //=======================================================================================
 // Prototypes 
+
+/**
+ * @brief User prompt 
+ * 
+ * @param user_msg : message to send to the user 
+ */
+void sik_radio_test_user_output(const char *user_msg); 
+
 
 /**
  * @brief MAVLink message payload decode 
@@ -151,6 +168,14 @@ static sik_mavlink_data_t mavlink_data;
  */
 void sik_radio_test_mavlink_payload_decode(void); 
 
+
+// Normal mode user input decode 
+void sik_radio_test_mavlink_user_decode(void); 
+
+
+// AT command mode user input decode 
+void sik_radio_test_at_user_decode(void); 
+
 //=======================================================================================
 
 
@@ -159,132 +184,6 @@ void sik_radio_test_mavlink_payload_decode(void);
 
 void sik_radio_test_init(void)
 {
-    // Initialize GPIO ports 
-    gpio_port_init(); 
-
-    // Periodic (counter update) interrupt timer 
-    tim_9_to_11_counter_init(
-        TIM9, 
-        TIM_84MHZ_100US_PSC, 
-        0x2710,   // ARR=10000, (10000 counts)*(100us/count) = 1s 
-        TIM_UP_INT_ENABLE); 
-    tim_enable(TIM9); 
-
-    //==================================================
-    // UART init 
-
-    // UART1 init - SiK radio module 
-    uart_init(
-        USART1, 
-        GPIOA, 
-        PIN_10, 
-        PIN_9, 
-        UART_FRAC_84_115200, 
-        UART_MANT_84_115200, 
-        UART_DMA_DISABLE, 
-        UART_DMA_ENABLE); 
-
-    // UART1 interrupt init - SiK radio module - IDLE line (RX) interrupts 
-    uart_interrupt_init(
-        USART1, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_ENABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE); 
-
-    // UART2 init - Serial terminal 
-    uart_init(
-        USART2, 
-        GPIOA, 
-        PIN_3, 
-        PIN_2, 
-        UART_FRAC_42_9600, 
-        UART_MANT_42_9600, 
-        UART_DMA_DISABLE, 
-        UART_DMA_ENABLE); 
-
-    // UART2 interrupt init - Serial terminal - IDLE line (RX) interrupts 
-    uart_interrupt_init(
-        USART2, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_ENABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE); 
-    
-    //==================================================
-
-    //==================================================
-    // DMA 
-
-    // DMA2 stream init - UART1 - SiK radio module 
-    dma_stream_init(
-        DMA2, 
-        DMA2_Stream2, 
-        DMA_CHNL_4, 
-        DMA_DIR_PM, 
-        DMA_CM_ENABLE,
-        DMA_PRIOR_VHI, 
-        DMA_DBM_DISABLE, 
-        DMA_ADDR_INCREMENT,   // Increment the buffer pointer to fill the buffer 
-        DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
-        DMA_DATA_SIZE_BYTE, 
-        DMA_DATA_SIZE_BYTE); 
-
-    // DMA2 stream config - UART1 - SiK radio module 
-    dma_stream_config(
-        DMA2_Stream2, 
-        (uint32_t)(&USART1->DR), 
-        (uint32_t)radio_data.cb, 
-        (uint32_t)NULL, 
-        (uint16_t)SIK_TEST_MSG_BUFF_SIZE); 
-
-    // DMA1 stream init - UART2 - Serial terminal 
-    dma_stream_init(
-        DMA1, 
-        DMA1_Stream5, 
-        DMA_CHNL_4, 
-        DMA_DIR_PM, 
-        DMA_CM_ENABLE,
-        DMA_PRIOR_HI, 
-        DMA_DBM_DISABLE, 
-        DMA_ADDR_INCREMENT,   // Increment the buffer pointer to fill the buffer 
-        DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
-        DMA_DATA_SIZE_BYTE, 
-        DMA_DATA_SIZE_BYTE); 
-
-    // DMA1 stream config - UART2 - Serial terminal 
-    dma_stream_config(
-        DMA1_Stream5, 
-        (uint32_t)(&USART2->DR), 
-        (uint32_t)user_data.cb, 
-        (uint32_t)NULL, 
-        (uint16_t)SIK_TEST_MSG_BUFF_SIZE); 
-
-    // Enable DMA streams 
-    dma_stream_enable(DMA2_Stream2);   // UART1 - Sik radio 
-    dma_stream_enable(DMA1_Stream5);   // UART2 - Serial terminal 
-
-    //==================================================
-    
-    //==================================================
-    // Initialize interrupts 
-
-    // Initialize interrupt handler flags 
-    int_handler_init(); 
-
-    // Enable the interrupt handlers 
-    nvic_config(USART1_IRQn, EXTI_PRIORITY_0);          // UART1 - SiK radio 
-    nvic_config(USART2_IRQn, EXTI_PRIORITY_1);          // UART2 - Serial terminal (user input) 
-    nvic_config(TIM1_BRK_TIM9_IRQn, EXTI_PRIORITY_2);   // TIM9 - periodic timer 
-
-    //==================================================
-
     //==================================================
     // Initialize data 
 
@@ -317,15 +216,150 @@ void sik_radio_test_init(void)
     user_data.data_in_index = CLEAR; 
 
     // MAVLink data 
-    mavlink_data.channel = MAVLINK_COMM_0; 
-    mavlink_data.mavlink_system_id = SIK_TEST_SYS_ID; 
-    mavlink_data.mavlink_component_id = MAV_COMP_ID_TELEMETRY_RADIO; 
-    mavlink_data.heartbeat.custom_mode = CLEAR; 
-    mavlink_data.heartbeat.type = MAV_TYPE_SURFACE_BOAT; 
-    mavlink_data.heartbeat.autopilot = MAV_AUTOPILOT_GENERIC_MISSION_FULL; 
-    mavlink_data.heartbeat.base_mode = MAV_MODE_FLAG_GUIDED_ENABLED; 
-    mavlink_data.heartbeat.system_status = MAV_STATE_ACTIVE; 
-    mavlink_data.heartbeat_timer = CLEAR; 
+    system_data.channel = MAVLINK_COMM_0; 
+    system_data.system_id = SIK_TEST_SYS_ID; 
+    system_data.component_id = MAV_COMP_ID_TELEMETRY_RADIO; 
+    system_data.heartbeat.custom_mode = CLEAR; 
+    system_data.heartbeat.type = MAV_TYPE_SURFACE_BOAT; 
+    system_data.heartbeat.autopilot = MAV_AUTOPILOT_GENERIC_MISSION_FULL; 
+    system_data.heartbeat.base_mode = MAV_MODE_FLAG_GUIDED_ENABLED; 
+    system_data.heartbeat.system_status = MAV_STATE_ACTIVE; 
+    system_data.heartbeat_timer = CLEAR; 
+    system_data.connected = CLEAR_BIT; 
+    system_data.at_mode = CLEAR_BIT; 
+
+    //==================================================
+
+    // Initialize GPIO ports 
+    gpio_port_init(); 
+
+    // Periodic (counter update) interrupt timer 
+    tim_9_to_11_counter_init(
+        TIM9, 
+        TIM_84MHZ_100US_PSC, 
+        0x2710,   // ARR=10000, (10000 counts)*(100us/count) = 1s 
+        TIM_UP_INT_ENABLE); 
+    tim_enable(TIM9); 
+
+    //==================================================
+    // UART init 
+
+    // UART1 init - SiK radio module 
+    uart_init(
+        radio_data.uart, 
+        GPIOA, 
+        PIN_10, 
+        PIN_9, 
+        UART_FRAC_84_115200, 
+        UART_MANT_84_115200, 
+        UART_DMA_DISABLE, 
+        UART_DMA_ENABLE); 
+
+    // UART1 interrupt init - SiK radio module - IDLE line (RX) interrupts 
+    uart_interrupt_init(
+        radio_data.uart, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_ENABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE); 
+
+    // UART2 init - Serial terminal 
+    uart_init(
+        user_data.uart, 
+        GPIOA, 
+        PIN_3, 
+        PIN_2, 
+        UART_FRAC_42_9600, 
+        UART_MANT_42_9600, 
+        UART_DMA_DISABLE, 
+        UART_DMA_ENABLE); 
+
+    // UART2 interrupt init - Serial terminal - IDLE line (RX) interrupts 
+    uart_interrupt_init(
+        user_data.uart, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_ENABLE, 
+        UART_INT_DISABLE, 
+        UART_INT_DISABLE); 
+    
+    //==================================================
+
+    //==================================================
+    // DMA 
+
+    // DMA2 stream init - UART1 - SiK radio module 
+    dma_stream_init(
+        DMA2, 
+        radio_data.dma_stream, 
+        DMA_CHNL_4, 
+        DMA_DIR_PM, 
+        DMA_CM_ENABLE,
+        DMA_PRIOR_VHI, 
+        DMA_DBM_DISABLE, 
+        DMA_ADDR_INCREMENT,   // Increment the buffer pointer to fill the buffer 
+        DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
+        DMA_DATA_SIZE_BYTE, 
+        DMA_DATA_SIZE_BYTE); 
+
+    // DMA2 stream config - UART1 - SiK radio module 
+    dma_stream_config(
+        radio_data.dma_stream, 
+        (uint32_t)(&radio_data.uart->DR), 
+        (uint32_t)radio_data.cb, 
+        (uint32_t)NULL, 
+        (uint16_t)SIK_TEST_MSG_BUFF_SIZE); 
+
+    // DMA1 stream init - UART2 - Serial terminal 
+    dma_stream_init(
+        DMA1, 
+        user_data.dma_stream, 
+        DMA_CHNL_4, 
+        DMA_DIR_PM, 
+        DMA_CM_ENABLE,
+        DMA_PRIOR_HI, 
+        DMA_DBM_DISABLE, 
+        DMA_ADDR_INCREMENT,   // Increment the buffer pointer to fill the buffer 
+        DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
+        DMA_DATA_SIZE_BYTE, 
+        DMA_DATA_SIZE_BYTE); 
+
+    // DMA1 stream config - UART2 - Serial terminal 
+    dma_stream_config(
+        user_data.dma_stream, 
+        (uint32_t)(&user_data.uart->DR), 
+        (uint32_t)user_data.cb, 
+        (uint32_t)NULL, 
+        (uint16_t)SIK_TEST_MSG_BUFF_SIZE); 
+
+    // Enable DMA streams 
+    dma_stream_enable(radio_data.dma_stream);   // UART1 - Sik radio 
+    dma_stream_enable(user_data.dma_stream);    // UART2 - Serial terminal 
+
+    //==================================================
+    
+    //==================================================
+    // Initialize interrupts 
+
+    // Initialize interrupt handler flags 
+    int_handler_init(); 
+
+    // Enable the interrupt handlers 
+    nvic_config(USART1_IRQn, EXTI_PRIORITY_0);          // UART1 - SiK radio 
+    nvic_config(USART2_IRQn, EXTI_PRIORITY_1);          // UART2 - Serial terminal (user input) 
+    nvic_config(TIM1_BRK_TIM9_IRQn, EXTI_PRIORITY_2);   // TIM9 - periodic timer 
+
+    //==================================================
+
+    //==================================================
+    // Device driver setup 
+
+    sik_init(radio_data.uart); 
 
     //==================================================
 }
@@ -352,20 +386,30 @@ void sik_radio_test_app(void)
         dma_cb_index(radio_data.dma_stream, &radio_data.dma_index, &radio_data.cb_index); 
         cb_parse(radio_data.cb, &radio_data.cb_index, radio_data.data_in_buff); 
 
-        // Look at each byte of the received data and try to decode MAVLink messages 
-        // until there is no more data to check. 
-        while (radio_data.data_in_buff[radio_data.data_in_index] != NULL_CHAR)
+        // Choose an action based on whether the radio is in AT command mode or not. 
+        if (system_data.at_mode)
         {
-            if (mavlink_parse_char(
-                    mavlink_data.channel, 
-                    radio_data.data_in_buff[radio_data.data_in_index++], 
-                    &mavlink_data.msg, 
-                    &mavlink_data.status))
+            // Show the user the AT response from the radio. 
+            sik_radio_test_user_output((char *)radio_data.data_in_buff); 
+            sik_radio_test_user_output(sik_user_prompt); 
+        }
+        else 
+        {
+            // Look at each byte of the received data and try to decode MAVLink messages 
+            // until there is no more data to check. 
+            while (radio_data.data_in_buff[radio_data.data_in_index] != NULL_CHAR)
             {
-                // If a MAVLink message has been decoded then proceed to decode the 
-                // message payload. This can happen more than once if multiple messages 
-                // are in the received data. 
-                sik_radio_test_mavlink_payload_decode(); 
+                if (mavlink_parse_char(
+                        system_data.channel, 
+                        radio_data.data_in_buff[radio_data.data_in_index++], 
+                        &system_data.msg, 
+                        &system_data.status))
+                {
+                    // If a MAVLink message has been decoded then proceed to decode the 
+                    // message payload. This can happen more than once if multiple messages 
+                    // are in the received data. 
+                    sik_radio_test_mavlink_payload_decode(); 
+                }
             }
         }
     }
@@ -379,8 +423,9 @@ void sik_radio_test_app(void)
         dma_cb_index(user_data.dma_stream, &user_data.dma_index, &user_data.cb_index); 
         cb_parse(user_data.cb, &user_data.cb_index, user_data.data_in_buff); 
 
-        // Check for AT command mode request 
-        // Check for mavlink message to send 
+        // Choose an action based on whether the radio is in AT command mode or not. 
+        system_data.at_mode ? sik_radio_test_at_user_decode() : 
+                              sik_radio_test_mavlink_user_decode(); 
     }
 
     // Periodic interrupt 
@@ -388,11 +433,25 @@ void sik_radio_test_app(void)
     {
         handler_flags.tim1_brk_tim9_glbl_flag = CLEAR_BIT; 
 
-        // Send heartbeat 
-
-        if (mavlink_data.heartbeat_timer++ >= SIK_TEST_HB_TIMEOUT)
+        // Only perform MAVLink actions when the SiK radio is not in AT command mode. 
+        if (!system_data.at_mode)
         {
-            // Have not seen heartbeat for too long. Disconnected. 
+            // Send heartbeat 
+            mavlink_msg_heartbeat_encode(
+                system_data.system_id, 
+                system_data.component_id, 
+                &system_data.msg, 
+                &system_data.heartbeat); 
+            mavlink_msg_to_send_buffer(radio_data.data_out_buff, &system_data.msg); 
+            sik_send_data((char *)radio_data.data_out_buff); 
+
+            // Check for a timeout 
+            if (system_data.heartbeat_timer++ >= SIK_TEST_HB_TIMEOUT)
+            {
+                // Have not seen heartbeat for too long. Disconnected. 
+                system_data.heartbeat_timer--; 
+                system_data.connected = CLEAR_BIT; 
+            }
         }
     }
 }
@@ -403,32 +462,28 @@ void sik_radio_test_app(void)
 //=======================================================================================
 // Helper functions 
 
+// User prompt 
+void sik_radio_test_user_output(const char *user_msg)
+{
+    uart_send_str(user_data.uart, user_msg); 
+}
+
+
 // MAVLink message payload decode 
 void sik_radio_test_mavlink_payload_decode(void)
 {
-    switch (mavlink_data.msg.msgid)
+    switch (system_data.msg.msgid)
     {
         case MAVLINK_MSG_ID_HEARTBEAT: 
             mavlink_msg_heartbeat_decode(
-                &mavlink_data.msg, 
-                &mavlink_data.heartbeat); 
-            mavlink_data.heartbeat_timer = CLEAR; 
-            // Show the user that a heartbeat was received 
-            uart_send_str(user_data.uart, "Heartbeat\r\n"); 
-            // Respond to the heatbeat message 
-            mavlink_msg_heartbeat_encode(
-                mavlink_data.mavlink_system_id, 
-                mavlink_data.mavlink_component_id, 
-                &mavlink_data.msg, 
-                &mavlink_data.heartbeat); 
-            mavlink_msg_to_send_buffer(radio_data.data_out_buff, &mavlink_data.msg); 
-            uart_send_str(radio_data.uart, (char *)radio_data.data_out_buff); 
+                &system_data.msg, 
+                &system_data.heartbeat); 
+            system_data.heartbeat_timer = CLEAR; 
+            system_data.connected = SET_BIT; 
+            sik_radio_test_user_output(sik_user_hb); 
             break; 
 
         case MAVLINK_MSG_ID_GLOBAL_POSITION_INT: 
-            mavlink_msg_global_position_int_decode(
-                &mavlink_data.msg, 
-                &mavlink_data.global_position); 
             break; 
 
         case MAVLINK_MSG_ID_GPS_STATUS: 
@@ -444,6 +499,33 @@ void sik_radio_test_mavlink_payload_decode(void)
         
         default: 
             break; 
+    }
+}
+
+
+// Normal mode user input decode 
+void sik_radio_test_mavlink_user_decode(void)
+{
+    if (str_compare(sik_at_enter_cmd, (char *)user_data.data_in_buff, BYTE_0))
+    {
+        sik_at_mode(SIK_AT_ENTER); 
+        system_data.at_mode = SET_BIT; 
+    }
+}
+
+
+// AT command mode user input decode 
+void sik_radio_test_at_user_decode(void)
+{
+    if (str_compare(sik_ato_cmd, (char *)user_data.data_in_buff, BYTE_0))
+    {
+        sik_at_mode(SIK_AT_EXIT); 
+        system_data.at_mode = CLEAR_BIT; 
+    }
+    else 
+    {
+        sik_send_data((char *)user_data.data_in_buff); 
+        sik_radio_test_user_output(sik_user_prompt); 
     }
 }
 
