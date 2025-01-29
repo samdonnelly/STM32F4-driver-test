@@ -87,6 +87,7 @@ extern "C"
 
 #define SIK_TEST_MSG_BUFF_SIZE 200 
 #define SIK_TEST_SYS_ID 1            // GCS IDs start at 255, systems start at 1 
+#define SIK_TEST_HB_TIMEOUT 10 
 
 //=======================================================================================
 
@@ -104,6 +105,7 @@ typedef struct sik_serial_data_s
     dma_index_t dma_index;                           // DMA transfer indexing info 
     uint8_t data_in_buff[SIK_TEST_MSG_BUFF_SIZE];    // Buffer that stores latest UART input 
     uint8_t data_out_buff[SIK_TEST_MSG_BUFF_SIZE];   // Buffer that stores outgoing data 
+    uint16_t data_in_index;                          // Data input buffer index 
 }
 sik_serial_data_t; 
 
@@ -114,17 +116,21 @@ static sik_serial_data_t user_data;
 // System MAVLink data 
 typedef struct sik_mavlink_data_s 
 {
+    // MAVLink identification 
     int channel; 
-    mavlink_message_t msg; 
-    uint16_t msg_buff_index; 
-    mavlink_status_t status; 
+    uint8_t mavlink_system_id; 
+    uint8_t mavlink_component_id; 
 
-    uint8_t system_id; 
-    uint8_t component_id; 
+    // Packet handling 
+    mavlink_message_t msg; 
+    mavlink_status_t status; 
 
     // Messages 
     mavlink_heartbeat_t heartbeat; 
     mavlink_global_position_int_cov_t global_position; 
+
+    // Timers 
+    uint8_t heartbeat_timer; 
 }
 sik_mavlink_data_t; 
 
@@ -155,6 +161,14 @@ void sik_radio_test_init(void)
 {
     // Initialize GPIO ports 
     gpio_port_init(); 
+
+    // Periodic (counter update) interrupt timer 
+    tim_9_to_11_counter_init(
+        TIM9, 
+        TIM_84MHZ_100US_PSC, 
+        0x2710,   // ARR=10000, (10000 counts)*(100us/count) = 1s 
+        TIM_UP_INT_ENABLE); 
+    tim_enable(TIM9); 
 
     //==================================================
     // UART init 
@@ -265,8 +279,9 @@ void sik_radio_test_init(void)
     int_handler_init(); 
 
     // Enable the interrupt handlers 
-    nvic_config(USART1_IRQn, EXTI_PRIORITY_0);   // UART1 - SiK radio 
-    nvic_config(USART2_IRQn, EXTI_PRIORITY_1);   // UART2 - Serial terminal (user input) 
+    nvic_config(USART1_IRQn, EXTI_PRIORITY_0);          // UART1 - SiK radio 
+    nvic_config(USART2_IRQn, EXTI_PRIORITY_1);          // UART2 - Serial terminal (user input) 
+    nvic_config(TIM1_BRK_TIM9_IRQn, EXTI_PRIORITY_2);   // TIM9 - periodic timer 
 
     //==================================================
 
@@ -285,6 +300,7 @@ void sik_radio_test_init(void)
     radio_data.dma_index.ndt_new = CLEAR; 
     memset((void *)radio_data.data_in_buff, CLEAR, sizeof(radio_data.data_in_buff)); 
     memset((void *)radio_data.data_out_buff, CLEAR, sizeof(radio_data.data_out_buff)); 
+    radio_data.data_in_index = CLEAR; 
 
     // User data 
     user_data.uart = USART2; 
@@ -298,17 +314,18 @@ void sik_radio_test_init(void)
     user_data.dma_index.ndt_new = CLEAR; 
     memset((void *)user_data.data_in_buff, CLEAR, sizeof(user_data.data_in_buff)); 
     memset((void *)user_data.data_out_buff, CLEAR, sizeof(user_data.data_out_buff)); 
+    user_data.data_in_index = CLEAR; 
 
     // MAVLink data 
     mavlink_data.channel = MAVLINK_COMM_0; 
-    mavlink_data.msg_buff_index = CLEAR; 
-    mavlink_data.system_id = SIK_TEST_SYS_ID; 
-    mavlink_data.component_id = MAV_COMP_ID_TELEMETRY_RADIO; 
+    mavlink_data.mavlink_system_id = SIK_TEST_SYS_ID; 
+    mavlink_data.mavlink_component_id = MAV_COMP_ID_TELEMETRY_RADIO; 
     mavlink_data.heartbeat.custom_mode = CLEAR; 
     mavlink_data.heartbeat.type = MAV_TYPE_SURFACE_BOAT; 
     mavlink_data.heartbeat.autopilot = MAV_AUTOPILOT_GENERIC_MISSION_FULL; 
     mavlink_data.heartbeat.base_mode = MAV_MODE_FLAG_GUIDED_ENABLED; 
     mavlink_data.heartbeat.system_status = MAV_STATE_ACTIVE; 
+    mavlink_data.heartbeat_timer = CLEAR; 
 
     //==================================================
 }
@@ -329,7 +346,7 @@ void sik_radio_test_app(void)
     if (handler_flags.usart1_flag)
     {
         handler_flags.usart1_flag = CLEAR_BIT; 
-        mavlink_data.msg_buff_index = CLEAR; 
+        radio_data.data_in_index = CLEAR; 
 
         // Parse the new radio data from the circular buffer into the data buffer. 
         dma_cb_index(radio_data.dma_stream, &radio_data.dma_index, &radio_data.cb_index); 
@@ -337,11 +354,11 @@ void sik_radio_test_app(void)
 
         // Look at each byte of the received data and try to decode MAVLink messages 
         // until there is no more data to check. 
-        while (radio_data.data_in_buff[mavlink_data.msg_buff_index] != NULL_CHAR)
+        while (radio_data.data_in_buff[radio_data.data_in_index] != NULL_CHAR)
         {
             if (mavlink_parse_char(
                     mavlink_data.channel, 
-                    radio_data.data_in_buff[mavlink_data.msg_buff_index++], 
+                    radio_data.data_in_buff[radio_data.data_in_index++], 
                     &mavlink_data.msg, 
                     &mavlink_data.status))
             {
@@ -352,7 +369,6 @@ void sik_radio_test_app(void)
             }
         }
     }
-
 
     // New serial terminal (user input) data received 
     if (handler_flags.usart2_flag)
@@ -365,6 +381,19 @@ void sik_radio_test_app(void)
 
         // Check for AT command mode request 
         // Check for mavlink message to send 
+    }
+
+    // Periodic interrupt 
+    if (handler_flags.tim1_brk_tim9_glbl_flag)
+    {
+        handler_flags.tim1_brk_tim9_glbl_flag = CLEAR_BIT; 
+
+        // Send heartbeat 
+
+        if (mavlink_data.heartbeat_timer++ >= SIK_TEST_HB_TIMEOUT)
+        {
+            // Have not seen heartbeat for too long. Disconnected. 
+        }
     }
 }
 
@@ -383,10 +412,13 @@ void sik_radio_test_mavlink_payload_decode(void)
             mavlink_msg_heartbeat_decode(
                 &mavlink_data.msg, 
                 &mavlink_data.heartbeat); 
+            mavlink_data.heartbeat_timer = CLEAR; 
+            // Show the user that a heartbeat was received 
+            uart_send_str(user_data.uart, "Heartbeat\r\n"); 
             // Respond to the heatbeat message 
             mavlink_msg_heartbeat_encode(
-                mavlink_data.system_id, 
-                mavlink_data.component_id, 
+                mavlink_data.mavlink_system_id, 
+                mavlink_data.mavlink_component_id, 
                 &mavlink_data.msg, 
                 &mavlink_data.heartbeat); 
             mavlink_msg_to_send_buffer(radio_data.data_out_buff, mavlink_data.msg); 

@@ -7,7 +7,8 @@
  * 
  * @details Setup 
  *          - Hardware 
- *            * STM32F4 microcontroller with a serial connection to a PC 
+ *            * STM32F4 microcontroller with a serial connection to a PC. 
+ *            * Two potentiometers for each ADC input connected to the STM32F4. 
  *          
  *          Configuration 
  *          - UART 
@@ -21,10 +22,16 @@
  *          
  *          Dependencies 
  *          - STM32F4 driver library 
- *            - 
+ *            - UART, ADC and timers drivers are used. 
  *          
  *          Procedure 
- *          - 
+ *          - ADC values from potentiometers are manually read and displayed to the 
+ *            serial terminal. There are two methods that can be used to read the ADC. 
+ *            The first is by reading a single ADC value from the specified channel and 
+ *            doing that for each channel. The second is by doing a scan of all ADC 
+ *            channels put into the sequence. The best method will depend on the 
+ *            application. A blocking delay is used after displaying the values so 
+ *            give breaks between reads. 
  *          
  *          Other tests demonstrating the analog driver: 
  *          - dma_test.c 
