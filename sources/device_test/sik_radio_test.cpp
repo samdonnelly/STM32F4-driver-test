@@ -88,6 +88,7 @@ extern "C"
 #define SIK_TEST_MSG_BUFF_SIZE 200 
 #define SIK_TEST_SYS_ID 1            // GCS IDs start at 255, systems start at 1 
 #define SIK_TEST_HB_TIMEOUT 10 
+#define SIK_TEST_AT_TIMEOUT 5 
 
 //=======================================================================================
 
@@ -131,10 +132,13 @@ typedef struct sik_system_data_s
 
     // Timers 
     uint8_t heartbeat_timer; 
+    uint8_t at_mode_timer; 
 
     // Status 
-    uint8_t at_mode   : 1;   // AT command mode flag 
-    uint8_t connected : 1;   // Radio connected flag 
+    uint8_t at_mode           : 1;   // AT command mode flag 
+    uint8_t at_mode_requested : 1;   // AT command mode requested flag 
+    uint8_t ui_mode           : 1;   // User input mode flag 
+    uint8_t connected         : 1;   // Radio connected flag 
 }
 sik_system_data_t; 
 
@@ -142,8 +146,13 @@ static sik_system_data_t system_data;
 
 
 const char 
-sik_user_prompt[] = "\r\n>>> ", 
-sik_user_hb[] = "Heartbeat\r\n"; 
+sik_test_user_prompt[] = "\r\n>>> ", 
+sik_test_user_msgid[] = "msgid: %lu\r\n", 
+sik_test_user_exitui[] = "exitui", 
+sik_test_at_request[] = "Requesting AT command mode... ", 
+sik_test_at_confirm[] = "OK\r\n", 
+sik_test_timeout_msg[] = "timeout\r\n", 
+sik_test_overwrite[] = "\r"; 
 
 //=======================================================================================
 
@@ -152,11 +161,19 @@ sik_user_hb[] = "Heartbeat\r\n";
 // Prototypes 
 
 /**
- * @brief User prompt 
+ * @brief AT command mode radio input decode 
  * 
- * @param user_msg : message to send to the user 
+ * @details 
  */
-void sik_radio_test_user_output(const char *user_msg); 
+void sik_radio_test_at_radio_decode(void); 
+
+
+/**
+ * @brief MAVLink mode radio input decode 
+ * 
+ * @details 
+ */
+void sik_radio_test_mavlink_radio_decode(void); 
 
 
 /**
@@ -169,12 +186,44 @@ void sik_radio_test_user_output(const char *user_msg);
 void sik_radio_test_mavlink_payload_decode(void); 
 
 
-// Normal mode user input decode 
+/**
+ * @brief AT command mode user input decode 
+ * 
+ * @details 
+ */
+void sik_radio_test_at_user_decode(void); 
+
+
+/**
+ * @brief MAVLink mode user input decode 
+ * 
+ * @details 
+ */
 void sik_radio_test_mavlink_user_decode(void); 
 
 
-// AT command mode user input decode 
-void sik_radio_test_at_user_decode(void); 
+/**
+ * @brief MAVlink mode periodic actions 
+ * 
+ * @details 
+ */
+void sik_radio_test_mavlink_periodic(void); 
+
+
+/**
+ * @brief User prompt 
+ * 
+ * @param user_msg : message to send to the user 
+ */
+void sik_radio_test_user_output(const char *user_msg); 
+
+
+/**
+ * @brief AT command mode request reset 
+ * 
+ * @param user_msg 
+ */
+void sik_radio_test_at_request_reset(const char *user_msg); 
 
 //=======================================================================================
 
@@ -215,7 +264,7 @@ void sik_radio_test_init(void)
     memset((void *)user_data.data_out_buff, CLEAR, sizeof(user_data.data_out_buff)); 
     user_data.data_in_index = CLEAR; 
 
-    // MAVLink data 
+    // System data 
     system_data.channel = MAVLINK_COMM_0; 
     system_data.system_id = SIK_TEST_SYS_ID; 
     system_data.component_id = MAV_COMP_ID_TELEMETRY_RADIO; 
@@ -225,10 +274,16 @@ void sik_radio_test_init(void)
     system_data.heartbeat.base_mode = MAV_MODE_FLAG_GUIDED_ENABLED; 
     system_data.heartbeat.system_status = MAV_STATE_ACTIVE; 
     system_data.heartbeat_timer = CLEAR; 
-    system_data.connected = CLEAR_BIT; 
+    system_data.at_mode_timer = CLEAR; 
     system_data.at_mode = CLEAR_BIT; 
+    system_data.at_mode_requested = CLEAR_BIT; 
+    system_data.ui_mode = CLEAR_BIT; 
+    system_data.connected = CLEAR_BIT; 
 
     //==================================================
+
+    //==================================================
+    // General setup 
 
     // Initialize GPIO ports 
     gpio_port_init(); 
@@ -240,6 +295,8 @@ void sik_radio_test_init(void)
         0x2710,   // ARR=10000, (10000 counts)*(100us/count) = 1s 
         TIM_UP_INT_ENABLE); 
     tim_enable(TIM9); 
+    
+    //==================================================
 
     //==================================================
     // UART init 
@@ -370,10 +427,6 @@ void sik_radio_test_init(void)
 //=======================================================================================
 // Test code 
 
-// TODO 
-// - Can multiple MAVLINK messages/packets come at once? 
-// - Transition to AT command mode. 
-
 void sik_radio_test_app(void)
 {
     // New SiK radio module data received 
@@ -389,28 +442,11 @@ void sik_radio_test_app(void)
         // Choose an action based on whether the radio is in AT command mode or not. 
         if (system_data.at_mode)
         {
-            // Show the user the AT response from the radio. 
-            sik_radio_test_user_output((char *)radio_data.data_in_buff); 
-            sik_radio_test_user_output(sik_user_prompt); 
+            sik_radio_test_at_radio_decode(); 
         }
         else 
         {
-            // Look at each byte of the received data and try to decode MAVLink messages 
-            // until there is no more data to check. 
-            while (radio_data.data_in_buff[radio_data.data_in_index] != NULL_CHAR)
-            {
-                if (mavlink_parse_char(
-                        system_data.channel, 
-                        radio_data.data_in_buff[radio_data.data_in_index++], 
-                        &system_data.msg, 
-                        &system_data.status))
-                {
-                    // If a MAVLink message has been decoded then proceed to decode the 
-                    // message payload. This can happen more than once if multiple messages 
-                    // are in the received data. 
-                    sik_radio_test_mavlink_payload_decode(); 
-                }
-            }
+            sik_radio_test_mavlink_radio_decode(); 
         }
     }
 
@@ -424,10 +460,16 @@ void sik_radio_test_app(void)
         cb_parse(user_data.cb, &user_data.cb_index, user_data.data_in_buff); 
 
         // Choose an action based on whether the radio is in AT command mode or not. 
-        system_data.at_mode ? sik_radio_test_at_user_decode() : 
-                              sik_radio_test_mavlink_user_decode(); 
+        if (system_data.at_mode)
+        {
+            sik_radio_test_at_user_decode(); 
+        }
+        else 
+        {
+            sik_radio_test_mavlink_user_decode(); 
+        }
     }
-
+    
     // Periodic interrupt 
     if (handler_flags.tim1_brk_tim9_glbl_flag)
     {
@@ -436,22 +478,7 @@ void sik_radio_test_app(void)
         // Only perform MAVLink actions when the SiK radio is not in AT command mode. 
         if (!system_data.at_mode)
         {
-            // Send heartbeat 
-            mavlink_msg_heartbeat_encode(
-                system_data.system_id, 
-                system_data.component_id, 
-                &system_data.msg, 
-                &system_data.heartbeat); 
-            mavlink_msg_to_send_buffer(radio_data.data_out_buff, &system_data.msg); 
-            sik_send_data((char *)radio_data.data_out_buff); 
-
-            // Check for a timeout 
-            if (system_data.heartbeat_timer++ >= SIK_TEST_HB_TIMEOUT)
-            {
-                // Have not seen heartbeat for too long. Disconnected. 
-                system_data.heartbeat_timer--; 
-                system_data.connected = CLEAR_BIT; 
-            }
+            sik_radio_test_mavlink_periodic(); 
         }
     }
 }
@@ -460,12 +487,65 @@ void sik_radio_test_app(void)
 
 
 //=======================================================================================
-// Helper functions 
+// State functions 
 
-// User prompt 
-void sik_radio_test_user_output(const char *user_msg)
+// AT command mode radio input decode 
+void sik_radio_test_at_radio_decode(void)
 {
-    uart_send_str(user_data.uart, user_msg); 
+    // Echo the AT response from the radio to the serial terminal for the user to see. A 
+    // prompt will be output after the user enters anything so it needs to be overwritten 
+    // to make way for the radio response. 
+    sik_radio_test_user_output(sik_test_overwrite); 
+    sik_radio_test_user_output((char *)radio_data.data_in_buff); 
+    sik_radio_test_user_output(sik_test_user_prompt); 
+}
+
+
+// MAVLink mode radio input decode 
+void sik_radio_test_mavlink_radio_decode(void)
+{
+    // Besides a MAVLink message, the only other data received from the radio in MAVLink 
+    // mode is an AT command mode enter response (assuming the user doesn't configure the 
+    // radio to not use MAVLink). This is only checked for right after the user requests 
+    // to go to AT command mode. 
+    if (system_data.at_mode_requested)
+    {
+        if (str_compare(sik_at_enter_resp, (char *)user_data.data_in_buff, BYTE_0))
+        {
+            system_data.at_mode = SET_BIT; 
+            sik_radio_test_at_request_reset(sik_test_at_confirm); 
+        }
+    }
+
+    // Look at each byte of the received data and try to decode MAVLink messages 
+    // until there is no more data to check. 
+    while (radio_data.data_in_buff[radio_data.data_in_index] != NULL_CHAR)
+    {
+        if (mavlink_parse_char(
+                system_data.channel, 
+                radio_data.data_in_buff[radio_data.data_in_index++], 
+                &system_data.msg, 
+                &system_data.status))
+        {
+            // MAVLink message has been successfully decoded. Proceed to decode the 
+            // message payload. Note that this can happen more than once if multiple 
+            // messages are received or not at all if a valid message can't be decoded. 
+
+            if (!system_data.ui_mode)
+            {
+                // If not in user input mode then display the message ID for the user to 
+                // see. This is done here so all received messages are shown to the user 
+                // even if the message payload is not meant to be decoded. 
+                snprintf((char *)user_data.data_out_buff, 
+                         SIK_TEST_MSG_BUFF_SIZE, 
+                         sik_test_user_msgid, 
+                         (uint32_t)system_data.msg.msgid); 
+                sik_radio_test_user_output((char *)user_data.data_out_buff); 
+            }
+
+            sik_radio_test_mavlink_payload_decode(); 
+        }
+    }
 }
 
 
@@ -480,7 +560,6 @@ void sik_radio_test_mavlink_payload_decode(void)
                 &system_data.heartbeat); 
             system_data.heartbeat_timer = CLEAR; 
             system_data.connected = SET_BIT; 
-            sik_radio_test_user_output(sik_user_hb); 
             break; 
 
         case MAVLINK_MSG_ID_GLOBAL_POSITION_INT: 
@@ -503,30 +582,130 @@ void sik_radio_test_mavlink_payload_decode(void)
 }
 
 
-// Normal mode user input decode 
-void sik_radio_test_mavlink_user_decode(void)
-{
-    if (str_compare(sik_at_enter_cmd, (char *)user_data.data_in_buff, BYTE_0))
-    {
-        sik_at_mode(SIK_AT_ENTER); 
-        system_data.at_mode = SET_BIT; 
-    }
-}
-
-
 // AT command mode user input decode 
 void sik_radio_test_at_user_decode(void)
 {
+    // Take the user input while in AT command mode and try to match it to one of the 
+    // predefined commands available in this test. If no command is matched then the 
+    // input is sent as is to the radio and a new prompt will be displayed. Any response 
+    // from the radio will be echoed to the serial terminal for the user to see. 
     if (str_compare(sik_ato_cmd, (char *)user_data.data_in_buff, BYTE_0))
     {
+        // Exit AT command mode 
         sik_at_mode(SIK_AT_EXIT); 
         system_data.at_mode = CLEAR_BIT; 
     }
     else 
     {
+        // Send input as is to the radio 
         sik_send_data((char *)user_data.data_in_buff); 
-        sik_radio_test_user_output(sik_user_prompt); 
     }
+
+    sik_radio_test_user_output(sik_test_user_prompt); 
+}
+
+
+// MAVLink mode user input decode 
+void sik_radio_test_mavlink_user_decode(void)
+{
+    // When AT command mode has been requested by the user then block and other inputs 
+    // from being registered until either AT command mode has been entered or the 
+    // request has timed out (either way the AT command request flag is cleared). 
+    if (system_data.at_mode_requested)
+    {
+        return; 
+    }
+
+    // When not waiting on AT command mode response and in MAVLink mode then look to 
+    // match the user input to a predefined response. If no match is found then a 
+    // new prompt will be displayed without any action or acknowledgement. 
+    if (!system_data.ui_mode)
+    {
+        // If this is true then it means the code is in MAVLink mode (i.e. not AT 
+        // command mode), all incoming messages are being displayed for the user to see 
+        // and the user has provided any input via the serial terminal. This case will 
+        // make it so messages will stop being displayed giving the user an opportunity 
+        // to provide uninterrupted input (i.e. user input mode). 
+        system_data.ui_mode = SET_BIT; 
+        sik_radio_test_user_output(sik_test_user_prompt); 
+    }
+    else if (str_compare(sik_test_user_exitui, (char *)user_data.data_in_buff, BYTE_0))
+    {
+        // Exit user input mode 
+        system_data.ui_mode = CLEAR_BIT; 
+    }
+    else if (str_compare(sik_at_enter_cmd, (char *)user_data.data_in_buff, BYTE_0))
+    {
+        // Submit an AT command mode request 
+        sik_at_mode(SIK_AT_ENTER); 
+        system_data.at_mode_requested = SET_BIT; 
+        sik_radio_test_user_output(sik_test_at_request); 
+    }
+    else 
+    {
+        // No matching action found. Do nothing. 
+        sik_radio_test_user_output(sik_test_user_prompt); 
+    }
+}
+
+
+// MAVlink mode periodic actions 
+void sik_radio_test_mavlink_periodic(void)
+{
+    // Everything here is performed periodically when in MAVLink mode. 
+
+    // Send heartbeat for GCS to see 
+    mavlink_msg_heartbeat_encode(
+        system_data.system_id, 
+        system_data.component_id, 
+        &system_data.msg, 
+        &system_data.heartbeat); 
+    mavlink_msg_to_send_buffer(radio_data.data_out_buff, &system_data.msg); 
+    sik_send_data((char *)radio_data.data_out_buff); 
+
+    // Check for a connection (heartbeat) timeout 
+    if (system_data.heartbeat_timer++ >= SIK_TEST_HB_TIMEOUT)
+    {
+        // Have not seen a heartbeat message from a GCS for too long. The system is 
+        // considered to be disconnected. 
+        system_data.heartbeat_timer--; 
+        system_data.connected = CLEAR_BIT; 
+    }
+
+    // Check for an AT command mode request timeout 
+    if (system_data.at_mode_requested)
+    {
+        // If AT command mode is being requested then the code waits on the appropriate 
+        // response from the radio. Waiting for this response blocks other actions so 
+        // once the system has waited too long then cancel the search and return to 
+        // normal MAVLink mode. 
+        if (system_data.at_mode_timer++ >= SIK_TEST_AT_TIMEOUT)
+        {
+            sik_radio_test_at_request_reset(sik_test_timeout_msg); 
+        }
+    }
+}
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Helper functions 
+
+// User prompt 
+void sik_radio_test_user_output(const char *user_msg)
+{
+    uart_send_str(user_data.uart, user_msg); 
+}
+
+
+// AT command mode request reset 
+void sik_radio_test_at_request_reset(const char *user_msg)
+{
+    system_data.at_mode_timer = CLEAR; 
+    system_data.at_mode_requested = CLEAR_BIT; 
+    sik_radio_test_user_output(user_msg); 
+    sik_radio_test_user_output(sik_test_user_prompt); 
 }
 
 //=======================================================================================
