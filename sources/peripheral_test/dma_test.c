@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief DMA test code 
+ * @brief DMA test 
  * 
  * @version 0.1
  * @date 2022-08-28
@@ -23,10 +23,7 @@
 //=======================================================================================
 // Macros 
 
-// Data 
 #define ADC_BUFF_SIZE 3               // Size according to the number of ADCs used 
-
-// Formatting 
 #define ADC_PRINT_SPACES 5            // Spaces between values displayed in the terminal 
 
 //=======================================================================================

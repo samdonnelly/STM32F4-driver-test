@@ -52,13 +52,53 @@
  *              application. 
  *          
  *          Procedure 
- *          - This code looks for data received from both the SiK telemetry radio and 
- *            the serial terminal. If data is received by the radio then the code will 
- *            attempt to decode a pre-defined MAVLINK message. A valid message will be 
- *            sent to the serial terminal for the user to see. If data is received from 
- *            the serial terminal then the code will process the input and perform the 
- *            needed action which can be to either encode and send a MAVLINK message or 
- *            put the SiK radio into AT command mode. 
+ *          - This code looks for data received via UART from both the SiK telemetry 
+ *            radio and the serial terminal. When data is input from either source, 
+ *            DMA will transfer the data to a circular buffer and an interrupt will be 
+ *            triggered once there is no more data to transfer. This interrupt causes 
+ *            the code to parse the circular buffer data into the complete input which 
+ *            is then used to carry out various commands. In addition to these inputs, 
+ *            there is also a periodic timer interrupt which carries out actions at 
+ *            fixed intervals. 
+ *          
+ *          - There are two primary modes for this test: MAVLink mode and AT command 
+ *            mode. 
+ *            * MAVLink mode (default) uses the SiK radio as a serial bridge to send and 
+ *              receive MAVLink messages with an external telemtry radio. Note that the 
+ *              radio can be configured to not use MAVLink packet framing but that is 
+ *              not supported in this test. In this mode, the device will attempt to 
+ *              decode inputs into MAVLink messages & payloads and it will also send 
+ *              MAVLink messages both periodically and at the request of the user. There 
+ *              is a sub-mode within MAVLink mode which is user input mode. By default 
+ *              user input mode is disabled and in this state the IDs of any received
+ *              MAVLink message will be output to the serial terminal for the user to 
+ *              see. User input mode can be entered from MAVLink mode by inputting 
+ *              anything into the serial terminal (i.e. inputting some formatted command 
+ *              will have no other affect). Once in user input mode, message IDs will 
+ *              stop being displayed and instead a prompt will be shown where the user 
+ *              can input other commands. You must be in user input mode to send commands 
+ *              to the radio. From user input mode you can transition to AT command mode. 
+ *            * AT command mode is used to configure the settings of the SiK radio. To 
+ *              enter this mode, you must input the appropriate command from MAVLink 
+ *              user input mode. In this mode, commands input by the user will be relayed 
+ *              to the radio and any responses from the radio will be echoed to the 
+ *              serial terminal for the user to see. This code provides the interface to 
+ *              configure the radio but for info on how to properly configure the radio 
+ *              the device documentation should be used. You can exit this mode using the 
+ *              appropriate command at the prompt and you will be taken back to user 
+ *              input mode in MAVLink mode. 
+ *          
+ *          - When attempting to transition from MAVLink user input mode to AT command 
+ *            mode, the code will enter a temporary "request" mode. The request will be 
+ *            sent to the radio to enter AT command mode and the code will wait on the 
+ *            response from the radio indicating that AT command mode has been entered. 
+ *            In the meantime no other actions can be requested by the user (it typically 
+ *            takes ~1s for the radio to enter AT mode). If the confirmation is not seen 
+ *            from the radio after a certain amount of time then the request will time 
+ *            out and the user will remain in MAVLink user input mode. 
+ *          
+ *          - For a list of commands available to the user, see the list of pre-defined 
+ *            strings below under the "Commands" section. 
  * 
  * @version 0.1
  * @date 2024-12-11
@@ -146,13 +186,17 @@ static sik_system_data_t system_data;
 
 
 const char 
+// Formatting 
 sik_test_user_prompt[] = "\r\n>>> ", 
+sik_test_overwrite[] = "\r", 
+// Feedback 
 sik_test_user_msgid[] = "msgid: %lu\r\n", 
+// Commands 
 sik_test_user_exitui[] = "exitui", 
+// Status 
 sik_test_at_request[] = "Requesting AT command mode... ", 
 sik_test_at_confirm[] = "OK\r\n", 
-sik_test_timeout_msg[] = "timeout\r\n", 
-sik_test_overwrite[] = "\r"; 
+sik_test_timeout_msg[] = "timeout\r\n"; 
 
 //=======================================================================================
 
@@ -163,7 +207,14 @@ sik_test_overwrite[] = "\r";
 /**
  * @brief AT command mode radio input decode 
  * 
- * @details 
+ * @details Used to decode radio input when in AT command mode. This function doesn't so 
+ *          much decode as it does echo the radio input to the serial terminal for the 
+ *          user to see. It's labelled as a decoding function to better align with the 
+ *          other input mode functions. 
+ *          
+ *          When a user inputs a valid AT command while in AT command mode, the radio 
+ *          should respond with the requested info. Echoing this input helps the user 
+ *          configure the radio as needed. 
  */
 void sik_radio_test_at_radio_decode(void); 
 
@@ -171,7 +222,10 @@ void sik_radio_test_at_radio_decode(void);
 /**
  * @brief MAVLink mode radio input decode 
  * 
- * @details 
+ * @details Used to decode radio input while in MAVLink mode. This function is primarily 
+ *          used to decode MAVLink messages received by the radio, however if in MAVLink 
+ *          mode and the user requests to go to AT command mode, this function will check 
+ *          if the radio responds with an acknowledgement that it has entere AT mode. 
  */
 void sik_radio_test_mavlink_radio_decode(void); 
 
@@ -179,9 +233,10 @@ void sik_radio_test_mavlink_radio_decode(void);
 /**
  * @brief MAVLink message payload decode 
  * 
- * @details This function provides a means to decode any desired messages. Messages can 
- *          be added and removed as needed. A piece of code like this is needed for any 
- *          MAVLink application to define which messages to handle. 
+ * @details Decodes the payload of a received MAVLink message once the received radio 
+ *          data is decoded into a complete MAVLink message. A function like this is 
+ *          recommended by the MAVLink documentation for identifying and handling 
+ *          messages. Different messages can be added as needed. 
  */
 void sik_radio_test_mavlink_payload_decode(void); 
 
@@ -189,7 +244,10 @@ void sik_radio_test_mavlink_payload_decode(void);
 /**
  * @brief AT command mode user input decode 
  * 
- * @details 
+ * @details Used to decode user input when in AT command mode. Some decoding is done to 
+ *          check for specific user commands but if no match is found then the user input 
+ *          is forwarded to the radio. This gives the user easy control over configuring 
+ *          the radio. 
  */
 void sik_radio_test_at_user_decode(void); 
 
@@ -197,7 +255,10 @@ void sik_radio_test_at_user_decode(void);
 /**
  * @brief MAVLink mode user input decode 
  * 
- * @details 
+ * @details Used to decode user input when in MAVLink mode. A match to specific predefined 
+ *          commands is checked for. If no match is found then nothing happens. When the 
+ *          system is in MAVLink mode and not in user input mode then any input will trigger 
+ *          user input mode and nothing else. 
  */
 void sik_radio_test_mavlink_user_decode(void); 
 
@@ -205,7 +266,7 @@ void sik_radio_test_mavlink_user_decode(void);
 /**
  * @brief MAVlink mode periodic actions 
  * 
- * @details 
+ * @details This function performs periodic actions when in MAVLink mode. 
  */
 void sik_radio_test_mavlink_periodic(void); 
 
@@ -221,7 +282,7 @@ void sik_radio_test_user_output(const char *user_msg);
 /**
  * @brief AT command mode request reset 
  * 
- * @param user_msg 
+ * @param user_msg : request status message to send to the user 
  */
 void sik_radio_test_at_request_reset(const char *user_msg); 
 
