@@ -5,6 +5,23 @@
  * 
  * @brief DMA test 
  * 
+ * @details Setup 
+ *          - Hardware 
+ *            * STM32F4 microcontroller with a serial connection to a PC. 
+ *          
+ *          Configuration 
+ *          - 
+ *          
+ *          Dependencies 
+ *          - STM32F4 driver library 
+ *            - 
+ *          
+ *          Procedure 
+ *          - 
+ *          
+ *          Other tests demonstrating the analog driver: 
+ *          - 
+ * 
  * @version 0.1
  * @date 2022-08-28
  * 
