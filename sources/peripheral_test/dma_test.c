@@ -40,8 +40,9 @@
 //=======================================================================================
 // Macros 
 
-#define ADC_BUFF_SIZE 3               // Size according to the number of ADCs used 
-#define ADC_PRINT_SPACES 5            // Spaces between values displayed in the terminal 
+#define ADC_TEST_BUFF_SIZE 3      // Size according to the number of ADCs used 
+#define ADC_TEST_PRINT_SPACES 5   // Spaces between values displayed in the terminal 
+#define ADC_TEST_DELAY 1000       // Blocking delay time 
 
 //=======================================================================================
 
@@ -62,7 +63,7 @@ typedef enum {
 //=======================================================================================
 // Globals 
 
-static uint16_t adc_data[ADC_BUFF_SIZE];  // Location for the DMA to store ADC values 
+static uint16_t adc_data[ADC_TEST_BUFF_SIZE]; 
 
 //=======================================================================================
 
@@ -170,7 +171,7 @@ void dma_test_init()
 #endif   // ADC_DMA_THIRD_CHANNEL 
 
     // Set the sequence length (called once and only for more than one channel) 
-    adc_seq_len_set(ADC1, (adc_seq_num_t)ADC_BUFF_SIZE); 
+    adc_seq_len_set(ADC1, (adc_seq_num_t)ADC_TEST_BUFF_SIZE); 
 
 #endif   // ADC_DMA_SECOND_CHANNEL 
 
@@ -206,7 +207,7 @@ void dma_test_init()
         (uint32_t)(&ADC1->DR), 
         (uint32_t)adc_data, 
         (uint32_t)NULL, 
-        (uint16_t)ADC_BUFF_SIZE); 
+        (uint16_t)ADC_TEST_BUFF_SIZE); 
 
     // Enable the DMA stream 
     dma_stream_enable(DMA2_Stream0); 
@@ -238,7 +239,6 @@ void dma_test_app()
 
 #if DMA_TEST_MODE_1 
 
-    // Local variables 
     static uint8_t user_button = CLEAR; 
     static uint8_t button_block = CLEAR; 
 
@@ -267,13 +267,13 @@ void dma_test_app()
 
 #if ADC_DMA_SECOND_CHANNEL 
 
-    uart_send_spaces(USART2, ADC_PRINT_SPACES); 
+    uart_send_spaces(USART2, ADC_TEST_PRINT_SPACES); 
     uart_send_str(USART2, "Second ADC: "); 
     uart_send_integer(USART2, (int16_t)adc_data[SECOND_ADC]); 
 
 #if ADC_DMA_THIRD_CHANNEL 
 
-    uart_send_spaces(USART2, ADC_PRINT_SPACES); 
+    uart_send_spaces(USART2, ADC_TEST_PRINT_SPACES); 
     uart_send_str(USART2, "Third ADC: "); 
     uart_send_integer(USART2, (int16_t)adc_data[THIRD_ADC]); 
 
@@ -284,7 +284,7 @@ void dma_test_app()
 #endif   // ADC_DMA_SECOND_CHANNEL 
 
     // Delay 
-    tim_delay_ms(TIM9, 1000); 
+    tim_delay_ms(TIM9, ADC_TEST_DELAY); 
 }
 
 //=======================================================================================
