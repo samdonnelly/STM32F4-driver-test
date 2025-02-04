@@ -63,6 +63,16 @@ typedef enum {
 //=======================================================================================
 // Globals 
 
+typedef struct dma_test_data_s
+{
+    TIM_TypeDef *timer; 
+    USART_TypeDef *uart; 
+    uint16_t adc_data[ADC_TEST_BUFF_SIZE]; 
+}
+dma_test_data_t; 
+
+static dma_test_data_t dma_data; 
+
 static uint16_t adc_data[ADC_TEST_BUFF_SIZE]; 
 
 //=======================================================================================
@@ -98,20 +108,25 @@ static uint16_t adc_data[ADC_TEST_BUFF_SIZE];
 
 void dma_test_init()
 {
+    // Initialize data 
+    dma_data.timer = TIM9; 
+    dma_data.uart = USART2; 
+    memset((void *)dma_data.adc_data, CLEAR, sizeof(dma_data.adc_data)); 
+
     // Initialize timers 
     tim_9_to_11_counter_init(
-        TIM9, 
+        dma_data.timer, 
         TIM_84MHZ_1US_PSC, 
         0xFFFF,  // Max ARR value 
         TIM_UP_INT_DISABLE); 
-    tim_enable(TIM9); 
+    tim_enable(dma_data.timer); 
 
     // Initialize GPIO ports 
     gpio_port_init(); 
 
     // Initialize UART
     uart_init(
-        USART2, 
+        dma_data.uart, 
         GPIOA, 
         PIN_3, 
         PIN_2, 
@@ -250,7 +265,7 @@ void dma_test_app()
     {
         adc_start(ADC1); 
         button_block++; 
-        tim_delay_ms(TIM9, 10);  // Wait for button bounce to settle 
+        tim_delay_ms(dma_data.timer, 10);  // Wait for button bounce to settle 
     }
     else if (user_button && button_block)
     {
@@ -262,29 +277,29 @@ void dma_test_app()
     //==================================================
 
     // Display the result to the serial terminal 
-    uart_send_str(USART2, "First ADC: "); 
-    uart_send_integer(USART2, (int16_t)adc_data[FIRST_ADC]); 
+    uart_send_str(dma_data.uart, "First ADC: "); 
+    uart_send_integer(dma_data.uart, (int16_t)adc_data[FIRST_ADC]); 
 
 #if ADC_DMA_SECOND_CHANNEL 
 
-    uart_send_spaces(USART2, ADC_TEST_PRINT_SPACES); 
-    uart_send_str(USART2, "Second ADC: "); 
-    uart_send_integer(USART2, (int16_t)adc_data[SECOND_ADC]); 
+    uart_send_spaces(dma_data.uart, ADC_TEST_PRINT_SPACES); 
+    uart_send_str(dma_data.uart, "Second ADC: "); 
+    uart_send_integer(dma_data.uart, (int16_t)adc_data[SECOND_ADC]); 
 
 #if ADC_DMA_THIRD_CHANNEL 
 
-    uart_send_spaces(USART2, ADC_TEST_PRINT_SPACES); 
-    uart_send_str(USART2, "Third ADC: "); 
-    uart_send_integer(USART2, (int16_t)adc_data[THIRD_ADC]); 
+    uart_send_spaces(dma_data.uart, ADC_TEST_PRINT_SPACES); 
+    uart_send_str(dma_data.uart, "Third ADC: "); 
+    uart_send_integer(dma_data.uart, (int16_t)adc_data[THIRD_ADC]); 
 
 #endif   // ADC_DMA_THIRD_CHANNEL 
 
-    uart_send_new_line(USART2); 
+    uart_send_new_line(dma_data.uart); 
 
 #endif   // ADC_DMA_SECOND_CHANNEL 
 
     // Delay 
-    tim_delay_ms(TIM9, ADC_TEST_DELAY); 
+    tim_delay_ms(dma_data.timer, ADC_TEST_DELAY); 
 }
 
 //=======================================================================================
