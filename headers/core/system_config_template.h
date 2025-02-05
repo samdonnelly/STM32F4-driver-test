@@ -71,18 +71,12 @@
 //=======================================================================================
 // Application test modes 
 
-//==================================================
 // Active object 
-
 #define AO_CPP_TEST 0 
 #define AO_C_TEST 0 
 
-//==================================================
-
-//==================================================
 // FreeRTOS test 
-
-#define PERIODIC_BLINK_TEST 0        // Highest priority test 
+#define PERIODIC_BLINK_TEST 0 
 #define MANUAL_BLINK_TEST 0 
 #define TASK_SCHEDULING_TEST 0 
 #define MEMORY_MANAGEMENT_TEST 0 
@@ -93,23 +87,14 @@
 #define SOFTWARE_TIMER_TEST_1 0 
 #define HARDWARE_INTERRUPT_TEST 0 
 #define DEADLOCK_STARVATION_TEST 0 
-#define PRIORITY_INVERSION_TEST 0    // Lowest priority test 
+#define PRIORITY_INVERSION_TEST 0 
 
-//==================================================
-
-//==================================================
 // RC Test 
-
-// Devices 
 #define RC_SYSTEM_1 0 
 #define RC_SYSTEM_2 0 
-
-// Test code 
 #define RC_SD_CARD_TEST 0 
 #define RC_MOTOR_TEST 0 
 #define RC_GROUND_STATION_TEST 0 
-
-//==================================================
 
 //=======================================================================================
 
@@ -119,96 +104,50 @@
 
 // Toggle the mode for each device/peripheral/tool test 
 
-//==================================================
 // General 
-
 #define HD44780U_ON_I2C_BUS 0             // Turn HD44780U screen off if on the same I2C 
                                           // bus as another device and not being used. 
 
-//==================================================
-
-//==================================================
-// ESC 
-
+// ESC driver test 
 #define ESC_SECOND_DEVICE 0               // Add a second device 
 
-//==================================================
-
-//==================================================
-// HC-05 
-
+// HC-05 driver test 
 #define HC05_CONTROLLER_TEST 0            // For switching between driver and controller testing 
 
-//==================================================
-
-//==================================================
-// HD44780U 
-
+// HD44780U driver test 
 #define HD44780U_CONTROLLER_TEST 0        // For switching between driver and controller testing 
 #define HD44780U_BACKLIGHT_TEST 0         // Backlight control test 
 #define HD44780U_DISPLAY_TEST 0           // Display on/off test 
 #define HD44780U_CURSOR_TEST 0            // Cursor visibility test 
 #define HD44780U_BLINK_TEST 0             // Cursor blink test 
 
-//==================================================
-
-//==================================================
-// HW125 (SD card) 
-
+// HW125 (SD card) driver test 
 #define FORMAT_EXFAT 0 
 #define HW125_CONTROLLER_TEST 0           // For switching between driver and controller testing 
 
-//==================================================
-
-//==================================================
-// LSM303AGR 
-
+// LSM303AGR driver test 
 // Only one mode is meant to be used at a time. The first macro under each mode is the 
 // main/parent mode setter. Subsequent macros under the same mode are only used once the 
 // mode is active. 
-
-// Magnetometer axis data mode 
-#define LSM303AGR_TEST_AXIS 0             // Magnetometer axis data read 
-
-// Magnetometer heading mode 
-#define LSM303AGR_TEST_HEADING 0          // Magnetometer heading read (compass) 
+#define LSM303AGR_TEST_AXIS 0             // Magnetometer axis data read mode 
+#define LSM303AGR_TEST_HEADING 0          // Magnetometer heading read (compass) mode 
 #define LSM303AGR_TEST_CALIBRATION 0      // Magnetometer heading calibration 
 
-//==================================================
+// M8Q driver test 
 
-//==================================================
-// M8Q 
-//==================================================
-
-//==================================================
 // MPU-6050 driver test 
-
-// Test control 
 #define MPU6050_CONTROLLER_TEST 0        // Switch between driver and controller testing 
 #define MPU6050_SECOND_DEVICE 0          // Include the test code for a second device 
 #define MPU6050_INT_PIN 0                // Interrupt pin enable 
 
-//==================================================
-
-//==================================================
 // nRF24L01 driver test 
-
-// Device 
 #define NRF24L01_SYSTEM_1 0              // Enable device 1 code 
 #define NRF24L01_SYSTEM_2 0              // Enable device 2 code 
+#define NRF24L01_HEARTBEAT 0             // Heartbeat test code 
+#define NRF24L01_MANUAL_CONTROL 0        // User input test code 
 
-// Test code 
-#define NRF24L01_HEARTBEAT 0             // Heartbeat 
-#define NRF24L01_MANUAL_CONTROL 0        // Perform actions based on user input 
-
-//==================================================
-
-//==================================================
 // WS2812 driver test 
-
 #define WS2812_SECOND_DEVICE 0           // Enable second device code 
-
-//==================================================
 
 //=======================================================================================
 
@@ -216,16 +155,15 @@
 //=======================================================================================
 // Peripheral test mode 
 
-// Analog 
+// Analog driver test 
 #define ADC_MODE_0 0                     // Single read mode, scan mode disabled 
 #define ADC_MODE_1 0                     // Single read mode, scan mode enabled 
 
-// DMA 
+// DMA driver test 
 #define ADC_DMA_SECOND_CHANNEL 0         // Enables test code for second ADC channel 
 #define ADC_DMA_THIRD_CHANNEL 0          // Enables test code for third ADC channel 
-#define DMA_TEST_MODE_1 0                // Mode 1 test code control (see source file) 
-#define DMA_TEST_MODE_2 0                // Mode 2 test code control (see source file) 
-#define DMA_TEST_MODE_3 0                // Mode 3 test code control (see source file) 
+#define DMA_TEST_SCAN_MDOE 0             // Scan mode 
+#define DMA_TEST_CONT_MODE 0             // Continuous mode 
 
 //=======================================================================================
 
