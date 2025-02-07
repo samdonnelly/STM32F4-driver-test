@@ -368,8 +368,8 @@ void sik_radio_test_init(void)
         GPIOA, 
         PIN_10, 
         PIN_9, 
-        UART_FRAC_84_115200, 
-        UART_MANT_84_115200, 
+        UART_FRAC_84_57600, 
+        UART_MANT_84_57600, 
         UART_DMA_DISABLE, 
         UART_DMA_ENABLE); 
 
@@ -418,7 +418,7 @@ void sik_radio_test_init(void)
         DMA_CHNL_4, 
         DMA_DIR_PM, 
         DMA_CM_ENABLE,
-        DMA_PRIOR_VHI, 
+        DMA_PRIOR_HI, 
         DMA_DBM_DISABLE, 
         DMA_ADDR_INCREMENT,   // Increment the buffer pointer to fill the buffer 
         DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
@@ -743,6 +743,7 @@ void sik_radio_test_mavlink_periodic(void)
         if (system_data.at_mode_timer++ >= SIK_TEST_AT_TIMEOUT)
         {
             sik_radio_test_at_request_reset(sik_test_timeout_msg); 
+            sik_at_mode(SIK_AT_EXIT); 
         }
     }
 }
