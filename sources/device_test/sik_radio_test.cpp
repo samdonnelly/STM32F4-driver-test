@@ -125,7 +125,7 @@ extern "C"
 //=======================================================================================
 // Macros 
 
-#define SIK_TEST_MSG_BUFF_SIZE 200 
+#define SIK_TEST_MSG_BUFF_SIZE 500 
 #define SIK_TEST_SYS_ID 1            // GCS IDs start at 255, systems start at 1 
 #define SIK_TEST_HB_TIMEOUT 10 
 #define SIK_TEST_AT_TIMEOUT 5 
@@ -328,7 +328,8 @@ void sik_radio_test_init(void)
     // System data 
     system_data.channel = MAVLINK_COMM_0; 
     system_data.system_id = SIK_TEST_SYS_ID; 
-    system_data.component_id = MAV_COMP_ID_TELEMETRY_RADIO; 
+    // system_data.component_id = MAV_COMP_ID_TELEMETRY_RADIO; 
+    system_data.component_id = MAV_COMP_ID_AUTOPILOT1; 
     system_data.heartbeat.custom_mode = CLEAR; 
     system_data.heartbeat.type = MAV_TYPE_SURFACE_BOAT; 
     system_data.heartbeat.autopilot = MAV_AUTOPILOT_GENERIC_MISSION_FULL; 
