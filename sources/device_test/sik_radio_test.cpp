@@ -328,7 +328,6 @@ void sik_radio_test_init(void)
     // System data 
     system_data.channel = MAVLINK_COMM_0; 
     system_data.system_id = SIK_TEST_SYS_ID; 
-    // system_data.component_id = MAV_COMP_ID_TELEMETRY_RADIO; 
     system_data.component_id = MAV_COMP_ID_AUTOPILOT1; 
     system_data.heartbeat.custom_mode = CLEAR; 
     system_data.heartbeat.type = MAV_TYPE_SURFACE_BOAT; 
