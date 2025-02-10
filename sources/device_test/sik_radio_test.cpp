@@ -168,7 +168,7 @@ typedef struct sik_system_data_s
 
     // Messages 
     mavlink_heartbeat_t heartbeat; 
-    mavlink_global_position_int_t global_position; 
+    mavlink_request_data_stream_t request_data_stream; 
 
     // Timers 
     uint8_t heartbeat_timer; 
@@ -494,7 +494,6 @@ void sik_radio_test_app(void)
     if (handler_flags.usart1_flag)
     {
         handler_flags.usart1_flag = CLEAR_BIT; 
-        radio_data.data_in_index = CLEAR; 
 
         // Parse the new radio data from the circular buffer into the data buffer. 
         dma_cb_index(radio_data.dma_stream, &radio_data.dma_index, &radio_data.cb_index); 
@@ -565,6 +564,8 @@ void sik_radio_test_at_radio_decode(void)
 // MAVLink mode radio input decode 
 void sik_radio_test_mavlink_radio_decode(void)
 {
+    radio_data.data_in_index = CLEAR; 
+
     // Besides a MAVLink message, the only other data received from the radio in MAVLink 
     // mode is an AT command mode enter response (assuming the user doesn't configure the 
     // radio to not use MAVLink). This is only checked for right after the user requests 
@@ -580,7 +581,8 @@ void sik_radio_test_mavlink_radio_decode(void)
 
     // Look at each byte of the received data and try to decode MAVLink messages 
     // until there is no more data to check. 
-    while (radio_data.data_in_buff[radio_data.data_in_index] != NULL_CHAR)
+    // while (radio_data.data_in_buff[radio_data.data_in_index] != NULL_CHAR)
+    while (radio_data.data_in_index < radio_data.dma_index.data_size)
     {
         if (mavlink_parse_char(
                 system_data.channel, 
@@ -622,11 +624,30 @@ void sik_radio_test_mavlink_payload_decode(void)
             system_data.heartbeat_timer = CLEAR; 
             system_data.connected = SET_BIT; 
             break; 
+            
+        case MAVLINK_MSG_ID_GPS_STATUS: 
+            break; 
 
         case MAVLINK_MSG_ID_GLOBAL_POSITION_INT: 
             break; 
 
-        case MAVLINK_MSG_ID_GPS_STATUS: 
+        case MAVLINK_MSG_ID_REQUEST_DATA_STREAM: 
+            // Mission Planner sends this message to request data from the autopilot. 
+            // When attempting to connect, this message will be sent in rapid succession. 
+            mavlink_msg_request_data_stream_decode(
+                &system_data.msg, 
+                &system_data.request_data_stream); 
+
+            snprintf((char *)user_data.data_out_buff, 
+                SIK_TEST_MSG_BUFF_SIZE, 
+                "system: %u, component: %u, stream: %u, rate: %u, start/stop: %u\r\n", 
+                system_data.request_data_stream.target_system, 
+                system_data.request_data_stream.target_component, 
+                system_data.request_data_stream.req_stream_id, 
+                system_data.request_data_stream.req_message_rate, 
+                system_data.request_data_stream.start_stop); 
+            sik_radio_test_user_output((char *)user_data.data_out_buff); 
+            
             break; 
         
         case MAVLINK_MSG_ID_COMMAND_INT: 
