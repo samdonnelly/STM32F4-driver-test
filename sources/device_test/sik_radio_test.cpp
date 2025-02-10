@@ -127,8 +127,20 @@ extern "C"
 
 #define SIK_TEST_MSG_BUFF_SIZE 500 
 #define SIK_TEST_SYS_ID 1            // GCS IDs start at 255, systems start at 1 
-#define SIK_TEST_HB_TIMEOUT 10 
-#define SIK_TEST_AT_TIMEOUT 5 
+
+// Periodic timing data 
+// - ARR = Auto Reload Register - number of counts before periodic timer resets. 
+// - SIK_TEST_PRESCALAR must coordinate with the timer_us_prescalars_t type used in the 
+//   periodic timer init. 
+// - SIK_TEST_INT_PERIOD is the period in ms of the periodic interrupt. This is used 
+//   to find the timer count limit when the GCS requests a certain message rate. 
+#define SIK_TEST_ARR 2500 
+#define SIK_TEST_PRESCALAR 10000 
+#define SIK_TEST_INT_PERIOD SIK_TEST_ARR * S_TO_MS / SIK_TEST_PRESCALAR 
+
+#define SIK_TEST_HB_FREQ 1       // Heartbeat message send frequency 
+#define SIK_TEST_HB_TIMEOUT 40   // Heartbeat message timeout - adjust with interrupt period 
+#define SIK_TEST_AT_TIMEOUT 20   // AT mode timeout - adjust with interrupt period 
 
 //=======================================================================================
 
@@ -136,7 +148,7 @@ extern "C"
 //=======================================================================================
 // Global data 
 
-// User & device data 
+// User & device serial interface data 
 typedef struct sik_serial_data_s 
 {
     USART_TypeDef *uart; 
@@ -154,7 +166,7 @@ static sik_serial_data_t radio_data;
 static sik_serial_data_t user_data; 
 
 
-// System MAVLink data 
+// System data 
 typedef struct sik_system_data_s 
 {
     // MAVLink identification 
@@ -167,18 +179,34 @@ typedef struct sik_system_data_s
     mavlink_status_t status; 
 
     // Messages 
-    mavlink_heartbeat_t heartbeat; 
-    mavlink_request_data_stream_t request_data_stream; 
+    mavlink_heartbeat_t heartbeat_msg; 
+    mavlink_request_data_stream_t request_data_stream_msg; 
+    mavlink_global_position_int_t global_pos_int_msg; 
+    mavlink_gps_status_t gps_status_msg; 
 
-    // Timers 
-    uint8_t heartbeat_timer; 
-    uint8_t at_mode_timer; 
+    // Message send timers 
+    uint8_t heartbeat_msg_timer; 
+    uint8_t global_pos_int_msg_timer; 
+    uint8_t gps_status_msg_timer; 
 
-    // Status 
-    uint8_t at_mode           : 1;   // AT command mode flag 
-    uint8_t at_mode_requested : 1;   // AT command mode requested flag 
-    uint8_t ui_mode           : 1;   // User input mode flag 
-    uint8_t connected         : 1;   // Radio connected flag 
+    // Message send timer limits 
+    uint8_t heartbeat_msg_timer_lim; 
+    uint8_t global_pos_int_msg_timer_lim; 
+    uint8_t gps_status_msg_timer_lim; 
+
+    // Status timers 
+    uint8_t heartbeat_status_timer; 
+    uint8_t at_mode_request_timer; 
+
+    // Flags 
+    uint8_t at_mode                   : 1;   // AT command mode flag 
+    uint8_t at_mode_requested         : 1;   // AT command mode requested flag 
+    uint8_t ui_mode                   : 1;   // User input mode flag 
+    uint8_t connected                 : 1;   // Radio connected flag 
+    uint8_t msg_send                  : 1;   // Send message flag 
+    uint8_t heartbeat_msg_enable      : 1;   // HEARTBEAT message enable 
+    uint8_t global_pos_int_msg_enable : 1;   // GLOBAL_POSITION_INT message enable 
+    uint8_t gps_status_msg_enable     : 1;   // GPS_STATUS message enable 
 }
 sik_system_data_t; 
 
@@ -231,17 +259,6 @@ void sik_radio_test_mavlink_radio_decode(void);
 
 
 /**
- * @brief MAVLink message payload decode 
- * 
- * @details Decodes the payload of a received MAVLink message once the received radio 
- *          data is decoded into a complete MAVLink message. A function like this is 
- *          recommended by the MAVLink documentation for identifying and handling 
- *          messages. Different messages can be added as needed. 
- */
-void sik_radio_test_mavlink_payload_decode(void); 
-
-
-/**
  * @brief AT command mode user input decode 
  * 
  * @details Used to decode user input when in AT command mode. Some decoding is done to 
@@ -261,6 +278,21 @@ void sik_radio_test_at_user_decode(void);
  *          user input mode and nothing else. 
  */
 void sik_radio_test_mavlink_user_decode(void); 
+
+
+/**
+ * @brief MAVLink message payload decode 
+ * 
+ * @details Decodes the payload of a received MAVLink message once the received radio 
+ *          data is decoded into a complete MAVLink message. A function like this is 
+ *          recommended by the MAVLink documentation for identifying and handling 
+ *          messages. Different messages can be added as needed. 
+ */
+void sik_radio_test_mavlink_payload_decode(void); 
+
+// MAVLink received message actions 
+void sik_radio_test_mavlink_request_data_stream(void); 
+void sik_radio_test_mavlink_heartbeat(void); 
 
 
 /**
@@ -329,17 +361,31 @@ void sik_radio_test_init(void)
     system_data.channel = MAVLINK_COMM_0; 
     system_data.system_id = SIK_TEST_SYS_ID; 
     system_data.component_id = MAV_COMP_ID_AUTOPILOT1; 
-    system_data.heartbeat.custom_mode = CLEAR; 
-    system_data.heartbeat.type = MAV_TYPE_SURFACE_BOAT; 
-    system_data.heartbeat.autopilot = MAV_AUTOPILOT_GENERIC_MISSION_FULL; 
-    system_data.heartbeat.base_mode = MAV_MODE_FLAG_GUIDED_ENABLED; 
-    system_data.heartbeat.system_status = MAV_STATE_ACTIVE; 
-    system_data.heartbeat_timer = CLEAR; 
-    system_data.at_mode_timer = CLEAR; 
+
+    system_data.heartbeat_msg.custom_mode = CLEAR; 
+    system_data.heartbeat_msg.type = MAV_TYPE_SURFACE_BOAT; 
+    system_data.heartbeat_msg.autopilot = MAV_AUTOPILOT_GENERIC_MISSION_FULL; 
+    system_data.heartbeat_msg.base_mode = MAV_MODE_FLAG_GUIDED_ENABLED; 
+    system_data.heartbeat_msg.system_status = MAV_STATE_ACTIVE; 
+
+    system_data.heartbeat_msg_timer = CLEAR; 
+    system_data.heartbeat_msg_timer_lim = S_TO_MS / (SIK_TEST_HB_FREQ * SIK_TEST_INT_PERIOD); 
+    system_data.global_pos_int_msg_timer = CLEAR; 
+    system_data.global_pos_int_msg_timer_lim = CLEAR; 
+    system_data.gps_status_msg_timer = CLEAR; 
+    system_data.gps_status_msg_timer_lim = CLEAR; 
+
+    system_data.heartbeat_status_timer = CLEAR; 
+    system_data.at_mode_request_timer = CLEAR; 
+
     system_data.at_mode = CLEAR_BIT; 
     system_data.at_mode_requested = CLEAR_BIT; 
     system_data.ui_mode = CLEAR_BIT; 
     system_data.connected = CLEAR_BIT; 
+    system_data.msg_send = CLEAR_BIT; 
+    system_data.heartbeat_msg_enable = SET_BIT; 
+    system_data.global_pos_int_msg_enable = CLEAR_BIT; 
+    system_data.gps_status_msg_enable = CLEAR_BIT; 
 
     //==================================================
 
@@ -353,7 +399,7 @@ void sik_radio_test_init(void)
     tim_9_to_11_counter_init(
         TIM9, 
         TIM_84MHZ_100US_PSC, 
-        0x2710,   // ARR=10000, (10000 counts)*(100us/count) = 1s 
+        SIK_TEST_ARR,   // ARR * (100us/count) = 0.25s period 
         TIM_UP_INT_ENABLE); 
     tim_enable(TIM9); 
     
@@ -547,7 +593,7 @@ void sik_radio_test_app(void)
 
 
 //=======================================================================================
-// State functions 
+// Serial input decoding and actions 
 
 // AT command mode radio input decode 
 void sik_radio_test_at_radio_decode(void)
@@ -581,7 +627,6 @@ void sik_radio_test_mavlink_radio_decode(void)
 
     // Look at each byte of the received data and try to decode MAVLink messages 
     // until there is no more data to check. 
-    // while (radio_data.data_in_buff[radio_data.data_in_index] != NULL_CHAR)
     while (radio_data.data_in_index < radio_data.dma_index.data_size)
     {
         if (mavlink_parse_char(
@@ -608,58 +653,6 @@ void sik_radio_test_mavlink_radio_decode(void)
 
             sik_radio_test_mavlink_payload_decode(); 
         }
-    }
-}
-
-
-// MAVLink message payload decode 
-void sik_radio_test_mavlink_payload_decode(void)
-{
-    switch (system_data.msg.msgid)
-    {
-        case MAVLINK_MSG_ID_HEARTBEAT: 
-            mavlink_msg_heartbeat_decode(
-                &system_data.msg, 
-                &system_data.heartbeat); 
-            system_data.heartbeat_timer = CLEAR; 
-            system_data.connected = SET_BIT; 
-            break; 
-            
-        case MAVLINK_MSG_ID_GPS_STATUS: 
-            break; 
-
-        case MAVLINK_MSG_ID_GLOBAL_POSITION_INT: 
-            break; 
-
-        case MAVLINK_MSG_ID_REQUEST_DATA_STREAM: 
-            // Mission Planner sends this message to request data from the autopilot. 
-            // When attempting to connect, this message will be sent in rapid succession. 
-            mavlink_msg_request_data_stream_decode(
-                &system_data.msg, 
-                &system_data.request_data_stream); 
-
-            snprintf((char *)user_data.data_out_buff, 
-                SIK_TEST_MSG_BUFF_SIZE, 
-                "system: %u, component: %u, stream: %u, rate: %u, start/stop: %u\r\n", 
-                system_data.request_data_stream.target_system, 
-                system_data.request_data_stream.target_component, 
-                system_data.request_data_stream.req_stream_id, 
-                system_data.request_data_stream.req_message_rate, 
-                system_data.request_data_stream.start_stop); 
-            sik_radio_test_user_output((char *)user_data.data_out_buff); 
-            
-            break; 
-        
-        case MAVLINK_MSG_ID_COMMAND_INT: 
-            // Call a separate function to decode mavlink_command_int_t.command 
-            break; 
-        
-        case MAVLINK_MSG_ID_COMMAND_LONG: 
-            // Call a separate function to decode mavlink_command_long_t.command 
-            break; 
-        
-        default: 
-            break; 
     }
 }
 
@@ -730,27 +723,125 @@ void sik_radio_test_mavlink_user_decode(void)
     }
 }
 
+//=======================================================================================
+
+
+//=======================================================================================
+// MAVLink payload decoding and actions 
+
+// MAVLink message payload decode 
+void sik_radio_test_mavlink_payload_decode(void)
+{
+    switch (system_data.msg.msgid)
+    {
+        case MAVLINK_MSG_ID_HEARTBEAT: 
+            sik_radio_test_mavlink_heartbeat(); 
+            break; 
+            
+        case MAVLINK_MSG_ID_GPS_STATUS: 
+            break; 
+
+        case MAVLINK_MSG_ID_GLOBAL_POSITION_INT: 
+            break; 
+
+        case MAVLINK_MSG_ID_REQUEST_DATA_STREAM: 
+            sik_radio_test_mavlink_request_data_stream(); 
+            break; 
+        
+        case MAVLINK_MSG_ID_COMMAND_INT: 
+            // Call a separate function to decode mavlink_command_int_t.command 
+            break; 
+        
+        case MAVLINK_MSG_ID_COMMAND_LONG: 
+            // Call a separate function to decode mavlink_command_long_t.command 
+            break; 
+        
+        default: 
+            break; 
+    }
+}
+
+
+// MAVLink HEARTBEAT message actions 
+void sik_radio_test_mavlink_heartbeat(void)
+{
+    mavlink_msg_heartbeat_decode(
+        &system_data.msg, 
+        &system_data.heartbeat_msg); 
+    system_data.heartbeat_status_timer = CLEAR; 
+    system_data.connected = SET_BIT; 
+}
+
+
+// MAVLink REQUEST_DATA_STREAM message actions 
+void sik_radio_test_mavlink_request_data_stream(void)
+{
+    // Mission Planner sends this message to request data from the autopilot. 
+    // When attempting to connect, this message will be sent in rapid succession. 
+
+    mavlink_msg_request_data_stream_decode(
+        &system_data.msg, 
+        &system_data.request_data_stream_msg); 
+
+    // This message comes with a cooresponding requested message rate. The calculated 
+    // timer counter limit is the same calculation for each requested message so it's 
+    // done once here and assigned to the requested message. Note that the periodic 
+    // interrupt period should be equipped to handle whatever the requested rate is. 
+    uint8_t timer_limit = (uint8_t)(S_TO_MS / 
+        (system_data.request_data_stream_msg.req_message_rate * SIK_TEST_INT_PERIOD)); 
+
+    // Enable/disable the requested message and assign the message timer counter limit 
+    // so it gets sent to the GCS at the requested rate. 
+    switch (system_data.request_data_stream_msg.req_stream_id)
+    {
+        case MAV_DATA_STREAM_RAW_SENSORS: 
+            system_data.gps_status_msg_enable = system_data.request_data_stream_msg.start_stop; 
+            system_data.gps_status_msg_timer_lim = timer_limit; 
+            break; 
+
+        case MAV_DATA_STREAM_EXTENDED_STATUS: 
+            break; 
+
+        case MAV_DATA_STREAM_RC_CHANNELS: 
+            break; 
+
+        case MAV_DATA_STREAM_POSITION: 
+            system_data.global_pos_int_msg_enable = system_data.request_data_stream_msg.start_stop; 
+            system_data.global_pos_int_msg_timer_lim = timer_limit; 
+            break; 
+
+        default: 
+            break; 
+    }
+
+    snprintf((char *)user_data.data_out_buff, 
+        SIK_TEST_MSG_BUFF_SIZE, 
+        "system: %u, component: %u, stream: %u, rate: %u, start/stop: %u\r\n", 
+        system_data.request_data_stream_msg.target_system, 
+        system_data.request_data_stream_msg.target_component, 
+        system_data.request_data_stream_msg.req_stream_id, 
+        system_data.request_data_stream_msg.req_message_rate, 
+        system_data.request_data_stream_msg.start_stop); 
+    sik_radio_test_user_output((char *)user_data.data_out_buff);    
+}
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Periodic actions 
 
 // MAVlink mode periodic actions 
 void sik_radio_test_mavlink_periodic(void)
 {
     // Everything here is performed periodically when in MAVLink mode. 
 
-    // Send heartbeat for GCS to see 
-    mavlink_msg_heartbeat_encode(
-        system_data.system_id, 
-        system_data.component_id, 
-        &system_data.msg, 
-        &system_data.heartbeat); 
-    mavlink_msg_to_send_buffer(radio_data.data_out_buff, &system_data.msg); 
-    sik_send_data((char *)radio_data.data_out_buff); 
-
     // Check for a connection (heartbeat) timeout 
-    if (system_data.heartbeat_timer++ >= SIK_TEST_HB_TIMEOUT)
+    if (system_data.heartbeat_status_timer++ >= SIK_TEST_HB_TIMEOUT)
     {
         // Have not seen a heartbeat message from a GCS for too long. The system is 
         // considered to be disconnected. 
-        system_data.heartbeat_timer--; 
+        system_data.heartbeat_status_timer--; 
         system_data.connected = CLEAR_BIT; 
     }
 
@@ -761,11 +852,56 @@ void sik_radio_test_mavlink_periodic(void)
         // response from the radio. Waiting for this response blocks other actions so 
         // once the system has waited too long then cancel the search and return to 
         // normal MAVLink mode. 
-        if (system_data.at_mode_timer++ >= SIK_TEST_AT_TIMEOUT)
+        if (system_data.at_mode_request_timer++ >= SIK_TEST_AT_TIMEOUT)
         {
             sik_radio_test_at_request_reset(sik_test_timeout_msg); 
             sik_at_mode(SIK_AT_EXIT); 
         }
+    }
+
+    // Check if any of the enabled periodic messages must be sent 
+    if (system_data.heartbeat_msg_enable && 
+       (++system_data.heartbeat_msg_timer >= system_data.heartbeat_msg_timer_lim))
+    {
+        system_data.heartbeat_msg_timer = CLEAR; 
+        system_data.msg_send = SET_BIT; 
+
+        mavlink_msg_heartbeat_encode(
+            system_data.system_id, 
+            system_data.component_id, 
+            &system_data.msg, 
+            &system_data.heartbeat_msg); 
+    }
+    else if (system_data.global_pos_int_msg_enable && 
+            (++system_data.global_pos_int_msg_timer >= system_data.global_pos_int_msg_timer_lim))
+    {
+        system_data.global_pos_int_msg_timer = CLEAR; 
+        system_data.msg_send = SET_BIT; 
+
+        mavlink_msg_global_position_int_encode(
+            system_data.system_id, 
+            system_data.component_id, 
+            &system_data.msg, 
+            &system_data.global_pos_int_msg); 
+    }
+    else if (system_data.gps_status_msg_enable && 
+            (++system_data.gps_status_msg_timer >= system_data.gps_status_msg_timer_lim))
+    {
+        system_data.gps_status_msg_timer = CLEAR; 
+        system_data.msg_send = SET_BIT; 
+
+        mavlink_msg_gps_status_encode(
+            system_data.system_id, 
+            system_data.component_id, 
+            &system_data.msg, 
+            &system_data.gps_status_msg); 
+    }
+
+    if (system_data.msg_send)
+    {
+        system_data.msg_send = CLEAR_BIT; 
+        mavlink_msg_to_send_buffer(radio_data.data_out_buff, &system_data.msg); 
+        sik_send_data((char *)radio_data.data_out_buff); 
     }
 }
 
@@ -785,7 +921,7 @@ void sik_radio_test_user_output(const char *user_msg)
 // AT command mode request reset 
 void sik_radio_test_at_request_reset(const char *user_msg)
 {
-    system_data.at_mode_timer = CLEAR; 
+    system_data.at_mode_request_timer = CLEAR; 
     system_data.at_mode_requested = CLEAR_BIT; 
     sik_radio_test_user_output(user_msg); 
     sik_radio_test_user_output(sik_test_user_prompt); 
