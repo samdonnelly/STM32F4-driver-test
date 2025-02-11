@@ -203,7 +203,6 @@ typedef struct sik_system_data_s
     uint8_t at_mode_requested         : 1;   // AT command mode requested flag 
     uint8_t ui_mode                   : 1;   // User input mode flag 
     uint8_t connected                 : 1;   // Radio connected flag 
-    uint8_t msg_send                  : 1;   // Send message flag 
     uint8_t heartbeat_msg_enable      : 1;   // HEARTBEAT message enable 
     uint8_t global_pos_int_msg_enable : 1;   // GLOBAL_POSITION_INT message enable 
     uint8_t gps_status_msg_enable     : 1;   // GPS_STATUS message enable 
@@ -382,7 +381,6 @@ void sik_radio_test_init(void)
     system_data.at_mode_requested = CLEAR_BIT; 
     system_data.ui_mode = CLEAR_BIT; 
     system_data.connected = CLEAR_BIT; 
-    system_data.msg_send = CLEAR_BIT; 
     system_data.heartbeat_msg_enable = SET_BIT; 
     system_data.global_pos_int_msg_enable = CLEAR_BIT; 
     system_data.gps_status_msg_enable = CLEAR_BIT; 
@@ -864,42 +862,38 @@ void sik_radio_test_mavlink_periodic(void)
        (++system_data.heartbeat_msg_timer >= system_data.heartbeat_msg_timer_lim))
     {
         system_data.heartbeat_msg_timer = CLEAR; 
-        system_data.msg_send = SET_BIT; 
 
         mavlink_msg_heartbeat_encode(
             system_data.system_id, 
             system_data.component_id, 
             &system_data.msg, 
             &system_data.heartbeat_msg); 
+        mavlink_msg_to_send_buffer(radio_data.data_out_buff, &system_data.msg); 
+        sik_send_data((char *)radio_data.data_out_buff); 
     }
-    else if (system_data.global_pos_int_msg_enable && 
-            (++system_data.global_pos_int_msg_timer >= system_data.global_pos_int_msg_timer_lim))
+    if (system_data.global_pos_int_msg_enable && 
+       (++system_data.global_pos_int_msg_timer >= system_data.global_pos_int_msg_timer_lim))
     {
         system_data.global_pos_int_msg_timer = CLEAR; 
-        system_data.msg_send = SET_BIT; 
 
         mavlink_msg_global_position_int_encode(
             system_data.system_id, 
             system_data.component_id, 
             &system_data.msg, 
             &system_data.global_pos_int_msg); 
+        mavlink_msg_to_send_buffer(radio_data.data_out_buff, &system_data.msg); 
+        sik_send_data((char *)radio_data.data_out_buff); 
     }
-    else if (system_data.gps_status_msg_enable && 
-            (++system_data.gps_status_msg_timer >= system_data.gps_status_msg_timer_lim))
+    if (system_data.gps_status_msg_enable && 
+       (++system_data.gps_status_msg_timer >= system_data.gps_status_msg_timer_lim))
     {
         system_data.gps_status_msg_timer = CLEAR; 
-        system_data.msg_send = SET_BIT; 
 
         mavlink_msg_gps_status_encode(
             system_data.system_id, 
             system_data.component_id, 
             &system_data.msg, 
             &system_data.gps_status_msg); 
-    }
-
-    if (system_data.msg_send)
-    {
-        system_data.msg_send = CLEAR_BIT; 
         mavlink_msg_to_send_buffer(radio_data.data_out_buff, &system_data.msg); 
         sik_send_data((char *)radio_data.data_out_buff); 
     }
