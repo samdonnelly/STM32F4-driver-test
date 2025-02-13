@@ -125,7 +125,7 @@ extern "C"
 //=======================================================================================
 // Macros 
 
-#define SIK_TEST_MSG_BUFF_SIZE 500 
+#define SIK_TEST_MSG_BUFF_SIZE 1000 
 #define SIK_TEST_SYS_ID 1            // GCS IDs start at 255, systems start at 1 
 
 // Periodic timing data 
@@ -146,7 +146,7 @@ extern "C"
 #define SIK_TEST_MOCK_BOOT_TIME 100 
 #define SIK_TEST_MOCK_LAT 506132700 
 #define SIK_TEST_MOCK_LON -1151237700 
-#define SIK_TEST_MOCK_ALTITUDE 50 
+#define SIK_TEST_MOCK_ALTITUDE 1 
 #define SIK_TEST_MOCK_NUM_SATELLITES 4 
 
 //=======================================================================================
@@ -176,7 +176,7 @@ static sik_serial_data_t user_data;
 struct sik_mavlink_msgs_t 
 {
     // Messages 
-    mavlink_heartbeat_t heartbeat_msg; 
+    mavlink_heartbeat_t heartbeat_msg, heartbeat_msg_gcs; 
     mavlink_request_data_stream_t request_data_stream_msg; 
     mavlink_raw_imu_t raw_imu_msg; 
     mavlink_gps_raw_int_t gps_raw_int_msg; 
@@ -595,8 +595,11 @@ void sik_radio_test_init_data(void)
     // HEARTBEAT 
     system_data.heartbeat_msg.custom_mode = CLEAR; 
     system_data.heartbeat_msg.type = MAV_TYPE_SURFACE_BOAT; 
-    system_data.heartbeat_msg.autopilot = MAV_AUTOPILOT_GENERIC_MISSION_FULL; 
-    system_data.heartbeat_msg.base_mode = MAV_MODE_FLAG_GUIDED_ENABLED; 
+    system_data.heartbeat_msg.autopilot = MAV_AUTOPILOT_GENERIC_WAYPOINTS_ONLY; 
+    system_data.heartbeat_msg.base_mode = MAV_MODE_FLAG_CUSTOM_MODE_ENABLED | 
+                                          MAV_MODE_FLAG_MANUAL_INPUT_ENABLED | 
+                                          MAV_MODE_FLAG_GUIDED_ENABLED | 
+                                          MAV_MODE_FLAG_SAFETY_ARMED; 
     system_data.heartbeat_msg.system_status = MAV_STATE_ACTIVE; 
     
     // RAW_IMU 
@@ -728,7 +731,15 @@ void sik_radio_test_init_data(void)
     // POSITION_TARGET_GLOBAL_INT 
     system_data.position_target_global_int_msg.time_boot_ms = SIK_TEST_MOCK_BOOT_TIME; 
     system_data.position_target_global_int_msg.coordinate_frame = MAV_FRAME_GLOBAL; 
-    system_data.position_target_global_int_msg.type_mask = ZERO; 
+    system_data.position_target_global_int_msg.type_mask = POSITION_TARGET_TYPEMASK_VX_IGNORE | 
+                                                           POSITION_TARGET_TYPEMASK_VY_IGNORE | 
+                                                           POSITION_TARGET_TYPEMASK_VZ_IGNORE |
+                                                           POSITION_TARGET_TYPEMASK_AX_IGNORE | 
+                                                           POSITION_TARGET_TYPEMASK_AY_IGNORE | 
+                                                           POSITION_TARGET_TYPEMASK_AZ_IGNORE |
+                                                           POSITION_TARGET_TYPEMASK_YAW_IGNORE | 
+                                                           POSITION_TARGET_TYPEMASK_YAW_RATE_IGNORE | 
+                                                           0xF000;
     system_data.position_target_global_int_msg.lat_int = SIK_TEST_MOCK_LAT; 
     system_data.position_target_global_int_msg.lon_int = SIK_TEST_MOCK_LON; 
     system_data.position_target_global_int_msg.alt = SIK_TEST_MOCK_ALTITUDE; 
@@ -770,6 +781,11 @@ void sik_radio_test_init_data(void)
     system_data.global_pos_int_msg.vy = ZERO; 
     system_data.global_pos_int_msg.vx = ZERO; 
     system_data.global_pos_int_msg.hdg = ZERO; 
+
+    // RANGEFINDER 
+    // WATER_DEPTH 
+    // PID_TUNING 
+    // WHEEL_DISTANCE 
     
     // Send timer counters 
     system_data.heartbeat_msg_timer = CLEAR; 
@@ -964,7 +980,7 @@ void sik_radio_test_at_user_decode(void)
     else 
     {
         // Send input as is to the radio 
-        sik_send_data((char *)user_data.data_in_buff); 
+        sik_send_data(user_data.data_in_buff, strlen((char *)user_data.data_in_buff)); 
     }
 
     sik_radio_test_user_output(sik_test_user_prompt); 
@@ -1052,7 +1068,7 @@ void sik_radio_test_mavlink_heartbeat(void)
 {
     mavlink_msg_heartbeat_decode(
         &system_data.msg, 
-        &system_data.heartbeat_msg); 
+        &system_data.heartbeat_msg_gcs); 
     system_data.heartbeat_status_timer = CLEAR; 
     system_data.connected = SET_BIT; 
 }
@@ -1137,15 +1153,15 @@ void sik_radio_test_mavlink_request_data_stream(void)
             break; 
     }
 
-    snprintf((char *)user_data.data_out_buff, 
-        SIK_TEST_MSG_BUFF_SIZE, 
-        "system: %u, component: %u, stream: %u, rate: %u, start/stop: %u\r\n", 
-        system_data.request_data_stream_msg.target_system, 
-        system_data.request_data_stream_msg.target_component, 
-        system_data.request_data_stream_msg.req_stream_id, 
-        system_data.request_data_stream_msg.req_message_rate, 
-        system_data.request_data_stream_msg.start_stop); 
-    sik_radio_test_user_output((char *)user_data.data_out_buff);    
+    // snprintf((char *)user_data.data_out_buff, 
+    //     SIK_TEST_MSG_BUFF_SIZE, 
+    //     "system: %u, component: %u, stream: %u, rate: %u, start/stop: %u\r\n", 
+    //     system_data.request_data_stream_msg.target_system, 
+    //     system_data.request_data_stream_msg.target_component, 
+    //     system_data.request_data_stream_msg.req_stream_id, 
+    //     system_data.request_data_stream_msg.req_message_rate, 
+    //     system_data.request_data_stream_msg.start_stop); 
+    // sik_radio_test_user_output((char *)user_data.data_out_buff);    
 }
 
 //=======================================================================================
@@ -1364,7 +1380,6 @@ void sik_radio_test_mavlink_periodic_send(void)
         sik_radio_test_mavlink_send_msg(); 
     }
 
-
     // GLOBAL_POSITION_INT 
     if (system_data.global_pos_int_msg_enable && 
        (++system_data.global_pos_int_msg_timer >= system_data.global_pos_int_msg_timer_lim))
@@ -1406,8 +1421,8 @@ void sik_radio_test_at_request_reset(const char *user_msg)
 // Serialize and send MAVLink message 
 void sik_radio_test_mavlink_send_msg(void)
 {
-    mavlink_msg_to_send_buffer(radio_data.data_out_buff, &system_data.msg); 
-    sik_send_data((char *)radio_data.data_out_buff); 
+    sik_send_data(radio_data.data_out_buff, 
+                  mavlink_msg_to_send_buffer(radio_data.data_out_buff, &system_data.msg)); 
 }
 
 //=======================================================================================
