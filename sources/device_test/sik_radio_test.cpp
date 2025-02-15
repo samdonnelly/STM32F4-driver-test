@@ -1243,6 +1243,14 @@ void sik_radio_test_mavlink_command_long(void)
     mavlink_msg_command_long_decode(
         &system_data.msg, 
         &system_data.command_long_msg_gcs); 
+
+    // This system is only concerned with messages meant for this system. If the taget 
+    // system and component ID in the message does not match this system then abort. 
+    if ((system_data.command_long_msg_gcs.target_system != system_data.system_id) || 
+        (system_data.command_long_msg_gcs.target_component != system_data.component_id))
+    {
+        return; 
+    }
 }
 
 //=======================================================================================
