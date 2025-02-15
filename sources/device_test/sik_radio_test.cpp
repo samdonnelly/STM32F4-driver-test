@@ -125,8 +125,13 @@ extern "C"
 //=======================================================================================
 // Macros 
 
+// Buffer sizes 
 #define SIK_TEST_MSG_BUFF_SIZE 1000 
-#define SIK_TEST_SYS_ID 1            // GCS IDs start at 255, systems start at 1 
+#define SIK_TEST_MISSION_MAX_LEN 5 
+
+// System IDs - GCS IDs start at 255, vehicles start at 1 
+#define SIK_TEST_SYS_ID 1 
+#define SIK_TEST_GCS_ID 255 
 
 // Periodic timing data 
 // - ARR = Auto Reload Register - number of counts before periodic timer resets. 
@@ -146,8 +151,11 @@ extern "C"
 #define SIK_TEST_MOCK_BOOT_TIME 100 
 #define SIK_TEST_MOCK_LAT 506132700 
 #define SIK_TEST_MOCK_LON -1151237700 
+#define SIK_TEST_MOCK_LAT_HOME 506132550 
+#define SIK_TEST_MOCK_LON_HOME -1151204230 
 #define SIK_TEST_MOCK_ALTITUDE 1 
 #define SIK_TEST_MOCK_NUM_SATELLITES 4 
+#define SIK_TEST_MOCK_WP_RADIUS 10 
 
 //=======================================================================================
 
@@ -184,39 +192,65 @@ struct sik_msg_timing_t
 // MAVLink messages 
 struct sik_mavlink_msgs_t 
 {
-    // Incoming messages 
-    mavlink_heartbeat_t heartbeat_msg_gcs; 
-    mavlink_param_request_list_t param_request_list_msg; 
-    mavlink_mission_request_t mission_request_msg; 
-    mavlink_request_data_stream_t request_data_stream_msg; 
-    mavlink_command_long_t command_long_msg; 
-    
-    // Outgoing messages 
-    mavlink_heartbeat_t heartbeat_msg; 
-    mavlink_raw_imu_t raw_imu_msg; 
-    mavlink_gps_raw_int_t gps_raw_int_msg; 
-    mavlink_rc_channels_scaled_t rc_channels_scaled_msg; 
-    mavlink_rc_channels_raw_t rc_channels_raw_msg; 
-    mavlink_servo_output_raw_t servo_output_raw_msg; 
-    mavlink_attitude_t attitude_msg; 
-    mavlink_position_target_global_int_t position_target_global_int_msg; 
-    mavlink_nav_controller_output_t nav_controller_output_msg; 
-    mavlink_local_position_ned_t local_position_ned_msg; 
-    mavlink_global_position_int_t global_pos_int_msg; 
-    mavlink_mission_item_int_t mission_item_int_msg; 
+    //==================================================
+    // Incoming 
 
-    // Message send (outgoing) timing info 
-    sik_msg_timing_t heartbeat_msg_timing;                    // HEARTBEAT 
-    sik_msg_timing_t raw_imu_msg_timing;                      // RAW_IMU 
-    sik_msg_timing_t gps_raw_int_msg_timing;                  // GPS_RAW_INT 
-    sik_msg_timing_t rc_channels_scaled_msg_timing;           // RC_CHANNELS_SCALED 
-    sik_msg_timing_t rc_channels_raw_msg_timing;              // RC_CHANNELS_RAW 
-    sik_msg_timing_t servo_output_raw_msg_timing;             // SERVO_OUTPUT_RAW 
-    sik_msg_timing_t attitude_msg_timing;                     // ATTITUDE 
-    sik_msg_timing_t position_target_global_int_msg_timing;   // POSITION_TARGET_GLOBAL_INT 
-    sik_msg_timing_t nav_controller_output_msg_timing;        // NAV_CONTROLLER_OUTPUT 
-    sik_msg_timing_t local_position_ned_msg_timing;           // LOCAL_POSITION_NED 
-    sik_msg_timing_t global_pos_int_msg_timing;               // GLOBAL_POSITION_INT 
+    // Incoming messages (from GCS) 
+    mavlink_heartbeat_t heartbeat_msg_gcs;                                   // HEARTBEAT 
+    mavlink_param_request_list_t param_request_list_msg_gcs;                 // PARAM_REQUEST_LIST 
+    mavlink_request_data_stream_t request_data_stream_msg_gcs;               // REQUEST_DATA_STREAM 
+    mavlink_command_long_t command_long_msg_gcs;                             // COMMAND_LONG 
+    
+    // Mission protocol messages (from GCS) 
+    mavlink_mission_request_t mission_request_msg_gcs;                       // MISSION_REQUEST 
+    mavlink_mission_count_t mission_count_msg_gcs;                           // MISSION_COUNT 
+    mavlink_mission_item_int_t mission_item_int_msg_gcs;                     // MISSION_ITEM_INT 
+    mavlink_mission_request_list_t mission_request_list_msg_gcs;             // MISSION_REQUEST_LIST 
+    mavlink_mission_request_int_t mission_request_int_msg_gcs;               // MISSION_REQUEST_INT 
+    mavlink_mission_ack_t mission_ack_msg_gcs;                               // MISSION_ACK 
+    mavlink_mission_set_current_t mission_set_current_msg;                   // MISSION_SET_CURRENT 
+    mavlink_mission_clear_all_t mission_clear_all_msg;                       // MISSION_CLEAR_ALL 
+    
+    //==================================================
+    
+    //==================================================
+    // Outgoing 
+
+    // Periodic outgoing messages 
+    mavlink_heartbeat_t heartbeat_msg;                                     // HEARTBEAT 
+    mavlink_raw_imu_t raw_imu_msg;                                         // RAW_IMU 
+    mavlink_gps_raw_int_t gps_raw_int_msg;                                 // GPS_RAW_INT 
+    mavlink_rc_channels_scaled_t rc_channels_scaled_msg;                   // RC_CHANNELS_SCALED 
+    mavlink_rc_channels_raw_t rc_channels_raw_msg;                         // RC_CHANNELS_RAW 
+    mavlink_servo_output_raw_t servo_output_raw_msg;                       // SERVO_OUTPUT_RAW 
+    mavlink_attitude_t attitude_msg;                                       // ATTITUDE 
+    mavlink_position_target_global_int_t position_target_global_int_msg;   // POSITION_TARGET_GLOBAL_INT 
+    mavlink_nav_controller_output_t nav_controller_output_msg;             // NAV_CONTROLLER_OUTPUT 
+    mavlink_local_position_ned_t local_position_ned_msg;                   // LOCAL_POSITION_NED 
+    mavlink_global_position_int_t global_pos_int_msg;                      // GLOBAL_POSITION_INT 
+    
+    // Mission protocol messages 
+    mavlink_mission_count_t mission_count_msg;                             // MISSION_COUNT 
+    mavlink_mission_item_int_t mission_item_int_msg;                       // MISSION_ITEM_INT 
+    mavlink_mission_request_int_t mission_request_int_msg;                 // MISSION_REQUEST_INT 
+    mavlink_mission_ack_t mission_ack_msg;                                 // MISSION_ACK 
+    mavlink_mission_current_t mission_current_msg;                         // MISSION_CURRENT 
+    mavlink_mission_item_reached_t mission_item_reached_msg;               // MISSION_ITEM_REACHED 
+    
+    // Periodic outgoing message timing info 
+    sik_msg_timing_t heartbeat_msg_timing;                                 // HEARTBEAT 
+    sik_msg_timing_t raw_imu_msg_timing;                                   // RAW_IMU 
+    sik_msg_timing_t gps_raw_int_msg_timing;                               // GPS_RAW_INT 
+    sik_msg_timing_t rc_channels_scaled_msg_timing;                        // RC_CHANNELS_SCALED 
+    sik_msg_timing_t rc_channels_raw_msg_timing;                           // RC_CHANNELS_RAW 
+    sik_msg_timing_t servo_output_raw_msg_timing;                          // SERVO_OUTPUT_RAW 
+    sik_msg_timing_t attitude_msg_timing;                                  // ATTITUDE 
+    sik_msg_timing_t position_target_global_int_msg_timing;                // POSITION_TARGET_GLOBAL_INT 
+    sik_msg_timing_t nav_controller_output_msg_timing;                     // NAV_CONTROLLER_OUTPUT 
+    sik_msg_timing_t local_position_ned_msg_timing;                        // LOCAL_POSITION_NED 
+    sik_msg_timing_t global_pos_int_msg_timing;                            // GLOBAL_POSITION_INT 
+    
+    //==================================================
 }; 
 
 
@@ -228,6 +262,8 @@ public:
     int channel; 
     uint8_t system_id; 
     uint8_t component_id; 
+    mavlink_mission_item_int_t mission[SIK_TEST_MISSION_MAX_LEN]; 
+    uint16_t mission_size; 
 
     // MAVLink packet handling 
     mavlink_message_t msg; 
@@ -559,6 +595,24 @@ void sik_radio_test_init_data(void)
     system_data.channel = MAVLINK_COMM_0; 
     system_data.system_id = SIK_TEST_SYS_ID; 
     system_data.component_id = MAV_COMP_ID_AUTOPILOT1; 
+
+    // Default home location 
+    system_data.mission[BYTE_0].target_system = SIK_TEST_GCS_ID; 
+    system_data.mission[BYTE_0].target_component = MAV_COMP_ID_MISSIONPLANNER; 
+    system_data.mission[BYTE_0].seq = ZERO; 
+    system_data.mission[BYTE_0].frame = MAV_FRAME_GLOBAL; 
+    system_data.mission[BYTE_0].command = MAV_CMD_NAV_WAYPOINT; 
+    system_data.mission[BYTE_0].current = ZERO; 
+    system_data.mission[BYTE_0].autocontinue = ZERO; 
+    system_data.mission[BYTE_0].param1 = ZERO; 
+    system_data.mission[BYTE_0].param2 = SIK_TEST_MOCK_WP_RADIUS; 
+    system_data.mission[BYTE_0].param3 = SIK_TEST_MOCK_WP_RADIUS; 
+    system_data.mission[BYTE_0].param4 = ZERO; 
+    system_data.mission[BYTE_0].x = SIK_TEST_MOCK_LAT_HOME; 
+    system_data.mission[BYTE_0].y = SIK_TEST_MOCK_LON_HOME; 
+    system_data.mission[BYTE_0].z = SIK_TEST_MOCK_ALTITUDE; 
+    system_data.mission[BYTE_0].mission_type = MAV_MISSION_TYPE_MISSION; 
+    system_data.mission_size = BYTE_1; 
     
     system_data.heartbeat_status_timer = CLEAR; 
     system_data.at_mode_request_timer = CLEAR; 
@@ -1014,8 +1068,18 @@ void sik_radio_test_mavlink_heartbeat(void)
     mavlink_msg_heartbeat_decode(
         &system_data.msg, 
         &system_data.heartbeat_msg_gcs); 
-    system_data.heartbeat_status_timer = CLEAR; 
-    system_data.connected = SET_BIT; 
+
+    // This system is only concerned with heartbeats from the GCS it's communicating with. 
+    // The system considers itself connected only if the heatbeat message type and source 
+    // are correct. 
+    if ((system_data.heartbeat_msg_gcs.type == MAV_TYPE_GCS) && 
+        (system_data.heartbeat_msg_gcs.autopilot == MAV_AUTOPILOT_INVALID) && 
+        (system_data.msg.sysid == SIK_TEST_GCS_ID) && 
+        (system_data.msg.compid == MAV_COMP_ID_MISSIONPLANNER))
+    {
+        system_data.heartbeat_status_timer = CLEAR; 
+        system_data.connected = SET_BIT; 
+    }
 }
 
 
@@ -1024,49 +1088,101 @@ void sik_radio_test_mavlink_param_request_list(void)
 {
     mavlink_msg_param_request_list_decode(
         &system_data.msg, 
-        &system_data.param_request_list_msg); 
+        &system_data.param_request_list_msg_gcs); 
+
+    // This system is only concerned with messages meant for this system. If the taget 
+    // system and component ID in the message does not match this system then abort. 
+    if ((system_data.param_request_list_msg_gcs.target_system != system_data.system_id) || 
+        (system_data.param_request_list_msg_gcs.target_component != system_data.component_id))
+    {
+        return; 
+    }
+
+    // snprintf((char *)user_data.data_out_buff, 
+    //     SIK_TEST_MSG_BUFF_SIZE, 
+    //     "system: %u, component: %u, seq: %u, mission_type: %u\r\n", 
+    //     system_data.mission_request_msg_gcs.target_system, 
+    //     system_data.mission_request_msg_gcs.target_component, 
+    //     system_data.mission_request_msg_gcs.seq, 
+    //     system_data.mission_request_msg_gcs.mission_type); 
+    // sik_radio_test_user_output((char *)user_data.data_out_buff); 
 }
 
 
 // MAVLink MISSION_REQUEST message actions 
 void sik_radio_test_mavlink_mission_request(void)
 {
+    // Mission planner sends MISSION_REQUEST messages despite the message being 
+    // deprecated by MAVLink in favour of MISSION_REQUEST_INT. When this message is 
+    // received, Mission Planner expects MISSION_ITEM_INT in return as discovered through 
+    // trial and error (i.e. MISSION_ITEM does not work). 
+    // MISSION_ITEM_INT takes the system and component IDs in its payload of the system 
+    // the message is being sent to. This should not be confused with the full MAVLink 
+    // message system and component IDs which identify where a message is coming from. 
+    // Mission Planner varries from standard MAVLink mission protocol in that the item 
+    // at mission sequence 0 is the home location, not the first waypoint location. 
+
     mavlink_msg_mission_request_decode(
         &system_data.msg, 
-        &system_data.mission_request_msg); 
+        &system_data.mission_request_msg_gcs); 
 
-    snprintf((char *)user_data.data_out_buff, 
-        SIK_TEST_MSG_BUFF_SIZE, 
-        "system: %u, component: %u, seq: %u, mission_type: %u\r\n", 
-        system_data.mission_request_msg.target_system, 
-        system_data.mission_request_msg.target_component, 
-        system_data.mission_request_msg.seq, 
-        system_data.mission_request_msg.mission_type); 
-    sik_radio_test_user_output((char *)user_data.data_out_buff); 
+    // This system is only concerned with messages meant for this system. If the taget 
+    // system and component ID in the message does not match this system then abort. 
+    if ((system_data.mission_request_msg_gcs.target_system != system_data.system_id) || 
+        (system_data.mission_request_msg_gcs.target_component != system_data.component_id))
+    {
+        return; 
+    }
+
+    // Only send the mission item if it exists 
+    if (system_data.mission_request_msg_gcs.seq < system_data.mission_size)
+    {
+        memcpy((void *)&system_data.mission_item_int_msg, 
+               (void *)&system_data.mission[system_data.mission_request_msg_gcs.seq], 
+               sizeof(mavlink_mission_item_int_t)); 
+        system_data.mission_item_int_msg.target_system = SIK_TEST_GCS_ID; 
+        system_data.mission_item_int_msg.target_component = MAV_COMP_ID_MISSIONPLANNER; 
+
+        mavlink_msg_mission_item_int_encode_chan(
+            system_data.system_id, 
+            system_data.component_id, 
+            system_data.channel, 
+            &system_data.msg, 
+            &system_data.mission_item_int_msg); 
+        sik_radio_test_mavlink_send_msg(); 
+    }
 }
 
 
 // MAVLink REQUEST_DATA_STREAM message actions 
 void sik_radio_test_mavlink_request_data_stream(void)
 {
-    // Mission Planner sends this message to request data from the autopilot. 
-    // When attempting to connect, this message will be sent in rapid succession. 
+    // Mission Planner sends this message to request data from the autopilot. This 
+    // message is often sent in bursts to request all the needed messages. 
 
     mavlink_msg_request_data_stream_decode(
         &system_data.msg, 
-        &system_data.request_data_stream_msg); 
+        &system_data.request_data_stream_msg_gcs); 
+    
+    // This system is only concerned with messages meant for this system. If the taget 
+    // system and component ID in the message does not match this system then abort. 
+    if ((system_data.request_data_stream_msg_gcs.target_system != system_data.system_id) || 
+        (system_data.request_data_stream_msg_gcs.target_component != system_data.component_id))
+    {
+        return; 
+    }
 
     // This message comes with a cooresponding requested message rate. The calculated 
     // timer counter limit is the same calculation for each requested message so it's 
     // done once here and assigned to the requested message. Note that the periodic 
     // interrupt period should be equipped to handle whatever the requested rate is. 
     uint8_t timer_limit = (uint8_t)(S_TO_MS / 
-        (system_data.request_data_stream_msg.req_message_rate * SIK_TEST_INT_PERIOD)); 
-    uint8_t enable = system_data.request_data_stream_msg.start_stop; 
+        (system_data.request_data_stream_msg_gcs.req_message_rate * SIK_TEST_INT_PERIOD)); 
+    uint8_t enable = system_data.request_data_stream_msg_gcs.start_stop; 
 
     // Enable/disable the requested message and assign the message timer counter limit 
     // so it gets sent to the GCS at the requested rate. 
-    switch (system_data.request_data_stream_msg.req_stream_id)
+    switch (system_data.request_data_stream_msg_gcs.req_stream_id)
     {
         case MAV_DATA_STREAM_ALL: 
             break; 
@@ -1118,16 +1234,6 @@ void sik_radio_test_mavlink_request_data_stream(void)
         default: 
             break; 
     }
-
-    // snprintf((char *)user_data.data_out_buff, 
-    //     SIK_TEST_MSG_BUFF_SIZE, 
-    //     "system: %u, component: %u, stream: %u, rate: %u, start/stop: %u\r\n", 
-    //     system_data.request_data_stream_msg.target_system, 
-    //     system_data.request_data_stream_msg.target_component, 
-    //     system_data.request_data_stream_msg.req_stream_id, 
-    //     system_data.request_data_stream_msg.req_message_rate, 
-    //     system_data.request_data_stream_msg.start_stop); 
-    // sik_radio_test_user_output((char *)user_data.data_out_buff); 
 }
 
 
@@ -1136,7 +1242,7 @@ void sik_radio_test_mavlink_command_long(void)
 {
     mavlink_msg_command_long_decode(
         &system_data.msg, 
-        &system_data.command_long_msg); 
+        &system_data.command_long_msg_gcs); 
 }
 
 //=======================================================================================
@@ -1185,7 +1291,7 @@ void sik_radio_test_mavlink_periodic_timeout(void)
 // MAVLink message periodic send 
 void sik_radio_test_mavlink_periodic_send(void)
 {
-    // Check if any of the enabled periodic messages must be sent 
+    // Check if any of the enabled periodic messages must be sent. 
 
     // HEARTBEAT 
     if (system_data.heartbeat_msg_timing.enable && 
