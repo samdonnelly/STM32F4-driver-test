@@ -128,6 +128,7 @@ extern "C"
 // Buffer sizes 
 #define SIK_TEST_MSG_BUFF_SIZE 1000 
 #define SIK_TEST_MISSION_MAX_LEN 5 
+#define SIK_TEST_NUM_PARAMS 5 
 
 // System IDs - GCS IDs start at 255, vehicles start at 1 
 #define SIK_TEST_SYS_ID 1 
@@ -144,6 +145,7 @@ extern "C"
 #define SIK_TEST_INT_PERIOD SIK_TEST_ARR * S_TO_MS / SIK_TEST_PRESCALAR 
 
 #define SIK_TEST_HB_FREQ 1       // Heartbeat message send frequency 
+#define SIK_TEST_PARAM_FREQ 4    // Parameter value message send frequency 
 #define SIK_TEST_HB_TIMEOUT 40   // Heartbeat message timeout - adjust with interrupt period 
 #define SIK_TEST_AT_TIMEOUT 20   // AT mode timeout - adjust with interrupt period 
 
@@ -264,6 +266,7 @@ struct sik_mavlink_msgs_t
     sik_msg_timing_t nav_controller_output_msg_timing;                     // NAV_CONTROLLER_OUTPUT 
     sik_msg_timing_t local_position_ned_msg_timing;                        // LOCAL_POSITION_NED 
     sik_msg_timing_t global_pos_int_msg_timing;                            // GLOBAL_POSITION_INT 
+    sik_msg_timing_t param_value_msg_timing;                               // PARAM_VALUE 
     
     //==================================================
 }; 
@@ -292,8 +295,8 @@ public:
         const char *name; 
         uint16_t value; 
         MAV_PARAM_TYPE type; 
-        uint8_t index; 
-    }; 
+    };
+    uint8_t param_index; 
 
     // Status timers 
     uint8_t heartbeat_status_timer; 
@@ -324,13 +327,13 @@ sik_test_timeout_msg[] = "timeout\r\n";
 
 
 // See https://ardupilot.org/rover/docs/parameters.html#parameters for more details. 
-static const SikSystemData::ParamInfo system_params[] = 
+static const SikSystemData::ParamInfo system_params[SIK_TEST_NUM_PARAMS] = 
 {
-    {"CRUISE_SPEED", 1, MAV_PARAM_TYPE_UINT16, 0},   // Target cruise speed in auto mode (m/s) 
-    {"FRAME_CLASS",  2, MAV_PARAM_TYPE_UINT16, 1},   // Frame class: Boat 
-    {"TURN_RADIUS",  1, MAV_PARAM_TYPE_UINT16, 2},   // Turn radius of vehicle (meters) 
-    {"LOIT_TYPE",    0, MAV_PARAM_TYPE_UINT16, 3},   // Loiter type: Forward or reverse to target point 
-    {"LOIT_RADIUS",  5, MAV_PARAM_TYPE_UINT16, 4}    // Loiter radius (meters) 
+    {"CRUISE_SPEED", 1, MAV_PARAM_TYPE_UINT16},   // Target cruise speed in auto mode (m/s) 
+    {"FRAME_CLASS",  2, MAV_PARAM_TYPE_UINT16},   // Frame class: Boat 
+    {"TURN_RADIUS",  1, MAV_PARAM_TYPE_UINT16},   // Turn radius of vehicle (meters) 
+    {"LOIT_TYPE",    0, MAV_PARAM_TYPE_UINT16},   // Loiter type: Forward or reverse to target point 
+    {"LOIT_RADIUS",  5, MAV_PARAM_TYPE_UINT16}    // Loiter radius (meters) 
 };
 
 //=======================================================================================
@@ -650,6 +653,8 @@ void sik_radio_test_init_data(void)
     system_data.mission[BYTE_0].z = SIK_TEST_MOCK_ALTITUDE; 
     system_data.mission[BYTE_0].mission_type = MAV_MISSION_TYPE_MISSION; 
     system_data.mission_size = BYTE_1; 
+
+    system_data.param_index = CLEAR; 
     
     system_data.heartbeat_status_timer = CLEAR; 
     system_data.at_mode_request_timer = CLEAR; 
@@ -862,6 +867,11 @@ void sik_radio_test_init_data(void)
     system_data.global_pos_int_msg_timing.count = CLEAR; 
     system_data.global_pos_int_msg_timing.count_lim = CLEAR; 
     system_data.global_pos_int_msg_timing.enable = CLEAR_BIT; 
+
+    // PARAM_VALUE 
+    system_data.param_value_msg_timing.count = CLEAR; 
+    system_data.param_value_msg_timing.count_lim = S_TO_MS / (SIK_TEST_PARAM_FREQ * SIK_TEST_INT_PERIOD); 
+    system_data.param_value_msg_timing.enable = CLEAR_BIT; 
     
     //==================================================
 }
@@ -1135,23 +1145,10 @@ void sik_radio_test_mavlink_param_request_list(void)
         return; 
     }
 
-    // Set index to 0 
-    // Enable message to be sent periodically 
-    // Iterate through all parameters in the periodic send 
-    // Once all are sent then disable periodic send 
-
-    system_data.param_value_msg.param_id = system_params[0].name; 
-    system_data.param_value_msg.param_value = system_params[0].value; 
-    system_data.param_value_msg.param_type = system_params[0].type; 
-    system_data.param_value_msg.param_count = 5; 
-    system_data.param_value_msg.param_index = system_params[0].index; 
-
-    mavlink_msg_param_value_encode_chan(
-        system_data.system_id, 
-        system_data.component_id, 
-        system_data.channel, 
-        &system_data.msg, 
-        &system_data.param_value_msg); 
+    // Enable the PARAM_VALUE message which gets sent periodically until all parameters 
+    // in the system have been sent. 
+    system_data.param_value_msg_timing.enable = SET_BIT; 
+    system_data.param_index = CLEAR; 
 }
 
 
@@ -1520,6 +1517,31 @@ void sik_radio_test_mavlink_periodic_send(void)
             &system_data.global_pos_int_msg); 
         sik_radio_test_mavlink_send_msg(); 
     }
+
+    // PARAM_VALUE (response to PARAM_REQUEST_LIST) 
+    if (system_data.param_value_msg_timing.enable && 
+       (++system_data.param_value_msg_timing.count >= 
+          system_data.param_value_msg_timing.count_lim))
+    {
+        system_data.param_value_msg_timing.count = CLEAR; 
+
+        mavlink_msg_param_value_pack_chan(
+            system_data.system_id, 
+            system_data.component_id, 
+            system_data.channel, 
+            &system_data.msg, 
+            system_params[system_data.param_index].name, 
+            system_params[system_data.param_index].value, 
+            system_params[system_data.param_index].type, 
+            SIK_TEST_NUM_PARAMS, 
+            system_data.param_index); 
+        sik_radio_test_mavlink_send_msg(); 
+
+        if (++system_data.param_index >= SIK_TEST_NUM_PARAMS)
+        {
+            system_data.param_value_msg_timing.enable = CLEAR_BIT; 
+        }
+     }
 }
 
 //=======================================================================================
