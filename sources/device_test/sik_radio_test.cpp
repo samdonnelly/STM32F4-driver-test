@@ -195,13 +195,10 @@ struct sik_mavlink_msgs_t
     //==================================================
     // Incoming 
 
-    // Incoming messages (from GCS) 
+    // Heartbeat protocol 
     mavlink_heartbeat_t heartbeat_msg_gcs;                                   // HEARTBEAT 
-    mavlink_param_request_list_t param_request_list_msg_gcs;                 // PARAM_REQUEST_LIST 
-    mavlink_request_data_stream_t request_data_stream_msg_gcs;               // REQUEST_DATA_STREAM 
-    mavlink_command_long_t command_long_msg_gcs;                             // COMMAND_LONG 
     
-    // Mission protocol messages (from GCS) 
+    // Mission protocol 
     mavlink_mission_request_t mission_request_msg_gcs;                       // MISSION_REQUEST 
     mavlink_mission_count_t mission_count_msg_gcs;                           // MISSION_COUNT 
     mavlink_mission_item_int_t mission_item_int_msg_gcs;                     // MISSION_ITEM_INT 
@@ -211,13 +208,39 @@ struct sik_mavlink_msgs_t
     mavlink_mission_set_current_t mission_set_current_msg;                   // MISSION_SET_CURRENT 
     mavlink_mission_clear_all_t mission_clear_all_msg;                       // MISSION_CLEAR_ALL 
     
+    // Parameter protocol 
+    mavlink_param_request_list_t param_request_list_msg_gcs;                 // PARAM_REQUEST_LIST 
+    mavlink_param_request_read_t param_request_read_msg_gcs;                 // PARAM_REQUEST_READ 
+    mavlink_param_set_t param_set_msg_gcs;                                   // PARAM_SET 
+    
+    // Command protocol 
+    mavlink_command_long_t command_long_msg_gcs;                             // COMMAND_LONG 
+    
+    // Other 
+    mavlink_request_data_stream_t request_data_stream_msg_gcs;               // REQUEST_DATA_STREAM 
+    
     //==================================================
     
     //==================================================
     // Outgoing 
-
-    // Periodic outgoing messages 
+    
+    // Heartbeat protocol 
     mavlink_heartbeat_t heartbeat_msg;                                     // HEARTBEAT 
+    
+    // Mission protocol 
+    mavlink_mission_count_t mission_count_msg;                             // MISSION_COUNT 
+    mavlink_mission_item_int_t mission_item_int_msg;                       // MISSION_ITEM_INT 
+    mavlink_mission_request_int_t mission_request_int_msg;                 // MISSION_REQUEST_INT 
+    mavlink_mission_ack_t mission_ack_msg;                                 // MISSION_ACK 
+    mavlink_mission_current_t mission_current_msg;                         // MISSION_CURRENT 
+    mavlink_mission_item_reached_t mission_item_reached_msg;               // MISSION_ITEM_REACHED 
+    
+    // Parameter protocol 
+    mavlink_param_value_t param_value_msg;                                 // PARAM_VALUE 
+    
+    // Command protocol 
+    
+    // Periodic data stream messages 
     mavlink_raw_imu_t raw_imu_msg;                                         // RAW_IMU 
     mavlink_gps_raw_int_t gps_raw_int_msg;                                 // GPS_RAW_INT 
     mavlink_rc_channels_scaled_t rc_channels_scaled_msg;                   // RC_CHANNELS_SCALED 
@@ -228,14 +251,6 @@ struct sik_mavlink_msgs_t
     mavlink_nav_controller_output_t nav_controller_output_msg;             // NAV_CONTROLLER_OUTPUT 
     mavlink_local_position_ned_t local_position_ned_msg;                   // LOCAL_POSITION_NED 
     mavlink_global_position_int_t global_pos_int_msg;                      // GLOBAL_POSITION_INT 
-    
-    // Mission protocol messages 
-    mavlink_mission_count_t mission_count_msg;                             // MISSION_COUNT 
-    mavlink_mission_item_int_t mission_item_int_msg;                       // MISSION_ITEM_INT 
-    mavlink_mission_request_int_t mission_request_int_msg;                 // MISSION_REQUEST_INT 
-    mavlink_mission_ack_t mission_ack_msg;                                 // MISSION_ACK 
-    mavlink_mission_current_t mission_current_msg;                         // MISSION_CURRENT 
-    mavlink_mission_item_reached_t mission_item_reached_msg;               // MISSION_ITEM_REACHED 
     
     // Periodic outgoing message timing info 
     sik_msg_timing_t heartbeat_msg_timing;                                 // HEARTBEAT 
@@ -262,12 +277,23 @@ public:
     int channel; 
     uint8_t system_id; 
     uint8_t component_id; 
-    mavlink_mission_item_int_t mission[SIK_TEST_MISSION_MAX_LEN]; 
-    uint16_t mission_size; 
-
+    
     // MAVLink packet handling 
     mavlink_message_t msg; 
     mavlink_status_t status; 
+
+    // Mission data 
+    mavlink_mission_item_int_t mission[SIK_TEST_MISSION_MAX_LEN]; 
+    uint16_t mission_size; 
+
+    // Parameters 
+    struct ParamInfo 
+    {
+        const char *name; 
+        uint16_t value; 
+        MAV_PARAM_TYPE type; 
+        uint8_t index; 
+    }; 
 
     // Status timers 
     uint8_t heartbeat_status_timer; 
@@ -295,6 +321,17 @@ sik_test_user_exitui[] = "exitui",
 sik_test_at_request[] = "Requesting AT command mode... ", 
 sik_test_at_confirm[] = "OK\r\n", 
 sik_test_timeout_msg[] = "timeout\r\n"; 
+
+
+// See https://ardupilot.org/rover/docs/parameters.html#parameters for more details. 
+static const SikSystemData::ParamInfo system_params[] = 
+{
+    {"CRUISE_SPEED", 1, MAV_PARAM_TYPE_UINT16, 0},   // Target cruise speed in auto mode (m/s) 
+    {"FRAME_CLASS",  2, MAV_PARAM_TYPE_UINT16, 1},   // Frame class: Boat 
+    {"TURN_RADIUS",  1, MAV_PARAM_TYPE_UINT16, 2},   // Turn radius of vehicle (meters) 
+    {"LOIT_TYPE",    0, MAV_PARAM_TYPE_UINT16, 3},   // Loiter type: Forward or reverse to target point 
+    {"LOIT_RADIUS",  5, MAV_PARAM_TYPE_UINT16, 4}    // Loiter radius (meters) 
+};
 
 //=======================================================================================
 
@@ -1098,14 +1135,23 @@ void sik_radio_test_mavlink_param_request_list(void)
         return; 
     }
 
-    // snprintf((char *)user_data.data_out_buff, 
-    //     SIK_TEST_MSG_BUFF_SIZE, 
-    //     "system: %u, component: %u, seq: %u, mission_type: %u\r\n", 
-    //     system_data.mission_request_msg_gcs.target_system, 
-    //     system_data.mission_request_msg_gcs.target_component, 
-    //     system_data.mission_request_msg_gcs.seq, 
-    //     system_data.mission_request_msg_gcs.mission_type); 
-    // sik_radio_test_user_output((char *)user_data.data_out_buff); 
+    // Set index to 0 
+    // Enable message to be sent periodically 
+    // Iterate through all parameters in the periodic send 
+    // Once all are sent then disable periodic send 
+
+    system_data.param_value_msg.param_id = system_params[0].name; 
+    system_data.param_value_msg.param_value = system_params[0].value; 
+    system_data.param_value_msg.param_type = system_params[0].type; 
+    system_data.param_value_msg.param_count = 5; 
+    system_data.param_value_msg.param_index = system_params[0].index; 
+
+    mavlink_msg_param_value_encode_chan(
+        system_data.system_id, 
+        system_data.component_id, 
+        system_data.channel, 
+        &system_data.msg, 
+        &system_data.param_value_msg); 
 }
 
 
@@ -1251,6 +1297,15 @@ void sik_radio_test_mavlink_command_long(void)
     {
         return; 
     }
+
+    // snprintf((char *)user_data.data_out_buff, 
+    //     SIK_TEST_MSG_BUFF_SIZE, 
+    //     "system: %u, component: %u, seq: %u, mission_type: %u\r\n", 
+    //     system_data.mission_request_msg_gcs.target_system, 
+    //     system_data.mission_request_msg_gcs.target_component, 
+    //     system_data.mission_request_msg_gcs.seq, 
+    //     system_data.mission_request_msg_gcs.mission_type); 
+    // sik_radio_test_user_output((char *)user_data.data_out_buff); 
 }
 
 //=======================================================================================
