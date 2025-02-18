@@ -293,8 +293,9 @@ public:
     struct ParamInfo 
     {
         const char *name; 
-        uint16_t value; 
-        MAV_PARAM_TYPE type; 
+        float value; 
+        // Mission planner seems to only accept floats so 
+        // no option for MAV_PARAM_TYPE is offered here. 
     };
     uint8_t param_index; 
 
@@ -329,11 +330,11 @@ sik_test_timeout_msg[] = "timeout\r\n";
 // See https://ardupilot.org/rover/docs/parameters.html#parameters for more details. 
 static const SikSystemData::ParamInfo system_params[SIK_TEST_NUM_PARAMS] = 
 {
-    {"CRUISE_SPEED", 1, MAV_PARAM_TYPE_UINT16},   // Target cruise speed in auto mode (m/s) 
-    {"FRAME_CLASS",  2, MAV_PARAM_TYPE_UINT16},   // Frame class: Boat 
-    {"TURN_RADIUS",  1, MAV_PARAM_TYPE_UINT16},   // Turn radius of vehicle (meters) 
-    {"LOIT_TYPE",    0, MAV_PARAM_TYPE_UINT16},   // Loiter type: Forward or reverse to target point 
-    {"LOIT_RADIUS",  5, MAV_PARAM_TYPE_UINT16}    // Loiter radius (meters) 
+    {"CRUISE_SPEED", 1.1},   // Target cruise speed in auto mode (m/s) 
+    {"FRAME_CLASS",  2},     // Frame class: Boat 
+    {"TURN_RADIUS",  1.0},   // Turn radius of vehicle (meters) 
+    {"LOIT_TYPE",    0},     // Loiter type: Forward or reverse to target point 
+    {"LOIT_RADIUS",  5.0}    // Loiter radius (meters) 
 };
 
 //=======================================================================================
@@ -1295,14 +1296,22 @@ void sik_radio_test_mavlink_command_long(void)
         return; 
     }
 
-    // snprintf((char *)user_data.data_out_buff, 
-    //     SIK_TEST_MSG_BUFF_SIZE, 
-    //     "system: %u, component: %u, seq: %u, mission_type: %u\r\n", 
-    //     system_data.mission_request_msg_gcs.target_system, 
-    //     system_data.mission_request_msg_gcs.target_component, 
-    //     system_data.mission_request_msg_gcs.seq, 
-    //     system_data.mission_request_msg_gcs.mission_type); 
-    // sik_radio_test_user_output((char *)user_data.data_out_buff); 
+    // Acknowledge the command. 
+    // Emit response to command if required. 
+
+    snprintf((char *)user_data.data_out_buff, 
+        SIK_TEST_MSG_BUFF_SIZE, 
+        "command: %u, confirm: %u, p1: %f, p2: %f, p3: %f, p4: %f, p5: %f, p6: %f, p7: %f\r\n", 
+        system_data.command_long_msg_gcs.command, 
+        system_data.command_long_msg_gcs.confirmation, 
+        system_data.command_long_msg_gcs.param1, 
+        system_data.command_long_msg_gcs.param2, 
+        system_data.command_long_msg_gcs.param3, 
+        system_data.command_long_msg_gcs.param4, 
+        system_data.command_long_msg_gcs.param5, 
+        system_data.command_long_msg_gcs.param6, 
+        system_data.command_long_msg_gcs.param7); 
+    sik_radio_test_user_output((char *)user_data.data_out_buff); 
 }
 
 //=======================================================================================
@@ -1525,19 +1534,23 @@ void sik_radio_test_mavlink_periodic_send(void)
     {
         system_data.param_value_msg_timing.count = CLEAR; 
 
-        mavlink_msg_param_value_pack_chan(
-            system_data.system_id, 
-            system_data.component_id, 
-            system_data.channel, 
-            &system_data.msg, 
-            system_params[system_data.param_index].name, 
-            system_params[system_data.param_index].value, 
-            system_params[system_data.param_index].type, 
-            SIK_TEST_NUM_PARAMS, 
-            system_data.param_index); 
-        sik_radio_test_mavlink_send_msg(); 
+        if (system_data.param_index < SIK_TEST_NUM_PARAMS)
+        {
+            mavlink_msg_param_value_pack_chan(
+                system_data.system_id, 
+                system_data.component_id, 
+                system_data.channel, 
+                &system_data.msg, 
+                system_params[system_data.param_index].name, 
+                system_params[system_data.param_index].value, 
+                MAV_PARAM_TYPE_REAL32, 
+                SIK_TEST_NUM_PARAMS, 
+                system_data.param_index); 
+            sik_radio_test_mavlink_send_msg(); 
 
-        if (++system_data.param_index >= SIK_TEST_NUM_PARAMS)
+            system_data.param_index++; 
+        }
+        else 
         {
             system_data.param_value_msg_timing.enable = CLEAR_BIT; 
         }
