@@ -241,6 +241,7 @@ struct sik_mavlink_msgs_t
     mavlink_param_value_t param_value_msg;                                 // PARAM_VALUE 
     
     // Command protocol 
+    mavlink_command_ack_t command_ack_msg;                                 // COMMAND_ACK 
     
     // Periodic data stream messages 
     mavlink_raw_imu_t raw_imu_msg;                                         // RAW_IMU 
@@ -1297,6 +1298,19 @@ void sik_radio_test_mavlink_command_long(void)
     }
 
     // Acknowledge the command. 
+    mavlink_msg_command_ack_pack_chan(
+        system_data.system_id, 
+        system_data.component_id, 
+        system_data.channel, 
+        &system_data.msg, 
+        system_data.command_long_msg_gcs.command, 
+        MAV_RESULT_ACCEPTED, 
+        system_data.command_ack_msg.progress, 
+        system_data.command_ack_msg.result_param2, 
+        SIK_TEST_GCS_ID, 
+        MAV_COMP_ID_MISSIONPLANNER); 
+    sik_radio_test_mavlink_send_msg(); 
+
     // Emit response to command if required. 
 
     snprintf((char *)user_data.data_out_buff, 
