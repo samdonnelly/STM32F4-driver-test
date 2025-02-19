@@ -59,7 +59,11 @@
  *            the code to parse the circular buffer data into the complete input which 
  *            is then used to carry out various commands. In addition to these inputs, 
  *            there is also a periodic timer interrupt which carries out actions at 
- *            fixed intervals. 
+ *            fixed intervals. If not using AT command mode, to get the test started 
+ *            the user should make sure both ends of the telemtry link are ready, 
+ *            then go to Mission Planner and press "Connect". Mission Planner should 
+ *            retrieve dummy data and a heartbeat from this system and that data 
+ *            should be visible in Mission Planner once retrieved. 
  *          
  *          - There are two primary modes for this test: MAVLink mode and AT command 
  *            mode. 
@@ -96,6 +100,18 @@
  *            takes ~1s for the radio to enter AT mode). If the confirmation is not seen 
  *            from the radio after a certain amount of time then the request will time 
  *            out and the user will remain in MAVLink user input mode. 
+ *          
+ *          - NOTE: While in MAVLink mode, the codes primary purpose is to communicate 
+ *            with Mission Planner (MP) which also uses a telemetry radio. This test is 
+ *            set up to do the bare minimum to communicate with MP. More info can be 
+ *            found online for how to use MP but essentially when the "Connect" button is 
+ *            pressed in MP (assuming radios are already connected to their respective 
+ *            computers), MP will first look for a heartbeat message. Once the heartbeat 
+ *            is seen, MP will proceed to send messages requesting various information 
+ *            from this system. This code is set up to respond to these messages with 
+ *            dummy data. Note that this test does the bare minimum to provide MP with 
+ *            the info it asks for out of the gate but no other functionality of MP is 
+ *            supported. MP offers a lot of features, too many to be covered here. 
  *          
  *          - For a list of commands available to the user, see the list of pre-defined 
  *            strings below under the "Commands" section. 
@@ -149,7 +165,7 @@ extern "C"
 #define SIK_TEST_HB_TIMEOUT 40   // Heartbeat message timeout - adjust with interrupt period 
 #define SIK_TEST_AT_TIMEOUT 20   // AT mode timeout - adjust with interrupt period 
 
-// Mock data 
+// Mock data - numbers selected simply to make the data make sense 
 #define SIK_TEST_MOCK_BOOT_TIME 100 
 #define SIK_TEST_MOCK_LAT 506132700 
 #define SIK_TEST_MOCK_LON -1151237700 
@@ -158,6 +174,8 @@ extern "C"
 #define SIK_TEST_MOCK_ALTITUDE 1 
 #define SIK_TEST_MOCK_NUM_SATELLITES 4 
 #define SIK_TEST_MOCK_WP_RADIUS 10 
+#define SIK_TEST_MOCK_IMU_DIR 1 
+#define SIK_TEST_MOCK_WP_DISTANCE 200 
 
 //=======================================================================================
 
@@ -194,82 +212,30 @@ struct sik_msg_timing_t
 // MAVLink messages 
 struct sik_mavlink_msgs_t 
 {
-    //==================================================
-    // Incoming 
-
-    // Heartbeat protocol 
-    mavlink_heartbeat_t heartbeat_msg_gcs;                                   // HEARTBEAT 
+    // Incoming messages 
+    mavlink_heartbeat_t heartbeat_msg_gcs;                       // HEARTBEAT 
+    mavlink_mission_request_t mission_request_msg_gcs;           // MISSION_REQUEST 
+    mavlink_param_request_list_t param_request_list_msg_gcs;     // PARAM_REQUEST_LIST 
+    mavlink_command_long_t command_long_msg_gcs;                 // COMMAND_LONG 
+    mavlink_request_data_stream_t request_data_stream_msg_gcs;   // REQUEST_DATA_STREAM 
     
-    // Mission protocol 
-    mavlink_mission_request_t mission_request_msg_gcs;                       // MISSION_REQUEST 
-    mavlink_mission_count_t mission_count_msg_gcs;                           // MISSION_COUNT 
-    mavlink_mission_item_int_t mission_item_int_msg_gcs;                     // MISSION_ITEM_INT 
-    mavlink_mission_request_list_t mission_request_list_msg_gcs;             // MISSION_REQUEST_LIST 
-    mavlink_mission_request_int_t mission_request_int_msg_gcs;               // MISSION_REQUEST_INT 
-    mavlink_mission_ack_t mission_ack_msg_gcs;                               // MISSION_ACK 
-    mavlink_mission_set_current_t mission_set_current_msg;                   // MISSION_SET_CURRENT 
-    mavlink_mission_clear_all_t mission_clear_all_msg;                       // MISSION_CLEAR_ALL 
-    
-    // Parameter protocol 
-    mavlink_param_request_list_t param_request_list_msg_gcs;                 // PARAM_REQUEST_LIST 
-    mavlink_param_request_read_t param_request_read_msg_gcs;                 // PARAM_REQUEST_READ 
-    mavlink_param_set_t param_set_msg_gcs;                                   // PARAM_SET 
-    
-    // Command protocol 
-    mavlink_command_long_t command_long_msg_gcs;                             // COMMAND_LONG 
-    
-    // Other 
-    mavlink_request_data_stream_t request_data_stream_msg_gcs;               // REQUEST_DATA_STREAM 
-    
-    //==================================================
-    
-    //==================================================
-    // Outgoing 
-    
-    // Heartbeat protocol 
-    mavlink_heartbeat_t heartbeat_msg;                                     // HEARTBEAT 
-    
-    // Mission protocol 
-    mavlink_mission_count_t mission_count_msg;                             // MISSION_COUNT 
-    mavlink_mission_item_int_t mission_item_int_msg;                       // MISSION_ITEM_INT 
-    mavlink_mission_request_int_t mission_request_int_msg;                 // MISSION_REQUEST_INT 
-    mavlink_mission_ack_t mission_ack_msg;                                 // MISSION_ACK 
-    mavlink_mission_current_t mission_current_msg;                         // MISSION_CURRENT 
-    mavlink_mission_item_reached_t mission_item_reached_msg;               // MISSION_ITEM_REACHED 
-    
-    // Parameter protocol 
-    mavlink_param_value_t param_value_msg;                                 // PARAM_VALUE 
-    
-    // Command protocol 
-    mavlink_command_ack_t command_ack_msg;                                 // COMMAND_ACK 
-    
-    // Periodic data stream messages 
-    mavlink_raw_imu_t raw_imu_msg;                                         // RAW_IMU 
-    mavlink_gps_raw_int_t gps_raw_int_msg;                                 // GPS_RAW_INT 
-    mavlink_rc_channels_scaled_t rc_channels_scaled_msg;                   // RC_CHANNELS_SCALED 
-    mavlink_rc_channels_raw_t rc_channels_raw_msg;                         // RC_CHANNELS_RAW 
-    mavlink_servo_output_raw_t servo_output_raw_msg;                       // SERVO_OUTPUT_RAW 
-    mavlink_attitude_t attitude_msg;                                       // ATTITUDE 
-    mavlink_position_target_global_int_t position_target_global_int_msg;   // POSITION_TARGET_GLOBAL_INT 
-    mavlink_nav_controller_output_t nav_controller_output_msg;             // NAV_CONTROLLER_OUTPUT 
-    mavlink_local_position_ned_t local_position_ned_msg;                   // LOCAL_POSITION_NED 
-    mavlink_global_position_int_t global_pos_int_msg;                      // GLOBAL_POSITION_INT 
+    // Outgoing (stored) messages - other messages get 
+    // sent but their data is not stored. 
+    mavlink_heartbeat_t heartbeat_msg;                           // HEARTBEAT 
     
     // Periodic outgoing message timing info 
-    sik_msg_timing_t heartbeat_msg_timing;                                 // HEARTBEAT 
-    sik_msg_timing_t raw_imu_msg_timing;                                   // RAW_IMU 
-    sik_msg_timing_t gps_raw_int_msg_timing;                               // GPS_RAW_INT 
-    sik_msg_timing_t rc_channels_scaled_msg_timing;                        // RC_CHANNELS_SCALED 
-    sik_msg_timing_t rc_channels_raw_msg_timing;                           // RC_CHANNELS_RAW 
-    sik_msg_timing_t servo_output_raw_msg_timing;                          // SERVO_OUTPUT_RAW 
-    sik_msg_timing_t attitude_msg_timing;                                  // ATTITUDE 
-    sik_msg_timing_t position_target_global_int_msg_timing;                // POSITION_TARGET_GLOBAL_INT 
-    sik_msg_timing_t nav_controller_output_msg_timing;                     // NAV_CONTROLLER_OUTPUT 
-    sik_msg_timing_t local_position_ned_msg_timing;                        // LOCAL_POSITION_NED 
-    sik_msg_timing_t global_pos_int_msg_timing;                            // GLOBAL_POSITION_INT 
-    sik_msg_timing_t param_value_msg_timing;                               // PARAM_VALUE 
-    
-    //==================================================
+    sik_msg_timing_t heartbeat_msg_timing;                       // HEARTBEAT 
+    sik_msg_timing_t raw_imu_msg_timing;                         // RAW_IMU 
+    sik_msg_timing_t gps_raw_int_msg_timing;                     // GPS_RAW_INT 
+    sik_msg_timing_t rc_channels_scaled_msg_timing;              // RC_CHANNELS_SCALED 
+    sik_msg_timing_t rc_channels_raw_msg_timing;                 // RC_CHANNELS_RAW 
+    sik_msg_timing_t servo_output_raw_msg_timing;                // SERVO_OUTPUT_RAW 
+    sik_msg_timing_t attitude_msg_timing;                        // ATTITUDE 
+    sik_msg_timing_t position_target_global_int_msg_timing;      // POSITION_TARGET_GLOBAL_INT 
+    sik_msg_timing_t nav_controller_output_msg_timing;           // NAV_CONTROLLER_OUTPUT 
+    sik_msg_timing_t local_position_ned_msg_timing;              // LOCAL_POSITION_NED 
+    sik_msg_timing_t global_pos_int_msg_timing;                  // GLOBAL_POSITION_INT 
+    sik_msg_timing_t param_value_msg_timing;                     // PARAM_VALUE 
 }; 
 
 
@@ -314,6 +280,7 @@ public:
 static SikSystemData system_data; 
 
 
+// Strings for formatting the serial terminal for the user. 
 const char 
 // Formatting 
 sik_test_user_prompt[] = "\r\n>>> ", 
@@ -328,6 +295,10 @@ sik_test_at_confirm[] = "OK\r\n",
 sik_test_timeout_msg[] = "timeout\r\n"; 
 
 
+// Parameters for this system. Parameters can be nearly any name and value and there are 
+// no pre-defined parameters in MAVLink. The below parameters were copied from ArduPilot 
+// and selected because they're relatively easy to understand at quick glance, not 
+// because they have anything to do with this system. 
 // See https://ardupilot.org/rover/docs/parameters.html#parameters for more details. 
 static const SikSystemData::ParamInfo system_params[SIK_TEST_NUM_PARAMS] = 
 {
@@ -344,7 +315,9 @@ static const SikSystemData::ParamInfo system_params[SIK_TEST_NUM_PARAMS] =
 //=======================================================================================
 // Prototypes 
 
-// Data initialization 
+/**
+ * @brief Data initialization - init system data to make code more readable 
+ */
 void sik_radio_test_init_data(void); 
 
 /**
@@ -441,7 +414,12 @@ void sik_radio_test_user_output(const char *user_msg);
 void sik_radio_test_at_request_reset(const char *user_msg); 
 
 
-// Serialize and send MAVLink message 
+/**
+ * @brief Serialize and send MAVLink message 
+ * 
+ * @details Once a message payload is packed/encoded, this can be called to insert the 
+ *          message into a buffer and sent it to the radio. 
+ */
 void sik_radio_test_mavlink_send_msg(void); 
 
 //=======================================================================================
@@ -639,21 +617,24 @@ void sik_radio_test_init_data(void)
     system_data.component_id = MAV_COMP_ID_AUTOPILOT1; 
 
     // Default home location 
-    system_data.mission[BYTE_0].target_system = SIK_TEST_GCS_ID; 
-    system_data.mission[BYTE_0].target_component = MAV_COMP_ID_MISSIONPLANNER; 
-    system_data.mission[BYTE_0].seq = ZERO; 
-    system_data.mission[BYTE_0].frame = MAV_FRAME_GLOBAL; 
-    system_data.mission[BYTE_0].command = MAV_CMD_NAV_WAYPOINT; 
-    system_data.mission[BYTE_0].current = ZERO; 
-    system_data.mission[BYTE_0].autocontinue = ZERO; 
-    system_data.mission[BYTE_0].param1 = ZERO; 
-    system_data.mission[BYTE_0].param2 = SIK_TEST_MOCK_WP_RADIUS; 
-    system_data.mission[BYTE_0].param3 = SIK_TEST_MOCK_WP_RADIUS; 
-    system_data.mission[BYTE_0].param4 = ZERO; 
-    system_data.mission[BYTE_0].x = SIK_TEST_MOCK_LAT_HOME; 
-    system_data.mission[BYTE_0].y = SIK_TEST_MOCK_LON_HOME; 
-    system_data.mission[BYTE_0].z = SIK_TEST_MOCK_ALTITUDE; 
-    system_data.mission[BYTE_0].mission_type = MAV_MISSION_TYPE_MISSION; 
+    system_data.mission[BYTE_0] = 
+    {
+        .param1 = ZERO, 
+        .param2 = SIK_TEST_MOCK_WP_RADIUS, 
+        .param3 = SIK_TEST_MOCK_WP_RADIUS, 
+        .param4 = ZERO, 
+        .x = SIK_TEST_MOCK_LAT_HOME, 
+        .y = SIK_TEST_MOCK_LON_HOME, 
+        .z = SIK_TEST_MOCK_ALTITUDE, 
+        .seq = ZERO, 
+        .command = MAV_CMD_NAV_WAYPOINT, 
+        .target_system = SIK_TEST_GCS_ID, 
+        .target_component = MAV_COMP_ID_MISSIONPLANNER, 
+        .frame = MAV_FRAME_GLOBAL, 
+        .current = ZERO, 
+        .autocontinue = ZERO, 
+        .mission_type = MAV_MISSION_TYPE_MISSION 
+    }; 
     system_data.mission_size = BYTE_1; 
 
     system_data.param_index = CLEAR; 
@@ -671,209 +652,41 @@ void sik_radio_test_init_data(void)
     //==================================================
     // MAVLink messages 
 
-    // This test does not read from other devices to populate system information so dummy 
-    // data is initialized here. There is no real reason for choosing specific numbers 
-    // besides making them valid for the message. 
+    // Only the heartbeat message is stored and defined here as this defines the system. All 
+    // other data that gets sent contains dummy data and is inserted directly into messages 
+    // before sending. 
 
     // HEARTBEAT 
-    system_data.heartbeat_msg.custom_mode = CLEAR; 
-    system_data.heartbeat_msg.type = MAV_TYPE_SURFACE_BOAT; 
-    system_data.heartbeat_msg.autopilot = MAV_AUTOPILOT_GENERIC_WAYPOINTS_ONLY; 
-    system_data.heartbeat_msg.base_mode = MAV_MODE_FLAG_CUSTOM_MODE_ENABLED | 
-                                          MAV_MODE_FLAG_MANUAL_INPUT_ENABLED | 
-                                          MAV_MODE_FLAG_GUIDED_ENABLED | 
-                                          MAV_MODE_FLAG_SAFETY_ARMED; 
-    system_data.heartbeat_msg.system_status = MAV_STATE_ACTIVE; 
+    system_data.heartbeat_msg = 
+    {
+        .custom_mode = CLEAR, 
+        .type = MAV_TYPE_SURFACE_BOAT, 
+        .autopilot = MAV_AUTOPILOT_GENERIC_WAYPOINTS_ONLY, 
+        .base_mode = MAV_MODE_FLAG_CUSTOM_MODE_ENABLED | 
+                     MAV_MODE_FLAG_MANUAL_INPUT_ENABLED | 
+                     MAV_MODE_FLAG_GUIDED_ENABLED | 
+                     MAV_MODE_FLAG_SAFETY_ARMED, 
+        .system_status = MAV_STATE_ACTIVE, 
+        .mavlink_version = ZERO   // Gets overwritten by MAVLink 
+    }; 
 
-    system_data.heartbeat_msg_timing.count = CLEAR; 
-    system_data.heartbeat_msg_timing.count_lim = S_TO_MS / (SIK_TEST_HB_FREQ * SIK_TEST_INT_PERIOD); 
-    system_data.heartbeat_msg_timing.enable = SET_BIT; 
-    
-    // RAW_IMU 
-    system_data.raw_imu_msg.time_usec = SIK_TEST_MOCK_BOOT_TIME; 
-    system_data.raw_imu_msg.xacc = ZERO; 
-    system_data.raw_imu_msg.yacc = ZERO; 
-    system_data.raw_imu_msg.zacc = 1; 
-    system_data.raw_imu_msg.xgyro = ZERO; 
-    system_data.raw_imu_msg.ygyro = ZERO; 
-    system_data.raw_imu_msg.zgyro = ZERO; 
-    system_data.raw_imu_msg.xmag = 1; 
-    system_data.raw_imu_msg.ymag = ZERO; 
-    system_data.raw_imu_msg.zmag = ZERO; 
-    system_data.raw_imu_msg.id = ZERO; 
-    system_data.raw_imu_msg.temperature = ZERO; 
-
-    system_data.raw_imu_msg_timing.count = CLEAR; 
-    system_data.raw_imu_msg_timing.count_lim = CLEAR; 
-    system_data.raw_imu_msg_timing.enable = CLEAR_BIT; 
-    
-    // GPS_RAW_INT 
-    system_data.gps_raw_int_msg.time_usec = SIK_TEST_MOCK_BOOT_TIME; 
-    system_data.gps_raw_int_msg.fix_type = GPS_FIX_TYPE_3D_FIX; 
-    system_data.gps_raw_int_msg.lat = SIK_TEST_MOCK_LAT; 
-    system_data.gps_raw_int_msg.lon = SIK_TEST_MOCK_LON; 
-    system_data.gps_raw_int_msg.alt = SIK_TEST_MOCK_ALTITUDE; 
-    system_data.gps_raw_int_msg.eph = HIGH_16BIT; 
-    system_data.gps_raw_int_msg.epv = HIGH_16BIT; 
-    system_data.gps_raw_int_msg.vel = HIGH_16BIT; 
-    system_data.gps_raw_int_msg.cog = HIGH_16BIT; 
-    system_data.gps_raw_int_msg.satellites_visible = SIK_TEST_MOCK_NUM_SATELLITES; 
-    system_data.gps_raw_int_msg.alt_ellipsoid = SIK_TEST_MOCK_ALTITUDE; 
-    system_data.gps_raw_int_msg.h_acc = ZERO; 
-    system_data.gps_raw_int_msg.v_acc = ZERO; 
-    system_data.gps_raw_int_msg.vel_acc = ZERO; 
-    system_data.gps_raw_int_msg.hdg_acc = ZERO; 
-    system_data.gps_raw_int_msg.yaw = ZERO; 
-
-    system_data.gps_raw_int_msg_timing.count = CLEAR; 
-    system_data.gps_raw_int_msg_timing.count_lim = CLEAR; 
-    system_data.gps_raw_int_msg_timing.enable = CLEAR_BIT; 
-    
-    // RC_CHANNELS_SCALED 
-    system_data.rc_channels_scaled_msg.time_boot_ms = SIK_TEST_MOCK_BOOT_TIME; 
-    system_data.rc_channels_scaled_msg.port = ZERO; 
-    system_data.rc_channels_scaled_msg.chan1_scaled = ZERO; 
-    system_data.rc_channels_scaled_msg.chan2_scaled = ZERO; 
-    system_data.rc_channels_scaled_msg.chan3_scaled = ZERO; 
-    system_data.rc_channels_scaled_msg.chan4_scaled = ZERO; 
-    system_data.rc_channels_scaled_msg.chan5_scaled = ZERO; 
-    system_data.rc_channels_scaled_msg.chan6_scaled = ZERO; 
-    system_data.rc_channels_scaled_msg.chan7_scaled = ZERO; 
-    system_data.rc_channels_scaled_msg.chan8_scaled = ZERO; 
-    system_data.rc_channels_scaled_msg.rssi = HIGH_8BIT; 
-
-    system_data.rc_channels_scaled_msg_timing.count = CLEAR; 
-    system_data.rc_channels_scaled_msg_timing.count_lim = CLEAR; 
-    system_data.rc_channels_scaled_msg_timing.enable = CLEAR_BIT; 
-    
-    // RC_CHANNELS_RAW 
-    system_data.rc_channels_raw_msg.time_boot_ms = SIK_TEST_MOCK_BOOT_TIME; 
-    system_data.rc_channels_raw_msg.port = ZERO; 
-    system_data.rc_channels_raw_msg.chan1_raw = ZERO; 
-    system_data.rc_channels_raw_msg.chan2_raw = ZERO; 
-    system_data.rc_channels_raw_msg.chan3_raw = ZERO; 
-    system_data.rc_channels_raw_msg.chan4_raw = ZERO; 
-    system_data.rc_channels_raw_msg.chan5_raw = ZERO; 
-    system_data.rc_channels_raw_msg.chan6_raw = ZERO; 
-    system_data.rc_channels_raw_msg.chan7_raw = ZERO; 
-    system_data.rc_channels_raw_msg.chan8_raw = ZERO; 
-    system_data.rc_channels_raw_msg.rssi = HIGH_8BIT; 
-
-    system_data.rc_channels_raw_msg_timing.count = CLEAR; 
-    system_data.rc_channels_raw_msg_timing.count_lim = CLEAR; 
-    system_data.rc_channels_raw_msg_timing.enable = CLEAR_BIT; 
-    
-    // SERVO_OUTPUT_RAW 
-    system_data.servo_output_raw_msg.time_usec = SIK_TEST_MOCK_BOOT_TIME; 
-    system_data.servo_output_raw_msg.port = ZERO; 
-    system_data.servo_output_raw_msg.servo1_raw = ZERO; 
-    system_data.servo_output_raw_msg.servo2_raw = ZERO; 
-    system_data.servo_output_raw_msg.servo3_raw = ZERO; 
-    system_data.servo_output_raw_msg.servo4_raw = ZERO; 
-    system_data.servo_output_raw_msg.servo5_raw = ZERO; 
-    system_data.servo_output_raw_msg.servo6_raw = ZERO; 
-    system_data.servo_output_raw_msg.servo7_raw = ZERO; 
-    system_data.servo_output_raw_msg.servo8_raw = ZERO; 
-    system_data.servo_output_raw_msg.servo9_raw = ZERO; 
-    system_data.servo_output_raw_msg.servo10_raw = ZERO; 
-    system_data.servo_output_raw_msg.servo11_raw = ZERO; 
-    system_data.servo_output_raw_msg.servo12_raw = ZERO; 
-    system_data.servo_output_raw_msg.servo13_raw = ZERO; 
-    system_data.servo_output_raw_msg.servo14_raw = ZERO; 
-    system_data.servo_output_raw_msg.servo15_raw = ZERO; 
-    system_data.servo_output_raw_msg.servo16_raw = ZERO; 
-
-    system_data.servo_output_raw_msg_timing.count = CLEAR; 
-    system_data.servo_output_raw_msg_timing.count_lim = CLEAR; 
-    system_data.servo_output_raw_msg_timing.enable = CLEAR_BIT; 
-    
-    // ATTITUDE 
-    system_data.attitude_msg.time_boot_ms = SIK_TEST_MOCK_BOOT_TIME; 
-    system_data.attitude_msg.roll = ZERO; 
-    system_data.attitude_msg.pitch = ZERO; 
-    system_data.attitude_msg.yaw = ZERO; 
-    system_data.attitude_msg.rollspeed = ZERO; 
-    system_data.attitude_msg.pitchspeed = ZERO; 
-    system_data.attitude_msg.yawspeed = ZERO; 
-
-    system_data.attitude_msg_timing.count = CLEAR; 
-    system_data.attitude_msg_timing.count_lim = CLEAR; 
-    system_data.attitude_msg_timing.enable = CLEAR_BIT; 
-    
-    // POSITION_TARGET_GLOBAL_INT 
-    system_data.position_target_global_int_msg.time_boot_ms = SIK_TEST_MOCK_BOOT_TIME; 
-    system_data.position_target_global_int_msg.coordinate_frame = MAV_FRAME_GLOBAL; 
-    system_data.position_target_global_int_msg.type_mask = POSITION_TARGET_TYPEMASK_VX_IGNORE | 
-                                                           POSITION_TARGET_TYPEMASK_VY_IGNORE | 
-                                                           POSITION_TARGET_TYPEMASK_VZ_IGNORE |
-                                                           POSITION_TARGET_TYPEMASK_AX_IGNORE | 
-                                                           POSITION_TARGET_TYPEMASK_AY_IGNORE | 
-                                                           POSITION_TARGET_TYPEMASK_AZ_IGNORE |
-                                                           POSITION_TARGET_TYPEMASK_YAW_IGNORE | 
-                                                           POSITION_TARGET_TYPEMASK_YAW_RATE_IGNORE | 
-                                                           0xF000;
-    system_data.position_target_global_int_msg.lat_int = SIK_TEST_MOCK_LAT; 
-    system_data.position_target_global_int_msg.lon_int = SIK_TEST_MOCK_LON; 
-    system_data.position_target_global_int_msg.alt = SIK_TEST_MOCK_ALTITUDE; 
-    system_data.position_target_global_int_msg.vx = ZERO; 
-    system_data.position_target_global_int_msg.vy = ZERO; 
-    system_data.position_target_global_int_msg.vz = ZERO; 
-    system_data.position_target_global_int_msg.afx = ZERO; 
-    system_data.position_target_global_int_msg.afy = ZERO; 
-    system_data.position_target_global_int_msg.afz = ZERO; 
-    system_data.position_target_global_int_msg.yaw = ZERO; 
-    system_data.position_target_global_int_msg.yaw_rate = ZERO; 
-
-    system_data.position_target_global_int_msg_timing.count = CLEAR; 
-    system_data.position_target_global_int_msg_timing.count_lim = CLEAR; 
-    system_data.position_target_global_int_msg_timing.enable = CLEAR_BIT; 
-    
-    // NAV_CONTROLLER_OUTPUT 
-    system_data.nav_controller_output_msg.nav_roll = ZERO; 
-    system_data.nav_controller_output_msg.nav_pitch = ZERO; 
-    system_data.nav_controller_output_msg.nav_bearing = ZERO; 
-    system_data.nav_controller_output_msg.target_bearing = ZERO; 
-    system_data.nav_controller_output_msg.wp_dist = 200; 
-    system_data.nav_controller_output_msg.alt_error = ZERO; 
-    system_data.nav_controller_output_msg.aspd_error = ZERO; 
-    system_data.nav_controller_output_msg.xtrack_error = ZERO; 
-
-    system_data.nav_controller_output_msg_timing.count = CLEAR; 
-    system_data.nav_controller_output_msg_timing.count_lim = CLEAR; 
-    system_data.nav_controller_output_msg_timing.enable = CLEAR_BIT; 
-    
-    // LOCAL_POSITION_NED 
-    system_data.local_position_ned_msg.time_boot_ms = SIK_TEST_MOCK_BOOT_TIME; 
-    system_data.local_position_ned_msg.x = ZERO; 
-    system_data.local_position_ned_msg.y = ZERO; 
-    system_data.local_position_ned_msg.z = ZERO; 
-    system_data.local_position_ned_msg.vx = ZERO; 
-    system_data.local_position_ned_msg.vy = ZERO; 
-    system_data.local_position_ned_msg.vz = ZERO; 
-
-    system_data.local_position_ned_msg_timing.count = CLEAR; 
-    system_data.local_position_ned_msg_timing.count_lim = CLEAR; 
-    system_data.local_position_ned_msg_timing.enable = CLEAR_BIT; 
-    
-    // GLOBAL_POSITION_INT 
-    system_data.global_pos_int_msg.time_boot_ms = SIK_TEST_MOCK_BOOT_TIME; 
-    system_data.global_pos_int_msg.lat = SIK_TEST_MOCK_LAT; 
-    system_data.global_pos_int_msg.lon = SIK_TEST_MOCK_LON; 
-    system_data.global_pos_int_msg.alt = SIK_TEST_MOCK_ALTITUDE; 
-    system_data.global_pos_int_msg.relative_alt = SIK_TEST_MOCK_ALTITUDE; 
-    system_data.global_pos_int_msg.vx = ZERO; 
-    system_data.global_pos_int_msg.vy = ZERO; 
-    system_data.global_pos_int_msg.vx = ZERO; 
-    system_data.global_pos_int_msg.hdg = ZERO; 
-
-    system_data.global_pos_int_msg_timing.count = CLEAR; 
-    system_data.global_pos_int_msg_timing.count_lim = CLEAR; 
-    system_data.global_pos_int_msg_timing.enable = CLEAR_BIT; 
-
-    // PARAM_VALUE 
-    system_data.param_value_msg_timing.count = CLEAR; 
-    system_data.param_value_msg_timing.count_lim = S_TO_MS / (SIK_TEST_PARAM_FREQ * SIK_TEST_INT_PERIOD); 
-    system_data.param_value_msg_timing.enable = CLEAR_BIT; 
+    // Message timing info 
+    system_data.heartbeat_msg_timing = { CLEAR, 
+                                         S_TO_MS / (SIK_TEST_HB_FREQ * SIK_TEST_INT_PERIOD), 
+                                         SET_BIT }; 
+    system_data.raw_imu_msg_timing                    = { CLEAR, CLEAR, CLEAR_BIT }; 
+    system_data.gps_raw_int_msg_timing                = { CLEAR, CLEAR, CLEAR_BIT }; 
+    system_data.rc_channels_scaled_msg_timing         = { CLEAR, CLEAR, CLEAR_BIT }; 
+    system_data.rc_channels_raw_msg_timing            = { CLEAR, CLEAR, CLEAR_BIT }; 
+    system_data.servo_output_raw_msg_timing           = { CLEAR, CLEAR, CLEAR_BIT }; 
+    system_data.attitude_msg_timing                   = { CLEAR, CLEAR, CLEAR_BIT }; 
+    system_data.position_target_global_int_msg_timing = { CLEAR, CLEAR, CLEAR_BIT }; 
+    system_data.nav_controller_output_msg_timing      = { CLEAR, CLEAR, CLEAR_BIT }; 
+    system_data.local_position_ned_msg_timing         = { CLEAR, CLEAR, CLEAR_BIT }; 
+    system_data.global_pos_int_msg_timing             = { CLEAR, CLEAR, CLEAR_BIT }; 
+    system_data.param_value_msg_timing = { CLEAR, 
+                                           S_TO_MS / (SIK_TEST_PARAM_FREQ * SIK_TEST_INT_PERIOD), 
+                                           CLEAR_BIT }; 
     
     //==================================================
 }
@@ -1101,7 +914,6 @@ void sik_radio_test_mavlink_payload_decode(void)
             break; 
         
         case MAVLINK_MSG_ID_COMMAND_LONG: 
-            // Call a separate function to decode mavlink_command_long_t.command 
             sik_radio_test_mavlink_command_long(); 
             break; 
         
@@ -1182,18 +994,12 @@ void sik_radio_test_mavlink_mission_request(void)
     // Only send the mission item if it exists 
     if (system_data.mission_request_msg_gcs.seq < system_data.mission_size)
     {
-        memcpy((void *)&system_data.mission_item_int_msg, 
-               (void *)&system_data.mission[system_data.mission_request_msg_gcs.seq], 
-               sizeof(mavlink_mission_item_int_t)); 
-        system_data.mission_item_int_msg.target_system = SIK_TEST_GCS_ID; 
-        system_data.mission_item_int_msg.target_component = MAV_COMP_ID_MISSIONPLANNER; 
-
         mavlink_msg_mission_item_int_encode_chan(
             system_data.system_id, 
             system_data.component_id, 
             system_data.channel, 
             &system_data.msg, 
-            &system_data.mission_item_int_msg); 
+            &system_data.mission[system_data.mission_request_msg_gcs.seq]); 
         sik_radio_test_mavlink_send_msg(); 
     }
 }
@@ -1297,7 +1103,7 @@ void sik_radio_test_mavlink_command_long(void)
         return; 
     }
 
-    // Acknowledge the command. 
+    // Acknowledge the command 
     mavlink_msg_command_ack_pack_chan(
         system_data.system_id, 
         system_data.component_id, 
@@ -1305,27 +1111,57 @@ void sik_radio_test_mavlink_command_long(void)
         &system_data.msg, 
         system_data.command_long_msg_gcs.command, 
         MAV_RESULT_ACCEPTED, 
-        system_data.command_ack_msg.progress, 
-        system_data.command_ack_msg.result_param2, 
+        ZERO, 
+        ZERO, 
         SIK_TEST_GCS_ID, 
         MAV_COMP_ID_MISSIONPLANNER); 
     sik_radio_test_mavlink_send_msg(); 
 
-    // Emit response to command if required. 
+    // Perform the needed action based on the command 
+    uint16_t cmd_id = (uint16_t)system_data.command_long_msg_gcs.param1; 
 
-    snprintf((char *)user_data.data_out_buff, 
-        SIK_TEST_MSG_BUFF_SIZE, 
-        "command: %u, confirm: %u, p1: %f, p2: %f, p3: %f, p4: %f, p5: %f, p6: %f, p7: %f\r\n", 
-        system_data.command_long_msg_gcs.command, 
-        system_data.command_long_msg_gcs.confirmation, 
-        system_data.command_long_msg_gcs.param1, 
-        system_data.command_long_msg_gcs.param2, 
-        system_data.command_long_msg_gcs.param3, 
-        system_data.command_long_msg_gcs.param4, 
-        system_data.command_long_msg_gcs.param5, 
-        system_data.command_long_msg_gcs.param6, 
-        system_data.command_long_msg_gcs.param7); 
-    sik_radio_test_user_output((char *)user_data.data_out_buff); 
+    switch (cmd_id)
+    {
+        case MAVLINK_MSG_ID_AUTOPILOT_VERSION: 
+        {
+            uint8_t version[8], hw_uid[18]; 
+            memset((void *)version, CLEAR, sizeof(version)); 
+            memset((void *)hw_uid, CLEAR, sizeof(hw_uid)); 
+
+            uint32_t capabilities = MAV_PROTOCOL_CAPABILITY_MISSION_FLOAT | 
+                                    MAV_PROTOCOL_CAPABILITY_MISSION_INT | 
+                                    MAV_PROTOCOL_CAPABILITY_COMMAND_INT | 
+                                    MAV_PROTOCOL_CAPABILITY_SET_POSITION_TARGET_LOCAL_NED | 
+                                    MAV_PROTOCOL_CAPABILITY_SET_POSITION_TARGET_GLOBAL_INT | 
+                                    MAV_PROTOCOL_CAPABILITY_SET_ATTITUDE_TARGET | 
+                                    MAV_PROTOCOL_CAPABILITY_PARAM_FLOAT |
+                                    MAV_PROTOCOL_CAPABILITY_COMPASS_CALIBRATION | 
+                                    MAV_PROTOCOL_CAPABILITY_MAVLINK2; 
+
+            mavlink_msg_autopilot_version_pack_chan(
+                system_data.system_id, 
+                system_data.component_id, 
+                system_data.channel, 
+                &system_data.msg, 
+                capabilities,   // Autopilot capabilities (bitmap) 
+                ZERO,           // Firmware version number 
+                ZERO,           // Middleware version number 
+                ZERO,           // Operating system version number 
+                ZERO,           // HW/board version 
+                version,        // Custom firmware version 
+                version,        // Custom middleware version 
+                version,        // Custom operating system version 
+                ZERO,           // ID of board vendor 
+                ZERO,           // ID of the product 
+                ZERO,           // UID if provided by hardware 
+                hw_uid);        // UID if provided by hardware 
+            sik_radio_test_mavlink_send_msg(); 
+            break; 
+        }
+
+        default: 
+            break; 
+    }
 }
 
 //=======================================================================================
@@ -1370,11 +1206,17 @@ void sik_radio_test_mavlink_periodic_timeout(void)
     }
 }
 
-
+//=======================================================================================
+// 
+//=======================================================================================
 // MAVLink message periodic send 
 void sik_radio_test_mavlink_periodic_send(void)
 {
     // Check if any of the enabled periodic messages must be sent. 
+
+    // This test does not read from other devices to populate system information so dummy 
+    // data is inserted into each message before sending. There is no real reason for 
+    // choosing specific numbers besides making them valid for the message. 
 
     // HEARTBEAT 
     if (system_data.heartbeat_msg_timing.enable && 
@@ -1397,12 +1239,23 @@ void sik_radio_test_mavlink_periodic_send(void)
           system_data.raw_imu_msg_timing.count_lim))
     {
         system_data.raw_imu_msg_timing.count = CLEAR; 
-        mavlink_msg_raw_imu_encode_chan(
+        mavlink_msg_raw_imu_pack_chan(
             system_data.system_id, 
             system_data.component_id, 
             system_data.channel, 
             &system_data.msg, 
-            &system_data.raw_imu_msg); 
+            SIK_TEST_MOCK_BOOT_TIME,   // Time since boot 
+            ZERO,                      // X accelerometer 
+            ZERO,                      // Y accelerometer 
+            SIK_TEST_MOCK_IMU_DIR,     // Z accelerometer 
+            ZERO,                      // X gyroscope 
+            ZERO,                      // Y gyroscope 
+            ZERO,                      // Z gyroscope 
+            SIK_TEST_MOCK_IMU_DIR,     // X magnetometer 
+            ZERO,                      // Y magnetometer 
+            ZERO,                      // Z magnetometer 
+            ZERO,                      // IMU ID 
+            ZERO);                     // Temperature 
         sik_radio_test_mavlink_send_msg(); 
     }
 
@@ -1412,12 +1265,27 @@ void sik_radio_test_mavlink_periodic_send(void)
           system_data.gps_raw_int_msg_timing.count_lim))
     {
         system_data.gps_raw_int_msg_timing.count = CLEAR; 
-        mavlink_msg_gps_raw_int_encode_chan(
+        mavlink_msg_gps_raw_int_pack_chan(
             system_data.system_id, 
             system_data.component_id, 
             system_data.channel, 
             &system_data.msg, 
-            &system_data.gps_raw_int_msg); 
+            SIK_TEST_MOCK_BOOT_TIME,        // Timestamp 
+            GPS_FIX_TYPE_3D_FIX,            // GPS fix type 
+            SIK_TEST_MOCK_LAT,              // Latitude 
+            SIK_TEST_MOCK_LON,              // Longitude 
+            SIK_TEST_MOCK_ALTITUDE,         // Altitude 
+            HIGH_16BIT,                     // GPS HDOP horizontal dilution of position 
+            HIGH_16BIT,                     // GPS VDOP vertical dilution of position 
+            HIGH_16BIT,                     // GPS ground speed 
+            HIGH_16BIT,                     // Course over ground 
+            SIK_TEST_MOCK_NUM_SATELLITES,   // Number of satellites visible 
+            SIK_TEST_MOCK_ALTITUDE,         // Altitude 
+            ZERO,                           // Position uncertainty 
+            ZERO,                           // Altitude uncertainty 
+            ZERO,                           // Speed uncertainty 
+            ZERO,                           // Heading / track uncertainty 
+            ZERO);                          // Yaw in earth frame from north 
         sik_radio_test_mavlink_send_msg(); 
     }
 
@@ -1427,12 +1295,15 @@ void sik_radio_test_mavlink_periodic_send(void)
           system_data.rc_channels_scaled_msg_timing.count_lim))
     {
         system_data.rc_channels_scaled_msg_timing.count = CLEAR; 
-        mavlink_msg_rc_channels_scaled_encode_chan(
+        mavlink_msg_rc_channels_scaled_pack_chan(
             system_data.system_id, 
             system_data.component_id, 
             system_data.channel, 
             &system_data.msg, 
-            &system_data.rc_channels_scaled_msg); 
+            SIK_TEST_MOCK_BOOT_TIME,                          // Time since boot 
+            ZERO,                                             // Servo output port 
+            ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,   // RC channels 1-8 
+            HIGH_8BIT);                                       // Receive signal strength 
         sik_radio_test_mavlink_send_msg(); 
     }
 
@@ -1442,12 +1313,15 @@ void sik_radio_test_mavlink_periodic_send(void)
           system_data.rc_channels_raw_msg_timing.count_lim))
     {
         system_data.rc_channels_raw_msg_timing.count = CLEAR; 
-        mavlink_msg_rc_channels_raw_encode_chan(
+        mavlink_msg_rc_channels_raw_pack_chan(
             system_data.system_id, 
             system_data.component_id, 
             system_data.channel, 
             &system_data.msg, 
-            &system_data.rc_channels_raw_msg); 
+            SIK_TEST_MOCK_BOOT_TIME,                          // Time since boot 
+            ZERO,                                             // Servo output port 
+            ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,   // RC channels 1-8 
+            HIGH_8BIT);                                       // Receive signal strength 
         sik_radio_test_mavlink_send_msg(); 
     }
 
@@ -1457,12 +1331,15 @@ void sik_radio_test_mavlink_periodic_send(void)
           system_data.servo_output_raw_msg_timing.count_lim))
     {
         system_data.servo_output_raw_msg_timing.count = CLEAR; 
-        mavlink_msg_servo_output_raw_encode_chan(
+        mavlink_msg_servo_output_raw_pack_chan(
             system_data.system_id, 
             system_data.component_id, 
             system_data.channel, 
             &system_data.msg, 
-            &system_data.servo_output_raw_msg); 
+            SIK_TEST_MOCK_BOOT_TIME,                           // Time since boot 
+            ZERO,                                              // Servo output port 
+            ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,    // Servo output 1-8 
+            ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO);   // Servo output 9-16 
         sik_radio_test_mavlink_send_msg(); 
     }
 
@@ -1472,12 +1349,18 @@ void sik_radio_test_mavlink_periodic_send(void)
           system_data.attitude_msg_timing.count_lim))
     {
         system_data.attitude_msg_timing.count = CLEAR; 
-        mavlink_msg_attitude_encode_chan(
+        mavlink_msg_attitude_pack_chan(
             system_data.system_id, 
             system_data.component_id, 
             system_data.channel, 
             &system_data.msg, 
-            &system_data.attitude_msg); 
+            SIK_TEST_MOCK_BOOT_TIME,   // Time since boot 
+            ZERO,                      // Roll angle (rad) 
+            ZERO,                      // Pitch angle (rad) 
+            ZERO,                      // Yaw angle (rad) 
+            ZERO,                      // Roll angular speed (rad/s) 
+            ZERO,                      // Pitch angular speed (rad/s) 
+            ZERO);                     // Yaw angular speed (rad/s) 
         sik_radio_test_mavlink_send_msg(); 
     }
 
@@ -1487,12 +1370,34 @@ void sik_radio_test_mavlink_periodic_send(void)
           system_data.position_target_global_int_msg_timing.count_lim))
     {
         system_data.position_target_global_int_msg_timing.count = CLEAR; 
-        mavlink_msg_position_target_global_int_encode_chan(
+        uint16_t type_mask = POSITION_TARGET_TYPEMASK_VX_IGNORE | 
+                             POSITION_TARGET_TYPEMASK_VY_IGNORE | 
+                             POSITION_TARGET_TYPEMASK_VZ_IGNORE | 
+                             POSITION_TARGET_TYPEMASK_AX_IGNORE | 
+                             POSITION_TARGET_TYPEMASK_AY_IGNORE | 
+                             POSITION_TARGET_TYPEMASK_AZ_IGNORE | 
+                             POSITION_TARGET_TYPEMASK_YAW_IGNORE | 
+                             POSITION_TARGET_TYPEMASK_YAW_RATE_IGNORE | 
+                             0xF000; 
+        mavlink_msg_position_target_global_int_pack_chan(
             system_data.system_id, 
             system_data.component_id, 
             system_data.channel, 
             &system_data.msg, 
-            &system_data.position_target_global_int_msg); 
+            SIK_TEST_MOCK_BOOT_TIME,   // Time since boot 
+            MAV_FRAME_GLOBAL,          // Coordinate frame (MAV_FRAME) 
+            type_mask,                 // Ignored dimensions (POSITION_TARGET_TYPEMASK) 
+            SIK_TEST_MOCK_LAT,         // Latitude 
+            SIK_TEST_MOCK_LON,         // Longitude 
+            SIK_TEST_MOCK_ALTITUDE,    // Altitude 
+            ZERO,                      // X velocity in NED frame (m/s) 
+            ZERO,                      // Y velocity in NED frame (m/s) 
+            ZERO,                      // Z velocity in NED frame (m/s) 
+            ZERO,                      // X acceleration or force in NED frame (N) 
+            ZERO,                      // y acceleration or force in NED frame (N) 
+            ZERO,                      // Z acceleration or force in NED frame (N) 
+            ZERO,                      // Yaw setpoint (rad) 
+            ZERO);                     // Yaw rate setpoint (rad/s) 
         sik_radio_test_mavlink_send_msg(); 
     }
 
@@ -1502,12 +1407,19 @@ void sik_radio_test_mavlink_periodic_send(void)
           system_data.nav_controller_output_msg_timing.count_lim))
     {
         system_data.nav_controller_output_msg_timing.count = CLEAR; 
-        mavlink_msg_nav_controller_output_encode_chan(
+        mavlink_msg_nav_controller_output_pack_chan(
             system_data.system_id, 
             system_data.component_id, 
             system_data.channel, 
             &system_data.msg, 
-            &system_data.nav_controller_output_msg); 
+            ZERO,                          // Current desired roll 
+            ZERO,                          // Current desired pitch 
+            ZERO,                          // Current desired heading 
+            ZERO,                          // Bearing to current waypoint/target 
+            SIK_TEST_MOCK_WP_DISTANCE,     // Distance to active waypoint 
+            ZERO,                          // Current altitude error 
+            ZERO,                          // Current airspeed error 
+            ZERO);                         // Current crosstrack error on x-y plane 
         sik_radio_test_mavlink_send_msg(); 
     }
 
@@ -1517,12 +1429,18 @@ void sik_radio_test_mavlink_periodic_send(void)
           system_data.local_position_ned_msg_timing.count_lim))
     {
         system_data.local_position_ned_msg_timing.count = CLEAR; 
-        mavlink_msg_local_position_ned_encode_chan(
+        mavlink_msg_local_position_ned_pack_chan(
             system_data.system_id, 
             system_data.component_id, 
             system_data.channel, 
             &system_data.msg, 
-            &system_data.local_position_ned_msg); 
+            SIK_TEST_MOCK_BOOT_TIME,   // Time since boot 
+            ZERO,                      // X position (m) 
+            ZERO,                      // Y position (m) 
+            ZERO,                      // Z position (m) 
+            ZERO,                      // X speed (m/s)  
+            ZERO,                      // Y speed (m/s)  
+            ZERO);                     // Z speed (m/s)  
         sik_radio_test_mavlink_send_msg(); 
     }
 
@@ -1532,12 +1450,20 @@ void sik_radio_test_mavlink_periodic_send(void)
           system_data.global_pos_int_msg_timing.count_lim))
     {
         system_data.global_pos_int_msg_timing.count = CLEAR; 
-        mavlink_msg_global_position_int_encode_chan(
+        mavlink_msg_global_position_int_pack_chan(
             system_data.system_id, 
             system_data.component_id, 
             system_data.channel, 
             &system_data.msg, 
-            &system_data.global_pos_int_msg); 
+            SIK_TEST_MOCK_BOOT_TIME,   // Time since boot 
+            SIK_TEST_MOCK_LAT,         // Latitude 
+            SIK_TEST_MOCK_LON,         // Longitude 
+            SIK_TEST_MOCK_ALTITUDE,    // Altitude 
+            SIK_TEST_MOCK_ALTITUDE,    // Relative altitude (above home) 
+            ZERO,                      // X velocity 
+            ZERO,                      // Y velocity 
+            ZERO,                      // Z velocity 
+            ZERO);                     // Heading (yaw angle) 
         sik_radio_test_mavlink_send_msg(); 
     }
 
