@@ -1206,9 +1206,7 @@ void sik_radio_test_mavlink_periodic_timeout(void)
     }
 }
 
-//=======================================================================================
-// 
-//=======================================================================================
+
 // MAVLink message periodic send 
 void sik_radio_test_mavlink_periodic_send(void)
 {
