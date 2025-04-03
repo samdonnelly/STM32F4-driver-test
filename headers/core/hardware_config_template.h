@@ -1,19 +1,19 @@
 /**
- * @file system_config_template.h
+ * @file hardware_config_template.h
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief System configuration template 
+ * @brief Hardware configuration template 
  * 
- * @details This file is a template and is not to be altered unless there is a system 
- *          configuration setting being added or removed. This means these settings should 
- *          not be used to configure your system. Instead, create a "system_config.h" file 
- *          in the same folder as this file and redefine each of the macros below (i.e. 
- *          copy the contents of this file) and change those to configure your system. 
- *          For example, if you're using FreeRTOS, then change FREERTOS_ENABLE to 1 in 
- *          "system_config.h". "system_config.h" is not tracked so it's specific to your 
- *          use case, but it's included in the build path. This file is tracked but 
- *          excluded from the build path. 
+ * @details This file is a template and is not to be altered unless there is a hardware 
+ *          configuration setting being added or removed. This means these settings 
+ *          should not be used to configure your system. Instead, create a 
+ *          "hardware_config.h" file in the same folder as this file and redefine each 
+ *          of the macros below (i.e. copy the contents of this file) and change those 
+ *          to configure your system. For example, if you're using FreeRTOS, then change 
+ *          FREERTOS_ENABLE to 1 in "hardware_config.h". "hardware_config.h" is not 
+ *          tracked so it's specific to your use case, but it's included in the build 
+ *          path. This file is tracked but excluded from the build path. 
  * 
  * @version 0.1
  * @date 2024-02-25
@@ -22,11 +22,11 @@
  * 
  */
 
-#ifndef _SYSTEM_CONFIG_TEMPLATE_H_ 
-#define _SYSTEM_CONFIG_TEMPLATE_H_ 
+#ifndef _HARDWARE_CONFIG_TEMPLATE_H_ 
+#define _HARDWARE_CONFIG_TEMPLATE_H_ 
 
 //=======================================================================================
-// System configuration 
+// Hardware configuration 
 
 // This needs to be set if using FreeRTOS as it includes additional files and alters 
 // some core code that's used with FreeRTOS. Note that the 'RTOS_ENABLE' variable in 
@@ -40,7 +40,7 @@
 
 // Board selection 
 // The below list allows for choosing which STM32F4 board to use. Redefine each of the 
-// following in the "system_config.h" file and change your selected board to 1. 
+// following in the "hardware_config.h" file and change your selected board to 1. 
 #define STM32F4_05xx 0 
 #define STM32F4_15xx 0 
 #define STM32F4_07xx 0 
@@ -167,4 +167,4 @@
 
 //=======================================================================================
 
-#endif   // _SYSTEM_CONFIG_TEMPLATE_H_ 
+#endif   // _HARDWARE_CONFIG_TEMPLATE_H_ 

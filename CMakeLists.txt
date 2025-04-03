@@ -74,6 +74,7 @@ set(PROJECT_INCLUDE_DIRECTORIES
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/headers/core
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/headers/devices
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/headers/peripherals
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/headers/to_be_moved
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/headers/tools)
 
 # External library code 
@@ -164,6 +165,8 @@ file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/sources/devices/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/sources/peripherals/*.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/sources/peripherals/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/sources/to_be_moved/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/sources/to_be_moved/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/sources/tools/*.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/sources/tools/*.cpp)
 

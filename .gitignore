@@ -17,7 +17,7 @@ build/
 # Configuration 
 
 # System configuration 
-headers/core/system_config.h
+headers/core/hardware_config.h
 SystemConfig.txt
 
 #==================================================
