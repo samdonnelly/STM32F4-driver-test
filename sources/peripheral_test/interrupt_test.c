@@ -113,10 +113,12 @@ void int_test_init()
         GPIOA, 
         PIN_3, 
         PIN_2, 
+        UART_PARAM_DISABLE,    // Word length 
+        CLEAR_BIT,             // STOP bits 
         UART_FRAC_42_9600, 
         UART_MANT_42_9600, 
-        UART_DMA_DISABLE, 
-        UART_DMA_DISABLE); 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE); 
 
     // Periodic (counter update) interrupt timer 
     tim_9_to_11_counter_init(

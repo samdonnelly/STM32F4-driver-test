@@ -160,10 +160,12 @@ void dma_test_init()
         GPIOA, 
         PIN_3, 
         PIN_2, 
+        UART_PARAM_DISABLE,    // Word length 
+        CLEAR_BIT,             // STOP bits 
         UART_FRAC_42_9600, 
         UART_MANT_42_9600, 
-        UART_DMA_DISABLE, 
-        UART_DMA_DISABLE); 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE); 
 
     // Configure a user push button to trigger ADC conversion. Only valid when not using 
     // continuous mode. This pin is commonly the user button on NUCLEO boards. 

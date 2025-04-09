@@ -110,10 +110,12 @@ void rc_test_init(void)
         GPIOA, 
         PIN_3, 
         PIN_2, 
+        UART_PARAM_DISABLE,    // Word length 
+        CLEAR_BIT,             // STOP bits 
         UART_FRAC_42_9600, 
         UART_MANT_42_9600, 
-        UART_DMA_DISABLE, 
-        UART_DMA_ENABLE);   // DMA enabled so it can be configured later 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_ENABLE);   // DMA enabled so it can be configured later 
 
     //==================================================
 
@@ -360,13 +362,13 @@ void rc_sd_card_test_init(void)
     // Enable the IDLE line interrupt 
     uart_interrupt_init(
         USART2, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_ENABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE); 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_ENABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE); 
 
     // Initialize the DMA stream for the UART 
     dma_stream_init(
@@ -1054,13 +1056,13 @@ void rc_ground_station_test_init(void)
     // Enable the IDLE line interrupt 
     uart_interrupt_init(
         USART2, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_ENABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE); 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_ENABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE); 
 
     // Initialize the DMA stream for the UART 
     dma_stream_init(

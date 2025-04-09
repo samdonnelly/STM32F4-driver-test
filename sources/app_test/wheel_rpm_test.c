@@ -86,10 +86,12 @@ void wheel_rpm_test_init(void)
         GPIOA, 
         PIN_3, 
         PIN_2, 
+        UART_PARAM_DISABLE,    // Word length 
+        CLEAR_BIT,             // STOP bits 
         UART_FRAC_42_9600, 
         UART_MANT_42_9600, 
-        UART_DMA_DISABLE, 
-        UART_DMA_DISABLE); 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE); 
 
     // External interrupt (rev count) setup 
     exti_init(); 

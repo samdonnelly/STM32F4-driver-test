@@ -157,21 +157,23 @@ void freertos_test_init(void)
         GPIOA, 
         PIN_3, 
         PIN_2, 
+        UART_PARAM_DISABLE,    // Word length 
+        CLEAR_BIT,             // STOP bits 
         UART_FRAC_42_9600, 
         UART_MANT_42_9600, 
-        UART_DMA_DISABLE, 
-        UART_DMA_ENABLE);   // RX DMA enabled for serial terminal reading 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_ENABLE);   // RX DMA enabled for serial terminal reading 
     
     // Enable IDLE line interrupts for reading serial terminal input with DMA 
     uart_interrupt_init(
         USART2, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_ENABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE); 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_ENABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE); 
 
     // Initialize the DMA stream 
     dma_stream_init(
@@ -644,10 +646,12 @@ void task_scheduling_init(void)
         GPIOA, 
         PIN_3, 
         PIN_2, 
+        UART_PARAM_DISABLE,    // Word length 
+        CLEAR_BIT,             // STOP bits 
         UART_FRAC_42_1200, 
         UART_MANT_42_1200, 
-        UART_DMA_DISABLE, 
-        UART_DMA_DISABLE); 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE); 
 
     // Create the thread(s) 
     msg01Handle = osThreadNew(TaskMsg01, NULL, &msg01_attributes); 

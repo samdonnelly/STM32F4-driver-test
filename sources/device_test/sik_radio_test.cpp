@@ -458,21 +458,23 @@ void sik_radio_test_init(void)
         GPIOA, 
         PIN_10, 
         PIN_9, 
+        UART_PARAM_DISABLE,    // Word length 
+        CLEAR_BIT,             // STOP bits 
         UART_FRAC_84_57600, 
         UART_MANT_84_57600, 
-        UART_DMA_DISABLE, 
-        UART_DMA_ENABLE); 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_ENABLE); 
 
     // UART1 interrupt init - SiK radio module - IDLE line (RX) interrupts 
     uart_interrupt_init(
         radio_data.uart, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_ENABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE); 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_ENABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE); 
 
     // UART2 init - Serial terminal 
     uart_init(
@@ -480,21 +482,23 @@ void sik_radio_test_init(void)
         GPIOA, 
         PIN_3, 
         PIN_2, 
+        UART_PARAM_DISABLE,    // Word length 
+        CLEAR_BIT,             // STOP bits 
         UART_FRAC_42_9600, 
         UART_MANT_42_9600, 
-        UART_DMA_DISABLE, 
-        UART_DMA_ENABLE); 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_ENABLE); 
 
     // UART2 interrupt init - Serial terminal - IDLE line (RX) interrupts 
     uart_interrupt_init(
         user_data.uart, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_ENABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE); 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_ENABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE); 
     
     //==================================================
 
