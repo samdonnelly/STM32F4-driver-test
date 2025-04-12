@@ -62,11 +62,33 @@
 
 //=======================================================================================
 // Macros 
+
+#define IBUS_RC_BUFF_SIZE 500 
+#define IBUS_SERIAL_BUFF_SIZE 100 
+
 //=======================================================================================
 
 
 //=======================================================================================
 // Global data 
+
+// IBUS test data 
+typedef struct ibus_data_s 
+{
+    // Receiver input 
+    uart_dma_input_cb_index_t rc; 
+    uint8_t rc_cb[IBUS_RC_BUFF_SIZE];            // Circular buffer populated by DMA 
+    uint8_t rc_data_in[IBUS_RC_BUFF_SIZE];    // Buffer that stores latest UART input 
+    
+    // Serial terminal output 
+    USART_TypeDef *serial_uart; 
+    uint8_t serial_data_out[IBUS_SERIAL_BUFF_SIZE]; 
+
+}
+ibus_data_t; 
+
+static ibus_data_t ibus_data; 
+
 //=======================================================================================
 
 
@@ -80,36 +102,62 @@
 
 void ibus_test_init(void)
 {
-    // 
+    //==================================================
+    // Data initialization 
+
+    ibus_data.rc.uart = USART6; 
+    // ibus_data.rc.dma_stream = DMAX_StreamX; 
+    ibus_data.rc.cb_index.cb_size = IBUS_RC_BUFF_SIZE; 
+    ibus_data.rc.cb_index.head = CLEAR; 
+    ibus_data.rc.cb_index.tail = CLEAR; 
+    ibus_data.rc.dma_index.data_size = CLEAR; 
+    ibus_data.rc.dma_index.ndt_old = dma_ndt_read(ibus_data.rc.dma_stream); 
+    ibus_data.rc.dma_index.ndt_new = CLEAR; 
+    ibus_data.rc.data_in_index = CLEAR; 
+    memset((void *)ibus_data.rc_cb, CLEAR, sizeof(ibus_data.rc_cb)); 
+    memset((void *)ibus_data.rc_data_in, CLEAR, sizeof(ibus_data.rc_data_in)); 
+
+    ibus_data.serial_uart = USART2; 
+    memset((void *)ibus_data.serial_data_out, CLEAR, sizeof(ibus_data.serial_data_out)); 
+
+    //==================================================
+
+    //==================================================
+    // General 
+
+    // Initialize GPIO ports 
+    gpio_port_init(); 
+    
+    //==================================================
 
     //==================================================
     // IBUS and UART 
 
     // UART2 init - Serial terminal 
     uart_init(
-        hardware.user_uart, 
+        ibus_data.serial_uart, 
         GPIOA, 
         PIN_3, 
         PIN_2, 
-        UART_PARAM_DISABLE,    // Word length 
-        CLEAR,                 // STOP bits 
+        UART_PARAM_DISABLE, 
+        CLEAR, 
         UART_FRAC_42_9600, 
         UART_MANT_42_9600, 
         UART_PARAM_DISABLE, 
         UART_PARAM_DISABLE); 
 
-    // UART6 init - RC receiver 
+    // UART6 init (IBUS) - RC receiver 
     ibus_init(
-        hardware.user_uart, 
+        ibus_data.rc.uart, 
         GPIOA, 
-        PIN_3, 
-        PIN_2, 
+        PIN_12, 
+        PIN_11, 
         UART_PARAM_DISABLE, 
-        UART_PARAM_DISABLE); 
+        UART_PARAM_ENABLE); 
 
     // UART6 interrupt init - RC receiver - IDLE line (RX) interrupts 
     uart_interrupt_init(
-        rc_data.uart, 
+        ibus_data.rc.uart, 
         UART_PARAM_DISABLE, 
         UART_PARAM_DISABLE, 
         UART_PARAM_DISABLE, 
