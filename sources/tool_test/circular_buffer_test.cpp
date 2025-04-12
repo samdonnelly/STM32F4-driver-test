@@ -72,7 +72,7 @@
 // Data structure to hold UART circular buffer data. The circular buffer gets populated 
 // by DMA when UART data is received and that UART data is then parsed into a separate 
 // buffer to make it available for the application. 
-struct uart_dma_cb 
+struct UART_PARAM_cb 
 {
     USART_TypeDef *uart; 
     DMA_Stream_TypeDef *dma_stream; 
@@ -82,7 +82,7 @@ struct uart_dma_cb
     uint8_t data_buff[UART_TEST_MAX_INPUT];   // Buffer that stores latest UART input 
 };
 
-static uart_dma_cb cb; 
+static UART_PARAM_cb cb; 
 
 //=======================================================================================
 
@@ -113,10 +113,12 @@ void cb_test_init(void)
         GPIOA, 
         PIN_3, 
         PIN_2, 
+        UART_PARAM_DISABLE, 
+        CLEAR, 
         UART_FRAC_42_9600, 
         UART_MANT_42_9600, 
-        UART_DMA_DISABLE, 
-        UART_DMA_ENABLE); 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_ENABLE); 
     
     // Enable IDLE line interrupts - this interrupt is triggered when the RX line 
     // goes idle (no more data coming in). This is used to read variable length 
@@ -124,13 +126,13 @@ void cb_test_init(void)
     // will only trigger for fixed lengths. 
     uart_interrupt_init(
         USART2, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_ENABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE); 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_ENABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE); 
 
     //==================================================
 

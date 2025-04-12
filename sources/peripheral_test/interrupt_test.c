@@ -48,7 +48,7 @@
  *            INTERRUPT_OVERRIDE macro to be set to use them. 
  *          
  *          Other tests demonstrating the interrupt driver: 
- *          - esc_readytosky_test.c 
+ *          - esc_test.c 
  *          - wheel_rpm_test.c 
  *          - circular_buffer_test.cpp 
  * 
@@ -113,10 +113,12 @@ void int_test_init()
         GPIOA, 
         PIN_3, 
         PIN_2, 
+        UART_PARAM_DISABLE, 
+        CLEAR, 
         UART_FRAC_42_9600, 
         UART_MANT_42_9600, 
-        UART_DMA_DISABLE, 
-        UART_DMA_DISABLE); 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE); 
 
     // Periodic (counter update) interrupt timer 
     tim_9_to_11_counter_init(

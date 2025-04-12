@@ -67,7 +67,7 @@ const osThreadAttr_t main_loop_attributes =
 }; 
 
 // Serial terminal data 
-// static uint8_t uart_dma_buff[SERIAL_INPUT_MAX_LEN];   // Circular buffer 
+// static uint8_t UART_PARAM_buff[SERIAL_INPUT_MAX_LEN];   // Circular buffer 
 // static uint8_t buff_index;                            // Circular buffer index 
 // static uint8_t user_in_buff[SERIAL_INPUT_MAX_LEN];    // Stores latest user input 
 
@@ -157,21 +157,23 @@ void freertos_test_init(void)
         GPIOA, 
         PIN_3, 
         PIN_2, 
+        UART_PARAM_DISABLE, 
+        CLEAR, 
         UART_FRAC_42_9600, 
         UART_MANT_42_9600, 
-        UART_DMA_DISABLE, 
-        UART_DMA_ENABLE);   // RX DMA enabled for serial terminal reading 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_ENABLE);   // RX DMA enabled for serial terminal reading 
     
     // Enable IDLE line interrupts for reading serial terminal input with DMA 
     uart_interrupt_init(
         USART2, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_ENABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE); 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_ENABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE); 
 
     // Initialize the DMA stream 
     dma_stream_init(
@@ -207,7 +209,7 @@ void freertos_test_init(void)
     mainLoopHandle = osThreadNew(TaskLoop, NULL, &main_loop_attributes); 
 
     // Initialize data 
-    // memset((void *)uart_dma_buff, CLEAR, sizeof(uart_dma_buff)); 
+    // memset((void *)UART_PARAM_buff, CLEAR, sizeof(UART_PARAM_buff)); 
     // memset((void *)&buff_index, CLEAR, sizeof(buff_index)); 
     // memset((void *)user_in_buff, CLEAR, sizeof(user_in_buff)); 
 
@@ -644,10 +646,12 @@ void task_scheduling_init(void)
         GPIOA, 
         PIN_3, 
         PIN_2, 
+        UART_PARAM_DISABLE, 
+        CLEAR, 
         UART_FRAC_42_1200, 
         UART_MANT_42_1200, 
-        UART_DMA_DISABLE, 
-        UART_DMA_DISABLE); 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE); 
 
     // Create the thread(s) 
     msg01Handle = osThreadNew(TaskMsg01, NULL, &msg01_attributes); 

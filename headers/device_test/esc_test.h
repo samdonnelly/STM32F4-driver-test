@@ -1,9 +1,9 @@
 /**
- * @file esc_readytosky_test.h
+ * @file esc_test.h
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Readytosky ESC test interface 
+ * @brief ESC test interface 
  * 
  * @version 0.1
  * @date 2023-09-06
@@ -12,8 +12,8 @@
  * 
  */
 
-#ifndef _ESC_READYTOSKY_TEST_H_ 
-#define _ESC_READYTOSKY_TEST_H_ 
+#ifndef _ESC_TEST_H_ 
+#define _ESC_TEST_H_ 
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,13 +33,13 @@ extern "C" {
 /**
  * @brief ESC setup code 
  */
-void esc_readytosky_test_init(void); 
+void esc_test_init(void); 
 
 
 /**
  * @brief ESC test code 
  */
-void esc_readytosky_test_app(void); 
+void esc_test_app(void); 
 
 //=======================================================================================
 
@@ -68,4 +68,4 @@ int16_t esc_test_adc_mapping(uint16_t adc_val);
 }
 #endif
 
-#endif   // _ESC_READYTOSKY_TEST_H_ 
+#endif   // _ESC_TEST_H_ 

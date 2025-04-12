@@ -21,7 +21,7 @@
 
 #include "nrf24l01_test.h" 
 #include "hw125_test.h" 
-#include "esc_readytosky_test.h" 
+#include "esc_test.h" 
 
 //=======================================================================================
 
@@ -110,10 +110,12 @@ void rc_test_init(void)
         GPIOA, 
         PIN_3, 
         PIN_2, 
+        UART_PARAM_DISABLE, 
+        CLEAR, 
         UART_FRAC_42_9600, 
         UART_MANT_42_9600, 
-        UART_DMA_DISABLE, 
-        UART_DMA_ENABLE);   // DMA enabled so it can be configured later 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_ENABLE);   // DMA enabled so it can be configured later 
 
     //==================================================
 
@@ -360,13 +362,13 @@ void rc_sd_card_test_init(void)
     // Enable the IDLE line interrupt 
     uart_interrupt_init(
         USART2, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_ENABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE); 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_ENABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE); 
 
     // Initialize the DMA stream for the UART 
     dma_stream_init(
@@ -785,7 +787,7 @@ void rc_motor_test_init(void)
     // ESC/motor setup 
 
     // ESC driver setup 
-    esc_readytosky_init(
+    esc_init(
         DEVICE_ONE, 
         TIM3, 
         TIMER_CH4, 
@@ -796,7 +798,7 @@ void rc_motor_test_init(void)
         RC_MOTOR_ESC_FWD_SPEED_LIM, 
         RC_MOTOR_ESC_REV_SPEED_LIM); 
 
-    esc_readytosky_init(
+    esc_init(
         DEVICE_TWO, 
         TIM3, 
         TIMER_CH3, 
@@ -964,7 +966,7 @@ void rc_test_thruster_output(
 {
     // Radio connected - clear timeout 
     *timer = CLEAR; 
-    esc_readytosky_send(device, throttle); 
+    esc_send(device, throttle); 
 }
 
 
@@ -1054,13 +1056,13 @@ void rc_ground_station_test_init(void)
     // Enable the IDLE line interrupt 
     uart_interrupt_init(
         USART2, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_ENABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE); 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_ENABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE); 
 
     // Initialize the DMA stream for the UART 
     dma_stream_init(

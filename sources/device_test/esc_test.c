@@ -1,9 +1,9 @@
 /**
- * @file esc_readytosky_test.c
+ * @file esc_test.c
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Readytosky ESC test 
+ * @brief ESC test 
  * 
  * @details Setup 
  *          - Hardware 
@@ -63,7 +63,7 @@
 //=======================================================================================
 // Includes 
 
-#include "esc_readytosky_test.h" 
+#include "esc_test.h" 
 #include "stm32f4xx_it.h" 
 
 //=======================================================================================
@@ -183,7 +183,7 @@ static esc_test_cmds_t esc_cmd_table[ESC_TEST_NUM_TEST_CMDS] =
 //=======================================================================================
 // Setup code 
 
-void esc_readytosky_test_init(void)
+void esc_test_init(void)
 {
     // Initialize GPIO ports 
     gpio_port_init(); 
@@ -205,21 +205,23 @@ void esc_readytosky_test_init(void)
         GPIOA, 
         PIN_3, 
         PIN_2, 
+        UART_PARAM_DISABLE, 
+        CLEAR, 
         UART_FRAC_42_9600, 
         UART_MANT_42_9600, 
-        UART_DMA_DISABLE, 
-        UART_DMA_ENABLE); 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_ENABLE); 
 
     // UART2 interrupt init - Serial terminal - IDLE line (RX) interrupts 
     uart_interrupt_init(
         USART2, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_ENABLE, 
-        UART_INT_DISABLE, 
-        UART_INT_DISABLE); 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_ENABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE); 
     
     //==================================================
 
@@ -336,7 +338,7 @@ void esc_readytosky_test_init(void)
     // ESC config 
 
     // ESC driver setup 
-    esc_readytosky_init(
+    esc_init(
         DEVICE_ONE, 
         TIM3, 
         TIMER_CH4, 
@@ -349,7 +351,7 @@ void esc_readytosky_test_init(void)
 
 #if ESC_SECOND_DEVICE 
 
-    esc_readytosky_init(
+    esc_init(
         DEVICE_TWO, 
         TIM3, 
         TIMER_CH3, 
@@ -395,7 +397,7 @@ void esc_readytosky_test_init(void)
 //=======================================================================================
 // Test code 
 
-void esc_readytosky_test_app(void)
+void esc_test_app(void)
 {
     // User input interrupt 
     if (handler_flags.usart2_flag)
@@ -411,7 +413,7 @@ void esc_readytosky_test_app(void)
              esc_test_input_check(esc_data.data_buff, &esc_data.pwm_input))
         {
             // Write PWM command to ESC/motor 
-            esc_readytosky_send(esc_data.dev_num, esc_data.pwm_input); 
+            esc_send(esc_data.dev_num, esc_data.pwm_input); 
             esc_test_user_feedback(); 
         }
         else 
@@ -440,9 +442,9 @@ void esc_readytosky_test_app(void)
         if (esc_data.mode_flag == ESC_TEST_MODE_CONTROL)
         {
             // Convert the ADC value to a throttle command and send it to the ESC 
-            esc_readytosky_send(DEVICE_ONE, esc_test_adc_mapping(esc_data.adc_data[0])); 
+            esc_send(DEVICE_ONE, esc_test_adc_mapping(esc_data.adc_data[0])); 
 #if ESC_SECOND_DEVICE 
-            esc_readytosky_send(DEVICE_TWO, esc_test_adc_mapping(esc_data.adc_data[1])); 
+            esc_send(DEVICE_TWO, esc_test_adc_mapping(esc_data.adc_data[1])); 
 #endif   // ESC_SECOND_DEVICE 
         }
     }
