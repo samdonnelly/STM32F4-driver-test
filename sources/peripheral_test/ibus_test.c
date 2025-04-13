@@ -35,13 +35,14 @@
  *              receiver using the IBUS, UART, DMA and interrupt drivers. 
  *          
  *          Procedure 
- *          - This code looks for data received via IBUS (UART) from the FlySky receiver. 
- *            Data is send very often (~7ms intervals) so a number of new data items are 
- *            checked to have accumulated before processing them. This is done because 
- *            systems using these receivers that do more than just use incoming receiver 
- *            data may not have time, or may not need to dedicate time, to processing 
- *            every new message. Once new data is processed, it's displayed to the serial 
- *            terminal so the user can see the value of each channel in the IBUS packet. 
+ *          - This code looks for data received via IBUS (UART) from the FlySky receiver 
+ *            at a fixed interval (periodic interrupt). If data is there it will be read. 
+ *            Every so often (but not every processing interval), the most recent IBUS 
+ *            packet will be displayed for the user to see. IBUS data is sent frequently 
+ *            (every ~7ms) and each packet could be used if needed but this test is meant 
+ *            to simulate a system doing more than just looking for receiver data so the 
+ *            receiver data is checked for at a fixed interval. More frequent sampling 
+ *            can easily be done. 
  *          
  *          NOTE: IBUS data is send roughly every 7ms from the receiver. 
  * 
@@ -56,6 +57,7 @@
 // Includes 
 
 #include "ibus_test.h" 
+#include "stm32f4xx_it.h" 
 
 //=======================================================================================
 
@@ -65,6 +67,7 @@
 
 #define IBUS_RC_BUFF_SIZE 500 
 #define IBUS_SERIAL_BUFF_SIZE 100 
+#define IBUS_DATA_DISPLAY_TIMER 4 
 
 //=======================================================================================
 
@@ -77,12 +80,16 @@ typedef struct ibus_data_s
 {
     // Receiver input 
     uart_dma_input_cb_index_t rc; 
-    uint8_t rc_cb[IBUS_RC_BUFF_SIZE];            // Circular buffer populated by DMA 
+    uint8_t rc_cb[IBUS_RC_BUFF_SIZE];         // Circular buffer populated by DMA 
     uint8_t rc_data_in[IBUS_RC_BUFF_SIZE];    // Buffer that stores latest UART input 
+
+    // IBUS packet handling 
+    uint8_t packet_count; 
+    uint8_t packets_index; 
     
     // Serial terminal output 
     USART_TypeDef *serial_uart; 
-    uint8_t serial_data_out[IBUS_SERIAL_BUFF_SIZE]; 
+    char serial_data_out[IBUS_SERIAL_BUFF_SIZE]; 
 
 }
 ibus_data_t; 
@@ -106,7 +113,7 @@ void ibus_test_init(void)
     // Data initialization 
 
     ibus_data.rc.uart = USART6; 
-    // ibus_data.rc.dma_stream = DMAX_StreamX; 
+    ibus_data.rc.dma_stream = DMA2_Stream1; 
     ibus_data.rc.cb_index.cb_size = IBUS_RC_BUFF_SIZE; 
     ibus_data.rc.cb_index.head = CLEAR; 
     ibus_data.rc.cb_index.tail = CLEAR; 
@@ -116,6 +123,9 @@ void ibus_test_init(void)
     ibus_data.rc.data_in_index = CLEAR; 
     memset((void *)ibus_data.rc_cb, CLEAR, sizeof(ibus_data.rc_cb)); 
     memset((void *)ibus_data.rc_data_in, CLEAR, sizeof(ibus_data.rc_data_in)); 
+
+    ibus_data.packet_count = CLEAR; 
+    ibus_data.packets_index = CLEAR; 
 
     ibus_data.serial_uart = USART2; 
     memset((void *)ibus_data.serial_data_out, CLEAR, sizeof(ibus_data.serial_data_out)); 
@@ -128,6 +138,19 @@ void ibus_test_init(void)
     // Initialize GPIO ports 
     gpio_port_init(); 
     
+    //==================================================
+
+    //==================================================
+    // Timers 
+
+    // Periodic (counter update) interrupt timer 
+    tim_9_to_11_counter_init(
+        TIM9, 
+        TIM_84MHZ_100US_PSC, 
+        0x01F4,   // ARR=500, (500 counts)*(100us/count) = 50ms 
+        TIM_UP_INT_ENABLE); 
+    tim_enable(TIM9); 
+
     //==================================================
 
     //==================================================
@@ -167,6 +190,48 @@ void ibus_test_init(void)
         UART_PARAM_DISABLE); 
 
     //==================================================
+
+    //==================================================
+    // DMA 
+
+    // DMA2 stream init - UART6 - RC receiver 
+    dma_stream_init(
+        DMA2, 
+        ibus_data.rc.dma_stream, 
+        DMA_CHNL_4, 
+        DMA_DIR_PM, 
+        DMA_CM_ENABLE,
+        DMA_PRIOR_HI, 
+        DMA_DBM_DISABLE, 
+        DMA_ADDR_INCREMENT, 
+        DMA_ADDR_FIXED, 
+        DMA_DATA_SIZE_BYTE, 
+        DMA_DATA_SIZE_BYTE); 
+
+    // DMA2 stream config - UART6 - RC receiver 
+    dma_stream_config(
+        ibus_data.rc.dma_stream, 
+        (uint32_t)(&ibus_data.rc.uart->DR), 
+        (uint32_t)ibus_data.rc_cb, 
+        (uint32_t)NULL, 
+        (uint16_t)IBUS_RC_BUFF_SIZE); 
+
+    // Enable DMA streams 
+    dma_stream_enable(ibus_data.rc.dma_stream);   // UART6 - RC receiver 
+
+    //==================================================
+    
+    //==================================================
+    // Initialize interrupts 
+
+    // Initialize interrupt handler flags 
+    int_handler_init(); 
+
+    // Enable the interrupt handlers 
+    nvic_config(USART6_IRQn, EXTI_PRIORITY_0);          // UART6 - RC receiver 
+    nvic_config(TIM1_BRK_TIM9_IRQn, EXTI_PRIORITY_1);   // TIM9 - periodic interrupt 
+
+    //==================================================
 }
 
 //=======================================================================================
@@ -177,12 +242,86 @@ void ibus_test_init(void)
 
 void ibus_test_app(void)
 {
-    // 
+    // Wait for the periodic interrupt before checking for new data. This is to simulate 
+    // a system that will check for data at a fixed interval as opposed to polling for 
+    // data or handling it as soon as an interrupt is triggered. 
+    if (handler_flags.tim1_brk_tim9_glbl_flag)
+    {
+        handler_flags.tim1_brk_tim9_glbl_flag = CLEAR_BIT; 
+        
+        // Check to see if new data has arrived. In this case there should always be data 
+        // ready by the time we check since the receivers sends new IBUS data every 7ms. 
+        // The exceptions to this are if the periodic interrupt is configured to occur 
+        // faster or the transmitter is not sending any data. We check anyway to be sure. 
+        if (handler_flags.usart6_flag)
+        {
+            handler_flags.usart6_flag = CLEAR_BIT; 
+            
+            // Since this interrupt is handled at an interval as opposed to as soon as 
+            // possible there is a chance the interrupt occurs while we're processing 
+            // the new data. If this happens our packet count may not match the data 
+            // collected so we make a local copy to keep it from changing. 
+            uint8_t num_packets = ibus_data.packet_count; 
+            ibus_data.packet_count = CLEAR; 
+            
+            // Parse the new receiver data from the circular buffer into the data buffer. 
+            // The receiver will likely send multiple IBUS packets by the time we go to 
+            // parse the data. As long as the buffer sizes are larger than the amount of 
+            // data the receiver can send between periodic interrupt intervals then no 
+            // data should be lost. 
+            dma_cb_index(ibus_data.rc.dma_stream, &ibus_data.rc.dma_index, &ibus_data.rc.cb_index); 
+            cb_parse(ibus_data.rc_cb, &ibus_data.rc.cb_index, ibus_data.rc_data_in); 
+            
+            // Only the most recent IBUS packet data is displayed for the user. The data 
+            // display interval is also further divided because (a) the user doesn't need 
+            // to see data updated as fast as the periodic interrupt and (b) because our 
+            // buffer sizes would need to be larger for a longer periodic interrupt 
+            // interval. 
+            if (++ibus_data.packets_index >= IBUS_DATA_DISPLAY_TIMER)
+            {
+                ibus_data.packets_index = CLEAR; 
+                ibus_packet_t *packet = 
+                    (ibus_packet_t *)&ibus_data.rc_data_in[num_packets*IBUS_PACKET_BYTES]; 
+
+                snprintf(
+                    ibus_data.serial_data_out, 
+                    IBUS_SERIAL_BUFF_SIZE, 
+                    "\r%u %u %u %u %u %u %u %u %u %u %u %u %u %u", 
+                    packet->items[IBUS_CH1], 
+                    packet->items[IBUS_CH2], 
+                    packet->items[IBUS_CH3], 
+                    packet->items[IBUS_CH4], 
+                    packet->items[IBUS_CH5], 
+                    packet->items[IBUS_CH6], 
+                    packet->items[IBUS_CH7], 
+                    packet->items[IBUS_CH8], 
+                    packet->items[IBUS_CH9], 
+                    packet->items[IBUS_CH10], 
+                    packet->items[IBUS_CH11], 
+                    packet->items[IBUS_CH12], 
+                    packet->items[IBUS_CH13], 
+                    packet->items[IBUS_CH14]); 
+
+                uart_send_str(ibus_data.serial_uart, ibus_data.serial_data_out); 
+            }
+        }
+    }
 }
 
 //=======================================================================================
 
 
 //=======================================================================================
-// Helper functions 
+// Interrupt override 
+
+// USART6 - RC receiver IDLE line interrupts 
+void USART6_IRQHandler(void)
+{
+    ibus_data.packet_count++; 
+
+    handler_flags.usart6_flag = SET_BIT; 
+    dummy_read(USART6->SR); 
+    dummy_read(USART6->DR); 
+}
+
 //=======================================================================================
