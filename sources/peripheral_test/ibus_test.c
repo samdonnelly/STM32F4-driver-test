@@ -67,7 +67,8 @@
 
 #define IBUS_RC_BUFF_SIZE 500 
 #define IBUS_SERIAL_BUFF_SIZE 100 
-#define IBUS_DATA_DISPLAY_TIMER 4 
+#define IBUS_TIMER_RELOAD 0x01F4    // == 500 
+#define IBUS_DATA_DISPLAY_TIMER 5 
 
 //=======================================================================================
 
@@ -147,7 +148,7 @@ void ibus_test_init(void)
     tim_9_to_11_counter_init(
         TIM9, 
         TIM_84MHZ_100US_PSC, 
-        0x01F4,   // ARR=500, (500 counts)*(100us/count) = 50ms 
+        IBUS_TIMER_RELOAD,   // ARR=500, (500 counts)*(100us/count) = 50ms 
         TIM_UP_INT_ENABLE); 
     tim_enable(TIM9); 
 
@@ -164,8 +165,8 @@ void ibus_test_init(void)
         PIN_2, 
         UART_PARAM_DISABLE, 
         CLEAR, 
-        UART_FRAC_42_9600, 
-        UART_MANT_42_9600, 
+        UART_FRAC_42_115200, 
+        UART_MANT_42_115200, 
         UART_PARAM_DISABLE, 
         UART_PARAM_DISABLE); 
 
