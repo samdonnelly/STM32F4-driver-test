@@ -21,7 +21,7 @@
 
 #include "nrf24l01_test.h" 
 #include "hw125_test.h" 
-#include "esc_readytosky_test.h" 
+#include "esc_test.h" 
 
 //=======================================================================================
 
@@ -787,7 +787,7 @@ void rc_motor_test_init(void)
     // ESC/motor setup 
 
     // ESC driver setup 
-    esc_readytosky_init(
+    esc_init(
         DEVICE_ONE, 
         TIM3, 
         TIMER_CH4, 
@@ -798,7 +798,7 @@ void rc_motor_test_init(void)
         RC_MOTOR_ESC_FWD_SPEED_LIM, 
         RC_MOTOR_ESC_REV_SPEED_LIM); 
 
-    esc_readytosky_init(
+    esc_init(
         DEVICE_TWO, 
         TIM3, 
         TIMER_CH3, 
@@ -966,7 +966,7 @@ void rc_test_thruster_output(
 {
     // Radio connected - clear timeout 
     *timer = CLEAR; 
-    esc_readytosky_send(device, throttle); 
+    esc_send(device, throttle); 
 }
 
 

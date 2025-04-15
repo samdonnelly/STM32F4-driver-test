@@ -72,7 +72,7 @@
 // Data structure to hold UART circular buffer data. The circular buffer gets populated 
 // by DMA when UART data is received and that UART data is then parsed into a separate 
 // buffer to make it available for the application. 
-struct uart_dma_cb 
+struct UART_PARAM_cb 
 {
     USART_TypeDef *uart; 
     DMA_Stream_TypeDef *dma_stream; 
@@ -82,7 +82,7 @@ struct uart_dma_cb
     uint8_t data_buff[UART_TEST_MAX_INPUT];   // Buffer that stores latest UART input 
 };
 
-static uart_dma_cb cb; 
+static UART_PARAM_cb cb; 
 
 //=======================================================================================
 

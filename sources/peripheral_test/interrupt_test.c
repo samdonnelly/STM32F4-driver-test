@@ -48,7 +48,7 @@
  *            INTERRUPT_OVERRIDE macro to be set to use them. 
  *          
  *          Other tests demonstrating the interrupt driver: 
- *          - esc_readytosky_test.c 
+ *          - esc_test.c 
  *          - wheel_rpm_test.c 
  *          - circular_buffer_test.cpp 
  * 

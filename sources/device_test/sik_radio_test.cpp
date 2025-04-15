@@ -320,6 +320,7 @@ static const SikSystemData::ParamInfo system_params[SIK_TEST_NUM_PARAMS] =
  */
 void sik_radio_test_init_data(void); 
 
+
 /**
  * @brief AT command mode radio input decode 
  * 

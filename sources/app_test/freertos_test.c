@@ -67,7 +67,7 @@ const osThreadAttr_t main_loop_attributes =
 }; 
 
 // Serial terminal data 
-// static uint8_t uart_dma_buff[SERIAL_INPUT_MAX_LEN];   // Circular buffer 
+// static uint8_t UART_PARAM_buff[SERIAL_INPUT_MAX_LEN];   // Circular buffer 
 // static uint8_t buff_index;                            // Circular buffer index 
 // static uint8_t user_in_buff[SERIAL_INPUT_MAX_LEN];    // Stores latest user input 
 
@@ -209,7 +209,7 @@ void freertos_test_init(void)
     mainLoopHandle = osThreadNew(TaskLoop, NULL, &main_loop_attributes); 
 
     // Initialize data 
-    // memset((void *)uart_dma_buff, CLEAR, sizeof(uart_dma_buff)); 
+    // memset((void *)UART_PARAM_buff, CLEAR, sizeof(UART_PARAM_buff)); 
     // memset((void *)&buff_index, CLEAR, sizeof(buff_index)); 
     // memset((void *)user_in_buff, CLEAR, sizeof(user_in_buff)); 
 
