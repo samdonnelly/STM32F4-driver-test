@@ -199,7 +199,7 @@ void ibus_test_init(void)
     dma_stream_init(
         DMA2, 
         ibus_data.rc.dma_stream, 
-        DMA_CHNL_4, 
+        DMA_CHNL_5, 
         DMA_DIR_PM, 
         DMA_CM_ENABLE,
         DMA_PRIOR_HI, 
