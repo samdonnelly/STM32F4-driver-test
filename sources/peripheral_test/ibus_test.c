@@ -74,9 +74,9 @@
 // Macros 
 
 #define IBUS_RC_BUFF_SIZE 500 
-#define IBUS_SERIAL_BUFF_SIZE 100 
+#define IBUS_SERIAL_BUFF_SIZE 150 
 #define IBUS_TIMER_RELOAD 0x01F4    // == 500 
-#define IBUS_DATA_DISPLAY_TIMER 5 
+#define IBUS_DATA_DISPLAY_TIMER 10 
 
 //=======================================================================================
 
@@ -93,7 +93,6 @@ typedef struct ibus_data_s
     uint8_t rc_data_in[IBUS_RC_BUFF_SIZE];    // Buffer that stores latest UART input 
 
     // IBUS packet handling 
-    uint8_t packet_count; 
     uint8_t packets_index; 
     
     // Serial terminal output 
@@ -133,7 +132,6 @@ void ibus_test_init(void)
     memset((void *)ibus_data.rc_cb, CLEAR, sizeof(ibus_data.rc_cb)); 
     memset((void *)ibus_data.rc_data_in, CLEAR, sizeof(ibus_data.rc_data_in)); 
 
-    ibus_data.packet_count = CLEAR; 
     ibus_data.packets_index = CLEAR; 
 
     ibus_data.serial_uart = USART2; 
@@ -266,13 +264,6 @@ void ibus_test_app(void)
         {
             handler_flags.usart6_flag = CLEAR_BIT; 
             
-            // Since this interrupt is handled at an interval as opposed to as soon as 
-            // possible there is a chance the interrupt occurs while we're processing 
-            // the new data. If this happens our packet count may not match the data 
-            // collected so we make a local copy to keep it from changing. 
-            uint8_t num_packets = ibus_data.packet_count; 
-            ibus_data.packet_count = CLEAR; 
-            
             // Parse the new receiver data from the circular buffer into the data buffer. 
             // The receiver will likely send multiple IBUS packets by the time we go to 
             // parse the data. As long as the buffer sizes are larger than the amount of 
@@ -289,48 +280,55 @@ void ibus_test_app(void)
             if (++ibus_data.packets_index >= IBUS_DATA_DISPLAY_TIMER)
             {
                 ibus_data.packets_index = CLEAR; 
-                ibus_packet_t *packet = 
-                    (ibus_packet_t *)&ibus_data.rc_data_in[num_packets*IBUS_PACKET_BYTES]; 
 
-                snprintf(
-                    ibus_data.serial_data_out, 
-                    IBUS_SERIAL_BUFF_SIZE, 
-                    "\r%u %u %u %u %u %u %u %u %u %u %u %u %u %u", 
-                    packet->items[IBUS_CH1], 
-                    packet->items[IBUS_CH2], 
-                    packet->items[IBUS_CH3], 
-                    packet->items[IBUS_CH4], 
-                    packet->items[IBUS_CH5], 
-                    packet->items[IBUS_CH6], 
-                    packet->items[IBUS_CH7], 
-                    packet->items[IBUS_CH8], 
-                    packet->items[IBUS_CH9], 
-                    packet->items[IBUS_CH10], 
-                    packet->items[IBUS_CH11], 
-                    packet->items[IBUS_CH12], 
-                    packet->items[IBUS_CH13], 
-                    packet->items[IBUS_CH14]); 
+                ibus_packet_t *packet = NULL; 
 
-                uart_send_str(ibus_data.serial_uart, ibus_data.serial_data_out); 
+                // The rate at which the receiver supplies data that's written to the 
+                // circular buffer via DMA and the rate at which the circular buffer is 
+                // parsed do not match/align so the data buffer containing parsed data 
+                // may not begin with the start of an IBUS packet. For this reason we 
+                // must search for the beginning of a packet before starting to use the 
+                // IBUS packet data. May want to make this a driver function. 
+                for (uint16_t i = 0; i < (IBUS_RC_BUFF_SIZE - 1); i++)
+                {
+                    // Search for 0x4020 
+                    if (ibus_data.rc_data_in[i] == 0x20)
+                    {
+                        if (ibus_data.rc_data_in[i + 1] == 0x40)
+                        {
+                            packet = (ibus_packet_t *)&ibus_data.rc_data_in[i]; 
+                            break; 
+                        }
+                    }
+                }
+
+                if (packet != NULL)
+                {
+                    snprintf(
+                        ibus_data.serial_data_out, 
+                        IBUS_SERIAL_BUFF_SIZE, 
+                        "\r%u  \r\n%u  \r\n%u  \r\n%u  \r\n%u  \r\n%u  \r\n%u  \r\n%u  \r\n%u  \r\n%u  \r\n%u  \r\n%u  \r\n%u  \r\n%u", 
+                        packet->items[IBUS_CH1], 
+                        packet->items[IBUS_CH2], 
+                        packet->items[IBUS_CH3], 
+                        packet->items[IBUS_CH4], 
+                        packet->items[IBUS_CH5], 
+                        packet->items[IBUS_CH6], 
+                        packet->items[IBUS_CH7], 
+                        packet->items[IBUS_CH8], 
+                        packet->items[IBUS_CH9], 
+                        packet->items[IBUS_CH10], 
+                        packet->items[IBUS_CH11], 
+                        packet->items[IBUS_CH12], 
+                        packet->items[IBUS_CH13], 
+                        packet->items[IBUS_CH14]); 
+                        
+                    uart_cursor_move(ibus_data.serial_uart, UART_CURSOR_UP, 13); 
+                    uart_send_str(ibus_data.serial_uart, ibus_data.serial_data_out); 
+                }
             }
         }
     }
-}
-
-//=======================================================================================
-
-
-//=======================================================================================
-// Interrupt override 
-
-// USART6 - RC receiver IDLE line interrupts 
-void USART6_IRQHandler(void)
-{
-    ibus_data.packet_count++; 
-
-    handler_flags.usart6_flag = SET_BIT; 
-    dummy_read(USART6->SR); 
-    dummy_read(USART6->DR); 
 }
 
 //=======================================================================================
