@@ -57,6 +57,10 @@
 // Testing Notes 
 
 // - Check if the receiver sends data regardless of whether the transmitter is on or not. 
+//   - It appears that it does. But it won't start sending data until it gets data from 
+//     the transmitter for the first time. 
+// - You need to enable failsafes in your transmitter that will tell the receiver to 
+//   default channels to certain values when the transmitter signal is lost. 
 
 //=======================================================================================
 
@@ -76,7 +80,7 @@
 #define IBUS_RC_BUFF_SIZE 500 
 #define IBUS_SERIAL_BUFF_SIZE 150 
 #define IBUS_TIMER_RELOAD 0x01F4    // == 500 
-#define IBUS_DATA_DISPLAY_TIMER 10 
+#define IBUS_DATA_DISPLAY_TIMER 5 
 
 //=======================================================================================
 
@@ -104,11 +108,6 @@ ibus_data_t;
 
 static ibus_data_t ibus_data; 
 
-//=======================================================================================
-
-
-//=======================================================================================
-// Prototypes 
 //=======================================================================================
 
 
@@ -281,33 +280,22 @@ void ibus_test_app(void)
             {
                 ibus_data.packets_index = CLEAR; 
 
-                ibus_packet_t *packet = NULL; 
-
                 // The rate at which the receiver supplies data that's written to the 
                 // circular buffer via DMA and the rate at which the circular buffer is 
                 // parsed do not match/align so the data buffer containing parsed data 
-                // may not begin with the start of an IBUS packet. For this reason we 
+                // may no0t begin with the start of an IBUS packet. For this reason we 
                 // must search for the beginning of a packet before starting to use the 
-                // IBUS packet data. May want to make this a driver function. 
-                for (uint16_t i = 0; i < (IBUS_RC_BUFF_SIZE - 1); i++)
-                {
-                    // Search for 0x4020 
-                    if (ibus_data.rc_data_in[i] == 0x20)
-                    {
-                        if (ibus_data.rc_data_in[i + 1] == 0x40)
-                        {
-                            packet = (ibus_packet_t *)&ibus_data.rc_data_in[i]; 
-                            break; 
-                        }
-                    }
-                }
+                // IBUS packet data. 
+                ibus_packet_t *packet = ibus_packet_align(ibus_data.rc_data_in, 
+                                                          ibus_data.rc.dma_index.data_size); 
 
                 if (packet != NULL)
                 {
                     snprintf(
                         ibus_data.serial_data_out, 
                         IBUS_SERIAL_BUFF_SIZE, 
-                        "\r%u  \r\n%u  \r\n%u  \r\n%u  \r\n%u  \r\n%u  \r\n%u  \r\n%u  \r\n%u  \r\n%u  \r\n%u  \r\n%u  \r\n%u  \r\n%u", 
+                        "\r%u \r\n%u \r\n%u \r\n%u \r\n%u \r\n%u \r\n%u \
+                        \r\n%u \r\n%u \r\n%u \r\n%u \r\n%u \r\n%u \r\n%u \r\n", 
                         packet->items[IBUS_CH1], 
                         packet->items[IBUS_CH2], 
                         packet->items[IBUS_CH3], 
@@ -323,7 +311,7 @@ void ibus_test_app(void)
                         packet->items[IBUS_CH13], 
                         packet->items[IBUS_CH14]); 
                         
-                    uart_cursor_move(ibus_data.serial_uart, UART_CURSOR_UP, 13); 
+                    uart_cursor_move(ibus_data.serial_uart, UART_CURSOR_UP, IBUS_CH14); 
                     uart_send_str(ibus_data.serial_uart, ibus_data.serial_data_out); 
                 }
             }
