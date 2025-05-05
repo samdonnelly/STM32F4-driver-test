@@ -27,7 +27,6 @@
 void ProjectApp(void)
 {
     // Project application code here 
-    ibus_test_app(); 
 }
 
 //=======================================================================================

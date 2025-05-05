@@ -27,7 +27,6 @@
 void ProjectInit(void)
 {
     // Project initialization code here 
-    ibus_test_init(); 
 }
 
 //=======================================================================================
