@@ -27,10 +27,12 @@
 
 // Configuration 
 #define LSM303AGR_TEST_LPF_GAIN 0.2 
-#define LSM303AGR_TEST_DISPLAY_COUNT 5 
-#define LSM303AGR_TEST_MAX_STR_SIZE 60 
+#define LSM303AGR_TEST_DISPLAY_COUNT 2 
+#define LSM303AGR_TEST_MAX_STR_SIZE 150 
 
 #define LSM303AGR_TEST_DATA_OUTPUT_SPACES 3 
+
+#define LSM303AGR_TEST_INT_COUNTER 0x03E8   // ARR=1000, (1000 counts)*(100us/count) = 100ms = 0.1s 
 
 //=======================================================================================
 
@@ -41,6 +43,10 @@
 // Test code data record 
 typedef struct lsm303agr_test_data_s 
 {
+    // Peripherals 
+    USART_TypeDef *uart; 
+    TIM_TypeDef *tim; 
+
     // Magnetometer data 
     int16_t m_axis_data[NUM_AXES]; 
     int32_t m_field_data[NUM_AXES]; 
@@ -88,6 +94,8 @@ void lasm303agr_test_fault_state(void);
 void lsm303agr_test_init(void)
 {
     // Initialize variables 
+    test_data.uart = USART2; 
+    test_data.tim = TIM10; 
     const int16_t *offsets = lsm303agr_test_offset_select(); 
     memset((void *)test_data.m_axis_data, CLEAR, sizeof(test_data.m_axis_data)); 
     memset((void *)test_data.m_field_data, CLEAR, sizeof(test_data.m_field_data)); 
@@ -99,32 +107,24 @@ void lsm303agr_test_init(void)
     // Initialize GPIO ports 
     gpio_port_init(); 
 
-    // General purpose timer 
-    tim_9_to_11_counter_init(
-        TIM9, 
-        TIM_84MHZ_1US_PSC, 
-        0xFFFF,  // Max ARR value 
-        TIM_UP_INT_DISABLE); 
-    tim_enable(TIM9); 
-
     // Periodic (counter update) interrupt timer (for event timing) 
     tim_9_to_11_counter_init(
-        TIM10, 
+        test_data.tim, 
         TIM_84MHZ_100US_PSC, 
-        0x03E8,  // ARR=1000, (1000 counts)*(100us/count) = 100ms = 0.1s 
+        LSM303AGR_TEST_INT_COUNTER, 
         TIM_UP_INT_ENABLE); 
-    tim_enable(TIM10); 
+    tim_enable(test_data.tim); 
 
     // Initialize UART (serial terminal output) 
     uart_init(
-        USART2, 
+        test_data.uart, 
         GPIOA, 
         PIN_3, 
         PIN_2, 
         UART_PARAM_DISABLE,    // Word length 
         CLEAR_BIT,             // STOP bits 
-        UART_FRAC_42_9600, 
-        UART_MANT_42_9600, 
+        UART_FRAC_42_115200,   // MotionCal requires this baudrate 
+        UART_MANT_42_115200, 
         UART_PARAM_DISABLE, 
         UART_PARAM_DISABLE); 
 
@@ -172,12 +172,12 @@ void lsm303agr_test_init(void)
     }
 
     // Set the initial serial terminal message 
-#if LSM303AGR_TEST_AXIS 
-    uart_send_str(USART2, "Axis data [x,y,z] (digital output, mgauss):"); 
-#elif LSM303AGR_TEST_HEADING 
-    uart_send_str(USART2, "Heading (deg*10):"); 
-#endif 
-    uart_send_new_line(USART2); 
+#if LSM303AGR_TEST_CALIBRATION
+    uart_send_str(test_data.uart, "Raw axis data (milligauss)"); 
+#else 
+    uart_send_str(test_data.uart, "Raw axis (milligauss), magnetic field, heading (deg*10)"); 
+#endif   // LSM303AGR_TEST_CALIBRATION 
+    uart_send_new_line(test_data.uart); 
 } 
 
 //=======================================================================================
@@ -188,62 +188,72 @@ void lsm303agr_test_init(void)
 
 void lsm303agr_test_app(void)
 {
-    // Test code for the LSM303AGR here 
-
     // Periodically update and display data 
     if (handler_flags.tim1_up_tim10_glbl_flag)
     {
         handler_flags.tim1_up_tim10_glbl_flag = CLEAR; 
         test_data.schedule_counter++; 
         
-        // Update the magnetometer data 
+        // Update the magnetometer data and check the driver status 
         test_data.driver_status = lsm303agr_m_update(); 
 
-#if LSM303AGR_TEST_AXIS 
+        if (test_data.driver_status != LSM303AGR_OK)
+        {
+            uart_send_new_line(test_data.uart); 
+            lasm303agr_test_fault_state(); 
+        }
 
-        // Display the heading (every x counts) 
+        // Get and display the magnetometer data 
+        lsm303agr_m_get_axis_data(test_data.m_axis_data); 
+        lsm303agr_m_get_field(test_data.m_field_data); 
+        test_data.m_heading = lsm303agr_m_get_heading(); 
+
         if (test_data.schedule_counter >= LSM303AGR_TEST_DISPLAY_COUNT)
         {
-            // Update and get the latest axis data 
-            lsm303agr_m_get_axis_data(test_data.m_axis_data); 
-            lsm303agr_m_get_field(test_data.m_field_data); 
-
             test_data.schedule_counter = CLEAR; 
+
+#if LSM303AGR_TEST_CALIBRATION 
+
+            // A software called MotionCal is used calibrate the magnetometer axis data. 
+            // When in calibration mode, the data output is formatted such that MotionCal 
+            // will read it. This output has space for accelerometer and gyroscope data 
+            // as well. 
+
             snprintf(
                 test_data.output_str, 
                 LSM303AGR_TEST_MAX_STR_SIZE, 
-                "%d, %ld     \r\n%d, %ld     \r\n%d, %ld     \r\n", 
+                "Raw:0,0,0,0,0,0,%d,%d,%d\r\n", 
                 test_data.m_axis_data[X_AXIS], 
-                test_data.m_field_data[X_AXIS], 
                 test_data.m_axis_data[Y_AXIS], 
-                test_data.m_field_data[Y_AXIS], 
+                test_data.m_axis_data[Z_AXIS]); 
+            uart_send_str(test_data.uart, test_data.output_str); 
+
+#else 
+            
+            // In normal mode, all the data read from the magnetometer is displayed for 
+            // the user to see. 
+
+            snprintf(
+                test_data.output_str, 
+                LSM303AGR_TEST_MAX_STR_SIZE, 
+                "x_axis: %d     \r\n\
+                 y_axis: %d     \r\n\
+                 z_axis: %d     \r\n\
+                 x_field: %ld     \r\n\
+                 y_field: %ld     \r\n\
+                 z_field: %ld     \r\n\
+                 heading: %d     ", 
+                test_data.m_axis_data[X_AXIS], 
+                test_data.m_axis_data[Y_AXIS], 
                 test_data.m_axis_data[Z_AXIS], 
-                test_data.m_field_data[Z_AXIS]); 
-            uart_send_str(USART2, test_data.output_str); 
-            uart_send_str(USART2, "\033[1A\033[1A\033[1A"); 
-        }
+                test_data.m_field_data[X_AXIS], 
+                test_data.m_field_data[Y_AXIS], 
+                test_data.m_field_data[Z_AXIS], 
+                test_data.m_heading); 
+            uart_send_str(test_data.uart, test_data.output_str); 
+            uart_cursor_move(test_data.uart, UART_CURSOR_UP, 6); 
 
-#elif LSM303AGR_TEST_HEADING 
-
-        // Update and get the latest heading 
-        test_data.m_heading = lsm303agr_m_get_heading(); 
-
-        // Display the heading (every x counts) 
-        if (test_data.schedule_counter >= LSM303AGR_TEST_DISPLAY_COUNT)
-        {
-            test_data.schedule_counter = CLEAR; 
-            uart_send_str(USART2, "\r"); 
-            uart_send_integer(USART2, test_data.m_heading); 
-            uart_send_spaces(USART2, LSM303AGR_TEST_DATA_OUTPUT_SPACES); 
-        }
-
-#endif   // LSM303AGR_TEST_HEADING 
-
-        // Check status 
-        if (test_data.driver_status)
-        {
-            uart_send_new_line(USART2); 
-            lasm303agr_test_fault_state(); 
+#endif   // LSM303AGR_TEST_CALIBRATION 
         }
     }
 }
@@ -268,9 +278,9 @@ const int16_t* lsm303agr_test_offset_select(void)
 // Outputs the driver status and stops program execution 
 void lasm303agr_test_fault_state(void)
 {
-    uart_send_str(USART2, "\r\nMagnetometer init status: "); 
-    uart_send_integer(USART2, (int16_t)test_data.driver_status); 
-    tim_disable(TIM10); 
+    uart_send_str(test_data.uart, "\r\nMagnetometer status: "); 
+    uart_send_integer(test_data.uart, (int16_t)test_data.driver_status); 
+    tim_disable(test_data.tim); 
     while (TRUE); 
 }
 
