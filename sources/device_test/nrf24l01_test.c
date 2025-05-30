@@ -22,7 +22,7 @@
 // Includes 
 
 #include "nrf24l01_test.h" 
-#include "nrf24l01_config.h" 
+#include "device_config.h" 
 #include "stm32f4xx_it.h" 
 
 //=======================================================================================

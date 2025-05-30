@@ -27,6 +27,7 @@
 void ProjectInit(void)
 {
     // Project initialization code here 
+    lsm303agr_test_init(); 
 }
 
 //=======================================================================================

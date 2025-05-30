@@ -16,7 +16,7 @@
 // Includes 
 
 #include "lsm303agr_test.h" 
-#include "lsm303agr_config.h" 
+#include "device_config.h" 
 #include "stm32f4xx_it.h" 
 
 //=======================================================================================
@@ -27,11 +27,8 @@
 
 // Configuration 
 #define LSM303AGR_TEST_LPF_GAIN 0.2 
-#define LSM303AGR_TEST_DISPLAY_COUNT 2 
-#define LSM303AGR_TEST_MAX_STR_SIZE 150 
-
-#define LSM303AGR_TEST_DATA_OUTPUT_SPACES 3 
-
+#define LSM303AGR_TEST_DISPLAY_COUNT 2      // Counter delay before displaying new data 
+#define LSM303AGR_TEST_MAX_STR_SIZE 150     // Max output string size 
 #define LSM303AGR_TEST_INT_COUNTER 0x03E8   // ARR=1000, (1000 counts)*(100us/count) = 100ms = 0.1s 
 
 //=======================================================================================
@@ -49,7 +46,6 @@ typedef struct lsm303agr_test_data_s
 
     // Magnetometer data 
     int16_t m_axis_data[NUM_AXES]; 
-    int32_t m_field_data[NUM_AXES]; 
     int16_t m_heading; 
 
     // Status 
@@ -73,14 +69,6 @@ static lsm303agr_test_data_t test_data;
 // Prototypes 
 
 /**
- * @brief Sets the offset data to be used during setup 
- * 
- * @return const int16_t* : pointer to lsm303agr heading offsets 
- */
-const int16_t* lsm303agr_test_offset_select(void); 
-
-
-/**
  * @brief Outputs the driver status and stops program execution 
  */
 void lasm303agr_test_fault_state(void); 
@@ -96,9 +84,7 @@ void lsm303agr_test_init(void)
     // Initialize variables 
     test_data.uart = USART2; 
     test_data.tim = TIM10; 
-    const int16_t *offsets = lsm303agr_test_offset_select(); 
     memset((void *)test_data.m_axis_data, CLEAR, sizeof(test_data.m_axis_data)); 
-    memset((void *)test_data.m_field_data, CLEAR, sizeof(test_data.m_field_data)); 
     test_data.m_heading = CLEAR; 
     test_data.driver_status = LSM303AGR_OK; 
     test_data.schedule_counter = CLEAR; 
@@ -144,20 +130,9 @@ void lsm303agr_test_init(void)
     int_handler_init(); 
     nvic_config(TIM1_UP_TIM10_IRQn, EXTI_PRIORITY_0); 
 
-    // Screen initialization 
-#if HD44780U_ON_I2C_BUS 
-    // If the HD44780U screen is on the same I2C bus as the LSM303AGR then the screen 
-    // must be set up first to prevent it from interfering with the bus. 
-    hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH); 
-    hd44780u_clear(); 
-    hd44780u_display_off(); 
-    hd44780u_backlight_off(); 
-#endif   // HD44780U_ON_I2C_BUS 
-
     // LSM303AGR driver init 
-    test_data.driver_status = lsm303agr_m_init(
+    test_data.driver_status |= lsm303agr_m_init(
         I2C1, 
-        offsets, 
         LSM303AGR_TEST_LPF_GAIN, 
         LSM303AGR_M_ODR_10, 
         LSM303AGR_M_MODE_CONT, 
@@ -165,6 +140,9 @@ void lsm303agr_test_init(void)
         LSM303AGR_CFG_DISABLE, 
         LSM303AGR_CFG_DISABLE, 
         LSM303AGR_CFG_DISABLE); 
+
+    // test_data.driver_status |= lsm303agr_m_offset_reg_set(); 
+    // test_data.driver_status |= lsm303agr_m_calibration_set(); 
 
     if (test_data.driver_status)
     {
@@ -204,8 +182,7 @@ void lsm303agr_test_app(void)
         }
 
         // Get and display the magnetometer data 
-        lsm303agr_m_get_axis_data(test_data.m_axis_data); 
-        lsm303agr_m_get_field(test_data.m_field_data); 
+        lsm303agr_m_get_axis(test_data.m_axis_data); 
         test_data.m_heading = lsm303agr_m_get_heading(); 
 
         if (test_data.schedule_counter >= LSM303AGR_TEST_DISPLAY_COUNT)
@@ -239,16 +216,10 @@ void lsm303agr_test_app(void)
                 "x_axis: %d     \r\n\
                  y_axis: %d     \r\n\
                  z_axis: %d     \r\n\
-                 x_field: %ld     \r\n\
-                 y_field: %ld     \r\n\
-                 z_field: %ld     \r\n\
                  heading: %d     ", 
                 test_data.m_axis_data[X_AXIS], 
                 test_data.m_axis_data[Y_AXIS], 
                 test_data.m_axis_data[Z_AXIS], 
-                test_data.m_field_data[X_AXIS], 
-                test_data.m_field_data[Y_AXIS], 
-                test_data.m_field_data[Z_AXIS], 
                 test_data.m_heading); 
             uart_send_str(test_data.uart, test_data.output_str); 
             uart_cursor_move(test_data.uart, UART_CURSOR_UP, 6); 
@@ -263,17 +234,6 @@ void lsm303agr_test_app(void)
 
 //=======================================================================================
 // Test functions 
-
-// Sets the offset data to be used during setup 
-const int16_t* lsm303agr_test_offset_select(void)
-{
-#if (LSM303AGR_TEST_HEADING && LSM303AGR_TEST_CALIBRATION) || LSM303AGR_TEST_AXIS 
-        return lsm303agr_calibrate_offsets; 
-#else 
-        return lsm303agr_config_dir_offsets_1; 
-#endif 
-}
-
 
 // Outputs the driver status and stops program execution 
 void lasm303agr_test_fault_state(void)

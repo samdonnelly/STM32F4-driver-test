@@ -153,8 +153,8 @@ file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/sources/core/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/sources/app_test/*.c
     ${CMAKE_CURRENT_SOURCE_DIR}/sources/app_test/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/sources/device_config/*.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/sources/device_config/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/sources/config_files/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/sources/config_files/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/sources/device_test/*.c
     ${CMAKE_CURRENT_SOURCE_DIR}/sources/device_test/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/sources/peripheral_test/*.c

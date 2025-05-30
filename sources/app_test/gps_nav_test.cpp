@@ -29,8 +29,7 @@
 // Includes 
 
 #include "gps_nav_test.h" 
-#include "m8q_config.h" 
-#include "lsm303agr_config.h" 
+#include "device_config.h" 
 #include "gps_coordinates.h" 
 #include "includes_cpp_drivers.h" 
 
@@ -293,7 +292,6 @@ void gps_nav_test_lsm303agr_init(void)
     // LSM303AGR magnetometer driver setup  
     LSM303AGR_STATUS lsm303agr_init_check = lsm303agr_m_init(
         I2C1, 
-        lsm303agr_config_dir_offsets_0, 
         HEADING_LPF_GAIN, 
         LSM303AGR_M_ODR_10, 
         LSM303AGR_M_MODE_CONT, 
