@@ -5,6 +5,54 @@
  * 
  * @brief LSM303AGR test code 
  * 
+ * @details Setup 
+ *          - Hardware 
+ *            * STM32F4 microcontroller with a serial connection to a PC. 
+ *            * An LSM303AGR IMU connected to the STM32F4 
+ *          - Software 
+ *            * Serial monitor on a PC to allow the exchange of info with the STM32F4. 
+ *            * MotionCal to obtain calibration values (but not used directly in this 
+ *              test). More on MotionCal below. 
+ *          
+ *          Configuration 
+ *          - TIM 
+ *            * A timer is configured to create a periodic interrupt which controls when 
+ *              to read and output device data. 
+ *          - UART 
+ *            * UART is configured to provide a serial terminal output, for either 
+ *              displaying data and providing the data to MotionCal. MotionCal requires 
+ *              115200 baud rate so that is what is configured. 
+ *          - I2C 
+ *            * I2C is configured to communicate with the LSM303AGR device. 
+ *          - Interrupts 
+ *            * An interrupt is configured for the timer to create a periodic interrupt 
+ *              to control when to read and output device data. 
+ *          
+ *          Dependencies 
+ *          - STM32F4 driver library 
+ *            * This library provides an interface to the device and the peripherals 
+ *              used in the test. 
+ *          
+ *          Procedure 
+ *          - The test will initialize all peripherals then configure the LSM303AGR 
+ *            device. Setters to correct magnetometer axis data output are called and 
+ *            the user must define the values provided to these functions. See the 
+ *            comments on these functions in the test code and the function descriptions 
+ *            for more details. When the code is running, driver data such as axis data 
+ *            and heading will periodically be output to the serial terminal for the user 
+ *            to see. LSM303AGR_TEST_DISPLAY_COUNT can be used to adjust the output 
+ *            rate of the data. 
+ *          
+ *          - This test supports data output for MotionCal which is a software used to 
+ *            find hard-iron offsets and soft-iron scaling values to correct the 
+ *            magnetoeter axis outputs and obtain a more accurate magnetic heading. 
+ *            LSM303AGR_TEST_CALIBRATION can be set in the hardware config to change 
+ *            the data output to a format supported by MotionCal. For details on how to 
+ *            use MotionCal see the following tutorial: 
+ *            - https://www.digikey.ca/en/maker/projects/how-to-calibrate-a-magnetometer/50f6bc8f36454a03b664dca30cf33a8b 
+ *            For details on how to properly apply the values obtained from MotionCal to 
+ *            the LSM303AGR driver, see the driver calibration setter function description. 
+ * 
  * @version 0.1
  * @date 2023-06-11
  * 
@@ -90,10 +138,10 @@ void lsm303agr_test_init(void)
     test_data.schedule_counter = CLEAR; 
     memset((void *)test_data.output_str, CLEAR, sizeof(test_data.output_str)); 
 
-    // Initialize GPIO ports 
+    // GPIO 
     gpio_port_init(); 
 
-    // Periodic (counter update) interrupt timer (for event timing) 
+    // Periodic (counter update) interrupt timer 
     tim_9_to_11_counter_init(
         test_data.tim, 
         TIM_84MHZ_100US_PSC, 
@@ -101,7 +149,7 @@ void lsm303agr_test_init(void)
         TIM_UP_INT_ENABLE); 
     tim_enable(test_data.tim); 
 
-    // Initialize UART (serial terminal output) 
+    // UART - serial terminal output 
     uart_init(
         test_data.uart, 
         GPIOA, 
@@ -114,7 +162,7 @@ void lsm303agr_test_init(void)
         UART_PARAM_DISABLE, 
         UART_PARAM_DISABLE); 
 
-    // Initialize I2C (to communicate with device) 
+    // I2C - LSM303AGR 
     i2c_init(
         I2C1, 
         PIN_9, 
@@ -163,7 +211,8 @@ void lsm303agr_test_init(void)
 #if LSM303AGR_TEST_CALIBRATION
     uart_send_str(test_data.uart, "Raw axis data (milligauss)\r\n"); 
 #else 
-    uart_send_str(test_data.uart, "Axis (milligauss), calibrated axis (milligauss), heading (deg*10)\r\n"); 
+    uart_send_str(test_data.uart, 
+                  "Axis (milligauss), calibrated axis (milligauss), heading (deg*10)\r\n"); 
 #endif   // LSM303AGR_TEST_CALIBRATION 
 } 
 
