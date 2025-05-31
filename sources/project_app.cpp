@@ -27,7 +27,6 @@
 void ProjectApp(void)
 {
     // Project application code here 
-    lsm303agr_test_app(); 
 }
 
 //=======================================================================================

@@ -125,13 +125,9 @@
 #define FORMAT_EXFAT 0 
 #define HW125_CONTROLLER_TEST 0           // For switching between driver and controller testing 
 
-// LSM303AGR driver test 
-// Only one mode is meant to be used at a time. The first macro under each mode is the 
-// main/parent mode setter. Subsequent macros under the same mode are only used once the 
-// mode is active. 
-#define LSM303AGR_TEST_AXIS 0             // Magnetometer axis data read mode 
-#define LSM303AGR_TEST_HEADING 0          // Magnetometer heading read (compass) mode 
-#define LSM303AGR_TEST_CALIBRATION 0      // Magnetometer heading calibration 
+// LSM303AGR driver test   
+#define LSM303AGR_TEST_CALIBRATION 0      // Magnetometer heading calibration mode 
+#define LSM303AGR_TEST_DISPLAY_COUNT 1    // Counter delay before displaying new data 
 
 // M8Q driver test 
 

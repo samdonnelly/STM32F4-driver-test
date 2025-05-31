@@ -31,12 +31,13 @@
 //=======================================================================================
 // LSM303AGR 
 
-// Zero offsets used for calibrating the device 
-extern const int16_t lsm303agr_calibrate_offsets[LSM303AGR_M_NUM_DIR]; 
+// Hard-iron offset register values 
+extern const int16_t lsm303agr_hi_offset_reg[NUM_AXES];    // Hard-iron offsets for registers 
 
-// Directional offsets to correct for heading errors (units: degrees*10) 
-extern const int16_t lsm303agr_config_dir_offsets_0[LSM303AGR_M_NUM_DIR]; 
-extern const int16_t lsm303agr_config_dir_offsets_1[LSM303AGR_M_NUM_DIR]; 
+// Hard and soft-iron calibration values 
+extern const float lsm303agr_hi_offset[NUM_AXES];        // Hard-iron offsets 
+extern const float lsm303agr_sid_values[NUM_AXES];       // Soft-iron diagonal values 
+extern const float lsm303agr_sio_values[NUM_AXES];       // Soft-iron off-diagonal values 
 
 //=======================================================================================
 

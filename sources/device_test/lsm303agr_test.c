@@ -26,9 +26,7 @@
 // Macros 
 
 // Configuration 
-#define LSM303AGR_TEST_LPF_GAIN 0.2 
-#define LSM303AGR_TEST_DISPLAY_COUNT 2      // Counter delay before displaying new data 
-#define LSM303AGR_TEST_MAX_STR_SIZE 150     // Max output string size 
+#define LSM303AGR_TEST_MAX_STR_SIZE 160     // Max output string size 
 #define LSM303AGR_TEST_INT_COUNTER 0x03E8   // ARR=1000, (1000 counts)*(100us/count) = 100ms = 0.1s 
 
 //=======================================================================================
@@ -45,7 +43,8 @@ typedef struct lsm303agr_test_data_s
     TIM_TypeDef *tim; 
 
     // Magnetometer data 
-    int16_t m_axis_data[NUM_AXES]; 
+    int16_t m_axis[NUM_AXES]; 
+    int16_t m_axis_cal[NUM_AXES]; 
     int16_t m_heading; 
 
     // Status 
@@ -84,7 +83,8 @@ void lsm303agr_test_init(void)
     // Initialize variables 
     test_data.uart = USART2; 
     test_data.tim = TIM10; 
-    memset((void *)test_data.m_axis_data, CLEAR, sizeof(test_data.m_axis_data)); 
+    memset((void *)test_data.m_axis, CLEAR, sizeof(test_data.m_axis)); 
+    memset((void *)test_data.m_axis_cal, CLEAR, sizeof(test_data.m_axis_cal)); 
     test_data.m_heading = CLEAR; 
     test_data.driver_status = LSM303AGR_OK; 
     test_data.schedule_counter = CLEAR; 
@@ -133,7 +133,6 @@ void lsm303agr_test_init(void)
     // LSM303AGR driver init 
     test_data.driver_status |= lsm303agr_m_init(
         I2C1, 
-        LSM303AGR_TEST_LPF_GAIN, 
         LSM303AGR_M_ODR_10, 
         LSM303AGR_M_MODE_CONT, 
         LSM303AGR_CFG_DISABLE, 
@@ -141,8 +140,19 @@ void lsm303agr_test_init(void)
         LSM303AGR_CFG_DISABLE, 
         LSM303AGR_CFG_DISABLE); 
 
-    // test_data.driver_status |= lsm303agr_m_offset_reg_set(); 
-    // test_data.driver_status |= lsm303agr_m_calibration_set(); 
+    // LSM303AGR hard-iron offset register set. If this setting is not desired then set 
+    // 'lsm303agr_hi_offset_reg' values to zero. If this is not desired in a practical 
+    // application then this function can simply not be called. If using this setting 
+    // then it's recommended not to use the calibration value setter below. 
+    test_data.driver_status |= lsm303agr_m_offset_reg_set(lsm303agr_hi_offset_reg); 
+
+    // LSM303AGR hard and soft-iron calibraton value set. If this setting is not desired 
+    // then set 'lsm303agr_hi_offset' and 'lsm303agr_sio_values' values to zero, and 
+    // 'lsm303agr_sid_values' values to 1 (see setter description for more details). If 
+    // this setting is not desdired in a practical application then this function can 
+    // simply not be called. If using this setting then it's recommended not to use the 
+    // hard-iron offset register setter above. 
+    lsm303agr_m_calibration_set(lsm303agr_hi_offset, lsm303agr_sid_values, lsm303agr_sio_values); 
 
     if (test_data.driver_status)
     {
@@ -151,11 +161,10 @@ void lsm303agr_test_init(void)
 
     // Set the initial serial terminal message 
 #if LSM303AGR_TEST_CALIBRATION
-    uart_send_str(test_data.uart, "Raw axis data (milligauss)"); 
+    uart_send_str(test_data.uart, "Raw axis data (milligauss)\r\n"); 
 #else 
-    uart_send_str(test_data.uart, "Raw axis (milligauss), magnetic field, heading (deg*10)"); 
+    uart_send_str(test_data.uart, "Axis (milligauss), calibrated axis (milligauss), heading (deg*10)\r\n"); 
 #endif   // LSM303AGR_TEST_CALIBRATION 
-    uart_send_new_line(test_data.uart); 
 } 
 
 //=======================================================================================
@@ -170,7 +179,6 @@ void lsm303agr_test_app(void)
     if (handler_flags.tim1_up_tim10_glbl_flag)
     {
         handler_flags.tim1_up_tim10_glbl_flag = CLEAR; 
-        test_data.schedule_counter++; 
         
         // Update the magnetometer data and check the driver status 
         test_data.driver_status = lsm303agr_m_update(); 
@@ -182,10 +190,11 @@ void lsm303agr_test_app(void)
         }
 
         // Get and display the magnetometer data 
-        lsm303agr_m_get_axis(test_data.m_axis_data); 
+        lsm303agr_m_get_axis(test_data.m_axis); 
+        lsm303agr_m_get_calibrated_axis(test_data.m_axis_cal); 
         test_data.m_heading = lsm303agr_m_get_heading(); 
 
-        if (test_data.schedule_counter >= LSM303AGR_TEST_DISPLAY_COUNT)
+        if (++test_data.schedule_counter >= LSM303AGR_TEST_DISPLAY_COUNT)
         {
             test_data.schedule_counter = CLEAR; 
 
@@ -200,9 +209,9 @@ void lsm303agr_test_app(void)
                 test_data.output_str, 
                 LSM303AGR_TEST_MAX_STR_SIZE, 
                 "Raw:0,0,0,0,0,0,%d,%d,%d\r\n", 
-                test_data.m_axis_data[X_AXIS], 
-                test_data.m_axis_data[Y_AXIS], 
-                test_data.m_axis_data[Z_AXIS]); 
+                test_data.m_axis[X_AXIS], 
+                test_data.m_axis[Y_AXIS], 
+                test_data.m_axis[Z_AXIS]); 
             uart_send_str(test_data.uart, test_data.output_str); 
 
 #else 
@@ -213,13 +222,20 @@ void lsm303agr_test_app(void)
             snprintf(
                 test_data.output_str, 
                 LSM303AGR_TEST_MAX_STR_SIZE, 
-                "x_axis: %d     \r\n\
-                 y_axis: %d     \r\n\
-                 z_axis: %d     \r\n\
-                 heading: %d     ", 
-                test_data.m_axis_data[X_AXIS], 
-                test_data.m_axis_data[Y_AXIS], 
-                test_data.m_axis_data[Z_AXIS], 
+                "\r" \
+                "x_axis: %d     \r\n" \
+                "y_axis: %d     \r\n" \
+                "z_axis: %d     \r\n" \
+                "x_axis_cal: %d     \r\n" \
+                "y_axis_cal: %d     \r\n" \
+                "z_axis_cal: %d     \r\n" \
+                "heading: %d     ", 
+                test_data.m_axis[X_AXIS], 
+                test_data.m_axis[Y_AXIS], 
+                test_data.m_axis[Z_AXIS], 
+                test_data.m_axis_cal[X_AXIS], 
+                test_data.m_axis_cal[Y_AXIS], 
+                test_data.m_axis_cal[Z_AXIS], 
                 test_data.m_heading); 
             uart_send_str(test_data.uart, test_data.output_str); 
             uart_cursor_move(test_data.uart, UART_CURSOR_UP, 6); 
@@ -238,7 +254,7 @@ void lsm303agr_test_app(void)
 // Outputs the driver status and stops program execution 
 void lasm303agr_test_fault_state(void)
 {
-    uart_send_str(test_data.uart, "\r\nMagnetometer status: "); 
+    uart_send_str(test_data.uart, "\r\nLSM303AGR status: "); 
     uart_send_integer(test_data.uart, (int16_t)test_data.driver_status); 
     tim_disable(test_data.tim); 
     while (TRUE); 

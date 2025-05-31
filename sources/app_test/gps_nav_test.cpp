@@ -41,7 +41,6 @@
 
 // Configuration 
 #define COORDINATE_LPF_GAIN 0.5   // Coordinate low pass filter gain 
-#define HEADING_LPF_GAIN 0.2      // Heading low pass filter gain 
 #define TN_OFFSET 130             // Offset between magnetic and true north (degrees*10) 
 #define COORDINATE_RADIUS 100     // Threshold distance to target (meters*10) 
 
@@ -292,7 +291,6 @@ void gps_nav_test_lsm303agr_init(void)
     // LSM303AGR magnetometer driver setup  
     LSM303AGR_STATUS lsm303agr_init_check = lsm303agr_m_init(
         I2C1, 
-        HEADING_LPF_GAIN, 
         LSM303AGR_M_ODR_10, 
         LSM303AGR_M_MODE_CONT, 
         LSM303AGR_CFG_DISABLE, 
