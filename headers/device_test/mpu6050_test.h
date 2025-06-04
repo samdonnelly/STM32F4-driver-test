@@ -25,21 +25,6 @@
 
 
 //=======================================================================================
-// Enums 
-
-/**
- * @brief Accelerometer and gyroscope array index 
- */
-typedef enum {
-    MPU6050_X_AXIS,
-    MPU6050_Y_AXIS,
-    MPU6050_Z_AXIS
-} mpu6050_axis_t;
-
-//=======================================================================================
-
-
-//=======================================================================================
 // Function pointers 
 
 /**
@@ -98,8 +83,8 @@ typedef MPU6050_FAULT_CODE (*mpu6050_getter_ptr_2)(device_number_t device_num);
  * @brief MPU6050 getters function pointer 3 
  * 
  * @details The following getters are called with this function pointer: 
- *           - mpu6050_get_accel_raw 
- *           - mpu6050_get_gyro_raw 
+ *           - mpu6050_get_accel_axis 
+ *           - mpu6050_get_gyro_axis 
  */
 typedef void (*mpu6050_getter_ptr_3)(
     device_number_t device_num, 
@@ -121,8 +106,8 @@ typedef int16_t (*mpu6050_getter_ptr_4)(device_number_t device_num);
  * @brief MPU6050 getters function pointer 5 
  * 
  * @details The following getters are called with this function pointer: 
- *           - mpu6050_get_accel 
- *           - mpu6050_get_gyro 
+ *           - mpu6050_get_accel_axis_gs 
+ *           - mpu6050_get_gyro_axis_rate 
  */
 typedef void (*mpu6050_getter_ptr_5)(
     device_number_t device_num, 

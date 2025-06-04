@@ -11,7 +11,7 @@ include(./arm-none-eabi-gcc.cmake)
 # FreeRTOS in the project. 
 # "SystemConfig.txt" is not tracked so users can configure their system without 
 # making changes to the project. The value of this variable must match the 
-# value of "FREERTOS_ENABLE" from the "system_config.h" file 
+# value of "FREERTOS_ENABLE" from the "hardware_config.h" file 
 include(${CMAKE_CURRENT_SOURCE_DIR}/SystemConfig.txt)
 
 # Set project name and source code folder location
