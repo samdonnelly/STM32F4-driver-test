@@ -5,6 +5,23 @@
  * 
  * @brief MPU-6050 test code 
  * 
+ * @details Setup 
+ *          - Hardware 
+ *            * STM32F4 microcontroller with a serial connection to a PC. 
+ *          - Software 
+ *            * 
+ *          
+ *          Configuration 
+ *          - 
+ *          
+ *          Dependencies 
+ *          - STM32F4 driver library 
+ *            * This library provides an interface to the device and the peripherals 
+ *              used in the test. 
+ *          
+ *          Procedure 
+ *          - 
+ * 
  * @version 0.1
  * @date 2022-08-28
  * 
