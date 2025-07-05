@@ -9,7 +9,7 @@
  *          - Hardware 
  *            * STM32F4 microcontroller with a serial connection to a PC. 
  *          - Software 
- *            * 
+ *            * Serial monitor on a PC to allow the exchange of info with the STM32F4. 
  *          
  *          Configuration 
  *          - 
