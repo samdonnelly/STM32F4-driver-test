@@ -155,8 +155,8 @@ void mpu6050_test_init()
         GPIOA, 
         PIN_3, 
         PIN_2, 
-        UART_PARAM_DISABLE,    // Word length 
-        CLEAR_BIT,             // STOP bits 
+        UART_PARAM_DISABLE, 
+        CLEAR_BIT, 
         UART_FRAC_42_9600, 
         UART_MANT_42_9600, 
         UART_PARAM_DISABLE, 
@@ -176,29 +176,8 @@ void mpu6050_test_init()
     
     //===================================================
 
-#if HD44780U_ON_I2C_BUS 
-
-    //===================================================
-    // HD44780U LCD setup 
-
-    // Must come before setup of other devices on the same I2C bus 
-
-    // Driver 
-    hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH);
-
-    // Contoller 
-    hd44780u_controller_init(TIM9); 
-
-    //===================================================
-
-#endif   // HD44780U_ON_I2C_BUS 
-
     //===================================================
     // Accelerometer initialization 
-
-    // NOTE: If the HD44780U LCD screen is connected to the same I2C bus then that needs to be 
-    //       initialized first. For some reason the uninitialized screen interferes with the bus 
-    //       and prevents the mpu6050 from being initialized properly. See above. 
     
     // Initialize the accelerometer 
     mpu6050_init(
@@ -221,8 +200,7 @@ void mpu6050_test_init()
         uart_send_str(USART2, "Device not seen\r\n");
     }
 
-    
-    #if MPU6050_SECOND_DEVICE 
+#if MPU6050_SECOND_DEVICE 
 
     // Initialize the second accelerometer 
     mpu6050_init(
@@ -236,10 +214,16 @@ void mpu6050_test_init()
         MPU6050_FS_SEL_500);
 
     // Return the status of the accelerometer WHO_AM_I register 
-    if (!mpu6050_get_status(DEVICE_TWO)) uart_send_str(USART2, "Second device seen\r\n");
-    else uart_send_str(USART2, "Second device not seen\r\n");
+    if (!mpu6050_get_status(DEVICE_TWO)) 
+    {
+        uart_send_str(USART2, "Second device seen\r\n");
+    }
+    else 
+    {
+        uart_send_str(USART2, "Second device not seen\r\n");
+    }
 
-    #endif   // MPU6050_SECOND_DEVICE 
+#endif   // MPU6050_SECOND_DEVICE 
 
     //===================================================
 
