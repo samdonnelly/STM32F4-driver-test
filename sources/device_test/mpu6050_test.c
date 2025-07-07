@@ -242,7 +242,7 @@ void mpu6050_test_init()
         MPU6050_DEV1_RATE); 
 
     
-    #if MPU6050_SECOND_DEVICE 
+#if MPU6050_SECOND_DEVICE 
 
     // Controller init 
     mpu6050_controller_init(
@@ -250,7 +250,7 @@ void mpu6050_test_init()
         TIM9, 
         MPU6050_DEV2_RATE); 
 
-    #endif   // MPU6050_SECOND_DEVICE 
+#endif   // MPU6050_SECOND_DEVICE 
 
     // Initialize the state machine test code 
     state_machine_init(MPU6050_NUM_TEST_CMDS); 
@@ -270,15 +270,15 @@ void mpu6050_test_init()
     mpu6050_calibrate(DEVICE_ONE); 
     
     
-    #if MPU6050_INT_PIN 
+#if MPU6050_INT_PIN 
 
     // Set up the INT pin 
     mpu6050_int_pin_init(GPIOC, PIN_11); 
 
-    #endif   // MPU6050_INT_PIN 
+#endif   // MPU6050_INT_PIN 
 
 
-    #if MPU6050_SECOND_DEVICE 
+#if MPU6050_SECOND_DEVICE 
 
     // MPU6050 self-test - second device 
     mpu_self_test_result = mpu6050_self_test(DEVICE_TWO);
@@ -292,7 +292,7 @@ void mpu6050_test_init()
     // Calibrate the device 
     mpu6050_calibrate(DEVICE_TWO); 
 
-    #endif   // MPU6050_SECOND_DEVICE 
+#endif   // MPU6050_SECOND_DEVICE 
 
 #endif   // MPU6050_CONTROLLER_TEST 
 
