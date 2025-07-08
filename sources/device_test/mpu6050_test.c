@@ -471,6 +471,8 @@ void mpu6050_test_app()
     mpu6050_get_accel_axis_gs(DEVICE_ONE, mpu6050_accel); 
     mpu6050_get_gyro_axis_rate(DEVICE_ONE, mpu6050_gyro); 
 
+    // Change the below to use snprintf instead. 
+
     // Display the first device results - values are scaled to remove decimal 
     uart_send_str(USART2, "temp1 = ");
     uart_send_integer(USART2, mpu6050_temp_sensor);
