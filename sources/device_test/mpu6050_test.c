@@ -49,83 +49,8 @@
 #define MPU6050_DRIVER_LOOP_DELAY 100       // Delay (blocking) between code loops (ms) 
 #define MPU6050_DRIVER_ST_DELAY 10          // Delay (blocking) after self test (ms) 
 
-// Controller test 
-#define MPU6050_NUM_TEST_CMDS 17            // Number of controller test commands for the user 
-#define MPU6050_DEV1_RATE 250000            // Device 1 time between reading new data (us) 
-#define MPU6050_DEV2_RATE 250000            // Device 2 time between reading new data (us) 
+
 #define MPU6050_TEST_DATA_OUTPUT_SPACES 2   // Spaces between data when outputing 
-
-//=======================================================================================
-
-
-//=======================================================================================
-// Function prototypes 
-
-#if MPU6050_CONTROLLER_TEST 
-
-void mpu6050_cntrl_test_device_one(void);   // Choose device one 
-void mpu6050_cntrl_test_device_two(void);   // Choose device two 
-
-#endif   // MPU6050_CONTROLLER_TEST
-
-//=======================================================================================
-
-
-//=======================================================================================
-// Global variables 
-
-#if MPU6050_CONTROLLER_TEST 
-
-// User command table 
-static state_request_t mpu6050_state_cmds[MPU6050_NUM_TEST_CMDS] = 
-{
-    {"dev_one",     SMT_ARGS_0, SMT_STATE_FUNC_PTR_3, SMT_ARG_BUFF_POS_0},   // 0
-    {"dev_two",     SMT_ARGS_0, SMT_STATE_FUNC_PTR_3, SMT_ARG_BUFF_POS_0},   // 1
-    {"lp_set",      SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, SMT_ARG_BUFF_POS_0},   // 2
-    {"lp_clear",    SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, SMT_ARG_BUFF_POS_0},   // 3
-    {"sample",      SMT_ARGS_1, SMT_STATE_FUNC_PTR_2, SMT_ARG_BUFF_POS_0},   // 4
-    {"read_state",  SMT_ARGS_1, SMT_STATE_FUNC_PTR_2, SMT_ARG_BUFF_POS_1},   // 5
-    {"read",        SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, SMT_ARG_BUFF_POS_0},   // 6
-    {"reset",       SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, SMT_ARG_BUFF_POS_0},   // 7
-    {"state",       SMT_ARGS_0, SMT_STATE_FUNC_PTR_4, SMT_ARG_BUFF_POS_0},   // 8
-    {"fault",       SMT_ARGS_0, SMT_STATE_FUNC_PTR_5, SMT_ARG_BUFF_POS_0},   // 9
-    {"accel_raw",   SMT_ARGS_0, SMT_STATE_FUNC_PTR_6, SMT_ARG_BUFF_POS_0},   // 10
-    {"gyro_raw",    SMT_ARGS_0, SMT_STATE_FUNC_PTR_6, SMT_ARG_BUFF_POS_0},   // 11
-    {"temp_raw",    SMT_ARGS_0, SMT_STATE_FUNC_PTR_7, SMT_ARG_BUFF_POS_0},   // 12
-    {"accel",       SMT_ARGS_0, SMT_STATE_FUNC_PTR_8, SMT_ARG_BUFF_POS_0},   // 13
-    {"gyro",        SMT_ARGS_0, SMT_STATE_FUNC_PTR_8, SMT_ARG_BUFF_POS_0},   // 14
-    {"temp",        SMT_ARGS_0, SMT_STATE_FUNC_PTR_9, SMT_ARG_BUFF_POS_0},   // 15
-    {"execute", 0, 0, 0}                                                     // 16
-}; 
-
-
-// Function pointer table 
-static mpu6050_func_ptrs_t m8q_state_func[MPU6050_NUM_TEST_CMDS] = 
-{
-    {NULL, NULL, &mpu6050_cntrl_test_device_one, NULL, NULL, NULL, NULL, NULL, NULL}, 
-    {NULL, NULL, &mpu6050_cntrl_test_device_two, NULL, NULL, NULL, NULL, NULL, NULL}, 
-    {&mpu6050_set_low_power, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}, 
-    {&mpu6050_clear_low_power, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}, 
-    {NULL, &mpu6050_set_smpl_type, NULL, NULL, NULL, NULL, NULL, NULL, NULL}, 
-    {NULL, &mpu6050_set_read_state, NULL, NULL, NULL, NULL, NULL, NULL, NULL}, 
-    {&mpu6050_set_read_flag, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}, 
-    {&mpu6050_set_reset_flag, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}, 
-    {NULL, NULL, NULL, &mpu6050_get_state, NULL, NULL, NULL, NULL, NULL}, 
-    {NULL, NULL, NULL, NULL, &mpu6050_get_fault_code, NULL, NULL, NULL, NULL}, 
-    {NULL, NULL, NULL, NULL, NULL, &mpu6050_get_accel_axis, NULL, NULL, NULL}, 
-    {NULL, NULL, NULL, NULL, NULL, &mpu6050_get_gyro_axis, NULL, NULL, NULL}, 
-    {NULL, NULL, NULL, NULL, NULL, NULL, &mpu6050_get_temp_raw, NULL, NULL}, 
-    {NULL, NULL, NULL, NULL, NULL, NULL, NULL, &mpu6050_get_accel_axis_gs, NULL}, 
-    {NULL, NULL, NULL, NULL, NULL, NULL, NULL, &mpu6050_get_gyro_axis_rate, NULL}, 
-    {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &mpu6050_get_temp}, 
-    {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL} 
-}; 
-
-
-// Device selector 
-static device_number_t mpu6050_cntrl_test_device; 
-
-#endif   // MPU6050_CONTROLLER_TEST
 
 //=======================================================================================
 
@@ -230,33 +155,6 @@ void mpu6050_test_init()
     //===================================================
     // Setup 
 
-#if MPU6050_CONTROLLER_TEST 
-
-    // Set the device number 
-    mpu6050_cntrl_test_device = DEVICE_ONE; 
-
-    // Controller init 
-    mpu6050_controller_init(
-        DEVICE_ONE, 
-        TIM9, 
-        MPU6050_DEV1_RATE); 
-
-    
-#if MPU6050_SECOND_DEVICE 
-
-    // Controller init 
-    mpu6050_controller_init(
-        DEVICE_TWO, 
-        TIM9, 
-        MPU6050_DEV2_RATE); 
-
-#endif   // MPU6050_SECOND_DEVICE 
-
-    // Initialize the state machine test code 
-    state_machine_init(MPU6050_NUM_TEST_CMDS); 
-
-#else   // MPU6050_CONTROLLER_TEST 
-
     // MPU6050 self-test 
     uint8_t mpu_self_test_result = mpu6050_self_test(DEVICE_ONE);
     uart_send_str(USART2, "MPU6050 Self-Test Result = ");
@@ -294,8 +192,6 @@ void mpu6050_test_init()
 
 #endif   // MPU6050_SECOND_DEVICE 
 
-#endif   // MPU6050_CONTROLLER_TEST 
-
     //===================================================
 } 
 
@@ -307,157 +203,6 @@ void mpu6050_test_init()
 
 void mpu6050_test_app()
 {
-#if MPU6050_CONTROLLER_TEST 
-
-    //==================================================
-    // Controller test code 
-
-    // General purpose arguments array 
-    static char user_args[STATE_USER_TEST_INPUT]; 
-
-    // Arguments for mpu6050_setter_ptr_2 
-    static uint8_t param[2]; 
-
-    // Sensor buffers 
-    static float imu_data_float[NUM_AXES]; 
-    static int16_t imu_data_int[NUM_AXES]; 
-
-    // Control flags 
-    uint8_t arg_convert = 0; 
-    uint32_t set_get_status = 0; 
-    uint8_t cmd_index = 0; 
-
-    // Determine what to do from user input 
-    state_machine_test(
-        mpu6050_state_cmds, 
-        user_args, 
-        &cmd_index, 
-        &arg_convert, 
-        &set_get_status); 
-
-    // Check if there are any setters or getters requested 
-    if (set_get_status)
-    {
-        for (uint8_t i = 0; i < (MPU6050_NUM_TEST_CMDS-1); i++)
-        {
-            if ((set_get_status >> i) & SET_BIT)
-            {
-                switch (mpu6050_state_cmds[i].func_ptr_index)
-                {
-                    case SMT_STATE_FUNC_PTR_1: 
-                        (m8q_state_func[i].setter_1)(
-                            mpu6050_cntrl_test_device); 
-                        break; 
-
-                    case SMT_STATE_FUNC_PTR_2: 
-                        (m8q_state_func[i].setter_2)(
-                            mpu6050_cntrl_test_device, 
-                            param[mpu6050_state_cmds[i].arg_buff_index]); 
-                        break; 
-
-                    case SMT_STATE_FUNC_PTR_3: 
-                        (m8q_state_func[i].setter_3)(); 
-                        break; 
-
-                    case SMT_STATE_FUNC_PTR_4: 
-                        uart_send_new_line(USART2); 
-                        uart_send_integer(
-                            USART2, 
-                            (int16_t)(m8q_state_func[i].getter_1)(mpu6050_cntrl_test_device)); 
-                        uart_send_new_line(USART2); 
-                        break; 
-
-                    case SMT_STATE_FUNC_PTR_5: 
-                        uart_send_new_line(USART2); 
-                        uart_send_integer(
-                            USART2, 
-                            (int16_t)(m8q_state_func[i].getter_2)(mpu6050_cntrl_test_device)); 
-                        uart_send_new_line(USART2); 
-                        break; 
-
-                    case SMT_STATE_FUNC_PTR_6: 
-                        (m8q_state_func[i].getter_3)(
-                            mpu6050_cntrl_test_device, 
-                            &imu_data_int[X_AXIS], 
-                            &imu_data_int[Y_AXIS], 
-                            &imu_data_int[Z_AXIS]); 
-                        uart_send_new_line(USART2); 
-                        uart_send_str(USART2, "X: ");
-                        uart_send_integer(USART2, imu_data_int[X_AXIS]); 
-                        uart_send_str(USART2, "  Y: ");
-                        uart_send_integer(USART2, imu_data_int[Y_AXIS]); 
-                        uart_send_str(USART2, "  Z: ");
-                        uart_send_integer(USART2, imu_data_int[Z_AXIS]); 
-                        uart_send_new_line(USART2); 
-                        break; 
-
-                    case SMT_STATE_FUNC_PTR_7: 
-                        uart_send_new_line(USART2); 
-                        uart_send_integer(
-                            USART2, 
-                            (m8q_state_func[i].getter_4)(mpu6050_cntrl_test_device)); 
-                        uart_send_new_line(USART2); 
-                        break; 
-
-                    case SMT_STATE_FUNC_PTR_8: 
-                        (m8q_state_func[i].getter_5)(
-                            mpu6050_cntrl_test_device, 
-                            &imu_data_float[X_AXIS], 
-                            &imu_data_float[Y_AXIS], 
-                            &imu_data_float[Z_AXIS]); 
-                        uart_send_new_line(USART2); 
-                        uart_send_str(USART2, "X: ");
-                        uart_send_integer(USART2, 
-                            (int16_t)(imu_data_float[X_AXIS] * SCALE_100)); 
-                        uart_send_str(USART2, "  Y: ");
-                        uart_send_integer(USART2, 
-                            (int16_t)(imu_data_float[Y_AXIS] * SCALE_100)); 
-                        uart_send_str(USART2, "  Z: ");
-                        uart_send_integer(USART2, 
-                            (int16_t)(imu_data_float[Z_AXIS] * SCALE_100)); 
-                        uart_send_new_line(USART2); 
-                        break; 
-
-                    case SMT_STATE_FUNC_PTR_9: 
-                        uart_send_new_line(USART2); 
-                        uart_send_integer(
-                            USART2, 
-                            (int16_t)((m8q_state_func[i].getter_6)(
-                                mpu6050_cntrl_test_device) * SCALE_100)); 
-                        uart_send_new_line(USART2); 
-                        break; 
-
-                    default: 
-                        break; 
-                }
-            }
-        }
-    }
-
-    // Check if user argument input should be converted and assigned 
-    if (arg_convert)
-    {
-        switch (mpu6050_state_cmds[cmd_index].func_ptr_index)
-        {
-            case SMT_STATE_FUNC_PTR_2: 
-                param[mpu6050_state_cmds[cmd_index].arg_buff_index] = atoi(user_args); 
-                break; 
-
-            default: 
-                break; 
-        }
-    }
-
-    // Call the device controller 
-    mpu6050_controller(mpu6050_cntrl_test_device); 
-
-    //==================================================
-
-#else   // MPU6050_CONTROLLER_TEST
-
-    //==================================================
-    // Driver test code 
-
     static int16_t mpu6050_temp_sensor; 
     static float mpu6050_accel[NUM_AXES]; 
     static float mpu6050_gyro[NUM_AXES]; 
@@ -565,33 +310,6 @@ void mpu6050_test_app()
 
     // Go to a the start of the line in the terminal 
     uart_send_str(USART2, "\r"); 
-
-    //==================================================
-
-#endif   // MPU6050_CONTROLLER_TEST 
 }
-
-//=======================================================================================
-
-
-//=======================================================================================
-// Test functions 
-
-#if MPU6050_CONTROLLER_TEST 
-
-// Choose device one 
-void mpu6050_cntrl_test_device_one(void)
-{
-    mpu6050_cntrl_test_device = DEVICE_ONE; 
-}
-
-
-// Choose device two 
-void mpu6050_cntrl_test_device_two(void)
-{
-    mpu6050_cntrl_test_device = DEVICE_TWO; 
-}
-
-#endif   // MPU6050_CONTROLLER_TEST
 
 //=======================================================================================

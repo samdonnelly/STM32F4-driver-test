@@ -132,7 +132,6 @@
 // M8Q driver test 
 
 // MPU-6050 driver test 
-#define MPU6050_CONTROLLER_TEST 0        // Switch between driver and controller testing 
 #define MPU6050_SECOND_DEVICE 0          // Include the test code for a second device 
 #define MPU6050_INT_PIN 0                // Interrupt pin enable 
 
