@@ -458,10 +458,10 @@ void mpu6050_test_app()
     //==================================================
     // Driver test code 
 
-    // Local variables 
     static int16_t mpu6050_temp_sensor; 
     static float mpu6050_accel[NUM_AXES]; 
     static float mpu6050_gyro[NUM_AXES]; 
+    // char output_buffer[100]; 
 
     // Update the accelerometer, temperature and gyroscope readings for device one 
     mpu6050_update(DEVICE_ONE); 
@@ -472,6 +472,16 @@ void mpu6050_test_app()
     mpu6050_get_gyro_axis_rate(DEVICE_ONE, mpu6050_gyro); 
 
     // Change the below to use snprintf instead. 
+    // snprintf(output_buffer, 
+    //          100, 
+    //          "temp1 = %d ax1 = %d ay1 = %d az1 = %d gx1 = %d gy1 = %d gz1 = %d", 
+    //          mpu6050_temp_sensor, 
+    //          (int16_t)(mpu6050_accel[X_AXIS] * SCALE_100), 
+    //          (int16_t)(mpu6050_accel[Y_AXIS] * SCALE_100), 
+    //          (int16_t)(mpu6050_accel[Z_AXIS] * SCALE_100), 
+    //          (int16_t)(mpu6050_gyro[X_AXIS] * SCALE_100), 
+    //          (int16_t)(mpu6050_gyro[Y_AXIS] * SCALE_100), 
+    //          (int16_t)(mpu6050_gyro[Z_AXIS] * SCALE_100)); 
 
     // Display the first device results - values are scaled to remove decimal 
     uart_send_str(USART2, "temp1 = ");
