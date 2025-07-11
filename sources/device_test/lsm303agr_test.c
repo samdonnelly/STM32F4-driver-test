@@ -155,9 +155,9 @@ void lsm303agr_test_init(void)
         GPIOA, 
         PIN_3, 
         PIN_2, 
-        UART_PARAM_DISABLE,    // Word length 
-        CLEAR_BIT,             // STOP bits 
-        UART_FRAC_42_115200,   // MotionCal requires this baudrate 
+        UART_PARAM_DISABLE, 
+        CLEAR_BIT, 
+        UART_FRAC_42_115200, 
         UART_MANT_42_115200, 
         UART_PARAM_DISABLE, 
         UART_PARAM_DISABLE); 
