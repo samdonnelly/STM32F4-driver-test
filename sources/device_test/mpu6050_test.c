@@ -242,7 +242,7 @@ void mpu6050_test_init()
 
     //===================================================
 
-    if (mpu6050_data.driver_status)
+    if (mpu6050_data.driver_status != MPU6050_OK)
     {
         mpu6050_test_fault_state(); 
     }
@@ -285,7 +285,12 @@ void mpu6050_test_app()
 void mpu6050_test_read_format_output(device_number_t device_num)
 {
     // Update the accelerometer, temperature and gyroscope readings for device one 
-    mpu6050_update(device_num); 
+    mpu6050_data.driver_status = mpu6050_update(device_num); 
+
+    if (mpu6050_data.driver_status != MPU6050_OK)
+    {
+        mpu6050_test_fault_state(); 
+    }
 
     // Get the raw temperature, accelerometer and gyroscope readings 
     mpu6050_data.temp_raw = mpu6050_get_temp_raw(device_num); 
@@ -330,9 +335,9 @@ void mpu6050_test_read_format_output(device_number_t device_num)
 // Output the driver status and stop program execution 
 void mpu6050_test_fault_state(void)
 {
+    tim_disable(mpu6050_data.tim_periodic); 
     uart_send_str(mpu6050_data.uart, "\r\nMPU6050 status: "); 
     uart_send_integer(mpu6050_data.uart, (int16_t)mpu6050_data.driver_status); 
-    tim_disable(mpu6050_data.tim_periodic); 
     while (TRUE); 
 }
 
