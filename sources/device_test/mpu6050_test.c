@@ -60,14 +60,23 @@
 //=======================================================================================
 // Global data 
 
+typedef struct mpu6050_test_imu_data_s
+{
+    uint16_t temp_raw, accel_raw[NUM_AXES], gyro_raw[NUM_AXES]; 
+    float temp, accel[NUM_AXES], gyro[NUM_AXES]; 
+    uint8_t st_result; 
+}
+mpu6050_test_imu_data_t; 
+
+
 typedef struct mpu6050_test_data_s 
 {
     USART_TypeDef *uart; 
     I2C_TypeDef *i2c; 
     TIM_TypeDef *tim_periodic, *tim_delay; 
 
-    uint16_t temp_raw, accel_raw[NUM_AXES], gyro_raw[NUM_AXES]; 
-    float temp, accel[NUM_AXES], gyro[NUM_AXES]; 
+    mpu6050_test_imu_data_t imu1; 
+    // mpu6050_test_imu_data_t imu2; 
 
     // Data output 
     char output_raw[MPU6050_TEST_MAX_STR_SIZE]; 
@@ -112,12 +121,13 @@ void mpu6050_test_init()
     mpu6050_data.i2c = I2C1; 
     mpu6050_data.tim_periodic = TIM10; 
     mpu6050_data.tim_delay = TIM9; 
-    mpu6050_data.temp_raw = CLEAR; 
-    memset((void*)mpu6050_data.accel_raw, CLEAR, sizeof(mpu6050_data.accel_raw)); 
-    memset((void*)mpu6050_data.gyro_raw, CLEAR, sizeof(mpu6050_data.gyro_raw)); 
-    mpu6050_data.temp = CLEAR; 
-    memset((void*)mpu6050_data.accel, CLEAR, sizeof(mpu6050_data.accel)); 
-    memset((void*)mpu6050_data.gyro, CLEAR, sizeof(mpu6050_data.gyro)); 
+    mpu6050_data.imu1.temp_raw = CLEAR; 
+    memset((void*)mpu6050_data.imu1.accel_raw, CLEAR, sizeof(mpu6050_data.imu1.accel_raw)); 
+    memset((void*)mpu6050_data.imu1.gyro_raw, CLEAR, sizeof(mpu6050_data.imu1.gyro_raw)); 
+    mpu6050_data.imu1.temp = CLEAR; 
+    memset((void*)mpu6050_data.imu1.accel, CLEAR, sizeof(mpu6050_data.imu1.accel)); 
+    memset((void*)mpu6050_data.imu1.gyro, CLEAR, sizeof(mpu6050_data.imu1.gyro)); 
+    // memset((void*)mpu6050_data.st_results, CLEAR, sizeof(mpu6050_data.st_results)); 
     memset((void *)mpu6050_data.output_raw, CLEAR, sizeof(mpu6050_data.output_raw)); 
     memset((void *)mpu6050_data.output_formatted, CLEAR, sizeof(mpu6050_data.output_formatted)); 
     mpu6050_data.cursor_lines = MPU6050_TEST_OUTPUT_LINES + MPU6050_TEST_OUTPUT_LINES*MPU6050_SECOND_DEVICE; 
@@ -213,10 +223,11 @@ void mpu6050_test_init()
     // Setup 
 
     // MPU6050 self-test 
-    uint8_t mpu_self_test_result = mpu6050_self_test(DEVICE_ONE);
-    uart_send_str(mpu6050_data.uart, "MPU-6050 Self-Test Result = ");
-    uart_send_integer(mpu6050_data.uart, (int16_t)(mpu_self_test_result));
-    uart_send_new_line(mpu6050_data.uart); 
+    // mpu6050_data.driver_status |= mpu6050_self_test(DEVICE_ONE, mpu6050_data.st_results[DEVICE_ONE]); 
+    // uint8_t mpu_self_test_result = mpu6050_self_test(DEVICE_ONE);
+    // uart_send_str(mpu6050_data.uart, "MPU-6050 Self-Test Result = ");
+    // uart_send_integer(mpu6050_data.uart, (int16_t)(mpu_self_test_result));
+    // uart_send_new_line(mpu6050_data.uart); 
 
     // Provide time for the device to update data so self-test data is not used elsewhere 
     tim_delay_ms(mpu6050_data.tim_delay, MPU6050_DRIVER_ST_DELAY); 
@@ -227,10 +238,10 @@ void mpu6050_test_init()
 #if MPU6050_SECOND_DEVICE 
 
     // MPU6050 self-test - second device 
-    mpu_self_test_result = mpu6050_self_test(DEVICE_TWO);
-    uart_send_str(mpu6050_data.uart, "MPU-6050 Second Self-Test Result = ");
-    uart_send_integer(mpu6050_data.uart, (int16_t)(mpu_self_test_result));
-    uart_send_new_line(mpu6050_data.uart); 
+    // mpu6050_data.driver_status |= mpu6050_self_test(DEVICE_TWO, mpu6050_data.st_results[DEVICE_TWO]); 
+    // uart_send_str(mpu6050_data.uart, "MPU-6050 Second Self-Test Result = ");
+    // uart_send_integer(mpu6050_data.uart, (int16_t)(mpu_self_test_result));
+    // uart_send_new_line(mpu6050_data.uart); 
 
     // Provide time for the device to update data so self-test data is not used elsewhere 
     tim_delay_ms(mpu6050_data.tim_delay, MPU6050_DRIVER_ST_DELAY); 
@@ -293,38 +304,38 @@ void mpu6050_test_read_format_output(device_number_t device_num)
     }
 
     // Get the raw temperature, accelerometer and gyroscope readings 
-    mpu6050_data.temp_raw = mpu6050_get_temp_raw(device_num); 
-    mpu6050_get_accel_axis(device_num, mpu6050_data.accel_raw); 
-    mpu6050_get_gyro_axis(device_num, mpu6050_data.gyro_raw); 
+    mpu6050_data.imu1.temp_raw = mpu6050_get_temp_raw(device_num); 
+    mpu6050_get_accel_axis(device_num, mpu6050_data.imu1.accel_raw); 
+    mpu6050_get_gyro_axis(device_num, mpu6050_data.imu1.gyro_raw); 
 
     // Get the formatted temp (degC), accelerometer (g's) and gyroscope (deg/s) data 
-    mpu6050_data.temp = mpu6050_get_temp(device_num); 
-    mpu6050_get_accel_axis_gs(device_num, mpu6050_data.accel); 
-    mpu6050_get_gyro_axis_rate(device_num, mpu6050_data.gyro); 
+    mpu6050_data.imu1.temp = mpu6050_get_temp(device_num); 
+    mpu6050_get_accel_axis_gs(device_num, mpu6050_data.imu1.accel); 
+    mpu6050_get_gyro_axis_rate(device_num, mpu6050_data.imu1.gyro); 
 
     // Format the raw data into a string 
     snprintf(mpu6050_data.output_raw, 
              MPU6050_TEST_MAX_STR_SIZE, 
              "temp1_r = %d ax1_r = %d ay1_r = %d az1_r = %d gx1_r = %d gy1_r = %d gz1_r = %d      \r\n", 
-             mpu6050_data.temp_raw, 
-             mpu6050_data.accel_raw[X_AXIS], 
-             mpu6050_data.accel_raw[Y_AXIS], 
-             mpu6050_data.accel_raw[Z_AXIS], 
-             mpu6050_data.gyro_raw[X_AXIS], 
-             mpu6050_data.gyro_raw[Y_AXIS], 
-             mpu6050_data.gyro_raw[Z_AXIS]); 
+             mpu6050_data.imu1.temp_raw, 
+             mpu6050_data.imu1.accel_raw[X_AXIS], 
+             mpu6050_data.imu1.accel_raw[Y_AXIS], 
+             mpu6050_data.imu1.accel_raw[Z_AXIS], 
+             mpu6050_data.imu1.gyro_raw[X_AXIS], 
+             mpu6050_data.imu1.gyro_raw[Y_AXIS], 
+             mpu6050_data.imu1.gyro_raw[Z_AXIS]); 
 
     // Format the formatted data into a striing 
     snprintf(mpu6050_data.output_formatted, 
              MPU6050_TEST_MAX_STR_SIZE, 
              "temp1_f = %f ax1_f = %f ay1_f = %f az1_f = %f gx1_f = %f gy1_f = %f gz1_f = %f      \r\n", 
-             (double)mpu6050_data.temp, 
-             (double)mpu6050_data.accel[X_AXIS], 
-             (double)mpu6050_data.accel[Y_AXIS], 
-             (double)mpu6050_data.accel[Z_AXIS], 
-             (double)mpu6050_data.gyro[X_AXIS], 
-             (double)mpu6050_data.gyro[Y_AXIS], 
-             (double)mpu6050_data.gyro[Z_AXIS]); 
+             (double)mpu6050_data.imu1.temp, 
+             (double)mpu6050_data.imu1.accel[X_AXIS], 
+             (double)mpu6050_data.imu1.accel[Y_AXIS], 
+             (double)mpu6050_data.imu1.accel[Z_AXIS], 
+             (double)mpu6050_data.imu1.gyro[X_AXIS], 
+             (double)mpu6050_data.imu1.gyro[Y_AXIS], 
+             (double)mpu6050_data.imu1.gyro[Z_AXIS]); 
 
     // Display the data in the serial terminal 
     uart_send_str(mpu6050_data.uart, mpu6050_data.output_raw); 
