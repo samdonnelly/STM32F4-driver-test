@@ -65,6 +65,7 @@ typedef struct mpu6050_test_imu_data_s
     uint16_t temp_raw, accel_raw[NUM_AXES], gyro_raw[NUM_AXES]; 
     float temp, accel[NUM_AXES], gyro[NUM_AXES]; 
     uint8_t st_result; 
+    MPU6050_STATUS status; 
 }
 mpu6050_test_imu_data_t; 
 
@@ -73,18 +74,20 @@ typedef struct mpu6050_test_data_s
 {
     USART_TypeDef *uart; 
     I2C_TypeDef *i2c; 
-    TIM_TypeDef *tim_periodic, *tim_delay; 
-
-    mpu6050_test_imu_data_t imu1; 
-    // mpu6050_test_imu_data_t imu2; 
+    TIM_TypeDef *tim_periodic; 
 
     // Data output 
     char output_raw[MPU6050_TEST_MAX_STR_SIZE]; 
     char output_formatted[MPU6050_TEST_MAX_STR_SIZE]; 
     uint8_t cursor_lines; 
 
-    // Status 
-    MPU6050_STATUS driver_status; 
+    mpu6050_test_imu_data_t imu1; 
+
+#if MPU6050_SECOND_DEVICE 
+
+    mpu6050_test_imu_data_t imu2; 
+
+#endif   // MPU6050_SECOND_DEVICE 
 }
 mpu6050_test_data_t; 
 
@@ -99,9 +102,12 @@ static mpu6050_test_data_t mpu6050_data;
 /**
  * @brief Read, format and output IMU data for a given device number 
  * 
- * @param device_num : IMU to use 
+ * @param device_num : IMU number 
+ * @param imu_data : IMU data to use 
  */
-void mpu6050_test_read_format_output(device_number_t device_num); 
+void mpu6050_test_read_format_output(
+    device_number_t device_num, 
+    mpu6050_test_imu_data_t imu_data); 
 
 
 /**
@@ -120,29 +126,34 @@ void mpu6050_test_init()
     mpu6050_data.uart = USART2; 
     mpu6050_data.i2c = I2C1; 
     mpu6050_data.tim_periodic = TIM10; 
-    mpu6050_data.tim_delay = TIM9; 
+    memset((void *)mpu6050_data.output_raw, CLEAR, sizeof(mpu6050_data.output_raw)); 
+    memset((void *)mpu6050_data.output_formatted, CLEAR, sizeof(mpu6050_data.output_formatted)); 
+    mpu6050_data.cursor_lines = MPU6050_TEST_OUTPUT_LINES + MPU6050_TEST_OUTPUT_LINES*MPU6050_SECOND_DEVICE; 
+
     mpu6050_data.imu1.temp_raw = CLEAR; 
     memset((void*)mpu6050_data.imu1.accel_raw, CLEAR, sizeof(mpu6050_data.imu1.accel_raw)); 
     memset((void*)mpu6050_data.imu1.gyro_raw, CLEAR, sizeof(mpu6050_data.imu1.gyro_raw)); 
     mpu6050_data.imu1.temp = CLEAR; 
     memset((void*)mpu6050_data.imu1.accel, CLEAR, sizeof(mpu6050_data.imu1.accel)); 
     memset((void*)mpu6050_data.imu1.gyro, CLEAR, sizeof(mpu6050_data.imu1.gyro)); 
-    // memset((void*)mpu6050_data.st_results, CLEAR, sizeof(mpu6050_data.st_results)); 
-    memset((void *)mpu6050_data.output_raw, CLEAR, sizeof(mpu6050_data.output_raw)); 
-    memset((void *)mpu6050_data.output_formatted, CLEAR, sizeof(mpu6050_data.output_formatted)); 
-    mpu6050_data.cursor_lines = MPU6050_TEST_OUTPUT_LINES + MPU6050_TEST_OUTPUT_LINES*MPU6050_SECOND_DEVICE; 
-    mpu6050_data.driver_status = MPU6050_OK; 
+    memset((void*)mpu6050_data.imu1.st_result, CLEAR, sizeof(mpu6050_data.imu1.st_result)); 
+    mpu6050_data.imu1.status = MPU6050_OK; 
+
+#if MPU6050_SECOND_DEVICE 
+
+    mpu6050_data.imu2.temp_raw = CLEAR; 
+    memset((void*)mpu6050_data.imu2.accel_raw, CLEAR, sizeof(mpu6050_data.imu2.accel_raw)); 
+    memset((void*)mpu6050_data.imu2.gyro_raw, CLEAR, sizeof(mpu6050_data.imu2.gyro_raw)); 
+    mpu6050_data.imu2.temp = CLEAR; 
+    memset((void*)mpu6050_data.imu2.accel, CLEAR, sizeof(mpu6050_data.imu2.accel)); 
+    memset((void*)mpu6050_data.imu2.gyro, CLEAR, sizeof(mpu6050_data.imu2.gyro)); 
+    memset((void*)mpu6050_data.imu2.st_result, CLEAR, sizeof(mpu6050_data.imu2.st_result)); 
+    mpu6050_data.imu2.status = MPU6050_OK; 
+
+#endif   // MPU6050_SECOND_DEVICE 
 
     // Initialize GPIO ports 
     gpio_port_init(); 
-
-    // Initialize timers 
-    tim_9_to_11_counter_init(
-        mpu6050_data.tim_delay, 
-        TIM_84MHZ_1US_PSC, 
-        0xFFFF,  // Max ARR value 
-        TIM_UP_INT_DISABLE); 
-    tim_enable(mpu6050_data.tim_delay); 
 
     // Periodic (counter update) interrupt timer 
     tim_9_to_11_counter_init(
@@ -182,10 +193,10 @@ void mpu6050_test_init()
     nvic_config(TIM1_UP_TIM10_IRQn, EXTI_PRIORITY_0); 
 
     //===================================================
-    // Accelerometer initialization 
+    // MPU-6050 initialization and setup 
     
     // Initialize the accelerometer 
-    mpu6050_data.driver_status |= mpu6050_init(
+    mpu6050_data.imu1.status |= mpu6050_init(
         DEVICE_ONE, 
         mpu6050_data.i2c, 
         MPU6050_ADDR_1,
@@ -195,10 +206,15 @@ void mpu6050_test_init()
         MPU6050_AFS_SEL_4,
         MPU6050_FS_SEL_500);
 
+    // MPU6050 self-test 
+    mpu6050_data.imu1.status |= mpu6050_self_test(DEVICE_ONE, mpu6050_data.imu1.st_result); 
+
+    // TODO calibration? 
+
 #if MPU6050_SECOND_DEVICE 
 
     // Initialize the second accelerometer 
-    mpu6050_data.driver_status |= mpu6050_init(
+    mpu6050_data.imu2.status |= mpu6050_init(
         DEVICE_TWO, 
         mpu6050_data.i2c, 
         MPU6050_ADDR_2,
@@ -207,6 +223,9 @@ void mpu6050_test_init()
         MPU6050_SMPLRT_DIV,
         MPU6050_AFS_SEL_4,
         MPU6050_FS_SEL_500);
+
+    // MPU6050 self-test 
+    mpu6050_data.imu2.status |= mpu6050_self_test(DEVICE_TWO, mpu6050_data.imu2.st_result); 
 
 #endif   // MPU6050_SECOND_DEVICE 
 
@@ -219,41 +238,7 @@ void mpu6050_test_init()
 
     //===================================================
 
-    //===================================================
-    // Setup 
-
-    // MPU6050 self-test 
-    // mpu6050_data.driver_status |= mpu6050_self_test(DEVICE_ONE, mpu6050_data.st_results[DEVICE_ONE]); 
-    // uint8_t mpu_self_test_result = mpu6050_self_test(DEVICE_ONE);
-    // uart_send_str(mpu6050_data.uart, "MPU-6050 Self-Test Result = ");
-    // uart_send_integer(mpu6050_data.uart, (int16_t)(mpu_self_test_result));
-    // uart_send_new_line(mpu6050_data.uart); 
-
-    // Provide time for the device to update data so self-test data is not used elsewhere 
-    tim_delay_ms(mpu6050_data.tim_delay, MPU6050_DRIVER_ST_DELAY); 
-
-    // Calibrate the device 
-    mpu6050_calibrate(DEVICE_ONE); 
-
-#if MPU6050_SECOND_DEVICE 
-
-    // MPU6050 self-test - second device 
-    // mpu6050_data.driver_status |= mpu6050_self_test(DEVICE_TWO, mpu6050_data.st_results[DEVICE_TWO]); 
-    // uart_send_str(mpu6050_data.uart, "MPU-6050 Second Self-Test Result = ");
-    // uart_send_integer(mpu6050_data.uart, (int16_t)(mpu_self_test_result));
-    // uart_send_new_line(mpu6050_data.uart); 
-
-    // Provide time for the device to update data so self-test data is not used elsewhere 
-    tim_delay_ms(mpu6050_data.tim_delay, MPU6050_DRIVER_ST_DELAY); 
-
-    // Calibrate the device 
-    mpu6050_calibrate(DEVICE_TWO); 
-
-#endif   // MPU6050_SECOND_DEVICE 
-
-    //===================================================
-
-    if (mpu6050_data.driver_status != MPU6050_OK)
+    if (mpu6050_data.imu1.status != MPU6050_OK)
     {
         mpu6050_test_fault_state(); 
     }
@@ -276,11 +261,11 @@ void mpu6050_test_app()
         uart_cursor_move(mpu6050_data.uart, UART_CURSOR_UP, mpu6050_data.cursor_lines); 
         uart_send_str(mpu6050_data.uart, "\r"); 
 
-        mpu6050_test_read_format_output(DEVICE_ONE); 
+        mpu6050_test_read_format_output(DEVICE_ONE, mpu6050_data.imu1); 
 
 #if MPU6050_SECOND_DEVICE 
 
-        mpu6050_test_read_format_output(DEVICE_TWO); 
+        mpu6050_test_read_format_output(DEVICE_TWO, mpu6050_data.imu2); 
 
 #endif   // MPU6050_SECOND_DEVICE 
     }
@@ -293,49 +278,51 @@ void mpu6050_test_app()
 // Test functions 
 
 // Read, format and output IMU data for a given device number 
-void mpu6050_test_read_format_output(device_number_t device_num)
+void mpu6050_test_read_format_output(
+    device_number_t device_num, 
+    mpu6050_test_imu_data_t imu_data)
 {
     // Update the accelerometer, temperature and gyroscope readings for device one 
-    mpu6050_data.driver_status = mpu6050_update(device_num); 
+    imu_data.status = mpu6050_update(device_num); 
 
-    if (mpu6050_data.driver_status != MPU6050_OK)
+    if (imu_data.status != MPU6050_OK)
     {
         mpu6050_test_fault_state(); 
     }
 
     // Get the raw temperature, accelerometer and gyroscope readings 
-    mpu6050_data.imu1.temp_raw = mpu6050_get_temp_raw(device_num); 
-    mpu6050_get_accel_axis(device_num, mpu6050_data.imu1.accel_raw); 
-    mpu6050_get_gyro_axis(device_num, mpu6050_data.imu1.gyro_raw); 
+    imu_data.temp_raw = mpu6050_get_temp_raw(device_num); 
+    mpu6050_get_accel_axis(device_num, imu_data.accel_raw); 
+    mpu6050_get_gyro_axis(device_num, imu_data.gyro_raw); 
 
     // Get the formatted temp (degC), accelerometer (g's) and gyroscope (deg/s) data 
-    mpu6050_data.imu1.temp = mpu6050_get_temp(device_num); 
-    mpu6050_get_accel_axis_gs(device_num, mpu6050_data.imu1.accel); 
-    mpu6050_get_gyro_axis_rate(device_num, mpu6050_data.imu1.gyro); 
+    imu_data.temp = mpu6050_get_temp(device_num); 
+    mpu6050_get_accel_axis_gs(device_num, imu_data.accel); 
+    mpu6050_get_gyro_axis_rate(device_num, imu_data.gyro); 
 
     // Format the raw data into a string 
     snprintf(mpu6050_data.output_raw, 
              MPU6050_TEST_MAX_STR_SIZE, 
              "temp1_r = %d ax1_r = %d ay1_r = %d az1_r = %d gx1_r = %d gy1_r = %d gz1_r = %d      \r\n", 
-             mpu6050_data.imu1.temp_raw, 
-             mpu6050_data.imu1.accel_raw[X_AXIS], 
-             mpu6050_data.imu1.accel_raw[Y_AXIS], 
-             mpu6050_data.imu1.accel_raw[Z_AXIS], 
-             mpu6050_data.imu1.gyro_raw[X_AXIS], 
-             mpu6050_data.imu1.gyro_raw[Y_AXIS], 
-             mpu6050_data.imu1.gyro_raw[Z_AXIS]); 
+             imu_data.temp_raw, 
+             imu_data.accel_raw[X_AXIS], 
+             imu_data.accel_raw[Y_AXIS], 
+             imu_data.accel_raw[Z_AXIS], 
+             imu_data.gyro_raw[X_AXIS], 
+             imu_data.gyro_raw[Y_AXIS], 
+             imu_data.gyro_raw[Z_AXIS]); 
 
     // Format the formatted data into a striing 
     snprintf(mpu6050_data.output_formatted, 
              MPU6050_TEST_MAX_STR_SIZE, 
              "temp1_f = %f ax1_f = %f ay1_f = %f az1_f = %f gx1_f = %f gy1_f = %f gz1_f = %f      \r\n", 
-             (double)mpu6050_data.imu1.temp, 
-             (double)mpu6050_data.imu1.accel[X_AXIS], 
-             (double)mpu6050_data.imu1.accel[Y_AXIS], 
-             (double)mpu6050_data.imu1.accel[Z_AXIS], 
-             (double)mpu6050_data.imu1.gyro[X_AXIS], 
-             (double)mpu6050_data.imu1.gyro[Y_AXIS], 
-             (double)mpu6050_data.imu1.gyro[Z_AXIS]); 
+             (double)imu_data.temp, 
+             (double)imu_data.accel[X_AXIS], 
+             (double)imu_data.accel[Y_AXIS], 
+             (double)imu_data.accel[Z_AXIS], 
+             (double)imu_data.gyro[X_AXIS], 
+             (double)imu_data.gyro[Y_AXIS], 
+             (double)imu_data.gyro[Z_AXIS]); 
 
     // Display the data in the serial terminal 
     uart_send_str(mpu6050_data.uart, mpu6050_data.output_raw); 
@@ -347,8 +334,25 @@ void mpu6050_test_read_format_output(device_number_t device_num)
 void mpu6050_test_fault_state(void)
 {
     tim_disable(mpu6050_data.tim_periodic); 
-    uart_send_str(mpu6050_data.uart, "\r\nMPU6050 status: "); 
-    uart_send_integer(mpu6050_data.uart, (int16_t)mpu6050_data.driver_status); 
+
+    snprintf(mpu6050_data.output_formatted, 
+             MPU6050_TEST_MAX_STR_SIZE, 
+             "\r\nMPU-6050 1\r\nStatus: %d\r\nSelf-Test: %d", 
+             mpu6050_data.imu1.status, 
+             mpu6050_data.imu1.st_result); 
+    uart_send_str(mpu6050_data.uart, mpu6050_data.output_formatted); 
+
+#if MPU6050_SECOND_DEVICE 
+
+    snprintf(mpu6050_data.output_formatted, 
+             MPU6050_TEST_MAX_STR_SIZE, 
+             "\r\nMPU-6050 2\r\nStatus: %d\r\nSelf-Test: %d", 
+             mpu6050_data.imu2.status, 
+             mpu6050_data.imu2.st_result); 
+    uart_send_str(mpu6050_data.uart, mpu6050_data.output_formatted); 
+
+#endif   // MPU6050_SECOND_DEVICE 
+
     while (TRUE); 
 }
 
