@@ -8,11 +8,22 @@
  * @details Setup 
  *          - Hardware 
  *            * STM32F4 microcontroller with a serial connection to a PC. 
+ *            * 1 or 2 MPU-6050 IMUs connected to the STM32F4. 
  *          - Software 
  *            * Serial monitor on a PC to allow the exchange of info with the STM32F4. 
  *          
  *          Configuration 
- *          - 
+ *          - TIM 
+ *            * A timer is configured to create a periodic interrupt which controls when 
+ *              to read and output device data. 
+ *          - UART 
+ *            * UART is configured to provide a serial terminal output both for device 
+ *              data and driver status faults. 
+ *          - I2C 
+ *            * I2C is configured to communicate with the MPU-6050 device. 
+ *          - Interrupts 
+ *            * An interrupt is configured for the timer to create a periodic interrupt 
+ *              to control when to read and output device data. 
  *          
  *          Dependencies 
  *          - STM32F4 driver library 
@@ -20,7 +31,14 @@
  *              used in the test. 
  *          
  *          Procedure 
- *          - 
+ *          - During setup, the IMU will run a self test to check its axes. If this fails 
+ *            then the status will be displayed and the code will be haulted. If successful 
+ *            then the code proceeds to read and display raw and formatted IMU data 
+ *            periodically in the serial terminal. If a fault occurs at any time then the 
+ *            test will be haulted and the driver status displayed. 
+ *          - A second device can be enabled that does the same thing in parallel to the 
+ *            the first device. 
+ *            
  * 
  * @version 0.1
  * @date 2022-08-28
@@ -131,23 +149,23 @@ void mpu6050_test_init()
     mpu6050_data.cursor_lines = MPU6050_TEST_OUTPUT_LINES + MPU6050_TEST_OUTPUT_LINES*MPU6050_SECOND_DEVICE; 
 
     mpu6050_data.imu1.temp_raw = CLEAR; 
-    memset((void*)mpu6050_data.imu1.accel_raw, CLEAR, sizeof(mpu6050_data.imu1.accel_raw)); 
-    memset((void*)mpu6050_data.imu1.gyro_raw, CLEAR, sizeof(mpu6050_data.imu1.gyro_raw)); 
+    memset((void *)mpu6050_data.imu1.accel_raw, CLEAR, sizeof(mpu6050_data.imu1.accel_raw)); 
+    memset((void *)mpu6050_data.imu1.gyro_raw, CLEAR, sizeof(mpu6050_data.imu1.gyro_raw)); 
     mpu6050_data.imu1.temp = CLEAR; 
-    memset((void*)mpu6050_data.imu1.accel, CLEAR, sizeof(mpu6050_data.imu1.accel)); 
-    memset((void*)mpu6050_data.imu1.gyro, CLEAR, sizeof(mpu6050_data.imu1.gyro)); 
-    memset((void*)mpu6050_data.imu1.st_result, CLEAR, sizeof(mpu6050_data.imu1.st_result)); 
+    memset((void *)mpu6050_data.imu1.accel, CLEAR, sizeof(mpu6050_data.imu1.accel)); 
+    memset((void *)mpu6050_data.imu1.gyro, CLEAR, sizeof(mpu6050_data.imu1.gyro)); 
+    mpu6050_data.imu1.st_result = CLEAR; 
     mpu6050_data.imu1.status = MPU6050_OK; 
 
 #if MPU6050_SECOND_DEVICE 
 
     mpu6050_data.imu2.temp_raw = CLEAR; 
-    memset((void*)mpu6050_data.imu2.accel_raw, CLEAR, sizeof(mpu6050_data.imu2.accel_raw)); 
-    memset((void*)mpu6050_data.imu2.gyro_raw, CLEAR, sizeof(mpu6050_data.imu2.gyro_raw)); 
+    memset((void *)mpu6050_data.imu2.accel_raw, CLEAR, sizeof(mpu6050_data.imu2.accel_raw)); 
+    memset((void *)mpu6050_data.imu2.gyro_raw, CLEAR, sizeof(mpu6050_data.imu2.gyro_raw)); 
     mpu6050_data.imu2.temp = CLEAR; 
-    memset((void*)mpu6050_data.imu2.accel, CLEAR, sizeof(mpu6050_data.imu2.accel)); 
-    memset((void*)mpu6050_data.imu2.gyro, CLEAR, sizeof(mpu6050_data.imu2.gyro)); 
-    memset((void*)mpu6050_data.imu2.st_result, CLEAR, sizeof(mpu6050_data.imu2.st_result)); 
+    memset((void *)mpu6050_data.imu2.accel, CLEAR, sizeof(mpu6050_data.imu2.accel)); 
+    memset((void *)mpu6050_data.imu2.gyro, CLEAR, sizeof(mpu6050_data.imu2.gyro)); 
+    mpu6050_data.imu2.st_result = CLEAR; 
     mpu6050_data.imu2.status = MPU6050_OK; 
 
 #endif   // MPU6050_SECOND_DEVICE 
@@ -206,10 +224,22 @@ void mpu6050_test_init()
         MPU6050_AFS_SEL_4,
         MPU6050_FS_SEL_500);
 
+#if MPU6050_INT_PIN 
+
+    // Set up the INT pin 
+    mpu6050_int_pin_init(GPIOC, PIN_11); 
+
+#endif   // MPU6050_INT_PIN 
+
     // MPU6050 self-test 
-    mpu6050_data.imu1.status |= mpu6050_self_test(DEVICE_ONE, mpu6050_data.imu1.st_result); 
+    mpu6050_data.imu1.status |= mpu6050_self_test(DEVICE_ONE, &mpu6050_data.imu1.st_result); 
 
     // TODO calibration? 
+
+    if (mpu6050_data.imu1.status != MPU6050_OK)
+    {
+        mpu6050_test_fault_state(); 
+    }
 
 #if MPU6050_SECOND_DEVICE 
 
@@ -225,23 +255,16 @@ void mpu6050_test_init()
         MPU6050_FS_SEL_500);
 
     // MPU6050 self-test 
-    mpu6050_data.imu2.status |= mpu6050_self_test(DEVICE_TWO, mpu6050_data.imu2.st_result); 
+    mpu6050_data.imu2.status |= mpu6050_self_test(DEVICE_TWO, &mpu6050_data.imu2.st_result); 
 
-#endif   // MPU6050_SECOND_DEVICE 
-
-#if MPU6050_INT_PIN 
-
-    // Set up the INT pin 
-    mpu6050_int_pin_init(GPIOC, PIN_11); 
-
-#endif   // MPU6050_INT_PIN 
-
-    //===================================================
-
-    if (mpu6050_data.imu1.status != MPU6050_OK)
+    if (mpu6050_data.imu2.status != MPU6050_OK)
     {
         mpu6050_test_fault_state(); 
     }
+
+#endif   // MPU6050_SECOND_DEVICE 
+
+    //===================================================
 } 
 
 //=======================================================================================
@@ -303,7 +326,7 @@ void mpu6050_test_read_format_output(
     // Format the raw data into a string 
     snprintf(mpu6050_data.output_raw, 
              MPU6050_TEST_MAX_STR_SIZE, 
-             "temp1_r = %d ax1_r = %d ay1_r = %d az1_r = %d gx1_r = %d gy1_r = %d gz1_r = %d      \r\n", 
+             "temp_r = %d ax_r = %d ay_r = %d az_r = %d gx_r = %d gy_r = %d gz_r = %d      \r\n", 
              imu_data.temp_raw, 
              imu_data.accel_raw[X_AXIS], 
              imu_data.accel_raw[Y_AXIS], 
@@ -315,7 +338,7 @@ void mpu6050_test_read_format_output(
     // Format the formatted data into a striing 
     snprintf(mpu6050_data.output_formatted, 
              MPU6050_TEST_MAX_STR_SIZE, 
-             "temp1_f = %f ax1_f = %f ay1_f = %f az1_f = %f gx1_f = %f gy1_f = %f gz1_f = %f      \r\n", 
+             "temp_f = %f ax_f = %f ay_f = %f az_f = %f gx_f = %f gy_f = %f gz_f = %f      \r\n", 
              (double)imu_data.temp, 
              (double)imu_data.accel[X_AXIS], 
              (double)imu_data.accel[Y_AXIS], 
