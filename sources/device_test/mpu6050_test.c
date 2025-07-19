@@ -336,14 +336,14 @@ void mpu6050_test_read_format_output(
     // Format the formatted data into a striing 
     snprintf(mpu6050_data.output_formatted, 
              MPU6050_TEST_MAX_STR_SIZE, 
-             "temp_f = %f ax_f = %f ay_f = %f az_f = %f gx_f = %f gy_f = %f gz_f = %f      \r\n", 
-             (double)imu_data.temp, 
-             (double)imu_data.accel[X_AXIS], 
-             (double)imu_data.accel[Y_AXIS], 
-             (double)imu_data.accel[Z_AXIS], 
-             (double)imu_data.gyro[X_AXIS], 
-             (double)imu_data.gyro[Y_AXIS], 
-             (double)imu_data.gyro[Z_AXIS]); 
+             "temp_f = %d ax_f = %d ay_f = %d az_f = %d gx_f = %d gy_f = %d gz_f = %d      \r\n", 
+             (int16_t)(imu_data.temp * SCALE_100), 
+             (int16_t)(imu_data.accel[X_AXIS] * SCALE_100), 
+             (int16_t)(imu_data.accel[Y_AXIS] * SCALE_100), 
+             (int16_t)(imu_data.accel[Z_AXIS] * SCALE_100), 
+             (int16_t)(imu_data.gyro[X_AXIS] * SCALE_100), 
+             (int16_t)(imu_data.gyro[Y_AXIS] * SCALE_100), 
+             (int16_t)(imu_data.gyro[Z_AXIS] * SCALE_100)); 
 
     // Display the data in the serial terminal 
     uart_send_str(mpu6050_data.uart, mpu6050_data.output_raw); 
