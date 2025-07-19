@@ -234,8 +234,6 @@ void mpu6050_test_init()
     // MPU6050 self-test 
     mpu6050_data.imu1.status |= mpu6050_self_test(DEVICE_ONE, &mpu6050_data.imu1.st_result); 
 
-    // TODO calibration? 
-
     if (mpu6050_data.imu1.status != MPU6050_OK)
     {
         mpu6050_test_fault_state(); 
