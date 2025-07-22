@@ -10,7 +10,7 @@ ${BUILD_DIR}/Makefile:
 		-G "MinGW Makefiles" \
 		-B${BUILD_DIR} \
 		-DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
-		-DCMAKE_TOOLCHAIN_FILE=arm-none-eabi-gcc.cmake \
+		-DCMAKE_TOOLCHAIN_FILE=build_tools/arm-none-eabi-gcc.cmake \
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
 		-DDUMP_ASM=OFF
 

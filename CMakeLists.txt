@@ -3,16 +3,16 @@ cmake_minimum_required(VERSION 3.12)
 
 ###############################################################################
 
-include(./arm-none-eabi-gcc.cmake)
+include(./build_tools/arm-none-eabi-gcc.cmake)
 
-# A "SystemConfig.txt" file must be created in the root of this project and 
-# within it the RTOS_ENABLE must be defined as "set(RTOS_ENABLE X)" where "X" 
-# is either 0 or 1 depending on how you configure your system. A 1 will include 
-# FreeRTOS in the project. 
+# A "SystemConfig.txt" file must be created in the build_tools folder of this 
+# project and within it the RTOS_ENABLE must be defined as "set(RTOS_ENABLE X)" 
+# where "X" is either 0 or 1 depending on how you configure your system. A 1 
+# will include FreeRTOS in the project. 
 # "SystemConfig.txt" is not tracked so users can configure their system without 
 # making changes to the project. The value of this variable must match the 
 # value of "FREERTOS_ENABLE" from the "hardware_config.h" file 
-include(${CMAKE_CURRENT_SOURCE_DIR}/SystemConfig.txt)
+include(${CMAKE_CURRENT_SOURCE_DIR}/build_tools/SystemConfig.txt)
 
 # Set project name and source code folder location
 project(STM32F4-driver-test)
@@ -62,15 +62,14 @@ set(STM32CUBEMX_INCLUDE_DIRECTORIES
 
 # Project and driver code 
 set(PROJECT_INCLUDE_DIRECTORIES 
-    ${CMAKE_CURRENT_SOURCE_DIR}/headers
-    ${CMAKE_CURRENT_SOURCE_DIR}/headers/core
-    ${CMAKE_CURRENT_SOURCE_DIR}/headers/app_test
-    ${CMAKE_CURRENT_SOURCE_DIR}/headers/config_files
-    ${CMAKE_CURRENT_SOURCE_DIR}/headers/device_test
-    ${CMAKE_CURRENT_SOURCE_DIR}/headers/includes
-    ${CMAKE_CURRENT_SOURCE_DIR}/headers/peripheral_test
-    ${CMAKE_CURRENT_SOURCE_DIR}/headers/test_data
-    ${CMAKE_CURRENT_SOURCE_DIR}/headers/tool_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/config_files
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/core
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/includes
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/test_data
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/application_tests
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/device_tests
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/peripheral_tests
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stm32f4/headers/core
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stm32f4/headers/devices
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stm32f4/headers/peripherals
@@ -144,20 +143,20 @@ endif()
 
 # Project and driver code 
 file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
-    ${CMAKE_CURRENT_SOURCE_DIR}/sources/*.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/sources/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/sources/core/*.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/sources/core/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/sources/app_test/*.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/sources/app_test/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/sources/config_files/*.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/sources/config_files/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/sources/device_test/*.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/sources/device_test/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/sources/peripheral_test/*.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/sources/peripheral_test/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/sources/tool_test/*.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/sources/tool_test/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/config_files/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/config_files/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/core/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/core/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/test_data/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/test_data/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/application_tests/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/application_tests/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/device_tests/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/device_tests/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/peripheral_tests/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/peripheral_tests/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stm32f4/sources/devices/*.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stm32f4/sources/devices/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stm32f4/sources/peripherals/*.c

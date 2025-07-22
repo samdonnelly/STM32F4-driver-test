@@ -1,27 +1,24 @@
 /**
- * @file project_interface.h
+ * @file mpu6050_test.h
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Project initialization and application code interface 
+ * @brief MPU-6050 test code interface 
  * 
  * @version 0.1
- * @date 2024-03-07
+ * @date 2022-08-28
  * 
- * @copyright Copyright (c) 2024
+ * @copyright Copyright (c) 2022
  * 
  */
 
-#ifndef _PROJECT_INTERFACE_H_ 
-#define _PROJECT_INTERFACE_H_ 
+#ifndef _MPU6050_TEST_H_
+#define _MPU6050_TEST_H_
 
 //=======================================================================================
 // Includes 
 
-#include "includes_app.h"
-#include "includes_cpp_app.h"
 #include "includes_drivers.h"
-#include "includes_cpp_drivers.h"
 
 //=======================================================================================
 
@@ -30,16 +27,16 @@
 // Prototypes 
 
 /**
- * @brief Project initialization code - called once 
+ * @brief MPU-6050 test initialization and setup code 
  */
-void ProjectInit(void); 
+void mpu6050_test_init(void); 
 
 
 /**
- * @brief Project application code - called repeatedly 
+ * @brief MPU-6050 test application code 
  */
-void ProjectApp(void); 
+void mpu6050_test_app(void); 
 
 //=======================================================================================
 
-#endif   // _PROJECT_INTERFACE_H_ 
+#endif  // _MPU6050_TEST_H_ 

@@ -1,9 +1,9 @@
 /**
- * @file project_app.cpp
+ * @file project_init.cpp
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Project application code 
+ * @brief Project initialization code 
  * 
  * @version 0.1
  * @date 2023-07-20
@@ -15,7 +15,7 @@
 //=======================================================================================
 // Includes 
 
-#include "project_interface.h" 
+#include "project.h" 
 
 //=======================================================================================
 
@@ -23,10 +23,10 @@
 //=======================================================================================
 // Functions 
 
-// Project application code - called repeatedly 
-void ProjectApp(void)
+// Project initialization code - called once 
+void ProjectInit(void)
 {
-    // Project application code here 
+    // Project initialization code here 
 }
 
 //=======================================================================================

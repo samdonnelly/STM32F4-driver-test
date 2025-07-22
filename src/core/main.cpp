@@ -20,7 +20,7 @@
 #include "tools.h" 
 
 // Application 
-#include "project_interface.h" 
+#include "project.h" 
 
 //=======================================================================================
 
@@ -63,6 +63,14 @@ static void MX_GPIO_Init(void);
  */
 void Error_Handler(void);
 
+
+/**
+ * @brief 
+ * 
+ * @return auto& 
+ */
+auto& DependencySelection(void); 
+
 //=======================================================================================
 
 
@@ -75,6 +83,8 @@ int main(void)
     // The order of the below function calls is important. Some stuff needs to be set up 
     // before other stuff can be set up. 
 
+    ProjectInterface project(DependencySelection()); 
+
     // Reset of all peripherals, initialize the Flash interface, then initialize and set 
     // the time base source. 
     HAL_Init(); 
@@ -84,6 +94,7 @@ int main(void)
 
     // Run application setup code 
     ProjectInit(); 
+    project.project.ProjectInit(); 
 
     // Initialize all configured peripherals 
     MX_GPIO_Init(); 
@@ -93,6 +104,7 @@ int main(void)
     while (1)
     {
         ProjectApp(); 
+        project.project.ProjectApp(); 
     }
 }
 
@@ -202,5 +214,13 @@ void assert_failed(uint8_t *file, uint32_t line)
 }
 
 #endif /* USE_FULL_ASSERT */
+
+
+
+auto& DependencySelection(void)
+{
+    IProjectInterface &interface = dead_reckoning_test; 
+    return interface; 
+}
 
 //=======================================================================================

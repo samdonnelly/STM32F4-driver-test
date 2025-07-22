@@ -20,14 +20,13 @@
 
 // Application test code 
 #include "active_object_test.h" 
+#include "circular_buffer_test.h" 
+#include "dead_reckoning_test.h" 
 #include "gps_nav_test.h" 
 #include "rc_test.h" 
 
 // Device test code 
 #include "sik_radio_test.h" 
-
-// Tools test code 
-#include "circular_buffer_test.h" 
 
 //=======================================================================================
 

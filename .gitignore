@@ -16,9 +16,9 @@ build/
 #==================================================
 # Configuration 
 
-headers/core/hardware_config.h
-sources/config_files/device_config.c
-SystemConfig.txt
+src/core/hardware_config.h
+src/config_files/device_config.c
+build_tools/SystemConfig.txt
 
 #==================================================
 
@@ -27,6 +27,6 @@ SystemConfig.txt
 # Code files 
 
 # M8Q test coordinates - Use-case specific so made as a local file 
-sources/test_data/gps_coordinates.cpp 
+src/test_data/gps_coordinates.cpp 
 
 #==================================================
