@@ -80,7 +80,7 @@
 
 typedef struct mpu6050_test_imu_data_s
 {
-    uint16_t temp_raw, accel_raw[NUM_AXES], gyro_raw[NUM_AXES]; 
+    int16_t temp_raw, accel_raw[NUM_AXES], gyro_raw[NUM_AXES]; 
     float temp, accel[NUM_AXES], gyro[NUM_AXES]; 
     uint8_t st_result; 
     MPU6050_STATUS status; 
@@ -358,7 +358,7 @@ void mpu6050_test_fault_state(void)
 
     snprintf(mpu6050_data.output_formatted, 
              MPU6050_TEST_MAX_STR_SIZE, 
-             "\r\nMPU-6050 1\r\nStatus: %d\r\nSelf-Test: %d", 
+             "\r\nMPU-6050 1\r\nStatus: %lu\r\nSelf-Test: %u", 
              mpu6050_data.imu1.status, 
              mpu6050_data.imu1.st_result); 
     uart_send_str(mpu6050_data.uart, mpu6050_data.output_formatted); 
@@ -367,7 +367,7 @@ void mpu6050_test_fault_state(void)
 
     snprintf(mpu6050_data.output_formatted, 
              MPU6050_TEST_MAX_STR_SIZE, 
-             "\r\nMPU-6050 2\r\nStatus: %d\r\nSelf-Test: %d", 
+             "\r\nMPU-6050 2\r\nStatus: %lu\r\nSelf-Test: %u", 
              mpu6050_data.imu2.status, 
              mpu6050_data.imu2.st_result); 
     uart_send_str(mpu6050_data.uart, mpu6050_data.output_formatted); 
