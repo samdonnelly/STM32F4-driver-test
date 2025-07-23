@@ -22,6 +22,7 @@
 //=======================================================================================
 // Includes 
 
+#include "stm32f411xe.h"
 #include "lsm303agr_driver.h" 
 #include "nrf24l01_driver.h" 
 
@@ -45,14 +46,20 @@ extern const float lsm303agr_sio_values[NUM_AXES];       // Soft-iron off-diagon
 //=======================================================================================
 // M8Q 
 
-// Number of messages in a configuration packet 
-#define M8Q_CONFIG_NUM_MSG_PKT_0 12 
-
-// Max length of a single config message in a packet 
-#define M8Q_CONFIG_MAX_LEN_PKT_0 130 
+#define M8Q_CONFIG_NUM_MSG_PKT_0 12    // Number of messages in a configuration packet 
+#define M8Q_CONFIG_MAX_LEN_PKT_0 130   // Max length of a single config message in a packet 
 
 extern const char m8q_config_no_pkt[]; 
 extern const char m8q_config_pkt_0[M8Q_CONFIG_NUM_MSG_PKT_0][M8Q_CONFIG_MAX_LEN_PKT_0]; 
+
+//=======================================================================================
+
+
+//=======================================================================================
+// MPU-6050 
+
+extern const uint8_t standby_mask;           // Axis standby status mask 
+extern const uint8_t sample_rate_divider;    // Sample Rate Divider 
 
 //=======================================================================================
 
