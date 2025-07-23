@@ -16,51 +16,27 @@
 #define _DRIVER_TEST_INTERFACE_H_ 
 
 //=======================================================================================
+// Includes 
+
+#include "includes_app.h"
+#include "includes_cpp_app.h"
+
+//=======================================================================================
+
+
+//=======================================================================================
 // Driver test interface 
 
 /**
- * @brief Project initialization code - called once 
+ * @brief Driver test initialization code - called once 
  */
-void ProjectInit(void); 
+void DriverTestInit(void); 
 
 
 /**
- * @brief Project application code - called repeatedly 
+ * @brief Driver test application code - called repeatedly 
  */
-void ProjectApp(void); 
-
-
-class IDriverTestInterface 
-{
-public: 
-    /**
-     * @brief Constructor 
-     */
-    IDriverTestInterface() = default; 
-
-    /**
-     * @brief Destructor 
-     */
-    ~IDriverTestInterface() = default; 
-
-    // Delete copy constructor and assignment operator
-    IDriverTestInterface(const IDriverTestInterface &) = delete;
-    IDriverTestInterface &operator=(const IDriverTestInterface &) = delete;
-
-    // Delete move constructor and assignment operator
-    IDriverTestInterface(IDriverTestInterface &&) = delete;
-    IDriverTestInterface &operator=(IDriverTestInterface &&) = delete;
-
-    /**
-     * @brief Initialization code - called once 
-     */
-    virtual void TestInit(void) noexcept = 0; 
-
-    /**
-     * @brief Application code - called repeatedly (or once for RTOS testing) 
-     */
-    virtual void TestApp(void) noexcept = 0; 
-};
+void DriverTestApp(void); 
 
 //=======================================================================================
 

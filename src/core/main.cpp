@@ -17,8 +17,6 @@
 
 #include "stm32f4xx_hal.h" 
 #include "driver_test_interface.h" 
-#include "includes_app.h"
-#include "includes_cpp_app.h" 
 
 //=======================================================================================
 
@@ -37,55 +35,6 @@
 #define TCK_GPIO_Port GPIOA
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GPIOB
-
-//=======================================================================================
-
-
-//=======================================================================================
-// Data 
-
-/**
- * @brief This is used when no driver test is selected by the user 
- */
-class NoTest final : public IDriverTestInterface 
-{
-public: 
-    // Constructor/Destructor 
-    NoTest() = default; 
-    ~NoTest() = default; 
-
-    // Delete copy constructor and assignment operator
-    NoTest(const NoTest &) = delete;
-    NoTest &operator=(const NoTest &) = delete;
-
-    // Delete move constructor and assignment operator
-    NoTest(NoTest &&) = delete;
-    NoTest &operator=(NoTest &&) = delete;
-
-    // Dummy initialization code - called once 
-    void TestInit(void) noexcept override {}
-
-    // Dummy application code - called repeatedly 
-    void TestApp(void) noexcept override {}
-};
-
-static NoTest no_test; 
-
-
-class DriverTestInterface 
-{
-public: 
-    // Reference to test object 
-    IDriverTestInterface &interface; 
-
-public: 
-    /**
-     * @brief Constructor 
-     * 
-     * @param test_object : reference to test object to inject 
-     */
-    DriverTestInterface(IDriverTestInterface &test_object) : interface(test_object) {}
-};
 
 //=======================================================================================
 
@@ -110,14 +59,6 @@ static void MX_GPIO_Init(void);
  */
 void Error_Handler(void);
 
-
-/**
- * @brief Return a reference to the test object - see hardware_config.h 
- * 
- * @return IDriverTestInterface& : reference to object to test 
- */
-IDriverTestInterface& DependencySelection(void); 
-
 //=======================================================================================
 
 
@@ -130,9 +71,6 @@ int main(void)
     // The order of the below function calls is important. Some stuff needs to be set up 
     // before other stuff can be set up. 
 
-    // Inject a driver test dependency into the code. 
-    DriverTestInterface driver_test(DependencySelection()); 
-
     // Reset of all peripherals, initialize the Flash interface, then initialize and set 
     // the time base source. 
     HAL_Init(); 
@@ -141,8 +79,7 @@ int main(void)
     SystemClock_Config(); 
 
     // Run application setup code 
-    ProjectInit(); 
-    driver_test.interface.TestInit(); 
+    DriverTestInit(); 
 
     // Initialize all configured peripherals 
     MX_GPIO_Init(); 
@@ -151,8 +88,7 @@ int main(void)
     // Infinite loop 
     while (1)
     {
-        ProjectApp(); 
-        driver_test.interface.TestApp(); 
+        DriverTestApp(); 
     }
 }
 
@@ -262,41 +198,5 @@ void assert_failed(uint8_t *file, uint32_t line)
 }
 
 #endif /* USE_FULL_ASSERT */
-
-
-// Return a reference to the test object 
-IDriverTestInterface& DependencySelection(void)
-{
-#if ACTIVE_OBJECT_TEST
-#elif CIRCULAR_BUFFER_TEST
-#elif DEAD_RECKONING_TEST
-    return dead_reckoning; 
-#elif FREERTOS_TEST
-#elif GPS_NAV_TEST
-#elif RC_TEST
-#elif STATE_MACHINE_TEST
-#elif SWITCH_DEBOUNCE_TEST
-#elif WHEEL_RPM_TEST
-#elif ESC_TEST
-#elif HC05_TEST
-#elif HD44780U_TEST
-#elif HW125_TEST
-#elif LSM303AGR_TEST
-#elif M8Q_TEST
-#elif MPU6050_TEST
-#elif NRF24L01_TEST
-#elif SIK_RADIO_TEST
-#elif WS2812_TEST
-#elif ANALOG_TEST
-#elif DMA_TEST
-#elif GPIO_TEST
-#elif IBUS_TEST
-#elif INTERRUPT_TEST
-#elif TIMERS_TEST
-#elif UART_TEST
-#else
-    return no_test; 
-#endif
-}
 
 //=======================================================================================

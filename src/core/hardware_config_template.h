@@ -69,50 +69,7 @@
 
 
 //=======================================================================================
-// Test selection 
-
-// These are used to select which test to run. Only one can be used at a time. 
-
 // Application tests 
-#define ACTIVE_OBJECT_TEST 0 
-#define CIRCULAR_BUFFER_TEST 0 
-#define DEAD_RECKONING_TEST 0 
-#define FREERTOS_TEST 0 
-#define GPS_NAV_TEST 0 
-#define RC_TEST 0 
-#define STATE_MACHINE_TEST 0 
-#define SWITCH_DEBOUNCE_TEST 0 
-#define WHEEL_RPM_TEST 0 
-
-// Device tests 
-#define ESC_TEST 0 
-#define HC05_TEST 0 
-#define HD44780U_TEST 0 
-#define HW125_TEST 0 
-#define LSM303AGR_TEST 0 
-#define M8Q_TEST 0 
-#define MPU6050_TEST 0 
-#define NRF24L01_TEST 0 
-#define SIK_RADIO_TEST 0 
-#define WS2812_TEST 0 
-
-// Peripheral tests 
-#define ANALOG_TEST 0 
-#define DMA_TEST 0 
-#define GPIO_TEST 0 
-#define IBUS_TEST 0 
-#define INTERRUPT_TEST 0 
-#define TIMERS_TEST 0 
-#define UART_TEST 0 
-
-//=======================================================================================
-
-
-//=======================================================================================
-// Application tests 
-
-// If one of the application tests is selected from above then the below can be used to 
-// configure the selected test. 
 
 // Active object 
 #define AO_CPP_TEST 0 
@@ -144,9 +101,6 @@
 
 //=======================================================================================
 // Device tests 
-
-// If one of the device tests is selected from above then the below can be used to 
-// configure the selected test. 
 
 // General 
 #define HD44780U_ON_I2C_BUS 0             // Turn HD44780U screen off if on the same I2C 
@@ -193,9 +147,6 @@
 
 //=======================================================================================
 // Peripheral tests 
-
-// If one of the peripheral tests is selected from above then the below can be used to 
-// configure the selected test. 
 
 // Analog driver test 
 #define ADC_MODE_0 0                     // Single read mode, scan mode disabled 

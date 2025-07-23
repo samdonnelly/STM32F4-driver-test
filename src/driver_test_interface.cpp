@@ -1,9 +1,9 @@
 /**
- * @file project_init.cpp
+ * @file driver_test_interface.cpp
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Project initialization code 
+ * @brief Driver test initialization and application code interface 
  * 
  * @version 0.1
  * @date 2023-07-20
@@ -16,7 +16,6 @@
 // Includes 
 
 #include "driver_test_interface.h" 
-#include "includes_app.h"
 
 //=======================================================================================
 
@@ -24,10 +23,17 @@
 //=======================================================================================
 // Functions 
 
-// Project initialization code - called once 
-void ProjectInit(void)
+// Driver test initialization code - called once 
+void DriverTestInit(void)
 {
-    // Project initialization code here 
+    // Driver test initialization code here 
+}
+
+
+// Driver test application code - called repeatedly 
+void DriverTestApp(void)
+{
+    // Driver test application code here 
 }
 
 //=======================================================================================

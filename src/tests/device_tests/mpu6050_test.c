@@ -65,7 +65,6 @@
 #define MPU6050_SMPLRT_DIV 0                // Sample Rate Divider 
 
 // Timing 
-#define MPU6050_DRIVER_ST_DELAY 10          // Delay (blocking) after self test (ms) 
 #define MPU6050_TEST_INT_COUNTER 0x07D0     // ARR=2000, (2000 counts)*(100us/count) = 200ms = 0.2s 
 
 // Data output 
@@ -231,7 +230,7 @@ void mpu6050_test_init()
 
 #endif   // MPU6050_INT_PIN 
 
-    // MPU6050 self-test 
+    // MPU-6050 self-test 
     mpu6050_data.imu1.status |= mpu6050_self_test(DEVICE_ONE, &mpu6050_data.imu1.st_result); 
 
     if (mpu6050_data.imu1.status != MPU6050_OK)
