@@ -15,10 +15,6 @@
 #ifndef _ACTIVE_OBJECT_TEST_H_ 
 #define _ACTIVE_OBJECT_TEST_H_ 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 //=======================================================================================
 // Functions 
 
@@ -34,9 +30,5 @@ void active_object_test_init(void);
 void active_object_test_app(void); 
 
 //=======================================================================================
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif   // _ACTIVE_OBJECT_TEST_H_ 

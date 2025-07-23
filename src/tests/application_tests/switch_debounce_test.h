@@ -15,6 +15,10 @@
 #ifndef _SWITCH_DEBOUNCE_TEST_H_ 
 #define _SWITCH_DEBOUNCE_TEST_H_ 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //=======================================================================================
 // Includes 
 
@@ -38,5 +42,9 @@ void switch_debounce_test_init(void);
 void switch_debounce_test_app(void); 
 
 //=======================================================================================
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif   // _SWITCH_DEBOUNCE_TEST_H_

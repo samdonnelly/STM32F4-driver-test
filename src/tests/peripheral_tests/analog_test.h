@@ -15,6 +15,10 @@
 #ifndef _ANALOG_TEST_H_
 #define _ANALOG_TEST_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //=======================================================================================
 // Includes 
 
@@ -38,5 +42,9 @@ void analog_test_init(void);
 void analog_test_app(void); 
 
 //=======================================================================================
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // _ANALOG_TEST_H_ 

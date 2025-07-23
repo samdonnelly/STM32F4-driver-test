@@ -15,6 +15,10 @@
 #ifndef _M8Q_TEST_H_
 #define _M8Q_TEST_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //=======================================================================================
 // Includes 
 
@@ -93,5 +97,9 @@ void m8q_test_1(void);
 void m8q_test_2(void); 
 
 //=======================================================================================
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // _M8Q_TEST_H_ 

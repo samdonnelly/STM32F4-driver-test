@@ -15,6 +15,10 @@
 #ifndef _UART_TEST_H_ 
 #define _UART_TEST_H_ 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //=======================================================================================
 // Includes 
 
@@ -38,5 +42,9 @@ void uart_test_init(void);
 void uart_test_app(void); 
 
 //=======================================================================================
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif   // _UART_TEST_H_ 

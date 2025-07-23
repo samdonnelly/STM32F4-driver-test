@@ -1,9 +1,9 @@
 /**
- * @file project_interface.h
+ * @file driver_test_interface.h
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Project initialization and application code interface 
+ * @brief Driver test initialization and application code interface 
  * 
  * @version 0.1
  * @date 2024-03-07
@@ -12,11 +12,11 @@
  * 
  */
 
-#ifndef _PROJECT_INTERFACE_H_ 
-#define _PROJECT_INTERFACE_H_ 
+#ifndef _DRIVER_TEST_INTERFACE_H_ 
+#define _DRIVER_TEST_INTERFACE_H_ 
 
 //=======================================================================================
-// Prototypes 
+// Driver test interface 
 
 /**
  * @brief Project initialization code - called once 
@@ -30,38 +30,38 @@ void ProjectInit(void);
 void ProjectApp(void); 
 
 
-class IProjectInterface 
+class IDriverTestInterface 
 {
 public: 
     /**
      * @brief Constructor 
      */
-    IProjectInterface() = default; 
+    IDriverTestInterface() = default; 
 
     /**
      * @brief Destructor 
      */
-    ~IProjectInterface() = default; 
+    ~IDriverTestInterface() = default; 
 
     // Delete copy constructor and assignment operator
-    IProjectInterface(const IProjectInterface &) = delete;
-    IProjectInterface &operator=(const IProjectInterface &) = delete;
+    IDriverTestInterface(const IDriverTestInterface &) = delete;
+    IDriverTestInterface &operator=(const IDriverTestInterface &) = delete;
 
     // Delete move constructor and assignment operator
-    IProjectInterface(IProjectInterface &&) = delete;
-    IProjectInterface &operator=(IProjectInterface &&) = delete;
+    IDriverTestInterface(IDriverTestInterface &&) = delete;
+    IDriverTestInterface &operator=(IDriverTestInterface &&) = delete;
 
     /**
      * @brief Initialization code - called once 
      */
-    virtual void ProjectInit(void) noexcept = 0; 
+    virtual void TestInit(void) noexcept = 0; 
 
     /**
      * @brief Application code - called repeatedly (or once for RTOS testing) 
      */
-    virtual void ProjectApp(void) noexcept = 0; 
+    virtual void TestApp(void) noexcept = 0; 
 };
 
 //=======================================================================================
 
-#endif   // _PROJECT_INTERFACE_H_ 
+#endif   // _DRIVER_TEST_INTERFACE_H_ 

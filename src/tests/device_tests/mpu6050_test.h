@@ -15,6 +15,10 @@
 #ifndef _MPU6050_TEST_H_
 #define _MPU6050_TEST_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //=======================================================================================
 // Includes 
 
@@ -38,5 +42,9 @@ void mpu6050_test_init(void);
 void mpu6050_test_app(void); 
 
 //=======================================================================================
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // _MPU6050_TEST_H_ 

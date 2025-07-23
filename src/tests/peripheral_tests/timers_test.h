@@ -15,6 +15,10 @@
 #ifndef _TIMERS_TEST_H_
 #define _TIMERS_TEST_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //=======================================================================================
 // Includes 
 
@@ -38,5 +42,9 @@ void timers_test_init(void);
 void timers_test_app(void); 
 
 //=======================================================================================
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // _TIMERS_TEST_H_ 

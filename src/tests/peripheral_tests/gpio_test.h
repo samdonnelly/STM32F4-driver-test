@@ -15,6 +15,10 @@
 #ifndef _GPIO_TEST_H_ 
 #define _GPIO_TEST_H_ 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //=======================================================================================
 // Includes 
 
@@ -38,5 +42,9 @@ void gpio_test_init(void);
 void gpio_test_app(void); 
 
 //=======================================================================================
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif   // _GPIO_TEST_H_ 

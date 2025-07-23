@@ -1,7 +1,7 @@
 /**
  * @file dead_reckoning_test.h
  * 
- * @author your name (you@domain.com)
+ * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
  * @brief Dead reckoning test interface 
  * 
@@ -12,14 +12,14 @@
  * 
  */
 
-#ifndef _DEAD_RECKONING_H_ 
-#define _DEAD_RECKONING_H_ 
+#ifndef _DEAD_RECKONING_TEST_H_ 
+#define _DEAD_RECKONING_TEST_H_ 
 
 //=======================================================================================
 // Includes 
 
-#include "project.h" 
-// #include "includes_drivers.h" 
+#include "driver_test_interface.h" 
+#include "includes_drivers.h" 
 
 //=======================================================================================
 
@@ -27,7 +27,7 @@
 //=======================================================================================
 // Test data and interface 
 
-class DeadReckoningTest final : public IProjectInterface 
+class DeadReckoningTest final : public IDriverTestInterface 
 {
 public: 
     /**
@@ -51,16 +51,16 @@ public:
     /**
      * @brief Initialization code - called once 
      */
-    void ProjectInit(void) noexcept override; 
+    void TestInit(void) noexcept override; 
 
     /**
      * @brief Application code - called repeatedly 
      */
-    void ProjectApp(void) noexcept override; 
+    void TestApp(void) noexcept override; 
 };
 
-DeadReckoningTest dead_reckoning; 
+extern DeadReckoningTest dead_reckoning; 
 
 //=======================================================================================
 
-#endif   // _DEAD_RECKONING_H_ 
+#endif   // _DEAD_RECKONING_TEST_H_ 

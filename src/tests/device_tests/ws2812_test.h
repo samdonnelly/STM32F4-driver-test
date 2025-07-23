@@ -15,6 +15,10 @@
 #ifndef _WS2812_TEST_H_ 
 #define _WS2812_TEST_H_ 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //=======================================================================================
 // Includes 
 
@@ -38,5 +42,9 @@ void ws2812_test_init(void);
 void ws2812_test_app(void); 
 
 //=======================================================================================
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif   // _WS2812_TEST_H_

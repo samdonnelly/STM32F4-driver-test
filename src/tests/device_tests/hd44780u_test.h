@@ -15,6 +15,10 @@
 #ifndef _HD44780U_TEST_H_
 #define _HD44780U_TEST_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //=======================================================================================
 // Includes 
 
@@ -161,5 +165,9 @@ void hd44780u_test_init(void);
 void hd44780u_test_app(void); 
 
 //=======================================================================================
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // _HD44780U_TEST_H_ 

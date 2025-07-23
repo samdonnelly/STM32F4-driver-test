@@ -15,10 +15,6 @@
 #ifndef _RC_TEST_H_ 
 #define _RC_TEST_H_ 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 //=======================================================================================
 // Includes 
 
@@ -42,9 +38,5 @@ void rc_test_init(void);
 void rc_test_app(void); 
 
 //=======================================================================================
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif   // _RC_TEST_H_ 

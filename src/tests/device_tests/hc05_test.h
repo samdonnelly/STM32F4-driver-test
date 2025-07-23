@@ -15,6 +15,10 @@
 #ifndef _HC05_TEST_H_
 #define _HC05_TEST_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //=======================================================================================
 // Includes 
 
@@ -99,5 +103,9 @@ void hc05_test_init(void);
 void hc05_test_app(void); 
 
 //=======================================================================================
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // _HC05_TEST_H_ 

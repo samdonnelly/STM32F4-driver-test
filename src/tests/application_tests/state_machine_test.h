@@ -15,6 +15,10 @@
 #ifndef _STATE_MACHINE_TEST_H_ 
 #define _STATE_MACHINE_TEST_H_ 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //================================================================================
 // Includes 
 
@@ -230,5 +234,9 @@ void state_machine_test(
     uint32_t *set_get_status); 
 
 //=======================================================================================
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif   // _STATE_MACHINE_TEST_H_

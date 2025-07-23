@@ -15,6 +15,10 @@
 #ifndef _INTERRUPT_TEST_H_
 #define _INTERRUPT_TEST_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //=======================================================================================
 // Includes 
 
@@ -38,5 +42,9 @@ void int_test_init(void);
 void int_test_app(void); 
 
 //=======================================================================================
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif   // _INTERRUPT_TEST_H_

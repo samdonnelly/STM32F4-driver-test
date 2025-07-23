@@ -1,7 +1,7 @@
 /**
  * @file dead_reckoning_test.cpp
  * 
- * @author your name (you@domain.com)
+ * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
  * @brief Dead reckoning test 
  * 
@@ -21,9 +21,17 @@
 
 
 //=======================================================================================
+// Data 
+
+DeadReckoningTest dead_reckoning; 
+
+//=======================================================================================
+
+
+//=======================================================================================
 // Setup 
 
-void DeadReckoningTest::ProjectInit(void)
+void DeadReckoningTest::TestInit(void)
 {
     // 
 }
@@ -34,7 +42,7 @@ void DeadReckoningTest::ProjectInit(void)
 //=======================================================================================
 // Application 
 
-void DeadReckoningTest::ProjectApp(void)
+void DeadReckoningTest::TestApp(void)
 {
     // 
 }

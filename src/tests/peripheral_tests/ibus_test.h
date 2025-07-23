@@ -15,6 +15,10 @@
 #ifndef _IBUS_TEST_H_ 
 #define _IBUS_TEST_H_ 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //=======================================================================================
 // Includes 
 
@@ -38,5 +42,9 @@ void ibus_test_init(void);
 void ibus_test_app(void); 
 
 //=======================================================================================
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif   // _IBUS_TEST_H_ 
