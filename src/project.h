@@ -16,17 +16,6 @@
 #define _PROJECT_INTERFACE_H_ 
 
 //=======================================================================================
-// Includes 
-
-#include "includes_app.h"
-#include "includes_cpp_app.h"
-#include "includes_drivers.h"
-#include "includes_cpp_drivers.h"
-
-//=======================================================================================
-
-
-//=======================================================================================
 // Prototypes 
 
 /**
@@ -44,25 +33,33 @@ void ProjectApp(void);
 class IProjectInterface 
 {
 public: 
-    // Constructor/Destructor 
+    /**
+     * @brief Constructor 
+     */
     IProjectInterface() = default; 
+
+    /**
+     * @brief Destructor 
+     */
     ~IProjectInterface() = default; 
 
-    // Initialization code - called once 
-    virtual void ProjectInit(void) = 0; 
+    // Delete copy constructor and assignment operator
+    IProjectInterface(const IProjectInterface &) = delete;
+    IProjectInterface &operator=(const IProjectInterface &) = delete;
 
-    // Application code - called repeatedly (or once for RTOS testing) 
-    virtual void ProjectApp(void) = 0; 
-};
+    // Delete move constructor and assignment operator
+    IProjectInterface(IProjectInterface &&) = delete;
+    IProjectInterface &operator=(IProjectInterface &&) = delete;
 
+    /**
+     * @brief Initialization code - called once 
+     */
+    virtual void ProjectInit(void) noexcept = 0; 
 
-class ProjectInterface 
-{
-public: 
-    IProjectInterface &project; 
-
-public: 
-    ProjectInterface(IProjectInterface &interface) : project(interface) {}
+    /**
+     * @brief Application code - called repeatedly (or once for RTOS testing) 
+     */
+    virtual void ProjectApp(void) noexcept = 0; 
 };
 
 //=======================================================================================

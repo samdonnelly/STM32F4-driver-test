@@ -15,15 +15,13 @@
 #ifndef _INCLUDES_APP_H_
 #define _INCLUDES_APP_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 //=======================================================================================
 // Includes 
 
 // Application test code 
 #include "freertos_test.h" 
+#include "state_machine_test.h" 
+#include "switch_debounce_test.h" 
 #include "wheel_rpm_test.h" 
 
 // Device test code 
@@ -46,14 +44,6 @@ extern "C" {
 #include "timers_test.h" 
 #include "uart_test.h" 
 
-// Tools test code 
-#include "state_machine_test.h" 
-#include "switch_debounce_test.h" 
-
 //=======================================================================================
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif  // _INCLUDES_APP_H_

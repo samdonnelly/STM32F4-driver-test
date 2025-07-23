@@ -15,12 +15,10 @@
 //=======================================================================================
 // Includes 
 
-// Library 
 #include "stm32f4xx_hal.h" 
-#include "tools.h" 
-
-// Application 
 #include "project.h" 
+#include "includes_app.h"
+#include "includes_cpp_app.h"
 
 //=======================================================================================
 
@@ -39,6 +37,21 @@
 #define TCK_GPIO_Port GPIOA
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GPIOB
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Data 
+
+class ProjectInterface 
+{
+public: 
+    IProjectInterface &project; 
+
+public: 
+    ProjectInterface(IProjectInterface &interface) : project(interface) {}
+};
 
 //=======================================================================================
 
@@ -67,9 +80,9 @@ void Error_Handler(void);
 /**
  * @brief 
  * 
- * @return auto& 
+ * @return IProjectInterface& 
  */
-auto& DependencySelection(void); 
+IProjectInterface& DependencySelection(void); 
 
 //=======================================================================================
 
@@ -83,7 +96,8 @@ int main(void)
     // The order of the below function calls is important. Some stuff needs to be set up 
     // before other stuff can be set up. 
 
-    ProjectInterface project(DependencySelection()); 
+    // IProjectInterface& test_obj = DependencySelection(); 
+    // ProjectInterface project(DependencySelection()); 
 
     // Reset of all peripherals, initialize the Flash interface, then initialize and set 
     // the time base source. 
@@ -94,7 +108,7 @@ int main(void)
 
     // Run application setup code 
     ProjectInit(); 
-    project.project.ProjectInit(); 
+    // project.project.ProjectInit(); 
 
     // Initialize all configured peripherals 
     MX_GPIO_Init(); 
@@ -104,7 +118,7 @@ int main(void)
     while (1)
     {
         ProjectApp(); 
-        project.project.ProjectApp(); 
+        // project.project.ProjectApp(); 
     }
 }
 
@@ -119,8 +133,8 @@ void SystemClock_Config(void)
 {
     RCC_OscInitTypeDef RCC_OscInitStruct; 
     RCC_ClkInitTypeDef RCC_ClkInitStruct; 
-    memset((void *)&RCC_OscInitStruct, CLEAR, sizeof(RCC_OscInitTypeDef)); 
-    memset((void *)&RCC_ClkInitStruct, CLEAR, sizeof(RCC_ClkInitTypeDef)); 
+    memset((void *)&RCC_OscInitStruct, 0, sizeof(RCC_OscInitTypeDef)); 
+    memset((void *)&RCC_ClkInitStruct, 0, sizeof(RCC_ClkInitTypeDef)); 
 
     // Configure the main internal regulator output voltage 
     __HAL_RCC_PWR_CLK_ENABLE(); 
@@ -162,7 +176,7 @@ void SystemClock_Config(void)
 static void MX_GPIO_Init(void)
 {
     GPIO_InitTypeDef GPIO_InitStruct; 
-    memset((void *)&GPIO_InitStruct, CLEAR, sizeof(GPIO_InitTypeDef)); 
+    memset((void *)&GPIO_InitStruct, 0, sizeof(GPIO_InitTypeDef)); 
 
     // GPIO Ports Clock Enable 
     __HAL_RCC_GPIOC_CLK_ENABLE(); 
@@ -217,10 +231,9 @@ void assert_failed(uint8_t *file, uint32_t line)
 
 
 
-auto& DependencySelection(void)
-{
-    IProjectInterface &interface = dead_reckoning_test; 
-    return interface; 
-}
+// IProjectInterface& DependencySelection(void)
+// {
+//     return dead_reckoning; 
+// }
 
 //=======================================================================================

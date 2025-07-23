@@ -18,27 +18,48 @@
 //=======================================================================================
 // Includes 
 
-// #include "project.h" 
+#include "project.h" 
+// #include "includes_drivers.h" 
 
 //=======================================================================================
 
 
 //=======================================================================================
-// 
-
-class IProjectInterface; 
+// Test data and interface 
 
 class DeadReckoningTest final : public IProjectInterface 
 {
 public: 
-    // 
-    void ProjectInit(void) override; 
+    /**
+     * @brief Constructor 
+     */
+    DeadReckoningTest() = default; 
 
-    // 
-    void ProjectApp(void) override; 
+    /**
+     * @brief Destructor 
+     */
+    ~DeadReckoningTest() = default; 
+
+    // Delete copy constructor and assignment operator
+    DeadReckoningTest(const DeadReckoningTest &) = delete;
+    DeadReckoningTest &operator=(const DeadReckoningTest &) = delete;
+
+    // Delete move constructor and assignment operator
+    DeadReckoningTest(DeadReckoningTest &&) = delete;
+    DeadReckoningTest &operator=(DeadReckoningTest &&) = delete;
+
+    /**
+     * @brief Initialization code - called once 
+     */
+    void ProjectInit(void) noexcept override; 
+
+    /**
+     * @brief Application code - called repeatedly 
+     */
+    void ProjectApp(void) noexcept override; 
 };
 
-DeadReckoningTest &dead_reckoning_test; 
+DeadReckoningTest dead_reckoning; 
 
 //=======================================================================================
 
