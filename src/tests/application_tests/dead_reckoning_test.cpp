@@ -43,6 +43,14 @@ public:
      */
     ~DeadReckoningTest() = default;
 
+    // Delete copy constructor and assignment operator
+    DeadReckoningTest(const DeadReckoningTest &) = delete;
+    DeadReckoningTest &operator=(const DeadReckoningTest &) = delete;
+
+    // Delete move constructor and assignment operator
+    DeadReckoningTest(DeadReckoningTest &&) = delete;
+    DeadReckoningTest &operator=(DeadReckoningTest &&) = delete;
+
 public:
     // Peripherals 
     USART_TypeDef *uart; 
