@@ -26,43 +26,10 @@
 //=======================================================================================
 // Test data 
 
+DeadReckoningTest dead_reckoning; 
+
 // Timing 
-static constexpr uint16_t interrupt_counter = 0x07D0;   // ARR=2000, (2000 counts)*(100us/count) = 200ms = 0.2s 
-
-
-class DeadReckoningTest final
-{
-public: 
-    /**
-     * @brief Constructor 
-     */
-    DeadReckoningTest() = default;
-
-    /**
-     * @brief Destructor 
-     */
-    ~DeadReckoningTest() = default;
-
-    // Delete copy constructor and assignment operator
-    DeadReckoningTest(const DeadReckoningTest &) = delete;
-    DeadReckoningTest &operator=(const DeadReckoningTest &) = delete;
-
-    // Delete move constructor and assignment operator
-    DeadReckoningTest(DeadReckoningTest &&) = delete;
-    DeadReckoningTest &operator=(DeadReckoningTest &&) = delete;
-
-public:
-    // Peripherals 
-    USART_TypeDef *uart; 
-    I2C_TypeDef *i2c; 
-    TIM_TypeDef *tim_periodic; 
-
-    // IMU data 
-    uint8_t st_result; 
-    MPU6050_STATUS status; 
-};
-
-static DeadReckoningTest dead_reckoning; 
+static constexpr uint16_t interrupt_counter = 0x03E8;   // ARR=1000, (1000 counts)*(100us/count) = 100ms = 0.1s 
 
 //=======================================================================================
 
@@ -70,15 +37,18 @@ static DeadReckoningTest dead_reckoning;
 //=======================================================================================
 // Setup 
 
-void DeadReckoningTestInit(void)
+DeadReckoningTest::DeadReckoningTest()
+    : uart(USART2),
+      i2c(I2C1),
+      tim_periodic(TIM10),
+      device_num(DEVICE_ONE),
+      st_result(CLEAR),
+      status(MPU6050_OK)
 {
-    // Set class data 
-    dead_reckoning.uart = USART2; 
-    dead_reckoning.i2c = I2C1; 
-    dead_reckoning.tim_periodic = TIM10; 
-    dead_reckoning.st_result = CLEAR; 
-    dead_reckoning.status = MPU6050_OK; 
+}
 
+void DeadReckoningTest::TestInit(void)
+{
     // Initialize GPIO ports 
     gpio_port_init(); 
 
@@ -121,7 +91,7 @@ void DeadReckoningTestInit(void)
     
     // MPU-6050 driver initialization 
     dead_reckoning.status |= mpu6050_init(
-        DEVICE_ONE, 
+        dead_reckoning.device_num, 
         dead_reckoning.i2c, 
         MPU6050_ADDR_1,
         standby_mask, 
@@ -131,11 +101,11 @@ void DeadReckoningTestInit(void)
         MPU6050_FS_SEL_500);
 
     // MPU-6050 self-test 
-    dead_reckoning.status |= mpu6050_self_test(DEVICE_ONE, &dead_reckoning.st_result); 
+    dead_reckoning.status |= mpu6050_self_test(dead_reckoning.device_num, &dead_reckoning.st_result); 
 
     if (dead_reckoning.status != MPU6050_OK)
     {
-        // 
+        dead_reckoning.IMUFault(); 
     }
 }
 
@@ -145,7 +115,31 @@ void DeadReckoningTestInit(void)
 //=======================================================================================
 // Application 
 
-void DeadReckoningTestApp(void)
+void DeadReckoningTest::TestApp(void)
+{
+    // Periodically update IMU data 
+    if (handler_flags.tim1_up_tim10_glbl_flag)
+    {
+        handler_flags.tim1_up_tim10_glbl_flag = CLEAR; 
+
+        // Read the latest IMU data 
+        dead_reckoning.status |= mpu6050_update(dead_reckoning.device_num); 
+
+        // Check the IMU for faults 
+        if (dead_reckoning.status != MPU6050_OK)
+        {
+            dead_reckoning.IMUFault(); 
+        }
+    }
+}
+
+//=======================================================================================
+
+
+//=======================================================================================
+// Test functions 
+
+void DeadReckoningTest::IMUFault(void)
 {
     // 
 }

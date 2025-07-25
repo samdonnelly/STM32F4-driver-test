@@ -18,16 +18,57 @@
 //=======================================================================================
 // Prototypes 
 
-/**
- * @brief Dead reckoning test initialization and setup code 
- */
-void DeadReckoningTestInit(void); 
+class DeadReckoningTest final
+{
+public: 
+    
+    /**
+     * @brief Constructor 
+     */
+    DeadReckoningTest();
 
+    /**
+     * @brief Destructor 
+     */
+    ~DeadReckoningTest() = default;
 
-/**
- * @brief Dead reckoning test application code 
- */
-void DeadReckoningTestApp(void); 
+    // Delete copy constructor and assignment operator
+    DeadReckoningTest(const DeadReckoningTest &) = delete;
+    DeadReckoningTest &operator=(const DeadReckoningTest &) = delete;
+
+    // Delete move constructor and assignment operator
+    DeadReckoningTest(DeadReckoningTest &&) = delete;
+    DeadReckoningTest &operator=(DeadReckoningTest &&) = delete;
+
+    /**
+     * @brief Dead reckoning test initialization and setup code 
+     */
+    void TestInit(void); 
+
+    /**
+     * @brief Dead reckoning test application code 
+     */
+    void TestApp(void); 
+
+private: 
+
+    /**
+     * @brief Fault state for the IMU 
+     */
+    void IMUFault(void); 
+    
+    // Peripherals 
+    USART_TypeDef *uart; 
+    I2C_TypeDef *i2c; 
+    TIM_TypeDef *tim_periodic; 
+
+    // IMU data 
+    device_number_t device_num; 
+    uint8_t st_result; 
+    MPU6050_STATUS status; 
+};
+
+extern DeadReckoningTest dead_reckoning; 
 
 //=======================================================================================
 
