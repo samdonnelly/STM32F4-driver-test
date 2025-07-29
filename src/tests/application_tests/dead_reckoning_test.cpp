@@ -89,7 +89,7 @@ void DeadReckoningTest::TestInit(void)
     int_handler_init(); 
     nvic_config(TIM1_UP_TIM10_IRQn, EXTI_PRIORITY_0); 
     
-    // MPU-6050 driver initialization 
+    // Initialization the device 
     dead_reckoning.status |= mpu6050_init(
         dead_reckoning.device_num, 
         dead_reckoning.i2c, 
@@ -100,8 +100,11 @@ void DeadReckoningTest::TestInit(void)
         MPU6050_AFS_SEL_4,
         MPU6050_FS_SEL_500);
 
-    // MPU-6050 self-test 
+    // Run a self-test 
     dead_reckoning.status |= mpu6050_self_test(dead_reckoning.device_num, &dead_reckoning.st_result); 
+
+    // Set the device offsets to calibrate the readings 
+    dead_reckoning.status |= mpu6050_set_offsets(dead_reckoning.device_num, accel_offsets, gyro_offsets); 
 
     if (dead_reckoning.status != MPU6050_OK)
     {

@@ -58,8 +58,10 @@ extern const char m8q_config_pkt_0[M8Q_CONFIG_NUM_MSG_PKT_0][M8Q_CONFIG_MAX_LEN_
 //=======================================================================================
 // MPU-6050 
 
-extern const uint8_t standby_mask;           // Axis standby status mask 
-extern const uint8_t sample_rate_divider;    // Sample Rate Divider 
+extern const uint8_t standby_mask;              // Axis standby status mask 
+extern const uint8_t sample_rate_divider;       // Sample Rate Divider 
+extern const int16_t accel_offsets[NUM_AXES];   // Accelerometer axis offsets 
+extern const int16_t gyro_offsets[NUM_AXES];    // Gyroscope axis offsets 
 
 //=======================================================================================
 

@@ -51,6 +51,7 @@
 // Includes 
 
 #include "mpu6050_test.h" 
+#include "device_config.h"
 #include "stm32f4xx_it.h" 
 
 //=======================================================================================
@@ -79,10 +80,11 @@
 
 typedef struct mpu6050_test_imu_data_s
 {
+    device_number_t device_num; 
+    MPU6050_STATUS status; 
+    uint8_t st_result; 
     int16_t temp_raw, accel_raw[NUM_AXES], gyro_raw[NUM_AXES]; 
     float temp, accel[NUM_AXES], gyro[NUM_AXES]; 
-    uint8_t st_result; 
-    MPU6050_STATUS status; 
 }
 mpu6050_test_imu_data_t; 
 
@@ -147,25 +149,27 @@ void mpu6050_test_init()
     memset((void *)mpu6050_data.output_formatted, CLEAR, sizeof(mpu6050_data.output_formatted)); 
     mpu6050_data.cursor_lines = MPU6050_TEST_OUTPUT_LINES + MPU6050_TEST_OUTPUT_LINES*MPU6050_SECOND_DEVICE; 
 
+    mpu6050_data.imu1.device_num = DEVICE_ONE; 
+    mpu6050_data.imu1.status = MPU6050_OK; 
+    mpu6050_data.imu1.st_result = CLEAR; 
     mpu6050_data.imu1.temp_raw = CLEAR; 
     memset((void *)mpu6050_data.imu1.accel_raw, CLEAR, sizeof(mpu6050_data.imu1.accel_raw)); 
     memset((void *)mpu6050_data.imu1.gyro_raw, CLEAR, sizeof(mpu6050_data.imu1.gyro_raw)); 
     mpu6050_data.imu1.temp = CLEAR; 
     memset((void *)mpu6050_data.imu1.accel, CLEAR, sizeof(mpu6050_data.imu1.accel)); 
     memset((void *)mpu6050_data.imu1.gyro, CLEAR, sizeof(mpu6050_data.imu1.gyro)); 
-    mpu6050_data.imu1.st_result = CLEAR; 
-    mpu6050_data.imu1.status = MPU6050_OK; 
 
 #if MPU6050_SECOND_DEVICE 
 
+    mpu6050_data.imu1.device_num = DEVICE_TWO; 
+    mpu6050_data.imu2.status = MPU6050_OK; 
+    mpu6050_data.imu2.st_result = CLEAR; 
     mpu6050_data.imu2.temp_raw = CLEAR; 
     memset((void *)mpu6050_data.imu2.accel_raw, CLEAR, sizeof(mpu6050_data.imu2.accel_raw)); 
     memset((void *)mpu6050_data.imu2.gyro_raw, CLEAR, sizeof(mpu6050_data.imu2.gyro_raw)); 
     mpu6050_data.imu2.temp = CLEAR; 
     memset((void *)mpu6050_data.imu2.accel, CLEAR, sizeof(mpu6050_data.imu2.accel)); 
     memset((void *)mpu6050_data.imu2.gyro, CLEAR, sizeof(mpu6050_data.imu2.gyro)); 
-    mpu6050_data.imu2.st_result = CLEAR; 
-    mpu6050_data.imu2.status = MPU6050_OK; 
 
 #endif   // MPU6050_SECOND_DEVICE 
 
@@ -212,9 +216,9 @@ void mpu6050_test_init()
     //===================================================
     // MPU-6050 initialization and setup 
     
-    // Initialize the accelerometer 
+    // Initialize the device 
     mpu6050_data.imu1.status |= mpu6050_init(
-        DEVICE_ONE, 
+        mpu6050_data.imu1.device_num, 
         mpu6050_data.i2c, 
         MPU6050_ADDR_1,
         MPU6050_DEV1_STBY_MASK, 
@@ -230,8 +234,11 @@ void mpu6050_test_init()
 
 #endif   // MPU6050_INT_PIN 
 
-    // MPU-6050 self-test 
-    mpu6050_data.imu1.status |= mpu6050_self_test(DEVICE_ONE, &mpu6050_data.imu1.st_result); 
+    // Run a self-test 
+    mpu6050_data.imu1.status |= mpu6050_self_test(mpu6050_data.imu1.device_num, &mpu6050_data.imu1.st_result); 
+
+    // Set the device offsets to calibrate the readings 
+    mpu6050_data.imu1.status |= mpu6050_set_offsets(mpu6050_data.imu1.device_num, accel_offsets, gyro_offsets); 
 
     if (mpu6050_data.imu1.status != MPU6050_OK)
     {
@@ -240,9 +247,9 @@ void mpu6050_test_init()
 
 #if MPU6050_SECOND_DEVICE 
 
-    // Initialize the second accelerometer 
+    // Initialize the second device 
     mpu6050_data.imu2.status |= mpu6050_init(
-        DEVICE_TWO, 
+        mpu6050_data.imu2.device_num, 
         mpu6050_data.i2c, 
         MPU6050_ADDR_2,
         MPU6050_DEV2_STBY_MASK, 
@@ -251,8 +258,11 @@ void mpu6050_test_init()
         MPU6050_AFS_SEL_4,
         MPU6050_FS_SEL_500);
 
-    // MPU6050 self-test 
-    mpu6050_data.imu2.status |= mpu6050_self_test(DEVICE_TWO, &mpu6050_data.imu2.st_result); 
+    // Run a self-test 
+    mpu6050_data.imu2.status |= mpu6050_self_test(mpu6050_data.imu2.device_num, &mpu6050_data.imu2.st_result); 
+
+    // Set the device offsets to calibrate the readings 
+    mpu6050_data.imu1.status |= mpu6050_set_offsets(mpu6050_data.imu2.device_num, accel_offsets, gyro_offsets); 
 
     if (mpu6050_data.imu2.status != MPU6050_OK)
     {
@@ -281,11 +291,11 @@ void mpu6050_test_app()
         uart_cursor_move(mpu6050_data.uart, UART_CURSOR_UP, mpu6050_data.cursor_lines); 
         uart_send_str(mpu6050_data.uart, "\r"); 
 
-        mpu6050_test_read_format_output(DEVICE_ONE, mpu6050_data.imu1); 
+        mpu6050_test_read_format_output(mpu6050_data.imu1.device_num, mpu6050_data.imu1); 
 
 #if MPU6050_SECOND_DEVICE 
 
-        mpu6050_test_read_format_output(DEVICE_TWO, mpu6050_data.imu2); 
+        mpu6050_test_read_format_output(mpu6050_data.imu2.device_num, mpu6050_data.imu2); 
 
 #endif   // MPU6050_SECOND_DEVICE 
     }
