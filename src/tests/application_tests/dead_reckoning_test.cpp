@@ -28,8 +28,8 @@
 
 DeadReckoningTest dead_reckoning; 
 
-// Timing 
 static constexpr uint16_t interrupt_counter = 0x03E8;   // ARR=1000, (1000 counts)*(100us/count) = 100ms = 0.1s 
+static constexpr uint8_t max_msg_len = 100; 
 
 //=======================================================================================
 
@@ -144,7 +144,23 @@ void DeadReckoningTest::TestApp(void)
 
 void DeadReckoningTest::IMUFault(void)
 {
-    // 
+    char fault_msg[max_msg_len]; 
+    snprintf(fault_msg, max_msg_len, "\r\nFault Code: %lu", dead_reckoning.status); 
+    uart_send_str(dead_reckoning.uart, fault_msg); 
+    while(TRUE); 
+}
+
+
+// Estimate the heading, velocity and position using data from the IMU 
+void DeadReckoningTest::DeadReckoning(void)
+{
+    // Estimate the heading with the gyroscope and time between samples and keep it 
+    // within acceptable bounds (0-360 degrees). 
+
+    // Rotate the accelerometer data to find the acceleration in the NED frame. 
+
+    // Integrate the NED acceleration using the sample interval to estimate the velocity 
+    // then do that again to estimate the position. 
 }
 
 //=======================================================================================

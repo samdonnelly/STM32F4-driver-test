@@ -16,6 +16,14 @@
 #define _DEAD_RECKONING_TEST_H_ 
 
 //=======================================================================================
+// Includes 
+
+#include "includes_drivers.h"
+
+//=======================================================================================
+
+
+//=======================================================================================
 // Prototypes 
 
 class DeadReckoningTest final
@@ -55,7 +63,12 @@ private:
     /**
      * @brief Fault state for the IMU 
      */
-    void IMUFault(void); 
+    void IMUFault(void);
+
+    /**
+     * @brief Estimate the heading, velocity and position using data from the IMU 
+     */
+    void DeadReckoning(void);
     
     // Peripherals 
     USART_TypeDef *uart; 

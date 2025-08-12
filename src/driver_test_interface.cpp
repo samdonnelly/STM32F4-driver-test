@@ -27,6 +27,7 @@
 void DriverTestInit(void)
 {
     // Driver test initialization code here 
+    dead_reckoning.TestInit(); 
 }
 
 
@@ -34,6 +35,7 @@ void DriverTestInit(void)
 void DriverTestApp(void)
 {
     // Driver test application code here 
+    dead_reckoning.TestApp(); 
 }
 
 //=======================================================================================
