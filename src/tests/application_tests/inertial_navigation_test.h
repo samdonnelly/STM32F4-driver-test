@@ -1,9 +1,9 @@
 /**
- * @file dead_reckoning_test.h
+ * @file inertial_navigation_test.h
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Dead reckoning test interface 
+ * @brief Inertial navigation test interface 
  * 
  * @version 0.1
  * @date 2025-07-22
@@ -12,8 +12,8 @@
  * 
  */
 
-#ifndef _DEAD_RECKONING_TEST_H_ 
-#define _DEAD_RECKONING_TEST_H_ 
+#ifndef _INERTIAL_NAVIGATION_TEST_H_ 
+#define _INERTIAL_NAVIGATION_TEST_H_ 
 
 //=======================================================================================
 // Includes 
@@ -26,27 +26,27 @@
 //=======================================================================================
 // Prototypes 
 
-class DeadReckoningTest final
+class InertialNavigationTest final
 {
 public: 
     
     /**
      * @brief Constructor 
      */
-    DeadReckoningTest();
+    InertialNavigationTest();
 
     /**
      * @brief Destructor 
      */
-    ~DeadReckoningTest() = default;
+    ~InertialNavigationTest() = default;
 
     // Delete copy constructor and assignment operator
-    DeadReckoningTest(const DeadReckoningTest &) = delete;
-    DeadReckoningTest &operator=(const DeadReckoningTest &) = delete;
+    InertialNavigationTest(const InertialNavigationTest &) = delete;
+    InertialNavigationTest &operator=(const InertialNavigationTest &) = delete;
 
     // Delete move constructor and assignment operator
-    DeadReckoningTest(DeadReckoningTest &&) = delete;
-    DeadReckoningTest &operator=(DeadReckoningTest &&) = delete;
+    InertialNavigationTest(InertialNavigationTest &&) = delete;
+    InertialNavigationTest &operator=(InertialNavigationTest &&) = delete;
 
     /**
      * @brief Dead reckoning test initialization and setup code 
@@ -68,7 +68,7 @@ private:
     /**
      * @brief Estimate the heading, velocity and position using data from the IMU 
      */
-    void DeadReckoning(void);
+    void InertialNavCalcs(void);
     
     // Peripherals 
     USART_TypeDef *uart; 
@@ -81,8 +81,8 @@ private:
     MPU6050_STATUS status; 
 };
 
-extern DeadReckoningTest dead_reckoning; 
+extern InertialNavigationTest inertial_navigation; 
 
 //=======================================================================================
 
-#endif   // _DEAD_RECKONING_TEST_H_ 
+#endif   // _INERTIAL_NAVIGATION_TEST_H_ 

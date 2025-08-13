@@ -1,9 +1,9 @@
 /**
- * @file dead_reckoning_test.cpp
+ * @file inertial_navigation.cpp
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Dead reckoning test 
+ * @brief Inertial navigation test 
  * 
  * @version 0.1
  * @date 2025-07-22
@@ -15,7 +15,7 @@
 //=======================================================================================
 // Includes 
 
-#include "dead_reckoning_test.h"
+#include "inertial_navigation_test.h"
 #include "device_config.h"
 #include "stm32f4xx_it.h"
 #include "includes_drivers.h"
@@ -26,7 +26,7 @@
 //=======================================================================================
 // Test data 
 
-DeadReckoningTest dead_reckoning; 
+InertialNavigationTest inertial_navigation; 
 
 static constexpr uint16_t interrupt_counter = 0x03E8;   // ARR=1000, (1000 counts)*(100us/count) = 100ms = 0.1s 
 static constexpr uint8_t max_msg_len = 100; 
@@ -37,7 +37,7 @@ static constexpr uint8_t max_msg_len = 100;
 //=======================================================================================
 // Setup 
 
-DeadReckoningTest::DeadReckoningTest()
+InertialNavigationTest::InertialNavigationTest()
     : uart(USART2),
       i2c(I2C1),
       tim_periodic(TIM10),
@@ -47,22 +47,22 @@ DeadReckoningTest::DeadReckoningTest()
 {
 }
 
-void DeadReckoningTest::TestInit(void)
+void InertialNavigationTest::TestInit(void)
 {
     // Initialize GPIO ports 
     gpio_port_init(); 
 
     // Periodic (counter update) interrupt timer 
     tim_9_to_11_counter_init(
-        dead_reckoning.tim_periodic, 
+        inertial_navigation.tim_periodic, 
         TIM_84MHZ_100US_PSC, 
         interrupt_counter, 
         TIM_UP_INT_ENABLE); 
-    tim_enable(dead_reckoning.tim_periodic); 
+    tim_enable(inertial_navigation.tim_periodic); 
 
     // UART - serial terminal output 
     uart_init(
-        dead_reckoning.uart, 
+        inertial_navigation.uart, 
         GPIOA, 
         PIN_3, 
         PIN_2, 
@@ -75,7 +75,7 @@ void DeadReckoningTest::TestInit(void)
 
     // Initialize I2C1
     i2c_init(
-        dead_reckoning.i2c, 
+        inertial_navigation.i2c, 
         PIN_9, 
         GPIOB, 
         PIN_8, 
@@ -90,9 +90,9 @@ void DeadReckoningTest::TestInit(void)
     nvic_config(TIM1_UP_TIM10_IRQn, EXTI_PRIORITY_0); 
     
     // Initialization the device 
-    dead_reckoning.status |= mpu6050_init(
-        dead_reckoning.device_num, 
-        dead_reckoning.i2c, 
+    inertial_navigation.status |= mpu6050_init(
+        inertial_navigation.device_num, 
+        inertial_navigation.i2c, 
         MPU6050_ADDR_1,
         standby_mask, 
         MPU6050_DLPF_CFG_1,
@@ -101,14 +101,14 @@ void DeadReckoningTest::TestInit(void)
         MPU6050_FS_SEL_500);
 
     // Run a self-test 
-    dead_reckoning.status |= mpu6050_self_test(dead_reckoning.device_num, &dead_reckoning.st_result); 
+    inertial_navigation.status |= mpu6050_self_test(inertial_navigation.device_num, &inertial_navigation.st_result); 
 
     // Set the device offsets to calibrate the readings 
-    dead_reckoning.status |= mpu6050_set_offsets(dead_reckoning.device_num, accel_offsets, gyro_offsets); 
+    inertial_navigation.status |= mpu6050_set_offsets(inertial_navigation.device_num, accel_offsets, gyro_offsets); 
 
-    if (dead_reckoning.status != MPU6050_OK)
+    if (inertial_navigation.status != MPU6050_OK)
     {
-        dead_reckoning.IMUFault(); 
+        inertial_navigation.IMUFault(); 
     }
 }
 
@@ -118,7 +118,7 @@ void DeadReckoningTest::TestInit(void)
 //=======================================================================================
 // Application 
 
-void DeadReckoningTest::TestApp(void)
+void InertialNavigationTest::TestApp(void)
 {
     // Periodically update IMU data 
     if (handler_flags.tim1_up_tim10_glbl_flag)
@@ -126,12 +126,12 @@ void DeadReckoningTest::TestApp(void)
         handler_flags.tim1_up_tim10_glbl_flag = CLEAR; 
 
         // Read the latest IMU data 
-        dead_reckoning.status |= mpu6050_update(dead_reckoning.device_num); 
+        inertial_navigation.status |= mpu6050_update(inertial_navigation.device_num); 
 
         // Check the IMU for faults 
-        if (dead_reckoning.status != MPU6050_OK)
+        if (inertial_navigation.status != MPU6050_OK)
         {
-            dead_reckoning.IMUFault(); 
+            inertial_navigation.IMUFault(); 
         }
     }
 }
@@ -142,17 +142,17 @@ void DeadReckoningTest::TestApp(void)
 //=======================================================================================
 // Test functions 
 
-void DeadReckoningTest::IMUFault(void)
+void InertialNavigationTest::IMUFault(void)
 {
     char fault_msg[max_msg_len]; 
-    snprintf(fault_msg, max_msg_len, "\r\nFault Code: %lu", dead_reckoning.status); 
-    uart_send_str(dead_reckoning.uart, fault_msg); 
+    snprintf(fault_msg, max_msg_len, "\r\nFault Code: %lu", inertial_navigation.status); 
+    uart_send_str(inertial_navigation.uart, fault_msg); 
     while(TRUE); 
 }
 
 
 // Estimate the heading, velocity and position using data from the IMU 
-void DeadReckoningTest::DeadReckoning(void)
+void InertialNavigationTest::InertialNavCalcs(void)
 {
     // Estimate the heading with the gyroscope and time between samples and keep it 
     // within acceptable bounds (0-360 degrees). 
