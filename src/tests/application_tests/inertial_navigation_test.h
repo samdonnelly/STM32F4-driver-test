@@ -79,6 +79,8 @@ private:
     device_number_t device_num; 
     uint8_t st_result; 
     MPU6050_STATUS status; 
+    int16_t accel_raw[NUM_AXES], gyro_raw[NUM_AXES]; 
+    float accel[NUM_AXES], gyro[NUM_AXES]; 
 };
 
 extern InertialNavigationTest inertial_navigation; 

@@ -1,5 +1,5 @@
 /**
- * @file inertial_navigation.cpp
+ * @file inertial_navigation_test.cpp
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
@@ -54,15 +54,15 @@ void InertialNavigationTest::TestInit(void)
 
     // Periodic (counter update) interrupt timer 
     tim_9_to_11_counter_init(
-        inertial_navigation.tim_periodic, 
+        tim_periodic, 
         TIM_84MHZ_100US_PSC, 
         interrupt_counter, 
         TIM_UP_INT_ENABLE); 
-    tim_enable(inertial_navigation.tim_periodic); 
+    tim_enable(tim_periodic); 
 
     // UART - serial terminal output 
     uart_init(
-        inertial_navigation.uart, 
+        uart, 
         GPIOA, 
         PIN_3, 
         PIN_2, 
@@ -75,7 +75,7 @@ void InertialNavigationTest::TestInit(void)
 
     // Initialize I2C1
     i2c_init(
-        inertial_navigation.i2c, 
+        i2c, 
         PIN_9, 
         GPIOB, 
         PIN_8, 
@@ -90,9 +90,9 @@ void InertialNavigationTest::TestInit(void)
     nvic_config(TIM1_UP_TIM10_IRQn, EXTI_PRIORITY_0); 
     
     // Initialization the device 
-    inertial_navigation.status |= mpu6050_init(
-        inertial_navigation.device_num, 
-        inertial_navigation.i2c, 
+    status |= mpu6050_init(
+        device_num, 
+        i2c, 
         MPU6050_ADDR_1,
         standby_mask, 
         MPU6050_DLPF_CFG_1,
@@ -101,14 +101,14 @@ void InertialNavigationTest::TestInit(void)
         MPU6050_FS_SEL_500);
 
     // Run a self-test 
-    inertial_navigation.status |= mpu6050_self_test(inertial_navigation.device_num, &inertial_navigation.st_result); 
+    status |= mpu6050_self_test(device_num, &st_result); 
 
     // Set the device offsets to calibrate the readings 
-    inertial_navigation.status |= mpu6050_set_offsets(inertial_navigation.device_num, accel_offsets, gyro_offsets); 
+    status |= mpu6050_set_offsets(device_num, accel_offsets, gyro_offsets); 
 
-    if (inertial_navigation.status != MPU6050_OK)
+    if (status != MPU6050_OK)
     {
-        inertial_navigation.IMUFault(); 
+        IMUFault(); 
     }
 }
 
@@ -126,13 +126,22 @@ void InertialNavigationTest::TestApp(void)
         handler_flags.tim1_up_tim10_glbl_flag = CLEAR; 
 
         // Read the latest IMU data 
-        inertial_navigation.status |= mpu6050_update(inertial_navigation.device_num); 
+        status |= mpu6050_update(device_num); 
 
         // Check the IMU for faults 
-        if (inertial_navigation.status != MPU6050_OK)
+        if (status != MPU6050_OK)
         {
-            inertial_navigation.IMUFault(); 
+            IMUFault(); 
         }
+
+        // Get the latest accelerometer and gyroscope data 
+        mpu6050_get_accel_axis(device_num, accel_raw);   // Raw 
+        mpu6050_get_gyro_axis(device_num, gyro_raw);     // Raw 
+        mpu6050_get_accel_axis_gs(device_num, accel);    // g's 
+        mpu6050_get_gyro_axis_rate(device_num, gyro);    // deg/s 
+
+        // Perform inertial navigation calcs 
+        InertialNavCalcs(); 
     }
 }
 
@@ -145,8 +154,8 @@ void InertialNavigationTest::TestApp(void)
 void InertialNavigationTest::IMUFault(void)
 {
     char fault_msg[max_msg_len]; 
-    snprintf(fault_msg, max_msg_len, "\r\nFault Code: %lu", inertial_navigation.status); 
-    uart_send_str(inertial_navigation.uart, fault_msg); 
+    snprintf(fault_msg, max_msg_len, "\r\nFault Code: %lu", status); 
+    uart_send_str(uart, fault_msg); 
     while(TRUE); 
 }
 
