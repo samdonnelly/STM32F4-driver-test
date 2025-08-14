@@ -69,6 +69,11 @@ private:
      * @brief Estimate the heading, velocity and position using data from the IMU 
      */
     void InertialNavCalcs(void);
+
+    /**
+     * @brief Estimate orientation using the accelerometer, gyroscope and magnetometer data 
+     */
+    void MadgwickFilter(void);
     
     // Peripherals 
     USART_TypeDef *uart; 
@@ -79,8 +84,8 @@ private:
     device_number_t device_num; 
     uint8_t st_result; 
     MPU6050_STATUS status; 
-    int16_t accel_raw[NUM_AXES], gyro_raw[NUM_AXES]; 
-    float accel[NUM_AXES], gyro[NUM_AXES]; 
+    int16_t accel_raw[NUM_AXES], gyro_raw[NUM_AXES], mag_raw[NUM_AXES]; 
+    float accel[NUM_AXES], gyro[NUM_AXES], mag[NUM_AXES]; 
 };
 
 extern InertialNavigationTest inertial_navigation; 

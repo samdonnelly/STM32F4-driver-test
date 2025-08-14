@@ -172,4 +172,11 @@ void InertialNavigationTest::InertialNavCalcs(void)
     // then do that again to estimate the position. 
 }
 
+
+// Estimate orientation using the accelerometer, gyroscope and magnetometer data 
+void InertialNavigationTest::MadgwickFilter(void)
+{
+    // 
+}
+
 //=======================================================================================
