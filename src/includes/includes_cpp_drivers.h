@@ -19,6 +19,7 @@
 // Includes 
 
 // Tools 
+#include "madgwick_filter.h"
 #include "nav_calcs.h" 
 #include "pid_control.h"
 

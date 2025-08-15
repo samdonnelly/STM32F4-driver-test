@@ -27,7 +27,7 @@
 void DriverTestInit(void)
 {
     // Driver test initialization code here 
-    inertial_navigation.TestInit(); 
+    orientation_estimate.TestInit(); 
 }
 
 
@@ -35,7 +35,7 @@ void DriverTestInit(void)
 void DriverTestApp(void)
 {
     // Driver test application code here 
-    inertial_navigation.TestApp(); 
+    orientation_estimate.TestApp(); 
 }
 
 //=======================================================================================
