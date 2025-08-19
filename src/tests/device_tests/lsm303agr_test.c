@@ -64,7 +64,7 @@
 // Includes 
 
 #include "lsm303agr_test.h" 
-#include "device_config.h" 
+#include "driver_test_config.h" 
 #include "stm32f4xx_it.h" 
 
 //=======================================================================================
@@ -240,7 +240,7 @@ void lsm303agr_test_app(void)
 
         // Get and display the magnetometer data 
         lsm303agr_m_get_axis(test_data.m_axis); 
-        lsm303agr_m_get_calibrated_axis(test_data.m_axis_cal); 
+        lsm303agr_m_get_axis_cal_int(test_data.m_axis_cal); 
         test_data.m_heading = lsm303agr_m_get_heading(); 
 
         if (++test_data.schedule_counter >= LSM303AGR_TEST_DISPLAY_COUNT)

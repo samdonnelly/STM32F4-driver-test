@@ -29,7 +29,7 @@
 // Includes 
 
 #include "gps_nav_test.h" 
-#include "device_config.h" 
+#include "driver_test_config.h" 
 #include "gps_coordinates.h" 
 #include "includes_cpp_drivers.h" 
 

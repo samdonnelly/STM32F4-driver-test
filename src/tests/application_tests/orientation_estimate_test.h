@@ -80,22 +80,17 @@ private:
     // Peripherals 
     USART_TypeDef *uart; 
     I2C_TypeDef *i2c; 
-    TIM_TypeDef *tim_periodic;
-
-    // Timing 
-    uint8_t display_counter;
+    TIM_TypeDef *tim_calc, *tim_display;
 
     // MPU-6050 IMU data 
     device_number_t device_num; 
     uint8_t imu_st_result; 
     MPU6050_STATUS imu_status; 
-    std::array<int16_t, NUM_AXES> accel_raw, gyro_raw;
     std::array<float, NUM_AXES> accel, gyro;
 
     // LSM303AGR magnetometer data 
     LSM303AGR_STATUS mag_status;
-    std::array<int16_t, NUM_AXES> mag_raw, mag;
-    std::array<float, NUM_AXES> magf;
+    std::array<float, NUM_AXES> mag;
 
     // Calculations 
     MadgwickFilter madgwick_filter;

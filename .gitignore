@@ -17,7 +17,7 @@ build/
 # Configuration 
 
 src/core/hardware_config.h
-src/config_files/device_config.c
+src/config_files/driver_test_config.c
 build_tools/SystemConfig.txt
 
 #==================================================

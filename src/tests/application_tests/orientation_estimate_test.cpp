@@ -19,7 +19,10 @@
  *          Configuration 
  *          - TIM 
  *            * A timer is configured to create a periodic interrupt which controls when 
- *              to read and output device data. 
+ *              to read data and calculate the orientation. 
+ *            * A second timer is configured also as a periodic interrupt which is used 
+ *              to control when data is output. This is done so the calculation frequency 
+ *              can be updated without affecting the output rate. 
  *          - UART 
  *            * UART is configured to provide a serial terminal output both for device 
  *              data and driver status faults. 
@@ -35,6 +38,7 @@
  *            * The gyroscope is set to update/output at a rate of 1kHz. The DLPF is 
  *              enabled and the SMPLRT_DIV register is set to 0 (see datasheet). 
  *          - LSM303AGR 
+ *            * The magnetometer updates/outputs at a rate of 50Hz. 
  *          
  *          Dependencies 
  *          - STM32F4 driver library 
@@ -46,7 +50,6 @@
  *            and are read from periodically. The read data is fed into a Madgwick filter 
  *            which is used to estimate the orientation of the system. The orientation is 
  *            displayed to the serial terminal periodically for the user to see. 
- *            
  * 
  * @version 0.1
  * @date 2025-07-22
@@ -59,7 +62,7 @@
 // Includes 
 
 #include "orientation_estimate_test.h"
-#include "device_config.h"
+#include "driver_test_config.h"
 #include "stm32f4xx_it.h"
 
 //=======================================================================================
@@ -67,8 +70,8 @@
 
 //=======================================================================================
 // To Do: 
-// - What are the unit required to be fed to the Madgwick filter? 
-// - How will we handle getting magnetometer data as a float? s
+// - Apply magnetic declination to correct heading 
+// - Cap/bound orientation angles as needed 
 //=======================================================================================
 
 
@@ -77,12 +80,12 @@
 
 OrientationEstimateTest orientation_estimate; 
 
-static constexpr uint16_t interrupt_counter = 0x01F4;   // ARR=500, (500 counts)*(100us/count) = 50ms = 0.05s 
-static constexpr uint8_t max_msg_len = 100;             // Max length of output message 
-static constexpr uint8_t display_timer = 5;             // Interrupt count that triggers a data display update 
+// Counter update interupt ARR value --> (ARR counts)*(100us/count) = interrupt period (seconds) 
+static const uint16_t int_calc_count = static_cast<uint16_t>(madgwick_dt * SCALE_10000);
+static constexpr uint16_t int_display_count = 0x09C4;   // ARR=2500 
 
-static constexpr float madgwick_B = 0.1;                // Correction weight 
-static constexpr float madgwick_dt = 0.05;              // Time between samples/calculations (seconds) 
+// Formatting 
+static constexpr uint8_t max_msg_len = 100;   // Max length of output message 
 
 //=======================================================================================
 
@@ -93,14 +96,14 @@ static constexpr float madgwick_dt = 0.05;              // Time between samples/
 OrientationEstimateTest::OrientationEstimateTest()
     : uart(USART2),
       i2c(I2C1),
-      tim_periodic(TIM10),
-      display_counter(CLEAR),
+      tim_calc(TIM10),
+      tim_display(TIM9),
       device_num(DEVICE_ONE),
       imu_st_result(CLEAR),
       imu_status(MPU6050_OK), 
-      accel_raw{}, gyro_raw{}, accel{}, gyro{},
+      accel{}, gyro{},
       mag_status(LSM303AGR_OK),
-      mag_raw{}, mag{}, magf{},
+      mag{},
       madgwick_filter(madgwick_B, madgwick_dt)
 {
 }
@@ -110,13 +113,21 @@ void OrientationEstimateTest::TestInit(void)
     // Initialize GPIO ports 
     gpio_port_init(); 
 
-    // Periodic (counter update) interrupt timer 
+    // Periodic (counter update) interrupt timer - read data and perform calculation 
     tim_9_to_11_counter_init(
-        tim_periodic, 
+        tim_calc, 
         TIM_84MHZ_100US_PSC, 
-        interrupt_counter, 
+        int_calc_count, 
         TIM_UP_INT_ENABLE); 
-    tim_enable(tim_periodic); 
+    tim_enable(tim_calc); 
+
+    // Periodic (counter update) interrupt timer - display data 
+    tim_9_to_11_counter_init(
+        tim_display, 
+        TIM_84MHZ_100US_PSC, 
+        int_display_count, 
+        TIM_UP_INT_ENABLE); 
+    tim_enable(tim_display); 
 
     // UART - serial terminal output 
     uart_init(
@@ -141,11 +152,12 @@ void OrientationEstimateTest::TestInit(void)
         I2C_MODE_SM,
         I2C_APB1_42MHZ,
         I2C_CCR_SM_42_100,
-        I2C_TRISE_1000_42); 
+        I2C_TRISE_1000_42);
 
     // Initialize interrupt handler flags and enable the periodic timer interrupt handler 
     int_handler_init(); 
     nvic_config(TIM1_UP_TIM10_IRQn, EXTI_PRIORITY_0); 
+    nvic_config(TIM1_BRK_TIM9_IRQn, EXTI_PRIORITY_1); 
     
     // Initialization the MPU-6050, run self-test and set the axis offsets 
     imu_status |= mpu6050_init(
@@ -163,7 +175,7 @@ void OrientationEstimateTest::TestInit(void)
     // Initialize the LSM303AGR and set the hard and soft-iron calibration values 
     mag_status |= lsm303agr_m_init(
         I2C1, 
-        LSM303AGR_M_ODR_10, 
+        LSM303AGR_M_ODR_50, 
         LSM303AGR_M_MODE_CONT, 
         LSM303AGR_CFG_DISABLE, 
         LSM303AGR_CFG_DISABLE, 
@@ -182,7 +194,7 @@ void OrientationEstimateTest::TestInit(void)
 
 void OrientationEstimateTest::TestApp(void)
 {
-    // Periodically update IMU data 
+    // Periodically update IMU data and calculate the orientation 
     if (handler_flags.tim1_up_tim10_glbl_flag)
     {
         handler_flags.tim1_up_tim10_glbl_flag = CLEAR; 
@@ -195,22 +207,19 @@ void OrientationEstimateTest::TestApp(void)
         IMUFaultCheck(); 
 
         // Get the latest accelerometer, gyroscope and magnetometer data 
-        mpu6050_get_accel_axis(device_num, accel_raw.data());   // Raw 
-        mpu6050_get_gyro_axis(device_num, gyro_raw.data());     // Raw 
-        mpu6050_get_accel_axis_gs(device_num, accel.data());    // g's 
-        mpu6050_get_gyro_axis_rate(device_num, gyro.data());    // deg/s 
-        lsm303agr_m_get_axis(mag_raw.data());                   // Uncalibrate - milligauss 
-        lsm303agr_m_get_calibrated_axis(mag.data());            // Calibrated - milligauss 
+        mpu6050_get_accel_axis_gs(device_num, accel.data());   // g's 
+        mpu6050_get_gyro_axis_rate(device_num, gyro.data());   // deg/s 
+        lsm303agr_m_get_axis_cal_float(mag.data());            // mG 
 
         // Perform inertial navigation calcs 
         OrientationCalcs();
+    }
 
-        // Output the orientation (doesn't need to be as frequent as the calculation) 
-        if (++display_counter >= display_timer)
-        {
-            display_counter = CLEAR;
-            OrientationDisplay();
-        }
+    // Periodically display the orientation 
+    if (handler_flags.tim1_brk_tim9_glbl_flag)
+    {
+        handler_flags.tim1_brk_tim9_glbl_flag = CLEAR;
+        OrientationDisplay();
     }
 }
 
@@ -235,7 +244,8 @@ void OrientationEstimateTest::IMUFaultCheck(void)
             imu_status,
             mag_status); 
         uart_send_str(uart, fault_msg); 
-        tim_disable(tim_periodic); 
+        tim_disable(tim_calc); 
+        tim_disable(tim_display); 
         while(TRUE); 
     }
 }
@@ -244,7 +254,7 @@ void OrientationEstimateTest::IMUFaultCheck(void)
 // Estimate the orientation of system in the Earth frame (roll, pitch, yaw) 
 void OrientationEstimateTest::OrientationCalcs(void)
 {
-    madgwick_filter.Madgwick(gyro, accel, magf);
+    madgwick_filter.Madgwick(gyro, accel, mag);
     roll = madgwick_filter.GetRoll();
     pitch = madgwick_filter.GetPitch();
     yaw = madgwick_filter.GetYaw();

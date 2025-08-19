@@ -16,7 +16,7 @@
 // Includes 
 
 #include "m8q_test.h" 
-#include "device_config.h" 
+#include "driver_test_config.h" 
 #include "stm32f4xx_it.h" 
 
 //=======================================================================================
