@@ -269,16 +269,16 @@ void OrientationEstimateTest::OrientationCalcs(void)
 void OrientationEstimateTest::OrientationDisplay(void)
 {
     // Move the cursor in the serial terminal up to overwrite the old data 
-    uart_cursor_move(uart, UART_CURSOR_UP, 2);
+    uart_cursor_move(uart, UART_CURSOR_UP, 3);
 
     // Format and output the scaled orientation data 
     char orientation_msg[max_msg_len];
     snprintf(
         orientation_msg, 
         max_msg_len, 
-        "\r\nRoll (deg*100): %d"
-        "\r\nPitch (deg*100): %d"
-        "\r\nYaw (deg*100): %d",
+        "Roll (deg*100): %d   \r\n"
+        "Pitch (deg*100): %d   \r\n"
+        "Yaw (deg*100): %d   \r\n",
         (int16_t)(roll * SCALE_100),
         (int16_t)(pitch * SCALE_100),
         (int16_t)(yaw * SCALE_100));
