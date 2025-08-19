@@ -25,9 +25,16 @@
  *              data and driver status faults. 
  *          - I2C 
  *            * I2C is configured to communicate with the MPU-6050 and LSM303AGR devices. 
+ *            * It is set to run in standard mode (SM) where SCL runs at 100kHz which 
+ *              should handle a typical transaction with the MPU-6050 in ~1ms. 
  *          - Interrupts 
  *            * An interrupt is configured for the timer to create a periodic interrupt 
  *              to control when to read and output device data. 
+ *          - MPU-6050 
+ *            * The accelerometer updates/outputs at a rate of 1kHz (can't be adjusted). 
+ *            * The gyroscope is set to update/output at a rate of 1kHz. The DLPF is 
+ *              enabled and the SMPLRT_DIV register is set to 0 (see datasheet). 
+ *          - LSM303AGR 
  *          
  *          Dependencies 
  *          - STM32F4 driver library 
@@ -59,12 +66,23 @@
 
 
 //=======================================================================================
+// To Do: 
+// - What are the unit required to be fed to the Madgwick filter? 
+// - How will we handle getting magnetometer data as a float? s
+//=======================================================================================
+
+
+//=======================================================================================
 // Test data 
 
 OrientationEstimateTest orientation_estimate; 
 
-static constexpr uint16_t interrupt_counter = 0x03E8;   // ARR=1000, (1000 counts)*(100us/count) = 100ms = 0.1s 
-static constexpr uint8_t max_msg_len = 100; 
+static constexpr uint16_t interrupt_counter = 0x01F4;   // ARR=500, (500 counts)*(100us/count) = 50ms = 0.05s 
+static constexpr uint8_t max_msg_len = 100;             // Max length of output message 
+static constexpr uint8_t display_timer = 5;             // Interrupt count that triggers a data display update 
+
+static constexpr float madgwick_B = 0.1;                // Correction weight 
+static constexpr float madgwick_dt = 0.05;              // Time between samples/calculations (seconds) 
 
 //=======================================================================================
 
@@ -76,13 +94,14 @@ OrientationEstimateTest::OrientationEstimateTest()
     : uart(USART2),
       i2c(I2C1),
       tim_periodic(TIM10),
+      display_counter(CLEAR),
       device_num(DEVICE_ONE),
       imu_st_result(CLEAR),
       imu_status(MPU6050_OK), 
       accel_raw{}, gyro_raw{}, accel{}, gyro{},
       mag_status(LSM303AGR_OK),
-      mag_raw{}, mag{},
-      madgwick_filter()
+      mag_raw{}, mag{}, magf{},
+      madgwick_filter(madgwick_B, madgwick_dt)
 {
 }
 
@@ -184,9 +203,14 @@ void OrientationEstimateTest::TestApp(void)
         lsm303agr_m_get_calibrated_axis(mag.data());            // Calibrated - milligauss 
 
         // Perform inertial navigation calcs 
-        InertialNavCalcs(); 
+        OrientationCalcs();
 
-        // Output the orientation 
+        // Output the orientation (doesn't need to be as frequent as the calculation) 
+        if (++display_counter >= display_timer)
+        {
+            display_counter = CLEAR;
+            OrientationDisplay();
+        }
     }
 }
 
@@ -217,18 +241,38 @@ void OrientationEstimateTest::IMUFaultCheck(void)
 }
 
 
-// Estimate the heading, velocity and position using data from the IMU 
-void OrientationEstimateTest::InertialNavCalcs(void)
+// Estimate the orientation of system in the Earth frame (roll, pitch, yaw) 
+void OrientationEstimateTest::OrientationCalcs(void)
 {
-    // Estimate the heading with the gyroscope and time between samples and keep it 
-    // within acceptable bounds (0-360 degrees). 
+    madgwick_filter.Madgwick(gyro, accel, magf);
+    roll = madgwick_filter.GetRoll();
+    pitch = madgwick_filter.GetPitch();
+    yaw = madgwick_filter.GetYaw();
 
-    // Rotate the accelerometer data to find the acceleration in the NED frame. 
+    // Apply magnetic declination to get yaw to true north 
 
-    // Integrate the NED acceleration using the sample interval to estimate the velocity 
-    // then do that again to estimate the position. 
+    // Cap/bound angles as needed to keep them within range 
+}
 
-    madgwick_filter.Madgwick(); 
+
+// Output the orientation for the use to see 
+void OrientationEstimateTest::OrientationDisplay(void)
+{
+    // Move the cursor in the serial terminal up to overwrite the old data 
+    uart_cursor_move(uart, UART_CURSOR_UP, 2);
+
+    // Format and output the scaled orientation data 
+    char orientation_msg[max_msg_len];
+    snprintf(
+        orientation_msg, 
+        max_msg_len, 
+        "\r\nRoll (deg*100): %d"
+        "\r\nPitch (deg*100): %d"
+        "\r\nYaw (deg*100): %d",
+        (int16_t)(roll * SCALE_100),
+        (int16_t)(pitch * SCALE_100),
+        (int16_t)(yaw * SCALE_100));
+    uart_send_str(uart, orientation_msg);
 }
 
 //=======================================================================================

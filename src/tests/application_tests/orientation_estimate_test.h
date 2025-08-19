@@ -68,14 +68,22 @@ private:
     void IMUFaultCheck(void);
 
     /**
-     * @brief Estimate the heading, velocity and position using data from the IMU 
+     * @brief Estimate the orientation of system in the Earth frame (roll, pitch, yaw) 
      */
-    void InertialNavCalcs(void);
+    void OrientationCalcs(void);
+
+    /**
+     * @brief Output the orientation for the use to see 
+     */
+    void OrientationDisplay(void);
     
     // Peripherals 
     USART_TypeDef *uart; 
     I2C_TypeDef *i2c; 
-    TIM_TypeDef *tim_periodic; 
+    TIM_TypeDef *tim_periodic;
+
+    // Timing 
+    uint8_t display_counter;
 
     // MPU-6050 IMU data 
     device_number_t device_num; 
@@ -87,9 +95,11 @@ private:
     // LSM303AGR magnetometer data 
     LSM303AGR_STATUS mag_status;
     std::array<int16_t, NUM_AXES> mag_raw, mag;
+    std::array<float, NUM_AXES> magf;
 
     // Calculations 
     MadgwickFilter madgwick_filter;
+    float roll, pitch, yaw; 
 };
 
 extern OrientationEstimateTest orientation_estimate; 
