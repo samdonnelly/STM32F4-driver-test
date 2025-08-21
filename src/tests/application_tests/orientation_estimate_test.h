@@ -94,6 +94,7 @@ private:
 
     // Calculations 
     MadgwickFilter madgwick_filter;
+    NavCalcs nav_calcs;
     float roll, pitch, yaw; 
 };
 

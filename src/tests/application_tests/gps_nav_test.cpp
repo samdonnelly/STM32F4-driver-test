@@ -40,16 +40,16 @@
 // Macros 
 
 // Configuration 
-#define COORDINATE_LPF_GAIN 0.5   // Coordinate low pass filter gain 
-#define TN_OFFSET 130             // Offset between magnetic and true north (degrees*10) 
-#define COORDINATE_RADIUS 100     // Threshold distance to target (meters*10) 
+#define COORDINATE_LPF_GAIN 0.5f   // Coordinate low pass filter gain 
+#define TN_OFFSET 13.4f            // Offset between magnetic and true north (degrees*10) 
+#define COORDINATE_RADIUS 10.0f    // Threshold distance to target (meters) 
 
 // Timing 
-#define SAMPLE_INTERVAL 100000    // Interval between data reads/checks (us) 
-#define GNSS_SAMPLE_COUNTER 10    // Number of intervals to elapse before checking the GPS 
+#define SAMPLE_INTERVAL 100000     // Interval between data reads/checks (us) 
+#define GNSS_SAMPLE_COUNTER 10     // Number of intervals to elapse before checking the GPS 
 
 // Data output 
-#define OUTPUT_LENGTH 70          // Max data string output length 
+#define OUTPUT_LENGTH 70           // Max data string output length 
 
 //=======================================================================================
 
@@ -57,7 +57,7 @@
 //=======================================================================================
 // Classes 
 
-class gps_nav_test : public nav_calculations 
+class gps_nav_test : public NavCalcs 
 {
 private:   // Private variables 
 
@@ -65,13 +65,13 @@ private:   // Private variables
     gps_waypoints_t current;           // Current location coordinates 
     gps_waypoints_t target;            // Desired waypoint coordinates 
     uint8_t waypoint_index;            // Index of target waypoints 
-    int32_t radius;                    // Distance between current and desired location 
+    float radius;                      // Distance between current and desired location 
     uint8_t navstat;                   // Position lock status 
     
     // Heading 
-    int16_t coordinate_heading;        // Heading between current and desired location 
-    int16_t compass_heading;           // Current compass heading 
-    int16_t error_heading;             // Error between compass and coordinate heading 
+    float coordinate_heading;          // Heading between current and desired location 
+    float compass_heading;             // Current compass heading 
+    float error_heading;               // Error between compass and coordinate heading 
 
     // Timer information 
     TIM_TypeDef *timer_nonblocking;    // Timer used for non-blocking delays 
@@ -87,9 +87,10 @@ public:   // Setup and teardown
     // Constructor 
     gps_nav_test(
         TIM_TypeDef *timer, 
-        double coordinate_filter_gain, 
-        int16_t tn_offset) 
-        : waypoint_index(CLEAR), 
+        float coordinate_filter_gain, 
+        float tn_offset) 
+        : NavCalcs(coordinate_filter_gain, tn_offset),
+          waypoint_index(CLEAR), 
           radius(COORDINATE_RADIUS), 
           navstat(CLEAR), 
           coordinate_heading(CLEAR), 
@@ -98,17 +99,13 @@ public:   // Setup and teardown
           timer_nonblocking(timer), 
           timer_counter(CLEAR), 
           m8q_status(M8Q_OK), 
-          lsm303agr_status(LSM303AGR_OK) 
+          lsm303agr_status(LSM303AGR_OK)
     {
         // GNSS 
         current.lat = CLEAR; 
         current.lon = CLEAR; 
-        target.lat = waypoints_0[waypoint_index].lat; 
-        target.lon = waypoints_0[waypoint_index].lon; 
-
-        // Navigation calculations 
-        set_coordinate_lpf_gain(coordinate_filter_gain); 
-        set_tn_offset(tn_offset); 
+        target.lat = waypoints_0[waypoint_index].lat;
+        target.lon = waypoints_0[waypoint_index].lon;
     }
 
     // Destructor 
@@ -369,8 +366,8 @@ void gps_nav_test::nav_heading(void)
     // error between the current (compass) and desired (GPS) headings. Heading error 
     // is determined here and not with each location update so it's updated faster. 
     lsm303agr_status = lsm303agr_m_update(); 
-    compass_heading = true_north_heading(lsm303agr_m_get_heading()); 
-    error_heading = heading_error(compass_heading, coordinate_heading); 
+    compass_heading = TrueNorthHeading(lsm303agr_m_get_heading()); 
+    error_heading = HeadingError(compass_heading, coordinate_heading); 
 }
 
 
@@ -386,12 +383,11 @@ void gps_nav_test::nav_location(void)
         // the result. 
         device_coordinates.lat = m8q_get_position_lat(); 
         device_coordinates.lon = m8q_get_position_lon(); 
-        coordinate_filter(device_coordinates, current); 
+        CoordinateFilter(device_coordinates, current); 
 
         // Calculate the distance to the target location and the heading needed to get 
         // there. 
-        radius = gps_radius(current, target); 
-        coordinate_heading = gps_heading(current, target); 
+        WaypointError(current, target, coordinate_heading, radius);
 
         // Check if the distance to the target is within the threshold. If so, the 
         // target is considered "hit" and we can move to the next target. 
@@ -426,8 +422,12 @@ void gps_nav_test::nav_info_output(void)
     snprintf(
         output_buff, 
         OUTPUT_LENGTH, 
-        "NAVSTAT: %u\r\nRadius: %ld     \r\nHeading Error: %d     \r\n", 
-        navstat, radius, error_heading); 
+        "NAVSTAT: %u\r\n"
+        "Radius: %ld     \r\n"
+        "Heading Error: %d     \r\n", 
+        navstat,
+        (int32_t)(radius*SCALE_10),
+        (int16_t)(error_heading*SCALE_10)); 
 
     // Overwrite the old navigation data 
     uart_send_str(USART2, "\033[1A\033[1A\033[1A"); 

@@ -104,7 +104,9 @@ OrientationEstimateTest::OrientationEstimateTest()
       accel{}, gyro{},
       mag_status(LSM303AGR_OK),
       mag{},
-      madgwick_filter(madgwick_B, madgwick_dt)
+      madgwick_filter(madgwick_B, madgwick_dt),
+      nav_calcs(1.0, magnetic_declination),
+      roll(CLEAR), pitch(CLEAR), yaw(CLEAR)
 {
 }
 
@@ -211,6 +213,9 @@ void OrientationEstimateTest::TestApp(void)
         mpu6050_get_gyro_axis_rate(device_num, gyro.data());   // deg/s 
         lsm303agr_m_get_axis_cal_float(mag.data());            // mG 
 
+        // Correct data as needed to be in the NWU orientation 
+        mag[Y_AXIS] = -mag[Y_AXIS];
+
         // Perform inertial navigation calcs 
         OrientationCalcs();
     }
@@ -255,13 +260,13 @@ void OrientationEstimateTest::IMUFaultCheck(void)
 void OrientationEstimateTest::OrientationCalcs(void)
 {
     madgwick_filter.Madgwick(gyro, accel, mag);
-    roll = madgwick_filter.GetRoll();
-    pitch = madgwick_filter.GetPitch();
-    yaw = madgwick_filter.GetYaw();
+    roll = madgwick_filter.GetRollDegNED();
+    pitch = madgwick_filter.GetPitchDegNED();
+    yaw = madgwick_filter.GetYawDegNED();
 
-    // Apply magnetic declination to get yaw to true north 
-
-    // Cap/bound angles as needed to keep them within range 
+    // Apply magnetic declination and adjust the yaw/heading range to get a heading 
+    // relative to true North in the range 0.0-359.9 degrees. 
+    yaw = nav_calcs.TrueNorthHeading(yaw);
 }
 
 
@@ -276,12 +281,12 @@ void OrientationEstimateTest::OrientationDisplay(void)
     snprintf(
         orientation_msg, 
         max_msg_len, 
-        "Roll (deg*100): %d   \r\n"
-        "Pitch (deg*100): %d   \r\n"
-        "Yaw (deg*100): %d   \r\n",
-        (int16_t)(roll * SCALE_100),
-        (int16_t)(pitch * SCALE_100),
-        (int16_t)(yaw * SCALE_100));
+        "Roll (deg*10): %d   \r\n"
+        "Pitch (deg*10): %d   \r\n"
+        "Yaw (deg*10): %d   \r\n",
+        (int16_t)(roll * SCALE_10),
+        (int16_t)(pitch * SCALE_10),
+        (int16_t)(yaw * SCALE_10));
     uart_send_str(uart, orientation_msg);
 }
 
