@@ -69,13 +69,6 @@
 
 
 //=======================================================================================
-// To Do: 
-// - Apply magnetic declination to correct heading 
-// - Cap/bound orientation angles as needed 
-//=======================================================================================
-
-
-//=======================================================================================
 // Test data 
 
 OrientationEstimateTest orientation_estimate; 
@@ -85,7 +78,8 @@ static const uint16_t int_calc_count = static_cast<uint16_t>(madgwick_dt * SCALE
 static constexpr uint16_t int_display_count = 0x09C4;   // ARR=2500 
 
 // Formatting 
-static constexpr uint8_t max_msg_len = 100;   // Max length of output message 
+static constexpr uint8_t max_msg_len = 100;      // Max length of output message 
+static constexpr uint8_t num_output_lines = 3;   // Number of lines to move the cursor 
 
 //=======================================================================================
 
@@ -234,6 +228,7 @@ void OrientationEstimateTest::TestApp(void)
 //=======================================================================================
 // Test functions 
 
+// Check for driver faults, halt program if they exist 
 void OrientationEstimateTest::IMUFaultCheck(void)
 {
     if ((imu_status != MPU6050_OK) || (mag_status != LSM303AGR_OK))
@@ -251,7 +246,7 @@ void OrientationEstimateTest::IMUFaultCheck(void)
         uart_send_str(uart, fault_msg); 
         tim_disable(tim_calc); 
         tim_disable(tim_display); 
-        while(TRUE); 
+        while(true); 
     }
 }
 
@@ -274,7 +269,7 @@ void OrientationEstimateTest::OrientationCalcs(void)
 void OrientationEstimateTest::OrientationDisplay(void)
 {
     // Move the cursor in the serial terminal up to overwrite the old data 
-    uart_cursor_move(uart, UART_CURSOR_UP, 3);
+    uart_cursor_move(uart, UART_CURSOR_UP, num_output_lines);
 
     // Format and output the scaled orientation data 
     char orientation_msg[max_msg_len];
