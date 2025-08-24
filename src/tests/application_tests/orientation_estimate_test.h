@@ -26,7 +26,7 @@
 
 
 //=======================================================================================
-// Prototypes 
+// Classes 
 
 class OrientationEstimateTest final
 {
