@@ -60,6 +60,11 @@ public:
     void TestApp(void); 
 
 private: 
+
+    // Peripherals 
+    USART_TypeDef *uart; 
+    I2C_TypeDef *i2c; 
+    TIM_TypeDef *tim_calc, *tim_display;
 };
 
 //=======================================================================================
