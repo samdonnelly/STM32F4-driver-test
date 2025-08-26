@@ -65,6 +65,12 @@ private:
     USART_TypeDef *uart; 
     I2C_TypeDef *i2c; 
     TIM_TypeDef *tim_calc, *tim_display;
+
+    // MPU-6050 IMU data 
+    device_number_t device_num; 
+    uint8_t imu_st_result; 
+    MPU6050_STATUS imu_status; 
+    std::array<float, NUM_AXES> accel, gyro;
 };
 
 //=======================================================================================

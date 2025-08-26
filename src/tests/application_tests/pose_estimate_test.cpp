@@ -32,7 +32,11 @@ PoseEstimate::PoseEstimate()
     : uart(USART2),
       i2c(I2C1),
       tim_calc(TIM10),
-      tim_display(TIM9)
+      tim_display(TIM9),
+      device_num(DEVICE_ONE),
+      imu_st_result(CLEAR),
+      imu_status(MPU6050_OK), 
+      accel{}, gyro{}
 {
 }
 
