@@ -71,6 +71,10 @@ private:
     uint8_t imu_st_result; 
     MPU6050_STATUS imu_status; 
     std::array<float, NUM_AXES> accel, gyro;
+
+    // LSM303AGR magnetometer data 
+    LSM303AGR_STATUS mag_status;
+    std::array<float, NUM_AXES> mag;
 };
 
 //=======================================================================================

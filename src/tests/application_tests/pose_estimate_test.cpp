@@ -36,7 +36,9 @@ PoseEstimate::PoseEstimate()
       device_num(DEVICE_ONE),
       imu_st_result(CLEAR),
       imu_status(MPU6050_OK), 
-      accel{}, gyro{}
+      accel{}, gyro{},
+      mag_status(LSM303AGR_OK),
+      mag{}
 {
 }
 
