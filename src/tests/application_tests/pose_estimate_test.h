@@ -34,7 +34,7 @@ public:
     /**
      * @brief Constructor 
      */
-    PoseEstimate() = default;
+    PoseEstimate();
 
     /**
      * @brief Destructor 

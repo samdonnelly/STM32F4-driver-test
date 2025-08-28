@@ -96,6 +96,7 @@ private:
     MadgwickFilter madgwick_filter;
     NavCalcs nav_calcs;
     float roll, pitch, yaw; 
+    std::array<float, NUM_AXES> accel_ned;
 };
 
 extern OrientationEstimateTest orientation_estimate; 

@@ -78,7 +78,7 @@ static const uint16_t int_calc_count = static_cast<uint16_t>(madgwick_dt * SCALE
 static constexpr uint16_t int_display_count = 0x09C4;   // ARR=2500 
 
 // Formatting 
-static constexpr uint8_t max_msg_len = 100;      // Max length of output message 
+static constexpr uint8_t max_msg_len = 150;      // Max length of output message 
 static constexpr uint8_t num_output_lines = 3;   // Number of lines to move the cursor 
 
 //=======================================================================================
@@ -100,7 +100,8 @@ OrientationEstimateTest::OrientationEstimateTest()
       mag{},
       madgwick_filter(madgwick_B, madgwick_dt),
       nav_calcs(1.0, magnetic_declination),
-      roll(CLEAR), pitch(CLEAR), yaw(CLEAR)
+      roll(CLEAR), pitch(CLEAR), yaw(CLEAR),
+      accel_ned{}
 {
 }
 
@@ -254,6 +255,7 @@ void OrientationEstimateTest::IMUFaultCheck(void)
 // Estimate the orientation of system in the Earth frame (roll, pitch, yaw) 
 void OrientationEstimateTest::OrientationCalcs(void)
 {
+    // Get roll, pitch and yaw in the NED frame 
     madgwick_filter.Madgwick(gyro, accel, mag);
     roll = madgwick_filter.GetRollDegNED();
     pitch = madgwick_filter.GetPitchDegNED();
@@ -262,6 +264,11 @@ void OrientationEstimateTest::OrientationCalcs(void)
     // Apply magnetic declination and adjust the yaw/heading range to get a heading 
     // relative to true North in the range 0.0-359.9 degrees. 
     yaw = nav_calcs.TrueNorthHeading(yaw);
+
+    // Get the acceleration in the NED frame 
+    madgwick_filter.GetAccelNED(accel_ned);
+
+    // Apply magnetic declination to adjust the direction of the NED frame 
 }
 
 
@@ -278,10 +285,16 @@ void OrientationEstimateTest::OrientationDisplay(void)
         max_msg_len, 
         "Roll (deg*10): %d   \r\n"
         "Pitch (deg*10): %d   \r\n"
-        "Yaw (deg*10): %d   \r\n",
+        "Yaw (deg*10): %d   \r\n"
+        "aN (g's): %d   \r\n"
+        "aE (g's): %d   \r\n"
+        "aD (g's): %d   \r\n",
         (int16_t)(roll * SCALE_10),
         (int16_t)(pitch * SCALE_10),
-        (int16_t)(yaw * SCALE_10));
+        (int16_t)(yaw * SCALE_10),
+        (int16_t)(accel_ned[X_AXIS] * SCALE_10),
+        (int16_t)(accel_ned[Y_AXIS] * SCALE_10),
+        (int16_t)(accel_ned[Z_AXIS] * SCALE_10));
     uart_send_str(uart, orientation_msg);
 }
 
