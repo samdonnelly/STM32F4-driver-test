@@ -171,7 +171,7 @@ void OrientationEstimateTest::TestInit(void)
 
     // Initialize the LSM303AGR and set the hard and soft-iron calibration values 
     mag_status |= lsm303agr_m_init(
-        I2C1, 
+        i2c, 
         LSM303AGR_M_ODR_50, 
         LSM303AGR_M_MODE_CONT, 
         LSM303AGR_CFG_DISABLE, 
@@ -203,15 +203,7 @@ void OrientationEstimateTest::TestApp(void)
         // Check for driver faults 
         IMUFaultCheck(); 
 
-        // Get the latest accelerometer, gyroscope and magnetometer data 
-        mpu6050_get_accel_axis_gs(device_num, accel.data());   // g's 
-        mpu6050_get_gyro_axis_rate(device_num, gyro.data());   // deg/s 
-        lsm303agr_m_get_axis_cal_float(mag.data());            // mG 
-
-        // Correct data as needed to be in the NWU orientation 
-        mag[Y_AXIS] = -mag[Y_AXIS];
-
-        // Perform inertial navigation calcs 
+        // Perform orientation calculations 
         OrientationCalcs();
     }
 
@@ -252,13 +244,23 @@ void OrientationEstimateTest::IMUFaultCheck(void)
 }
 
 
-// Estimate the orientation of system in the Earth frame (roll, pitch, yaw) 
+// Find the orientation and acceleration of system in the Earth frame 
 void OrientationEstimateTest::OrientationCalcs(void)
 {
+    // Get the latest accelerometer, gyroscope and magnetometer data 
+    mpu6050_get_accel_axis_gs(device_num, accel.data());   // g's 
+    mpu6050_get_gyro_axis_rate(device_num, gyro.data());   // deg/s 
+    lsm303agr_m_get_axis_cal_float(mag.data());            // mG 
+
+    // Correct data as needed to be in the NWU orientation 
+    mag[Y_AXIS] = -mag[Y_AXIS];
+
+    // Run the Madgwick filter with new IMU data to determine the system orientation. 
+    madgwick_filter.Madgwick(gyro, accel, mag);
+
     // Get roll, pitch and yaw in the NED frame. Apply magnetic declination and adjust 
     // the yaw/heading range to get a heading relative to true North in the range 
     // 0.0-359.9 degrees. 
-    madgwick_filter.Madgwick(gyro, accel, mag);
     roll = madgwick_filter.GetRollDegNED();
     pitch = madgwick_filter.GetPitchDegNED();
     yaw = nav_calcs.TrueNorthHeading(madgwick_filter.GetYawDegNED());

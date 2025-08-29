@@ -21,7 +21,8 @@
 // Application test code 
 #include "active_object_test.h" 
 #include "circular_buffer_test.h" 
-#include "orientation_estimate_test.h" 
+#include "orientation_estimate_test.h"
+#include "pose_estimate_test.h"
 #include "gps_nav_test.h" 
 #include "rc_test.h" 
 

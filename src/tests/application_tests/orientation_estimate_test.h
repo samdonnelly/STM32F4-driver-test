@@ -68,12 +68,12 @@ private:
     void IMUFaultCheck(void);
 
     /**
-     * @brief Estimate the orientation of system in the Earth frame (roll, pitch, yaw) 
+     * @brief Find the orientation and acceleration of system in the Earth frame 
      */
     void OrientationCalcs(void);
 
     /**
-     * @brief Output the orientation for the use to see 
+     * @brief Output the orientation for the user to see 
      */
     void OrientationDisplay(void);
     

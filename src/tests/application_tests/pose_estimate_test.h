@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Pose estimation test 
+ * @brief Pose estimation test interface 
  * 
  * @version 0.1
  * @date 2025-08-22
@@ -61,6 +61,21 @@ public:
 
 private: 
 
+    /**
+     * @brief Check for driver faults, halt program if they exist 
+     */
+    void DeviceFaultCheck(void);
+
+    /**
+     * @brief Find the global position of the system 
+     */
+    void PoseCalcs(void);
+
+    /**
+     * @brief Output the determined position of the system for the user to see 
+     */
+    void PoseDisplay(void);
+
     // Peripherals 
     USART_TypeDef *uart; 
     I2C_TypeDef *i2c; 
@@ -75,7 +90,19 @@ private:
     // LSM303AGR magnetometer data 
     LSM303AGR_STATUS mag_status;
     std::array<float, NUM_AXES> mag;
+
+    // M8Q GPS data 
+    M8Q_STATUS gps_status;
+
+    // Calculations 
+    MadgwickFilter madgwick_filter;
+    NavCalcs nav_calcs;
+    uint8_t kalman_update;
+    float lat, lon, alt;
+    std::array<float, NUM_AXES> accel_ned, vel;
 };
+
+extern PoseEstimate pose_estimate;
 
 //=======================================================================================
 
