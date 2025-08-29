@@ -79,7 +79,7 @@ static constexpr uint16_t int_display_count = 0x09C4;   // ARR=2500
 
 // Formatting 
 static constexpr uint8_t max_msg_len = 150;      // Max length of output message 
-static constexpr uint8_t num_output_lines = 3;   // Number of lines to move the cursor 
+static constexpr uint8_t num_output_lines = 6;   // Number of lines to move the cursor 
 
 //=======================================================================================
 
@@ -255,24 +255,22 @@ void OrientationEstimateTest::IMUFaultCheck(void)
 // Estimate the orientation of system in the Earth frame (roll, pitch, yaw) 
 void OrientationEstimateTest::OrientationCalcs(void)
 {
-    // Get roll, pitch and yaw in the NED frame 
+    // Get roll, pitch and yaw in the NED frame. Apply magnetic declination and adjust 
+    // the yaw/heading range to get a heading relative to true North in the range 
+    // 0.0-359.9 degrees. 
     madgwick_filter.Madgwick(gyro, accel, mag);
     roll = madgwick_filter.GetRollDegNED();
     pitch = madgwick_filter.GetPitchDegNED();
-    yaw = madgwick_filter.GetYawDegNED();
+    yaw = nav_calcs.TrueNorthHeading(madgwick_filter.GetYawDegNED());
 
-    // Apply magnetic declination and adjust the yaw/heading range to get a heading 
-    // relative to true North in the range 0.0-359.9 degrees. 
-    yaw = nav_calcs.TrueNorthHeading(yaw);
-
-    // Get the acceleration in the NED frame 
+    // Get the absolute acceleration in the NED frame relative to magnetic North then 
+    // rotate it to be relative to true North. 
     madgwick_filter.GetAccelNED(accel_ned);
-
-    // Apply magnetic declination to adjust the direction of the NED frame 
+    nav_calcs.TrueNorthAccel(accel_ned[X_AXIS], accel_ned[Y_AXIS]);
 }
 
 
-// Output the orientation for the use to see 
+// Output the orientation for the user to see 
 void OrientationEstimateTest::OrientationDisplay(void)
 {
     // Move the cursor in the serial terminal up to overwrite the old data 
@@ -286,15 +284,15 @@ void OrientationEstimateTest::OrientationDisplay(void)
         "Roll (deg*10): %d   \r\n"
         "Pitch (deg*10): %d   \r\n"
         "Yaw (deg*10): %d   \r\n"
-        "aN (g's): %d   \r\n"
-        "aE (g's): %d   \r\n"
-        "aD (g's): %d   \r\n",
+        "aN (g*100): %d   \r\n"
+        "aE (g*100): %d   \r\n"
+        "aD (g*100): %d   \r\n",
         (int16_t)(roll * SCALE_10),
         (int16_t)(pitch * SCALE_10),
         (int16_t)(yaw * SCALE_10),
-        (int16_t)(accel_ned[X_AXIS] * SCALE_10),
-        (int16_t)(accel_ned[Y_AXIS] * SCALE_10),
-        (int16_t)(accel_ned[Z_AXIS] * SCALE_10));
+        (int16_t)(accel_ned[X_AXIS] * SCALE_100),
+        (int16_t)(accel_ned[Y_AXIS] * SCALE_100),
+        (int16_t)(accel_ned[Z_AXIS] * SCALE_100));
     uart_send_str(uart, orientation_msg);
 }
 
