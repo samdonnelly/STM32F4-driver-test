@@ -18,10 +18,6 @@
 #ifndef _GPS_COORDINATES_H_ 
 #define _GPS_COORDINATES_H_ 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 //=======================================================================================
 // Includes 
 
@@ -41,12 +37,8 @@ extern "C" {
 //=======================================================================================
 // Coordinates 
 
-extern const gps_waypoints_t waypoints_0[NUM_GPS_WAYPOINTS_0]; 
+extern const NavCalcs::Position waypoints_0[NUM_GPS_WAYPOINTS_0]; 
 
 //=======================================================================================
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif  // _GPS_COORDINATES_H_

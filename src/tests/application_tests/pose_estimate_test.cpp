@@ -75,7 +75,7 @@ static const uint16_t int_calc_count = static_cast<uint16_t>(madgwick_dt * SCALE
 static constexpr uint16_t int_display_count = 0x09C4;   // ARR=2500 
 
 // Formatting 
-static constexpr uint8_t max_msg_len = 150;      // Max length of output message 
+static constexpr uint8_t max_msg_len = 200;      // Max length of output message 
 static constexpr uint8_t num_output_lines = 6;   // Number of lines to move the cursor 
 
 //=======================================================================================
@@ -99,8 +99,8 @@ PoseEstimate::PoseEstimate()
       madgwick_filter(madgwick_B, madgwick_dt),
       nav_calcs(1.0, magnetic_declination),
       accel_ned{},
-      gps_pos(CLEAR), position(CLEAR),
-      gps_vel(CLEAR), velocity(CLEAR),
+      gps_pos(), position(),
+      gps_vel(), velocity(),
       kalman_update(CLEAR_BIT)
 {
 }
@@ -280,30 +280,29 @@ void PoseEstimate::PoseCalcs(void)
     madgwick_filter.GetAccelNED(accel_ned);
     nav_calcs.TrueNorthEarthAccel(accel_ned[X_AXIS], accel_ned[Y_AXIS]);
 
-    // Run the Kalman filter to estimate position 
+    // Prediction step of the Kalman filter. Use the latest accelerometer data to 
+    // predict the position and velocity of the system. 
+    nav_calcs.KalmanPosePredict(accel_ned);
+
+    // If new measured position and velocity data from the GPS device is available then 
+    // we run the update step of the Kalman filter to provide the best estimate of true 
+    // position and velocity. 
     if (kalman_update == SET_BIT)
     {
-        // Update 
         kalman_update = CLEAR_BIT;
+        
+        // Get the latest GPS data then run the filter. 
+        gps_pos.lat = m8q_get_position_lat();                // deg 
+        gps_pos.lon = m8q_get_position_lon();                // deg 
+        gps_pos.alt = m8q_get_position_altref();             // m 
+        gps_vel.sog = m8q_get_position_sog() / KPH_TO_MPS;   // m/s 
+        gps_vel.cog = m8q_get_position_cog();                // deg 
+        gps_vel.vvel = m8q_get_position_vvel();              // m/s 
 
-        // Get the latest GPS data 
-        gps_pos.lat = m8q_get_position_lat();
-        gps_pos.lon = m8q_get_position_lon();
-        gps_pos.alt = m8q_get_position_altref();
-        gps_vel.sog = m8q_get_position_sog();
-        gps_vel.cog = m8q_get_position_cog();
-        gps_vel.vvel = m8q_get_position_vvel();
-
-        // 
         nav_calcs.KalmanPoseUpdate(gps_pos, gps_vel);
     }
-    else
-    {
-        // Prediction 
-        nav_calcs.KalmanPosePredict(accel_ned);
-    }
 
-    // 
+    // Retreive the position and velocity determined by the Kalman filter. 
     nav_calcs.GetKalmanPose(position, velocity);
 }
 
@@ -319,18 +318,18 @@ void PoseEstimate::PoseDisplay(void)
     snprintf(
         position_msg, 
         max_msg_len, 
-        "Latitude (): %ld   \r\n"
-        "Longitude (): %ld   \r\n"
-        "Altitude (): %ld   \r\n"
-        "SOG (m/s*100): %d   \r\n"
-        "COG (deg*100): %d   \r\n"
-        "vVel (m/s*100): %d   \r\n",
-        static_cast<int32_t>(position.lat * SCALE_10000),
-        static_cast<int32_t>(position.lon * SCALE_10000),
-        static_cast<int32_t>(position.alt * SCALE_10000),
-        static_cast<int16_t>(velocity.sog * SCALE_100),
-        static_cast<int16_t>(velocity.cog * SCALE_100),
-        static_cast<int16_t>(velocity.vvel * SCALE_100));
+        "Latitude (deg*1E6): %ld   \r\n"
+        "Longitude (deg*1E6): %ld   \r\n"
+        "Altitude (deg*1E3): %ld   \r\n"
+        "SOG (m/s*1E3): %d   \r\n"
+        "COG (deg*1E2): %d   \r\n"
+        "vVel (m/s*1E3): %d   \r\n",
+        static_cast<int32_t>(position.lat * SCALE_1E6F),
+        static_cast<int32_t>(position.lon * SCALE_1E6F),
+        static_cast<int32_t>(position.alt * SCALE_1000F),
+        static_cast<int16_t>(velocity.sog * SCALE_1000F),
+        static_cast<int16_t>(velocity.cog * SCALE_100F),
+        static_cast<int16_t>(velocity.vvel * SCALE_1000F));
     uart_send_str(uart, position_msg);
 }
 

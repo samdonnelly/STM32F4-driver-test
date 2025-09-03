@@ -62,8 +62,8 @@ class gps_nav_test : public NavCalcs
 private:   // Private variables 
 
     // GNSS 
-    gps_waypoints_t current;           // Current location coordinates 
-    gps_waypoints_t target;            // Desired waypoint coordinates 
+    NavCalcs::Position current;           // Current location coordinates 
+    NavCalcs::Position target;            // Desired waypoint coordinates 
     uint8_t waypoint_index;            // Index of target waypoints 
     float radius;                      // Distance between current and desired location 
     uint8_t navstat;                   // Position lock status 
@@ -374,7 +374,7 @@ void gps_nav_test::nav_heading(void)
 // Evaluate the location 
 void gps_nav_test::nav_location(void)
 {
-    gps_waypoints_t device_coordinates; 
+    NavCalcs::Position device_coordinates; 
     navstat = m8q_get_position_navstat_lock(); 
 
     if (navstat)
