@@ -268,7 +268,7 @@ void OrientationEstimateTest::OrientationCalcs(void)
     // Get the absolute acceleration in the NED frame relative to magnetic North then 
     // rotate it to be relative to true North. 
     madgwick_filter.GetAccelNED(accel_ned);
-    nav_calcs.TrueNorthAccel(accel_ned[X_AXIS], accel_ned[Y_AXIS]);
+    nav_calcs.TrueNorthEarthAccel(accel_ned[X_AXIS], accel_ned[Y_AXIS]);
 }
 
 

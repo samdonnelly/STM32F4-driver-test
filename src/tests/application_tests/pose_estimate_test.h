@@ -97,9 +97,10 @@ private:
     // Calculations 
     MadgwickFilter madgwick_filter;
     NavCalcs nav_calcs;
+    std::array<float, NUM_AXES> accel_ned;
+    NavCalcs::Position gps_pos, position;
+    NavCalcs::Velocity gps_vel, velocity;
     uint8_t kalman_update;
-    float lat, lon, alt;
-    std::array<float, NUM_AXES> accel_ned, vel;
 };
 
 extern PoseEstimate pose_estimate;

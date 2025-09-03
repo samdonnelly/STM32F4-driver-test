@@ -98,9 +98,10 @@ PoseEstimate::PoseEstimate()
       gps_status(M8Q_OK),
       madgwick_filter(madgwick_B, madgwick_dt),
       nav_calcs(1.0, magnetic_declination),
-      kalman_update(CLEAR_BIT),
-      lat(CLEAR), lon(CLEAR), alt(CLEAR),
-      accel_ned{}, vel{}
+      accel_ned{},
+      gps_pos(CLEAR), position(CLEAR),
+      gps_vel(CLEAR), velocity(CLEAR),
+      kalman_update(CLEAR_BIT)
 {
 }
 
@@ -277,7 +278,7 @@ void PoseEstimate::PoseCalcs(void)
     // Get the absolute acceleration in the NED frame relative to magnetic North then 
     // rotate it to be relative to true North. 
     madgwick_filter.GetAccelNED(accel_ned);
-    nav_calcs.TrueNorthAccel(accel_ned[X_AXIS], accel_ned[Y_AXIS]);
+    nav_calcs.TrueNorthEarthAccel(accel_ned[X_AXIS], accel_ned[Y_AXIS]);
 
     // Run the Kalman filter to estimate position 
     if (kalman_update == SET_BIT)
@@ -286,11 +287,24 @@ void PoseEstimate::PoseCalcs(void)
         kalman_update = CLEAR_BIT;
 
         // Get the latest GPS data 
+        gps_pos.lat = m8q_get_position_lat();
+        gps_pos.lon = m8q_get_position_lon();
+        gps_pos.alt = m8q_get_position_altref();
+        gps_vel.sog = m8q_get_position_sog();
+        gps_vel.cog = m8q_get_position_cog();
+        gps_vel.vvel = m8q_get_position_vvel();
+
+        // 
+        nav_calcs.KalmanPoseUpdate(gps_pos, gps_vel);
     }
     else
     {
         // Prediction 
+        nav_calcs.KalmanPosePredict(accel_ned);
     }
+
+    // 
+    nav_calcs.GetKalmanPose(position, velocity);
 }
 
 
@@ -308,15 +322,15 @@ void PoseEstimate::PoseDisplay(void)
         "Latitude (): %ld   \r\n"
         "Longitude (): %ld   \r\n"
         "Altitude (): %ld   \r\n"
-        "vN (): %d   \r\n"
-        "vE (): %d   \r\n"
-        "vD (): %d   \r\n",
-        static_cast<int32_t>(lat * SCALE_10000),
-        static_cast<int32_t>(lon * SCALE_10000),
-        static_cast<int32_t>(alt * SCALE_10000),
-        static_cast<int16_t>(vel[X_AXIS] * SCALE_100),
-        static_cast<int16_t>(vel[Y_AXIS] * SCALE_100),
-        static_cast<int16_t>(vel[Z_AXIS] * SCALE_100));
+        "SOG (m/s*100): %d   \r\n"
+        "COG (deg*100): %d   \r\n"
+        "vVel (m/s*100): %d   \r\n",
+        static_cast<int32_t>(position.lat * SCALE_10000),
+        static_cast<int32_t>(position.lon * SCALE_10000),
+        static_cast<int32_t>(position.alt * SCALE_10000),
+        static_cast<int16_t>(velocity.sog * SCALE_100),
+        static_cast<int16_t>(velocity.cog * SCALE_100),
+        static_cast<int16_t>(velocity.vvel * SCALE_100));
     uart_send_str(uart, position_msg);
 }
 
