@@ -97,12 +97,14 @@ PoseEstimate::PoseEstimate()
       mag{},
       gps_status(M8Q_OK),
       madgwick_filter(madgwick_B, madgwick_dt),
-      nav_calcs(1.0, magnetic_declination),
+      nav_calcs(),
       accel_ned{},
       gps_pos(), position(),
       gps_vel(), velocity(),
       kalman_update(CLEAR_BIT)
 {
+    nav_calcs.SetTnOffset(magnetic_declination);
+    nav_calcs.SetKalmanDT(madgwick_dt);
 }
 
 

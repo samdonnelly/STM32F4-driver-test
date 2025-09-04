@@ -99,10 +99,11 @@ OrientationEstimateTest::OrientationEstimateTest()
       mag_status(LSM303AGR_OK),
       mag{},
       madgwick_filter(madgwick_B, madgwick_dt),
-      nav_calcs(1.0, magnetic_declination),
+      nav_calcs(),
       roll(CLEAR), pitch(CLEAR), yaw(CLEAR),
       accel_ned{}
 {
+    nav_calcs.SetTnOffset(magnetic_declination);
 }
 
 void OrientationEstimateTest::TestInit(void)
