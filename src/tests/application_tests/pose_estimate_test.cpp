@@ -104,7 +104,6 @@ PoseEstimate::PoseEstimate()
       kalman_update(CLEAR_BIT)
 {
     nav_calcs.SetTnOffset(magnetic_declination);
-    nav_calcs.SetKalmanDT(madgwick_dt);
 }
 
 
@@ -192,7 +191,26 @@ void PoseEstimate::TestInit(void)
         CLEAR);
     gps_status |= m8q_txr_pin_init(GPIOC, PIN_11);
 
+    // Check if there were any faults during driver setup 
     DeviceFaultCheck();
+
+    // Wait until an initial GPS position is obtained before starting to estimate position. 
+    while (m8q_get_position_navstat_lock() == FALSE)
+    {
+        if (m8q_get_tx_ready() == GPIO_HIGH)
+        {
+            gps_status |= m8q_read_data();
+        }
+
+        if (handler_flags.tim1_brk_tim9_glbl_flag)
+        {
+            handler_flags.tim1_brk_tim9_glbl_flag = CLEAR;
+            // Display a waiting message 
+        }
+    }
+
+    // Set the Kalman filter data 
+    // nav_calcs.SetKalmanPoseData(madgwick_dt);
 }
 
 //=======================================================================================
@@ -211,7 +229,7 @@ void PoseEstimate::TestApp(void)
         // Read the latest data from the IMU, magnetometer and GPS (when available) 
         imu_status |= mpu6050_update(device_num);
         mag_status |= lsm303agr_m_update();
-        if (m8q_get_tx_ready() == GPIO_HIGH)
+        if ((m8q_get_tx_ready() == GPIO_HIGH) && (m8q_get_position_navstat_lock() == TRUE))
         {
             gps_status |= m8q_read_data();
             kalman_update = SET_BIT;

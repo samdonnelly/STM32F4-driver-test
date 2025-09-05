@@ -89,7 +89,7 @@ public:   // Setup and teardown
         TIM_TypeDef *timer, 
         float coordinate_filter_gain, 
         float tn_offset) 
-        : NavCalcs(coordinate_filter_gain, tn_offset),
+        : NavCalcs(),
           waypoint_index(CLEAR), 
           radius(COORDINATE_RADIUS), 
           navstat(CLEAR), 
@@ -106,6 +106,9 @@ public:   // Setup and teardown
         current.lon = CLEAR; 
         target.lat = waypoints_0[waypoint_index].lat;
         target.lon = waypoints_0[waypoint_index].lon;
+
+        NavCalcs::SetCoordinateLPFGain(coordinate_filter_gain);
+        NavCalcs::SetTnOffset(tn_offset);
     }
 
     // Destructor 
