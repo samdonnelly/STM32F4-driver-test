@@ -195,22 +195,7 @@ void PoseEstimate::TestInit(void)
     DeviceFaultCheck();
 
     // Wait until an initial GPS position is obtained before starting to estimate position. 
-    while (m8q_get_position_navstat_lock() == FALSE)
-    {
-        if (m8q_get_tx_ready() == GPIO_HIGH)
-        {
-            gps_status |= m8q_read_data();
-        }
-
-        if (handler_flags.tim1_brk_tim9_glbl_flag)
-        {
-            handler_flags.tim1_brk_tim9_glbl_flag = CLEAR;
-            // Display a waiting message 
-        }
-    }
-
-    // Set the Kalman filter data 
-    // nav_calcs.SetKalmanPoseData(madgwick_dt);
+    WaitForGPS();
 }
 
 //=======================================================================================
@@ -281,6 +266,58 @@ void PoseEstimate::DeviceFaultCheck(void)
 }
 
 
+// Wait for an initial GPS connection 
+void PoseEstimate::WaitForGPS(void)
+{
+    while (m8q_get_position_navstat_lock() == FALSE)
+    {
+        if (m8q_get_tx_ready() == GPIO_HIGH)
+        {
+            gps_status |= m8q_read_data();
+        }
+
+        if (handler_flags.tim1_brk_tim9_glbl_flag)
+        {
+            handler_flags.tim1_brk_tim9_glbl_flag = CLEAR;
+            
+            static uint8_t count = CLEAR;
+            char load_symbol;
+            char wait_msg[max_msg_len];
+
+            switch(count++)
+            {
+                case 0:
+                    load_symbol = SLASH_CHAR;
+                    break;
+                case 1:
+                    load_symbol = MINUS_CHAR;
+                    break;
+                default:
+                    load_symbol = BACKSLASH_CHAR;
+                    count = CLEAR;
+                    break;
+            }
+            
+            snprintf(
+                wait_msg, 
+                max_msg_len, 
+                "\rWaiting for GPS...%c", 
+                load_symbol); 
+            uart_send_str(uart, wait_msg);
+        }
+    }
+    
+    // Set the Kalman filter data now that we know the initial position 
+    GetGPSData();
+    nav_calcs.SetKalmanPoseData(madgwick_dt,
+                                gps_pos,
+                                accel_pos_variance,
+                                accel_vel_variance,
+                                gps_pos_variance,
+                                gps_vel_variance);
+}
+
+
 // Find the global position of the system 
 void PoseEstimate::PoseCalcs(void)
 {
@@ -310,20 +347,24 @@ void PoseEstimate::PoseCalcs(void)
     if (kalman_update == SET_BIT)
     {
         kalman_update = CLEAR_BIT;
-        
-        // Get the latest GPS data then run the filter. 
-        gps_pos.lat = m8q_get_position_lat();                // deg 
-        gps_pos.lon = m8q_get_position_lon();                // deg 
-        gps_pos.alt = m8q_get_position_altref();             // m 
-        gps_vel.sog = m8q_get_position_sog() / KPH_TO_MPS;   // m/s 
-        gps_vel.cog = m8q_get_position_cog();                // deg 
-        gps_vel.vvel = m8q_get_position_vvel();              // m/s 
-
+        GetGPSData();
         nav_calcs.KalmanPoseUpdate(gps_pos, gps_vel);
     }
 
     // Retreive the position and velocity determined by the Kalman filter. 
     nav_calcs.GetKalmanPose(position, velocity);
+}
+
+
+// Get GPS data 
+void PoseEstimate::GetGPSData(void)
+{
+    gps_pos.lat = m8q_get_position_lat();                // deg 
+    gps_pos.lon = m8q_get_position_lon();                // deg 
+    gps_pos.alt = m8q_get_position_altref();             // m 
+    gps_vel.sog = m8q_get_position_sog() / KPH_TO_MPS;   // m/s 
+    gps_vel.cog = m8q_get_position_cog();                // deg 
+    gps_vel.vvel = m8q_get_position_vvel();              // m/s 
 }
 
 

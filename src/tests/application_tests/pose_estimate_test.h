@@ -67,9 +67,19 @@ private:
     void DeviceFaultCheck(void);
 
     /**
+     * @brief Wait for an initial GPS connection 
+     */
+    void WaitForGPS(void);
+
+    /**
      * @brief Find the global position of the system 
      */
     void PoseCalcs(void);
+
+    /**
+     * @brief Get GPS data 
+     */
+    void GetGPSData(void);
 
     /**
      * @brief Output the determined position of the system for the user to see 
