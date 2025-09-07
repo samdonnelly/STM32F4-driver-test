@@ -10,9 +10,12 @@
  *            * STM32F4 microcontroller with a serial connection to a PC. 
  *            * 1 MPU-6050 IMU 
  *            * 1 LSM303AGR magnetometer 
+ *            * 1 SAM-M8Q GPS 
  *            * NOTE: The IMU and magnetometer must be fixed relative to one another so 
  *                    the orientation of the "system" or "object" can be determined. This 
- *                    could be achieved by mounting them to the same board. 
+ *                    could be achieved by mounting them to the same board. The GPS does 
+ *                    not need to be fixed relative to the IMU and magnetometer but it 
+ *                    must move with the system so position is known. 
  *          - Software 
  *            * Serial monitor on a PC to allow the exchange of info with the STM32F4. 
  *          
@@ -27,18 +30,21 @@
  *            * UART is configured to provide a serial terminal output both for device 
  *              data and driver status faults. 
  *          - I2C 
- *            * I2C is configured to communicate with the MPU-6050 and LSM303AGR devices. 
+ *            * I2C is configured to communicate with the MPU-6050, LSM303AGR and SAM-M8Q 
+ *              devices. 
  *            * It is set to run in standard mode (SM) where SCL runs at 100kHz which 
  *              should handle a typical transaction with the MPU-6050 in ~1ms. 
  *          - Interrupts 
- *            * An interrupt is configured for the timer to create a periodic interrupt 
- *              to control when to read and output device data. 
+ *            * Interrupts are configured for both timers to create periodic interrupts 
+ *              that control when to read and output device data. 
  *          - MPU-6050 
  *            * The accelerometer updates/outputs at a rate of 1kHz (can't be adjusted). 
  *            * The gyroscope is set to update/output at a rate of 1kHz. The DLPF is 
  *              enabled and the SMPLRT_DIV register is set to 0 (see datasheet). 
  *          - LSM303AGR 
  *            * The magnetometer updates/outputs at a rate of 50Hz. 
+ *          - SAM-M8Q
+ *            * The GPS updates/outputs at a maximum of 1Hz. 
  *          
  *          Dependencies 
  *          - STM32F4 driver library 
