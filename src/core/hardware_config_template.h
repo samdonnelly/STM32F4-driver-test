@@ -132,6 +132,7 @@
 // MPU-6050 driver test 
 #define MPU6050_SECOND_DEVICE 0          // Include the test code for a second device 
 #define MPU6050_INT_PIN 0                // Interrupt pin enable 
+#define MPU6050_LOG_OUTPUT 0             // Data output in a data logging format 
 
 // nRF24L01 driver test 
 #define NRF24L01_SYSTEM_1 0              // Enable device 1 code 

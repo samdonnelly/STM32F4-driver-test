@@ -108,17 +108,15 @@ typedef struct mpu6050_test_data_s
 
     // Data output 
     uint8_t data_count;
-    char output_raw[MPU6050_TEST_MAX_STR_SIZE]; 
-    char output_formatted[MPU6050_TEST_MAX_STR_SIZE]; 
+    char output_raw[MPU6050_TEST_MAX_STR_SIZE];
+    char output_formatted[MPU6050_TEST_MAX_STR_SIZE];
+    char output_log[MPU6050_TEST_MAX_STR_SIZE];
     uint8_t cursor_lines; 
 
     mpu6050_test_imu_data_t imu1; 
-
-#if MPU6050_SECOND_DEVICE 
-
+#if MPU6050_SECOND_DEVICE
     mpu6050_test_imu_data_t imu2; 
-
-#endif   // MPU6050_SECOND_DEVICE 
+#endif
 }
 mpu6050_test_data_t; 
 
@@ -164,8 +162,9 @@ void mpu6050_test_init()
     mpu6050_data.tim_read = TIM10; 
     mpu6050_data.tim_display = TIM9; 
     mpu6050_data.data_count = CLEAR;
-    memset((void *)mpu6050_data.output_raw, CLEAR, sizeof(mpu6050_data.output_raw)); 
-    memset((void *)mpu6050_data.output_formatted, CLEAR, sizeof(mpu6050_data.output_formatted)); 
+    memset((void *)mpu6050_data.output_raw, CLEAR, sizeof(mpu6050_data.output_raw));
+    memset((void *)mpu6050_data.output_formatted, CLEAR, sizeof(mpu6050_data.output_formatted));
+    memset((void *)mpu6050_data.output_log, CLEAR, sizeof(mpu6050_data.output_log));
     mpu6050_data.cursor_lines = MPU6050_TEST_OUTPUT_LINES + MPU6050_TEST_OUTPUT_LINES*MPU6050_SECOND_DEVICE; 
 
     mpu6050_data.imu1.device_num = DEVICE_ONE; 
@@ -402,6 +401,34 @@ void mpu6050_test_format_output(mpu6050_test_imu_data_t *imu_data)
         imu_data->gyro[i] = CLEAR;
     }
 
+#if MPU6050_LOG_OUTPUT
+
+    // Format the data to be logged into a string. This data prints out one line after 
+    // another so it can be saved by the user into a log file. 
+    snprintf(mpu6050_data.output_log, 
+             MPU6050_TEST_MAX_STR_SIZE, 
+             "IMU%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\r\n",
+             (uint8_t)imu_data->device_num,
+             temp_raw, 
+             accel_raw[X_AXIS], 
+             accel_raw[Y_AXIS], 
+             accel_raw[Z_AXIS], 
+             gyro_raw[X_AXIS], 
+             gyro_raw[Y_AXIS], 
+             gyro_raw[Z_AXIS],
+             (int16_t)(temp * SCALE_100), 
+             (int16_t)(accel[X_AXIS] * SCALE_100), 
+             (int16_t)(accel[Y_AXIS] * SCALE_100), 
+             (int16_t)(accel[Z_AXIS] * SCALE_100), 
+             (int16_t)(gyro[X_AXIS] * SCALE_100), 
+             (int16_t)(gyro[Y_AXIS] * SCALE_100), 
+             (int16_t)(gyro[Z_AXIS] * SCALE_100)); 
+
+    // Display the data in the serial terminal 
+    uart_send_str(mpu6050_data.uart, mpu6050_data.output_log); 
+
+#else
+
     // Reset the cursor position to overwrite the old data 
     uart_cursor_move(mpu6050_data.uart, UART_CURSOR_UP, mpu6050_data.cursor_lines); 
     uart_send_str(mpu6050_data.uart, "\r"); 
@@ -441,10 +468,12 @@ void mpu6050_test_format_output(mpu6050_test_imu_data_t *imu_data)
              (int16_t)(gyro[X_AXIS] * SCALE_100), 
              (int16_t)(gyro[Y_AXIS] * SCALE_100), 
              (int16_t)(gyro[Z_AXIS] * SCALE_100)); 
-
+             
     // Display the data in the serial terminal 
     uart_send_str(mpu6050_data.uart, mpu6050_data.output_raw); 
     uart_send_str(mpu6050_data.uart, mpu6050_data.output_formatted);
+
+#endif
 }
 
 

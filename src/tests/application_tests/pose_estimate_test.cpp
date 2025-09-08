@@ -42,9 +42,18 @@
  *            * The gyroscope is set to update/output at a rate of 1kHz. The DLPF is 
  *              enabled and the SMPLRT_DIV register is set to 0 (see datasheet). 
  *          - LSM303AGR 
- *            * The magnetometer updates/outputs at a rate of 50Hz. 
+ *            * The magnetometer updates/outputs at a rate of 50Hz. This can be 
+ *              configured to go as low as 10Hz. If the period for determining 
+ *              orientation and position prediciton is chosen faster than this then 
+ *              magnetometer data will be the same across multiple periods. 
  *          - SAM-M8Q
- *            * The GPS updates/outputs at a maximum of 1Hz. 
+ *            * The GPS updates/outputs at a maximum of 1Hz. The kalman filter position 
+ *              is only updated once this data comes in. 
+ *          - User Config 
+ *            * Madgwick filter correction weight (B) and the time between calculations 
+ *              (dt). 
+ *            * Magnetic declination for their location. 
+ *            * Kalman filter process (accelerometer) and measurement (GPS) variance. 
  *          
  *          Dependencies 
  *          - STM32F4 driver library 
@@ -52,7 +61,21 @@
  *              used in the test. 
  *          
  *          Procedure 
- *          - 
+ *          - After configuring devices but before starting to determine position, the 
+ *            code waits for a GPS position to be obtained so the initial location can 
+ *            be set. 
+ *          - Once the initial position is known, the code proceeds to determine the 
+ *            systems orientation using accelerometer, gyroscope and magnetometer data 
+ *            fed to a Madgwick filter which gets called periodically. Each orientation 
+ *            update is followed by a prediciton of the systems global position using 
+ *            a Kalman filter that takes in the systems acceleration in the NED frame. 
+ *            Once GPS data becomes available, the Kalman filter update step is called 
+ *            which fuses newly measured position and velocity data with the predicted 
+ *            posiiton to provide the best possible estimate of the systems true 
+ *            position and velocity. Determined position and velocity is displayed 
+ *            periodically in the serial terminal for the user to see. 
+ *          - The user is able to set Madgwick properties and well as magnetic 
+ *            declination and Kalman filter variances. 
  * 
  * @version 0.1
  * @date 2025-08-22
