@@ -94,8 +94,10 @@ typedef struct mpu6050_test_imu_data_s
     MPU6050_STATUS status; 
     uint8_t st_result; 
     // Buffers to sum multiple data readings 
-    int32_t temp_raw, accel_raw[NUM_AXES], gyro_raw[NUM_AXES]; 
-    float temp, accel[NUM_AXES], gyro[NUM_AXES]; 
+    int32_t temp_raw_sum, accel_raw_sum[NUM_AXES], gyro_raw_sum[NUM_AXES];
+    int16_t temp_raw, accel_raw[NUM_AXES], gyro_raw[NUM_AXES];
+    float temp_sum, accel_sum[NUM_AXES], gyro_sum[NUM_AXES];
+    float temp, accel[NUM_AXES], gyro[NUM_AXES];
 }
 mpu6050_test_imu_data_t; 
 
@@ -170,9 +172,15 @@ void mpu6050_test_init()
     mpu6050_data.imu1.device_num = DEVICE_ONE; 
     mpu6050_data.imu1.status = MPU6050_OK; 
     mpu6050_data.imu1.st_result = CLEAR; 
-    mpu6050_data.imu1.temp_raw = CLEAR; 
-    memset((void *)mpu6050_data.imu1.accel_raw, CLEAR, sizeof(mpu6050_data.imu1.accel_raw)); 
-    memset((void *)mpu6050_data.imu1.gyro_raw, CLEAR, sizeof(mpu6050_data.imu1.gyro_raw)); 
+    mpu6050_data.imu1.temp_raw_sum = CLEAR;
+    memset((void *)mpu6050_data.imu1.accel_raw_sum, CLEAR, sizeof(mpu6050_data.imu1.accel_raw_sum)); 
+    memset((void *)mpu6050_data.imu1.gyro_raw_sum, CLEAR, sizeof(mpu6050_data.imu1.gyro_raw_sum)); 
+    mpu6050_data.imu1.temp_raw = CLEAR;
+    memset((void *)mpu6050_data.imu1.accel_raw, CLEAR, sizeof(mpu6050_data.imu1.accel_raw));
+    memset((void *)mpu6050_data.imu1.gyro_raw, CLEAR, sizeof(mpu6050_data.imu1.gyro_raw));
+    mpu6050_data.imu1.temp_sum = CLEAR; 
+    memset((void *)mpu6050_data.imu1.accel_sum, CLEAR, sizeof(mpu6050_data.imu1.accel_sum)); 
+    memset((void *)mpu6050_data.imu1.gyro_sum, CLEAR, sizeof(mpu6050_data.imu1.gyro_sum)); 
     mpu6050_data.imu1.temp = CLEAR; 
     memset((void *)mpu6050_data.imu1.accel, CLEAR, sizeof(mpu6050_data.imu1.accel)); 
     memset((void *)mpu6050_data.imu1.gyro, CLEAR, sizeof(mpu6050_data.imu1.gyro)); 
@@ -182,9 +190,15 @@ void mpu6050_test_init()
     mpu6050_data.imu1.device_num = DEVICE_TWO; 
     mpu6050_data.imu2.status = MPU6050_OK; 
     mpu6050_data.imu2.st_result = CLEAR; 
-    mpu6050_data.imu2.temp_raw = CLEAR; 
-    memset((void *)mpu6050_data.imu2.accel_raw, CLEAR, sizeof(mpu6050_data.imu2.accel_raw)); 
-    memset((void *)mpu6050_data.imu2.gyro_raw, CLEAR, sizeof(mpu6050_data.imu2.gyro_raw)); 
+    mpu6050_data.imu2.temp_raw_sum = CLEAR;
+    memset((void *)mpu6050_data.imu2.accel_raw_sum, CLEAR, sizeof(mpu6050_data.imu2.accel_raw_sum)); 
+    memset((void *)mpu6050_data.imu2.gyro_raw_sum, CLEAR, sizeof(mpu6050_data.imu2.gyro_raw_sum)); 
+    mpu6050_data.imu2.temp_raw = CLEAR;
+    memset((void *)mpu6050_data.imu2.accel_raw, CLEAR, sizeof(mpu6050_data.imu2.accel_raw));
+    memset((void *)mpu6050_data.imu2.gyro_raw, CLEAR, sizeof(mpu6050_data.imu2.gyro_raw));
+    mpu6050_data.imu2.temp_sum = CLEAR; 
+    memset((void *)mpu6050_data.imu2.accel_sum, CLEAR, sizeof(mpu6050_data.imu2.accel_sum)); 
+    memset((void *)mpu6050_data.imu2.gyro_sum, CLEAR, sizeof(mpu6050_data.imu2.gyro_sum)); 
     mpu6050_data.imu2.temp = CLEAR; 
     memset((void *)mpu6050_data.imu2.accel, CLEAR, sizeof(mpu6050_data.imu2.accel)); 
     memset((void *)mpu6050_data.imu2.gyro, CLEAR, sizeof(mpu6050_data.imu2.gyro)); 
@@ -352,26 +366,23 @@ void mpu6050_test_read_record(mpu6050_test_imu_data_t *imu_data)
         mpu6050_test_fault_state(); 
     }
 
-    int16_t accel_raw[NUM_AXES], gyro_raw[NUM_AXES];
-    float accel[NUM_AXES], gyro[NUM_AXES];
-
     // Get the raw temperature, accelerometer and gyroscope readings 
-    imu_data->temp_raw += (int32_t)mpu6050_get_temp_raw(imu_data->device_num); 
-    mpu6050_get_accel_axis(imu_data->device_num, accel_raw); 
-    mpu6050_get_gyro_axis(imu_data->device_num, gyro_raw); 
+    imu_data->temp_raw_sum += (int32_t)mpu6050_get_temp_raw(imu_data->device_num); 
+    mpu6050_get_accel_axis(imu_data->device_num, imu_data->accel_raw); 
+    mpu6050_get_gyro_axis(imu_data->device_num, imu_data->gyro_raw); 
 
     // Get the formatted temp (degC), accelerometer (g's) and gyroscope (deg/s) data 
-    imu_data->temp += mpu6050_get_temp(imu_data->device_num); 
-    mpu6050_get_accel_axis_gs(imu_data->device_num, accel); 
-    mpu6050_get_gyro_axis_rate(imu_data->device_num, gyro);
+    imu_data->temp_sum += mpu6050_get_temp(imu_data->device_num); 
+    mpu6050_get_accel_axis_gs(imu_data->device_num, imu_data->accel); 
+    mpu6050_get_gyro_axis_rate(imu_data->device_num, imu_data->gyro);
 
     // Record the accel and gyro data 
     for (uint8_t i = X_AXIS; i < NUM_AXES; i++)
     {
-        imu_data->accel_raw[i] += (int32_t)accel_raw[i];
-        imu_data->gyro_raw[i] += (int32_t)gyro_raw[i];
-        imu_data->accel[i] += accel[i];
-        imu_data->gyro[i] += gyro[i];
+        imu_data->accel_raw_sum[i] += (int32_t)imu_data->accel_raw[i];
+        imu_data->gyro_raw_sum[i] += (int32_t)imu_data->gyro_raw[i];
+        imu_data->accel_sum[i] += imu_data->accel[i];
+        imu_data->gyro_sum[i] += imu_data->gyro[i];
     }
 }
 
@@ -379,28 +390,6 @@ void mpu6050_test_read_record(mpu6050_test_imu_data_t *imu_data)
 // Format and output IMU data 
 void mpu6050_test_format_output(mpu6050_test_imu_data_t *imu_data)
 {
-    int16_t temp_raw, accel_raw[NUM_AXES], gyro_raw[NUM_AXES];
-    float temp, accel[NUM_AXES], gyro[NUM_AXES];
-
-    // Average the collected data since the last display output and reset the data buffers 
-    temp_raw = imu_data->temp_raw / mpu6050_data.data_count;
-    temp = imu_data->temp / mpu6050_data.data_count;
-    imu_data->temp_raw = CLEAR;
-    imu_data->temp = CLEAR;
-
-    for (uint8_t i = X_AXIS; i < NUM_AXES; i++)
-    {
-        accel_raw[i] = imu_data->accel_raw[i] / mpu6050_data.data_count;
-        gyro_raw[i] = imu_data->gyro_raw[i] / mpu6050_data.data_count;
-        accel[i] = imu_data->accel[i] / mpu6050_data.data_count;
-        gyro[i] = imu_data->gyro[i] / mpu6050_data.data_count;
-
-        imu_data->accel_raw[i] = CLEAR;
-        imu_data->gyro_raw[i] = CLEAR;
-        imu_data->accel[i] = CLEAR;
-        imu_data->gyro[i] = CLEAR;
-    }
-
 #if MPU6050_LOG_OUTPUT
 
     // Format the data to be logged into a string. This data prints out one line after 
@@ -409,25 +398,44 @@ void mpu6050_test_format_output(mpu6050_test_imu_data_t *imu_data)
              MPU6050_TEST_MAX_STR_SIZE, 
              "IMU%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\r\n",
              (uint8_t)imu_data->device_num,
-             temp_raw, 
-             accel_raw[X_AXIS], 
-             accel_raw[Y_AXIS], 
-             accel_raw[Z_AXIS], 
-             gyro_raw[X_AXIS], 
-             gyro_raw[Y_AXIS], 
-             gyro_raw[Z_AXIS],
-             (int16_t)(temp * SCALE_100), 
-             (int16_t)(accel[X_AXIS] * SCALE_100), 
-             (int16_t)(accel[Y_AXIS] * SCALE_100), 
-             (int16_t)(accel[Z_AXIS] * SCALE_100), 
-             (int16_t)(gyro[X_AXIS] * SCALE_100), 
-             (int16_t)(gyro[Y_AXIS] * SCALE_100), 
-             (int16_t)(gyro[Z_AXIS] * SCALE_100)); 
+             imu_data->temp_raw, 
+             imu_data->accel_raw[X_AXIS],
+             imu_data->accel_raw[Y_AXIS],
+             imu_data->accel_raw[Z_AXIS],
+             imu_data->gyro_raw[X_AXIS],
+             imu_data->gyro_raw[Y_AXIS],
+             imu_data->gyro_raw[Z_AXIS],
+             (int16_t)(imu_data->temp * SCALE_100),
+             (int16_t)(imu_data->accel[X_AXIS] * GRAVITY * SCALE_100),
+             (int16_t)(imu_data->accel[Y_AXIS] * GRAVITY * SCALE_100),
+             (int16_t)(imu_data->accel[Z_AXIS] * GRAVITY * SCALE_100),
+             (int16_t)(imu_data->gyro[X_AXIS] * SCALE_100),
+             (int16_t)(imu_data->gyro[Y_AXIS] * SCALE_100),
+             (int16_t)(imu_data->gyro[Z_AXIS] * SCALE_100));
 
     // Display the data in the serial terminal 
     uart_send_str(mpu6050_data.uart, mpu6050_data.output_log); 
 
 #else
+
+    // Average the collected data since the last display output and reset the data buffers 
+    imu_data->temp_raw = imu_data->temp_raw_sum / mpu6050_data.data_count;
+    imu_data->temp = imu_data->temp_sum / mpu6050_data.data_count;
+    imu_data->temp_raw_sum = CLEAR;
+    imu_data->temp_sum = CLEAR;
+
+    for (uint8_t i = X_AXIS; i < NUM_AXES; i++)
+    {
+        imu_data->accel_raw[i] = imu_data->accel_raw_sum[i] / mpu6050_data.data_count;
+        imu_data->gyro_raw[i] = imu_data->gyro_raw_sum[i] / mpu6050_data.data_count;
+        imu_data->accel[i] = imu_data->accel_sum[i] / mpu6050_data.data_count;
+        imu_data->gyro[i] = imu_data->gyro_sum[i] / mpu6050_data.data_count;
+
+        imu_data->accel_raw_sum[i] = CLEAR;
+        imu_data->gyro_raw_sum[i] = CLEAR;
+        imu_data->accel_sum[i] = CLEAR;
+        imu_data->gyro_sum[i] = CLEAR;
+    }
 
     // Reset the cursor position to overwrite the old data 
     uart_cursor_move(mpu6050_data.uart, UART_CURSOR_UP, mpu6050_data.cursor_lines); 
@@ -443,13 +451,13 @@ void mpu6050_test_format_output(mpu6050_test_imu_data_t *imu_data)
              "gx_r = %d   \r\n"
              "gy_r = %d   \r\n"
              "gz_r = %d   \r\n\n", 
-             temp_raw, 
-             accel_raw[X_AXIS], 
-             accel_raw[Y_AXIS], 
-             accel_raw[Z_AXIS], 
-             gyro_raw[X_AXIS], 
-             gyro_raw[Y_AXIS], 
-             gyro_raw[Z_AXIS]); 
+             imu_data->temp_raw, 
+             imu_data->accel_raw[X_AXIS], 
+             imu_data->accel_raw[Y_AXIS], 
+             imu_data->accel_raw[Z_AXIS], 
+             imu_data->gyro_raw[X_AXIS], 
+             imu_data->gyro_raw[Y_AXIS], 
+             imu_data->gyro_raw[Z_AXIS]); 
 
     // Format the formatted data into a striing 
     snprintf(mpu6050_data.output_formatted, 
@@ -461,13 +469,13 @@ void mpu6050_test_format_output(mpu6050_test_imu_data_t *imu_data)
              "gx_f = %d   \r\n"
              "gy_f = %d   \r\n"
              "gz_f = %d   \r\n\n", 
-             (int16_t)(temp * SCALE_100), 
-             (int16_t)(accel[X_AXIS] * SCALE_100), 
-             (int16_t)(accel[Y_AXIS] * SCALE_100), 
-             (int16_t)(accel[Z_AXIS] * SCALE_100), 
-             (int16_t)(gyro[X_AXIS] * SCALE_100), 
-             (int16_t)(gyro[Y_AXIS] * SCALE_100), 
-             (int16_t)(gyro[Z_AXIS] * SCALE_100)); 
+             (int16_t)(imu_data->temp * SCALE_100), 
+             (int16_t)(imu_data->accel[X_AXIS] * SCALE_100), 
+             (int16_t)(imu_data->accel[Y_AXIS] * SCALE_100), 
+             (int16_t)(imu_data->accel[Z_AXIS] * SCALE_100), 
+             (int16_t)(imu_data->gyro[X_AXIS] * SCALE_100), 
+             (int16_t)(imu_data->gyro[Y_AXIS] * SCALE_100), 
+             (int16_t)(imu_data->gyro[Z_AXIS] * SCALE_100)); 
              
     // Display the data in the serial terminal 
     uart_send_str(mpu6050_data.uart, mpu6050_data.output_raw); 
