@@ -367,16 +367,18 @@ void mpu6050_test_read_record(mpu6050_test_imu_data_t *imu_data)
     }
 
     // Get the raw temperature, accelerometer and gyroscope readings 
-    imu_data->temp_raw_sum += (int32_t)mpu6050_get_temp_raw(imu_data->device_num); 
+    imu_data->temp_raw = (int32_t)mpu6050_get_temp_raw(imu_data->device_num); 
     mpu6050_get_accel_axis(imu_data->device_num, imu_data->accel_raw); 
     mpu6050_get_gyro_axis(imu_data->device_num, imu_data->gyro_raw); 
 
     // Get the formatted temp (degC), accelerometer (g's) and gyroscope (deg/s) data 
-    imu_data->temp_sum += mpu6050_get_temp(imu_data->device_num); 
+    imu_data->temp = mpu6050_get_temp(imu_data->device_num); 
     mpu6050_get_accel_axis_gs(imu_data->device_num, imu_data->accel); 
     mpu6050_get_gyro_axis_rate(imu_data->device_num, imu_data->gyro);
-
-    // Record the accel and gyro data 
+    
+    // Add the new data to the sum 
+    imu_data->temp_raw_sum += imu_data->temp_raw;
+    imu_data->temp_sum += imu_data->temp;
     for (uint8_t i = X_AXIS; i < NUM_AXES; i++)
     {
         imu_data->accel_raw_sum[i] += (int32_t)imu_data->accel_raw[i];

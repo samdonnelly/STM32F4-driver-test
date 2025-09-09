@@ -95,7 +95,7 @@ private:
     device_number_t device_num; 
     uint8_t imu_st_result; 
     MPU6050_STATUS imu_status; 
-    std::array<float, NUM_AXES> accel, gyro;
+    std::array<float, NUM_AXES> accel, gyro, accel_var;
 
     // LSM303AGR magnetometer data 
     LSM303AGR_STATUS mag_status;
@@ -107,9 +107,9 @@ private:
     // Calculations 
     MadgwickFilter madgwick_filter;
     NavCalcs nav_calcs;
-    std::array<float, NUM_AXES> accel_ned;
-    NavCalcs::Position gps_pos, position;
-    NavCalcs::Velocity gps_vel, velocity;
+    std::array<float, NUM_AXES> accel_ned, accel_ned_variance;
+    NavCalcs::Position gps_pos, gps_pos_var, position;
+    NavCalcs::Velocity gps_vel, gps_vel_var, velocity;
     uint8_t kalman_update;
 };
 

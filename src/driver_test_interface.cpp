@@ -27,8 +27,7 @@
 void DriverTestInit(void)
 {
     // Driver test initialization code here 
-    // pose_estimate.TestInit();
-    mpu6050_test_init();
+    pose_estimate.TestInit();
 }
 
 
@@ -36,8 +35,7 @@ void DriverTestInit(void)
 void DriverTestApp(void)
 {
     // Driver test application code here 
-    // pose_estimate.TestApp();
-    mpu6050_test_app();
+    pose_estimate.TestApp();
 }
 
 //=======================================================================================

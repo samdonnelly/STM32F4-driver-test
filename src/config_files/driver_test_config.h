@@ -104,11 +104,10 @@ extern const float madgwick_dt;            // Time between samples/calculations 
 //==================================================
 // Navigation Calculations 
 
-extern const float magnetic_declination;   // Magnetic declination at current location 
-extern const float accel_pos_variance;     // Kalman filter process variance - accelerometer position 
-extern const float accel_vel_variance;     // Kalman filter process variance - accelerometer velocity 
-extern const float gps_pos_variance;       // Kalman filter measurement variance - GPS position 
-extern const float gps_vel_variance;       // Kalman filter measurement variance - GPS velocity 
+extern const float magnetic_declination;         // Magnetic declination at current location 
+extern const float accel_variance[NUM_AXES];     // Kalman filter process variance - accelerometer 
+extern const float gps_vel_variance[NUM_AXES];   // Kalman filter measurement variance - GPS velocity 
+extern const float gps_pos_variance[NUM_AXES];   // Kalman filter measurement variance - GPS position 
 
 //==================================================
 

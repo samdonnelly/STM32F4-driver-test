@@ -122,14 +122,15 @@ PoseEstimate::PoseEstimate()
       imu_st_result(CLEAR),
       imu_status(MPU6050_OK), 
       accel{}, gyro{},
+      accel_var{ accel_variance[X_AXIS], accel_variance[Y_AXIS], accel_variance[Z_AXIS] },
       mag_status(LSM303AGR_OK),
       mag{},
       gps_status(M8Q_OK),
       madgwick_filter(madgwick_B, madgwick_dt),
       nav_calcs(),
-      accel_ned{},
-      gps_pos(), position(),
-      gps_vel(), velocity(),
+      accel_ned{}, accel_ned_variance{},
+      gps_pos(), gps_pos_var(), position(),
+      gps_vel(), gps_vel_var(), velocity(),
       kalman_update(CLEAR_BIT)
 {
     nav_calcs.SetTnOffset(magnetic_declination);
@@ -338,12 +339,7 @@ void PoseEstimate::WaitForGPS(void)
     
     // Set the Kalman filter data now that we know the initial position 
     GetGPSData();
-    nav_calcs.SetKalmanPoseData(madgwick_dt,
-                                gps_pos,
-                                accel_pos_variance,
-                                accel_vel_variance,
-                                gps_pos_variance,
-                                gps_vel_variance);
+    nav_calcs.SetKalmanPoseData(madgwick_dt, gps_pos);
 }
 
 
@@ -362,13 +358,15 @@ void PoseEstimate::PoseCalcs(void)
     madgwick_filter.Madgwick(gyro, accel, mag);
 
     // Get the absolute acceleration in the NED frame relative to magnetic North then 
-    // rotate it to be relative to true North. 
-    madgwick_filter.GetAccelNED(accel_ned);
+    // rotate it to be relative to true North. Do the same with the accelerometer variance. 
+    madgwick_filter.GetAccelNED(accel, accel_ned);
     nav_calcs.TrueNorthEarthAccel(accel_ned[X_AXIS], accel_ned[Y_AXIS]);
+    madgwick_filter.GetDataNED(accel_var, accel_ned_variance);
+    nav_calcs.TrueNorthEarthAccel(accel_ned_variance[X_AXIS], accel_ned_variance[Y_AXIS]);
 
     // Prediction step of the Kalman filter. Use the latest accelerometer data to 
     // predict the position and velocity of the system. 
-    nav_calcs.KalmanPosePredict(accel_ned);
+    nav_calcs.KalmanPosePredict(accel_ned, accel_ned_variance);
 
     // If new measured position and velocity data from the GPS device is available then 
     // we run the update step of the Kalman filter to provide the best estimate of true 
@@ -377,7 +375,7 @@ void PoseEstimate::PoseCalcs(void)
     {
         kalman_update = CLEAR_BIT;
         GetGPSData();
-        nav_calcs.KalmanPoseUpdate(gps_pos, gps_vel);
+        nav_calcs.KalmanPoseUpdate(gps_pos, gps_pos_var, gps_vel, gps_vel_var);
     }
 
     // Retreive the position and velocity determined by the Kalman filter. 
@@ -391,9 +389,16 @@ void PoseEstimate::GetGPSData(void)
     gps_pos.lat = m8q_get_position_lat();                // deg 
     gps_pos.lon = m8q_get_position_lon();                // deg 
     gps_pos.alt = m8q_get_position_altref();             // m 
+    gps_pos_var.lat = gps_pos_variance[X_AXIS];
+    gps_pos_var.lon = gps_pos_var.lat;
+    gps_pos_var.alt = gps_pos_variance[Z_AXIS];
+
     gps_vel.sog = m8q_get_position_sog() / KPH_TO_MPS;   // m/s 
     gps_vel.cog = m8q_get_position_cog();                // deg 
     gps_vel.vvel = m8q_get_position_vvel();              // m/s 
+    gps_vel_var.sog = gps_vel_variance[X_AXIS];
+    gps_vel_var.cog = gps_vel_variance[Y_AXIS];
+    gps_vel_var.vvel = gps_vel_variance[Z_AXIS];
 }
 
 
