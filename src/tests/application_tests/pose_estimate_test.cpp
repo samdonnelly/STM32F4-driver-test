@@ -358,11 +358,22 @@ void PoseEstimate::PoseCalcs(void)
     madgwick_filter.Madgwick(gyro, accel, mag);
 
     // Get the absolute acceleration in the NED frame relative to magnetic North then 
-    // rotate it to be relative to true North. Do the same with the accelerometer variance. 
+    // rotate it to be relative to true North. 
     madgwick_filter.GetAccelNED(accel, accel_ned);
     nav_calcs.TrueNorthEarthAccel(accel_ned[X_AXIS], accel_ned[Y_AXIS]);
-    madgwick_filter.GetDataNED(accel_var, accel_ned_variance);
+
+    // Rotate the accelerometer uncertainty into the Earth frame relative to true North 
+    // then make sure all values are positive. 
+    madgwick_filter.BodyToEarth(accel_var, accel_ned_variance);
     nav_calcs.TrueNorthEarthAccel(accel_ned_variance[X_AXIS], accel_ned_variance[Y_AXIS]);
+
+    for (uint8_t i = X_AXIS; i < NUM_AXES; i++)
+	{
+		if (accel_ned_variance[i] < ZERO)
+		{
+			accel_ned_variance[i] = -accel_ned_variance[i];
+		}
+	}
 
     // Prediction step of the Kalman filter. Use the latest accelerometer data to 
     // predict the position and velocity of the system. 
@@ -389,9 +400,9 @@ void PoseEstimate::GetGPSData(void)
     gps_pos.lat = m8q_get_position_lat();                // deg 
     gps_pos.lon = m8q_get_position_lon();                // deg 
     gps_pos.alt = m8q_get_position_altref();             // m 
-    gps_pos_var.lat = gps_pos_variance[X_AXIS];
+    gps_pos_var.lat = m8q_get_position_hacc();
     gps_pos_var.lon = gps_pos_var.lat;
-    gps_pos_var.alt = gps_pos_variance[Z_AXIS];
+    gps_pos_var.alt = m8q_get_position_vacc();
 
     gps_vel.sog = m8q_get_position_sog() / KPH_TO_MPS;   // m/s 
     gps_vel.cog = m8q_get_position_cog();                // deg 
