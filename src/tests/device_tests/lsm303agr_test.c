@@ -211,8 +211,7 @@ void lsm303agr_test_init(void)
 #if LSM303AGR_TEST_CALIBRATION
     uart_send_str(test_data.uart, "Raw axis data (milligauss)\r\n"); 
 #else 
-    uart_send_str(test_data.uart, 
-                  "Axis (milligauss), calibrated axis (milligauss), heading (deg*10)\r\n"); 
+    uart_send_str(test_data.uart, "Axis (milligauss), calibrated axis (milligauss), heading (deg*10)\r\n"); 
 #endif   // LSM303AGR_TEST_CALIBRATION 
 } 
 
@@ -240,7 +239,7 @@ void lsm303agr_test_app(void)
 
         // Get and display the magnetometer data 
         lsm303agr_m_get_axis(test_data.m_axis); 
-        lsm303agr_m_get_axis_cal_int(test_data.m_axis_cal); 
+        lsm303agr_m_get_axis_cal(test_data.m_axis_cal); 
         test_data.m_heading = lsm303agr_m_get_heading(); 
 
         if (++test_data.schedule_counter >= LSM303AGR_TEST_DISPLAY_COUNT)

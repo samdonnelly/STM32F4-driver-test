@@ -95,8 +95,8 @@ extern const uint8_t nrf24l01_pipe_addr[NRF24l01_ADDR_WIDTH];
 //==================================================
 // Madgwick Filter 
 
-extern const float madgwick_B;             // Correction weight 
-extern const float madgwick_dt;            // Time between samples/calculations (seconds) 
+extern const float madgwick_B;    // Correction weight 
+extern const float madgwick_dt;   // Time between samples/calculations (seconds) 
 
 //==================================================
 

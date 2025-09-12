@@ -349,7 +349,7 @@ void PoseEstimate::PoseCalcs(void)
     // Get the latest accelerometer, gyroscope and magnetometer data 
     mpu6050_get_accel_axis_gs(device_num, accel.data());   // g's 
     mpu6050_get_gyro_axis_rate(device_num, gyro.data());   // deg/s 
-    lsm303agr_m_get_axis_cal_float(mag.data());            // mG 
+    lsm303agr_m_get_axis_cal_f(mag.data());                // mG 
 
     // Correct data as needed to be in the NWU orientation 
     mag[Y_AXIS] = -mag[Y_AXIS];
