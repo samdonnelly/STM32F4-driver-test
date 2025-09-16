@@ -416,6 +416,29 @@ void PoseEstimate::GetGPSData(void)
 // Output the determined position of the system for the user to see 
 void PoseEstimate::PoseDisplay(void)
 {
+#if POSE_LOG_OUTPUT
+
+    // Format and output the scaled orientation data 
+    char position_msg[max_msg_len];
+    snprintf(
+        position_msg, 
+        max_msg_len, 
+        "Lat (deg*E7): %ld "
+        "Lon (deg*E7): %ld "
+        "Alt (m*E3): %ld "
+        "SOG (m/s*E3): %d "
+        "COG (deg*E2): %d "
+        "vVel (m/s*E3): %d     \r\n",
+        static_cast<int32_t>(position.lat * SCALE_1E7F),
+        static_cast<int32_t>(position.lon * SCALE_1E7F),
+        static_cast<int32_t>(position.alt * SCALE_1000F),
+        static_cast<int16_t>(velocity.sog * SCALE_1000F),
+        static_cast<int16_t>(velocity.cog * SCALE_100F),
+        static_cast<int16_t>(velocity.vvel * SCALE_1000F));
+    uart_send_str(uart, position_msg);
+
+#else
+
     // Move the cursor in the serial terminal up to overwrite the old data 
     uart_cursor_move(uart, UART_CURSOR_UP, num_output_lines);
 
@@ -424,19 +447,21 @@ void PoseEstimate::PoseDisplay(void)
     snprintf(
         position_msg, 
         max_msg_len, 
-        "Latitude (deg*1E6): %ld   \r\n"
-        "Longitude (deg*1E6): %ld   \r\n"
-        "Altitude (deg*1E3): %ld   \r\n"
-        "SOG (m/s*1E3): %d   \r\n"
-        "COG (deg*1E2): %d   \r\n"
-        "vVel (m/s*1E3): %d   \r\n",
-        static_cast<int32_t>(position.lat * SCALE_1E6F),
-        static_cast<int32_t>(position.lon * SCALE_1E6F),
+        "Latitude (deg*E7): %ld   \r\n"
+        "Longitude (deg*E7): %ld   \r\n"
+        "Altitude (m*E3): %ld   \r\n"
+        "SOG (m/s*E3): %d   \r\n"
+        "COG (deg*E2): %d   \r\n"
+        "vVel (m/s*E3): %d   \r\n",
+        static_cast<int32_t>(position.lat * SCALE_1E7F),
+        static_cast<int32_t>(position.lon * SCALE_1E7F),
         static_cast<int32_t>(position.alt * SCALE_1000F),
         static_cast<int16_t>(velocity.sog * SCALE_1000F),
         static_cast<int16_t>(velocity.cog * SCALE_100F),
         static_cast<int16_t>(velocity.vvel * SCALE_1000F));
     uart_send_str(uart, position_msg);
+
+#endif
 }
 
 //=======================================================================================

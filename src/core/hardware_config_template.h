@@ -89,6 +89,9 @@
 #define DEADLOCK_STARVATION_TEST 0 
 #define PRIORITY_INVERSION_TEST 0 
 
+// Pose estimate test 
+#define POSE_LOG_OUTPUT 0
+
 // RC Test 
 #define RC_SYSTEM_1 0 
 #define RC_SYSTEM_2 0 
