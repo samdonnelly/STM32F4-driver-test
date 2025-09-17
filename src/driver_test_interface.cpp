@@ -27,7 +27,6 @@
 void DriverTestInit(void)
 {
     // Driver test initialization code here 
-    pose_estimate.TestInit();
 }
 
 
@@ -35,7 +34,6 @@ void DriverTestInit(void)
 void DriverTestApp(void)
 {
     // Driver test application code here 
-    pose_estimate.TestApp();
 }
 
 //=======================================================================================
