@@ -27,13 +27,13 @@
 #define BUFF_SIZE 255 
 
 // User interface 
-#define HW125_NUM_DRIVER_CMDS 17    // Number of driver test commands for the user 
-#define HW125_NUM_CONT_CMDS 18      // Number of controller test commands for the user 
-#define CMD_SIZE 50                 // Max user command string length 
+#define HW125_NUM_DRIVER_CMDS 17            // Number of driver test commands for the user 
+#define HW125_NUM_CONT_CMDS 18              // Number of controller test commands for the user 
+#define CMD_SIZE 50                         // Max user command string length 
 
 // Controller testing 
-#define HW125_NUM_USER_CMDS 10      // Number of defined user commands for controller test 
-#define HW125_MAX_SETTER_ARGS 1     // Maximum arguments of all function pointer below 
+#define HW125_NUM_USER_CMDS 10              // Number of defined user commands for controller test 
+#define HW125_MAX_SETTER_ARGS 1             // Maximum arguments of all function pointer below 
 
 //=======================================================================================
 
@@ -79,7 +79,7 @@ void hw125_cont_test_file_end(void);       // Test for end of file on open file
 
 //==================================================
 
-#else   // HW125_CONTROLLER_TEST 
+#else 
 
 //==================================================
 // FatFs functions 
@@ -103,7 +103,7 @@ void file_remove(void);               // Remove files from the drive
 
 //==================================================
 
-#endif   // HW125_CONTROLLER_TEST 
+#endif 
 
 //==================================================
 // UI functions 
@@ -136,11 +136,16 @@ void display_buffer(void);
 // Data record 
 typedef struct hw125_test_record_s 
 {
+    // Peripherals 
+    SPI_TypeDef *spi;
+    USART_TypeDef *uart;
+    TIM_TypeDef *tim;
+
     // User data 
-    BYTE  access_mode;                    // File access mode (byte) 
+    BYTE access_mode;                     // File access mode (byte) 
     QWORD position;                       // File position (byte num) 
     QWORD read_len;                       // Read data size (bytes) 
-    BYTE  cmd_index;                      // For indixing function pointers 
+    BYTE cmd_index;                       // For indixing function pointers 
 
     // User and data buffers 
     char cmd_buff[CMD_SIZE];              // Stores user commands 
@@ -150,7 +155,7 @@ typedef struct hw125_test_record_s
 
 #if HW125_CONTROLLER_TEST 
 
-#else   // HW125_CONTROLLER_TEST
+#else
     
     // File variables 
     FATFS   file_sys;                     // File system 
@@ -171,13 +176,13 @@ typedef struct hw125_test_record_s
 
     #endif   // FORMAT_EXFAT
 
-#endif   // HW125_CONTROLLER_TEST
+#endif
 } 
 hw125_test_record_t; 
 
 
 // Data record instance 
-static hw125_test_record_t hw125_test_record; 
+static hw125_test_record_t hw125_data; 
 
 
 #if HW125_CONTROLLER_TEST 
@@ -218,7 +223,7 @@ static hw125_user_cmds_t cmd_table[HW125_NUM_CONT_CMDS] =
 }; 
 
 
-#else   // HW125_CONTROLLER_TEST 
+#else 
 
 
 // FatFs layer disk status - used for clearing the init status for re-mounting 
@@ -256,18 +261,20 @@ static hw125_user_cmds_t cmd_table[HW125_NUM_DRIVER_CMDS] =
     {"read_buffer", &display_buffer} 
 }; 
 
-#endif   // HW125_CONTROLLER_TEST 
+#endif 
 
 //=======================================================================================
 
 
 //=======================================================================================
-// Test code 
-
 // Setup code
+
 void hw125_test_init()
 {
-    // Setup code for the hw125_test here 
+    // Initialize data 
+    hw125_data.spi = SPI2;
+    hw125_data.uart = USART2;
+    hw125_data.tim = TIM9;
 
     //==================================================
     // Peripherals 
@@ -277,15 +284,15 @@ void hw125_test_init()
     
     // Initialize timers 
     tim_9_to_11_counter_init(
-        TIM9, 
+        hw125_data.tim, 
         TIM_84MHZ_1US_PSC, 
         0xFFFF,  // Max ARR value 
         TIM_UP_INT_DISABLE); 
-    tim_enable(TIM9); 
+    tim_enable(hw125_data.tim); 
 
     // UART2 for serial terminal communication 
     uart_init(
-        USART2, 
+        hw125_data.uart, 
         GPIOA, 
         PIN_3, 
         PIN_2, 
@@ -296,9 +303,9 @@ void hw125_test_init()
         UART_PARAM_DISABLE, 
         UART_PARAM_DISABLE); 
 
-    // SPI2 and slave select pin for SD card 
+    // SPI and slave select pin for SD card 
     spi_init(
-        SPI2, 
+        hw125_data.spi, 
         GPIOB,   // SCK pin GPIO port 
         PIN_10,  // SCK pin 
         GPIOB,   // Data (MISO/MOSI) pin GPIO port 
@@ -314,7 +321,7 @@ void hw125_test_init()
     // SD card init 
 
     // SD card user initialization 
-    hw125_user_init(SPI2, GPIOB, GPIOX_PIN_12); 
+    hw125_user_init(hw125_data.spi, GPIOB, GPIOX_PIN_12); 
 
 #if HW125_CONTROLLER_TEST 
 
@@ -324,7 +331,7 @@ void hw125_test_init()
     // State machine test 
     // state_machine_init(HW125_NUM_USER_CMDS); 
 
-#endif   // HW125_CONTROLLER_TEST 
+#endif 
     
     //==================================================
 
@@ -334,63 +341,57 @@ void hw125_test_init()
 #if HW125_CONTROLLER_TEST 
 
     // action = SET; 
-    uart_send_str(USART2, "\r\nOperation >>> "); 
+    uart_send_str(hw125_data.uart, "\r\nOperation >>> "); 
 
-#else   // HW125_CONTROLLER_TEST
+#else
 
     // Short delay to let the system set up 
-    tim_delay_ms(TIM9, 500); 
+    tim_delay_ms(hw125_data.tim, 500); 
 
-#endif   // HW125_CONTROLLER_TEST
+#endif
 
     //==================================================
 } 
 
+//=======================================================================================
 
+
+//=======================================================================================
 // Test code 
+
 void hw125_test_app()
 {
-    hw125_test_record.cmd_index = 0xFF; 
-
 #if HW125_CONTROLLER_TEST 
 
     if (action)
     {
         action = CLEAR; 
-        uart_send_str(USART2, "\r\nOperation >>> "); 
+        uart_send_str(hw125_data.uart, "\r\nOperation >>> "); 
     }
     else
     {
         // Get the info from the user 
-        if (uart_data_ready(USART2))
+        if (uart_data_ready(hw125_data.uart))
         {
             action = SET; 
 
             // Retrieve and format the input 
-            uart_get_data(USART2, hw125_test_record.cmd_buff); 
+            uart_get_data(hw125_data.uart, hw125_data.cmd_buff); 
 
             // Format the input and check for validity 
-            if (format_input(hw125_test_record.cmd_buff, 
-                             &hw125_test_record.read_len, 
+            if (format_input(hw125_data.cmd_buff, 
+                             &hw125_data.read_len, 
                              FORMAT_FILE_STRING))
             {
                 // Compare the input to the defined user commands 
                 for (uint8_t i = 0; i < HW125_NUM_CONT_CMDS; i++) 
                 {
-                    if (str_compare(hw125_test_record.cmd_buff, 
-                                    cmd_table[i].user_cmds, 
-                                    BYTE_0)) 
+                    if (str_compare(hw125_data.cmd_buff, cmd_table[i].user_cmds, BYTE_0)) 
                     {
-                        hw125_test_record.cmd_index = i; 
+                        (cmd_table[i].fatfs_func_ptrs_t)();
                         break; 
                     }
                 }
-
-                // Use the index to call the function as needed 
-                if (hw125_test_record.cmd_index != 0xFF) 
-                {
-                    (cmd_table[hw125_test_record.cmd_index].fatfs_func_ptrs_t)(); 
-                } 
             }
         }
     }
@@ -398,33 +399,30 @@ void hw125_test_app()
     // HW125 controller 
     hw125_controller(); 
 
-#else   // HW125_CONTROLLER_TEST
+#else
 
     // Look for a user command 
     get_input(
         "\r\nOperation >>> ", 
-        hw125_test_record.cmd_buff, CMD_SIZE, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
+        hw125_data.cmd_buff,  
+        CMD_SIZE, 
+        &hw125_data.read_len, 
+        FORMAT_FILE_STRING); 
 
     // Compare the input to the defined user commands 
-    for (uint8_t i = CLEAR; i < HW125_NUM_DRIVER_CMDS; i++) 
+    for (uint8_t i = CLEAR; i < HW125_NUM_DRIVER_CMDS; i++)
     {
-        if (str_compare(hw125_test_record.cmd_buff, cmd_table[i].user_cmds, BYTE_0)) 
+        if (str_compare(hw125_data.cmd_buff, cmd_table[i].user_cmds, BYTE_0)) 
         {
-            hw125_test_record.cmd_index = i; 
+            (cmd_table[i].fatfs_func_ptrs_t)();
             break; 
         }
     }
 
-    // Use the index to call the function as needed 
-    if (hw125_test_record.cmd_index != 0xFF) 
-    {
-        (cmd_table[hw125_test_record.cmd_index].fatfs_func_ptrs_t)(); 
-    } 
-
     // Delay 
-    tim_delay_ms(TIM9, 1);
+    tim_delay_ms(hw125_data.tim, 1);
 
-#endif   // HW125_CONTROLLER_TEST
+#endif
 }
 
 //=======================================================================================
@@ -462,11 +460,11 @@ void hw125_cont_test_make_dir(void)
     // Get and format the directory path string 
     get_input(
         "\nDirectory: ", 
-        hw125_test_record.buffer, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
+        hw125_data.buffer, &hw125_data.read_len, FORMAT_FILE_STRING); 
 
     // Write to the file 
-    // hw125_test_record.fresult = hw125_mkdir(hw125_test_record.buffer); 
-    hw125_mkdir(hw125_test_record.buffer); 
+    // hw125_data.fresult = hw125_mkdir(hw125_data.buffer); 
+    hw125_mkdir(hw125_data.buffer); 
 }
 
 
@@ -476,26 +474,26 @@ void hw125_cont_test_file_open(void)
     // Get and format the file name 
     get_input(
         "\nFile to open: ", 
-        hw125_test_record.file_name_buff, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
+        hw125_data.file_name_buff, &hw125_data.read_len, FORMAT_FILE_STRING); 
 
     // Get and format the access mode 
     get_input(
         "\nAccess mode: ", 
-        hw125_test_record.file_mode_buff, 
-        (QWORD *)(&hw125_test_record.access_mode), 
+        hw125_data.file_mode_buff, 
+        (QWORD *)(&hw125_data.access_mode), 
         FORMAT_FILE_MODE); 
 
     // Open a file (and create if it doesn't exist) 
-    // hw125_test_record.fresult = hw125_open(hw125_test_record.file_name_buff, 
-    //                                        hw125_test_record.access_mode); 
-    hw125_open(hw125_test_record.file_name_buff, hw125_test_record.access_mode); 
+    // hw125_data.fresult = hw125_open(hw125_data.file_name_buff, 
+    //                                        hw125_data.access_mode); 
+    hw125_open(hw125_data.file_name_buff, hw125_data.access_mode); 
 }
 
 
 // Close the open file 
 void hw125_cont_test_file_close(void) 
 {
-    // hw125_test_record.fresult = hw125_close(); 
+    // hw125_data.fresult = hw125_close(); 
     hw125_close(); 
 }
 
@@ -506,12 +504,12 @@ void hw125_cont_test_file_write(void)
     // Get and format the file string 
     get_input(
         "\nFile string: ", 
-        hw125_test_record.buffer, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
+        hw125_data.buffer, &hw125_data.read_len, FORMAT_FILE_STRING); 
 
     // Write to the file 
-    // hw125_test_record.fresult = hw125_f_write(hw125_test_record.buffer, 
-    //                                           strlen(hw125_test_record.buffer)); 
-    hw125_f_write(hw125_test_record.buffer, strlen(hw125_test_record.buffer)); 
+    // hw125_data.fresult = hw125_f_write(hw125_data.buffer, 
+    //                                           strlen(hw125_data.buffer)); 
+    hw125_f_write(hw125_data.buffer, strlen(hw125_data.buffer)); 
 }
 
 
@@ -521,10 +519,10 @@ void hw125_cont_test_put_string(void)
     // Get and format the file string 
     get_input(
         "\nFile string: ", 
-        hw125_test_record.buffer, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
+        hw125_data.buffer, &hw125_data.read_len, FORMAT_FILE_STRING); 
 
     // Write a string 
-    hw125_puts(hw125_test_record.buffer); 
+    hw125_puts(hw125_data.buffer); 
 }
 
 
@@ -536,15 +534,15 @@ void hw125_cont_test_printf(void)
     // Get and format the formatted string integer 
     get_input(
         "\nInteger: ", 
-        hw125_test_record.buffer, &fmt_value, FORMAT_FILE_NUM); 
+        hw125_data.buffer, &fmt_value, FORMAT_FILE_NUM); 
     
     // Get and format the formated string 
     get_input(
         "\nFormatted string: ", 
-        hw125_test_record.buffer, &hw125_test_record.read_len, FORMAT_FILE_STRING); 
+        hw125_data.buffer, &hw125_data.read_len, FORMAT_FILE_STRING); 
 
     // Write the formatted string to the file 
-    hw125_printf(hw125_test_record.buffer, (uint16_t)fmt_value); 
+    hw125_printf(hw125_data.buffer, (uint16_t)fmt_value); 
 }
 
 
@@ -554,11 +552,11 @@ void hw125_cont_test_file_seek(void)
     // Get and format the file position 
     get_input(
         "\nFile position: ", 
-        hw125_test_record.buffer, &hw125_test_record.position, FORMAT_FILE_NUM); 
+        hw125_data.buffer, &hw125_data.position, FORMAT_FILE_NUM); 
 
     // Move to the specified position in the file 
-    // hw125_test_record.fresult = hw125_lseek(hw125_test_record.position); 
-    hw125_lseek(hw125_test_record.position); 
+    // hw125_data.fresult = hw125_lseek(hw125_data.position); 
+    hw125_lseek(hw125_data.position); 
 }
 
 
@@ -568,9 +566,9 @@ void hw125_cont_test_state(void)
     HW125_STATE state = hw125_get_state(); 
 
     // Show the state 
-    uart_send_str(USART2, "state: "); 
-    uart_send_integer(USART2, (int16_t)state); 
-    uart_send_new_line(USART2); 
+    uart_send_str(hw125_data.uart, "state: "); 
+    uart_send_integer(hw125_data.uart, (int16_t)state); 
+    uart_send_new_line(hw125_data.uart); 
 }
 
 
@@ -579,9 +577,9 @@ void hw125_cont_test_fault_code(void)
 {
     HW125_FAULT_CODE code = hw125_get_fault_code(); 
 
-    uart_send_str(USART2, "fault code: "); 
-    uart_send_integer(USART2, (int16_t)code); 
-    uart_send_new_line(USART2); 
+    uart_send_str(hw125_data.uart, "fault code: "); 
+    uart_send_integer(hw125_data.uart, (int16_t)code); 
+    uart_send_new_line(hw125_data.uart); 
 }
 
 
@@ -590,9 +588,9 @@ void hw125_cont_test_fault_mode(void)
 {
     HW125_FAULT_MODE mode = hw125_get_fault_mode(); 
 
-    uart_send_str(USART2, "fault mode: "); 
-    uart_send_integer(USART2, (int16_t)mode); 
-    uart_send_new_line(USART2); 
+    uart_send_str(hw125_data.uart, "fault mode: "); 
+    uart_send_integer(hw125_data.uart, (int16_t)mode); 
+    uart_send_new_line(hw125_data.uart); 
 }
 
 
@@ -602,9 +600,9 @@ void hw125_cont_test_file_status(void)
     HW125_FILE_STATUS status = hw125_get_file_status(); 
 
     // Show open file flag setpoint 
-    uart_send_str(USART2, "open flag: "); 
-    uart_send_integer(USART2, (int16_t)status); 
-    uart_send_new_line(USART2); 
+    uart_send_str(hw125_data.uart, "open flag: "); 
+    uart_send_integer(hw125_data.uart, (int16_t)status); 
+    uart_send_new_line(hw125_data.uart); 
 }
 
 
@@ -614,12 +612,12 @@ void hw125_cont_test_file_read(void)
     // Get and format the read size (bytes) 
     get_input(
         "\nRead size (bytes): ", 
-        hw125_test_record.buffer, &hw125_test_record.read_len, FORMAT_FILE_NUM); 
+        hw125_data.buffer, &hw125_data.read_len, FORMAT_FILE_NUM); 
 
     // Read from the file 
-    // hw125_test_record.fresult = hw125_f_read(hw125_test_record.buffer, 
-    //                                          hw125_test_record.read_len); 
-    hw125_f_read(hw125_test_record.buffer, hw125_test_record.read_len); 
+    // hw125_data.fresult = hw125_f_read(hw125_data.buffer, 
+    //                                          hw125_data.read_len); 
+    hw125_f_read(hw125_data.buffer, hw125_data.read_len); 
 
     display_buffer(); 
 }
@@ -631,10 +629,10 @@ void hw125_cont_test_get_string(void)
     // Get and format the read size (bytes) 
     get_input(
         "\nRead size (bytes): ", 
-        hw125_test_record.buffer, &hw125_test_record.read_len, FORMAT_FILE_NUM); 
+        hw125_data.buffer, &hw125_data.read_len, FORMAT_FILE_NUM); 
 
     // Read from the file 
-    hw125_gets(hw125_test_record.buffer, hw125_test_record.read_len); 
+    hw125_gets(hw125_data.buffer, hw125_data.read_len); 
 
     display_buffer(); 
 }
@@ -646,12 +644,12 @@ void hw125_cont_test_file_end(void)
     int8_t eof_return = hw125_eof(); 
 
     // Display if end of file has been reached 
-    uart_send_str(USART2, "eof return: "); 
-    uart_send_integer(USART2, (int16_t)eof_return); 
-    uart_send_new_line(USART2); 
+    uart_send_str(hw125_data.uart, "eof return: "); 
+    uart_send_integer(hw125_data.uart, (int16_t)eof_return); 
+    uart_send_new_line(hw125_data.uart); 
 }
 
-#else   // HW125_CONTROLLER_TEST 
+#else 
 
 // Mount card 
 void mount_card(void) 
@@ -662,40 +660,40 @@ void mount_card(void)
     
     // Format the drive 
     fresult = f_mkfs("", FM_EXFAT, 0, work, sizeof work); 
-    if (fresult != FR_OK) uart_send_str(USART2, "Error in formatting the SD Card.\r\n");
-    else uart_send_str(USART2, "SD Card formatted successfully.\r\n"); 
+    if (fresult != FR_OK) uart_send_str(hw125_data.uart, "Error in formatting the SD Card.\r\n");
+    else uart_send_str(hw125_data.uart, "SD Card formatted successfully.\r\n"); 
 
 #endif
 
-    hw125_test_record.fresult = f_mount(&hw125_test_record.file_sys, "", HW125_MOUNT_NOW); 
+    hw125_data.fresult = f_mount(&hw125_data.file_sys, "", HW125_MOUNT_NOW); 
 
-    if (hw125_test_record.fresult == FR_OK) 
+    if (hw125_data.fresult == FR_OK) 
     {
-        uart_send_str(USART2, "\nMounted successfully. Volume type: "); 
+        uart_send_str(hw125_data.uart, "\nMounted successfully. Volume type: "); 
 
         // Check the volume type 
         switch (hw125_get_card_type())
         {
             case HW125_CT_MMC: 
-                uart_send_str(USART2, "MMC V3\r\n");
+                uart_send_str(hw125_data.uart, "MMC V3\r\n");
                 break;
             case HW125_CT_SDC1: 
-                uart_send_str(USART2, "SDC V1\r\n");
+                uart_send_str(hw125_data.uart, "SDC V1\r\n");
                 break;
             case HW125_CT_SDC2_BLOCK: 
-                uart_send_str(USART2, "SDC V2 block\r\n");
+                uart_send_str(hw125_data.uart, "SDC V2 block\r\n");
                 break;
             case HW125_CT_SDC2_BYTE: 
-                uart_send_str(USART2, "SDC V2 byte\r\n");
+                uart_send_str(hw125_data.uart, "SDC V2 byte\r\n");
                 break;
             default: 
-                uart_send_str(USART2, "Unknown\r\n");
+                uart_send_str(hw125_data.uart, "Unknown\r\n");
                 break;
         }
     }
     else 
     {
-        uart_send_str(USART2, "\nError in mounting volume.\r\n");
+        uart_send_str(hw125_data.uart, "\nError in mounting volume.\r\n");
     }
 }
 
@@ -704,18 +702,18 @@ void mount_card(void)
 void unmount_card(void) 
 {
     // Unmount the volume 
-    hw125_test_record.fresult = f_unmount(""); 
+    hw125_data.fresult = f_unmount(""); 
 
     // Clear the initialization status so it can be re-mounted 
     disk.is_initialized[0] = CLEAR; 
 
-    if (hw125_test_record.fresult == FR_OK) 
+    if (hw125_data.fresult == FR_OK) 
     {
-        uart_send_str(USART2, "\nVolume unmounted successfully.\r\n"); 
+        uart_send_str(hw125_data.uart, "\nVolume unmounted successfully.\r\n"); 
     }
     else 
     {
-        uart_send_str(USART2, "\nError in unmounting volume.\r\n");
+        uart_send_str(hw125_data.uart, "\nError in unmounting volume.\r\n");
     }
 }
 
@@ -726,23 +724,21 @@ void card_capacity(void)
     // These calcs assume 512 bytes/sector 
 
     // Check free space 
-    f_getfree("", &hw125_test_record.fre_clust, &hw125_test_record.pfs);
+    f_getfree("", &hw125_data.fre_clust, &hw125_data.pfs);
 
     // Calculate the total space 
-    hw125_test_record.total = (uint32_t)((hw125_test_record.pfs->n_fatent - 2) * 
-                                          hw125_test_record.pfs->csize * 0.5);
-    sprintf(hw125_test_record.buffer, 
+    hw125_data.total = (uint32_t)((hw125_data.pfs->n_fatent - 2) * hw125_data.pfs->csize / 2);
+    sprintf(hw125_data.buffer, 
             "\nSD CARD Total Size: \t%lu KB\r\n", 
-            hw125_test_record.total);
-    uart_send_str(USART2, hw125_test_record.buffer);
+            hw125_data.total);
+    uart_send_str(hw125_data.uart, hw125_data.buffer);
     
     // Calculate the free space 
-    hw125_test_record.free_space = (uint32_t)(hw125_test_record.fre_clust * 
-                                              hw125_test_record.pfs->csize * 0.5);
-    sprintf(hw125_test_record.buffer, 
+    hw125_data.free_space = (uint32_t)(hw125_data.fre_clust * hw125_data.pfs->csize / 2);
+    sprintf(hw125_data.buffer, 
             "SD CARD Free Space: \t%lu KB\r\n", 
-            hw125_test_record.free_space);
-    uart_send_str(USART2, hw125_test_record.buffer);
+            hw125_data.free_space);
+    uart_send_str(hw125_data.uart, hw125_data.buffer);
 }
 
 
@@ -752,29 +748,25 @@ void file_check(void)
     // Get and format the directory to check 
     get_input(
         "\nPath: ", 
-        hw125_test_record.buffer, 
+        hw125_data.buffer, 
         BUFF_SIZE, 
-        &hw125_test_record.read_len, 
+        &hw125_data.read_len, 
         FORMAT_FILE_STRING); 
     
-    uart_send_str(USART2, "\nFiles in path: \r\n"); 
+    uart_send_str(hw125_data.uart, "\nFiles in path: \r\n"); 
 
     // Start to search for files 
-    hw125_test_record.fresult = f_findfirst(&hw125_test_record.dj, 
-                                            &hw125_test_record.fno, 
-                                            hw125_test_record.buffer, 
-                                            "*"); 
+    hw125_data.fresult = f_findfirst(&hw125_data.dj, &hw125_data.fno, hw125_data.buffer, "*"); 
 
-    while ((hw125_test_record.fresult == FR_OK) && hw125_test_record.fno.fname[0]) 
+    while ((hw125_data.fresult == FR_OK) && hw125_data.fno.fname[0]) 
     {
-        uart_send_str(USART2, "\t- "); 
-        uart_send_str(USART2, hw125_test_record.fno.fname); 
-        uart_send_new_line(USART2); 
-        hw125_test_record.fresult = f_findnext(&hw125_test_record.dj, 
-                                               &hw125_test_record.fno); 
+        uart_send_str(hw125_data.uart, "\t- "); 
+        uart_send_str(hw125_data.uart, hw125_data.fno.fname); 
+        uart_send_new_line(hw125_data.uart); 
+        hw125_data.fresult = f_findnext(&hw125_data.dj, &hw125_data.fno); 
     }
 
-    f_closedir(&hw125_test_record.dj);
+    f_closedir(&hw125_data.dj);
 }
 
 
@@ -784,13 +776,13 @@ void file_mkdir(void)
     // Get and format the directory path string 
     get_input(
         "\nDirectory: ", 
-        hw125_test_record.buffer, 
+        hw125_data.buffer, 
         BUFF_SIZE, 
-        &hw125_test_record.read_len, 
+        &hw125_data.read_len, 
         FORMAT_FILE_STRING); 
 
     // Write to the file 
-    hw125_test_record.fresult = f_mkdir(hw125_test_record.buffer); 
+    hw125_data.fresult = f_mkdir(hw125_data.buffer); 
 }
 
 
@@ -800,30 +792,28 @@ void file_open(void)
     // Get and format the file name 
     get_input(
         "\nFile to open: ", 
-        hw125_test_record.file_name_buff, 
+        hw125_data.file_name_buff, 
         CMD_SIZE, 
-        &hw125_test_record.read_len, 
+        &hw125_data.read_len, 
         FORMAT_FILE_STRING); 
 
     // Get and format the access mode 
     get_input(
         "\nAccess mode: ", 
-        hw125_test_record.file_mode_buff, 
+        hw125_data.file_mode_buff, 
         CMD_SIZE, 
-        (QWORD *)(&hw125_test_record.access_mode), 
+        (QWORD *)(&hw125_data.access_mode), 
         FORMAT_FILE_MODE); 
 
     // Open a file (and create if it doesn't exist) 
-    hw125_test_record.fresult = f_open(&hw125_test_record.file, 
-                                       hw125_test_record.file_name_buff, 
-                                       hw125_test_record.access_mode); 
+    hw125_data.fresult = f_open(&hw125_data.file, hw125_data.file_name_buff, hw125_data.access_mode); 
 }
 
 
 // Close the open file 
 void file_close(void) 
 {
-    f_close(&hw125_test_record.file); 
+    f_close(&hw125_data.file); 
 }
 
 
@@ -833,13 +823,13 @@ void file_put_string(void)
     // Get and format the file string 
     get_input(
         "\nFile string: ", 
-        hw125_test_record.buffer, 
+        hw125_data.buffer, 
         BUFF_SIZE, 
-        &hw125_test_record.read_len, 
+        &hw125_data.read_len, 
         FORMAT_FILE_STRING); 
 
     // Write a string 
-    f_puts(hw125_test_record.buffer, &hw125_test_record.file); 
+    f_puts(hw125_data.buffer, &hw125_data.file); 
 }
 
 
@@ -849,13 +839,13 @@ void file_get_string(void)
     // Get and format the read size (bytes) 
     get_input(
         "\nRead size (bytes): ", 
-        hw125_test_record.buffer, 
+        hw125_data.buffer, 
         BUFF_SIZE, 
-        &hw125_test_record.read_len, 
+        &hw125_data.read_len, 
         FORMAT_FILE_NUM); 
 
     // Read from the file 
-    f_gets(hw125_test_record.buffer, hw125_test_record.read_len, &hw125_test_record.file); 
+    f_gets(hw125_data.buffer, hw125_data.read_len, &hw125_data.file); 
 }
 
 
@@ -867,7 +857,7 @@ void file_printf(void)
     // Get and format the formatted string integer 
     get_input(
         "\nInteger: ", 
-        hw125_test_record.buffer, 
+        hw125_data.buffer, 
         BUFF_SIZE, 
         &fmt_value, 
         FORMAT_FILE_NUM); 
@@ -875,17 +865,15 @@ void file_printf(void)
     // Get and format the formated string 
     get_input(
         "\nFormatted string: ", 
-        hw125_test_record.buffer, 
+        hw125_data.buffer, 
         BUFF_SIZE, 
-        &hw125_test_record.read_len, 
+        &hw125_data.read_len, 
         FORMAT_FILE_STRING); 
 
     // Write the formatted string to the file 
-    if (f_printf(&hw125_test_record.file, 
-                 hw125_test_record.buffer, 
-                 (uint16_t)fmt_value) < 0) 
+    if (f_printf(&hw125_data.file, hw125_data.buffer, (uint16_t)fmt_value) < 0) 
     {
-        uart_send_str(USART2, "\nfailure\r\n"); 
+        uart_send_str(hw125_data.uart, "\nfailure\r\n"); 
     }
 }
 
@@ -896,16 +884,16 @@ void file_write(void)
     // Get and format the file string 
     get_input(
         "\nFile string: ", 
-        hw125_test_record.buffer, 
+        hw125_data.buffer, 
         BUFF_SIZE, 
-        &hw125_test_record.read_len, 
+        &hw125_data.read_len, 
         FORMAT_FILE_STRING); 
 
     // Write to the file 
-    hw125_test_record.fresult = f_write(&hw125_test_record.file, 
-                                        hw125_test_record.buffer, 
-                                        strlen(hw125_test_record.buffer), 
-                                        &hw125_test_record.bw); 
+    hw125_data.fresult = f_write(&hw125_data.file, 
+                                 hw125_data.buffer, 
+                                 strlen(hw125_data.buffer), 
+                                 &hw125_data.bw); 
 
     // Indicate if write failed 
 }
@@ -917,16 +905,16 @@ void file_read(void)
     // Get and format the read size (bytes) 
     get_input(
         "\nRead size (bytes): ", 
-        hw125_test_record.buffer, 
+        hw125_data.buffer, 
         BUFF_SIZE, 
-        &hw125_test_record.read_len, 
+        &hw125_data.read_len, 
         FORMAT_FILE_NUM); 
 
     // Read from the file 
-    hw125_test_record.fresult = f_read(&hw125_test_record.file, 
-                                       hw125_test_record.buffer, 
-                                       hw125_test_record.read_len, 
-                                       &hw125_test_record.br); 
+    hw125_data.fresult = f_read(&hw125_data.file, 
+                                hw125_data.buffer, 
+                                hw125_data.read_len, 
+                                &hw125_data.br); 
 
     // Indicate if the read failed 
 }
@@ -938,28 +926,27 @@ void file_seek(void)
     // Get and format the file position 
     get_input(
         "\nFile position: ", 
-        hw125_test_record.buffer, 
+        hw125_data.buffer, 
         BUFF_SIZE, 
-        &hw125_test_record.position, 
+        &hw125_data.position, 
         FORMAT_FILE_NUM); 
 
     // Move to the specified position in the file 
-    hw125_test_record.fresult = f_lseek(&hw125_test_record.file, hw125_test_record.position); 
+    hw125_data.fresult = f_lseek(&hw125_data.file, hw125_data.position); 
 }
 
 
 // Navigate to the beginning of the file 
 void file_rewind(void) 
 {
-    hw125_test_record.fresult = f_lseek(&hw125_test_record.file, RESET_ZERO); 
+    hw125_data.fresult = f_lseek(&hw125_data.file, RESET_ZERO); 
 }
 
 
 // Navigate to the end of the file 
 void file_fast_fwd(void) 
 {
-    hw125_test_record.fresult = f_lseek(&hw125_test_record.file, 
-                                        f_size(&hw125_test_record.file)); 
+    hw125_data.fresult = f_lseek(&hw125_data.file, f_size(&hw125_data.file)); 
 }
 
 
@@ -969,23 +956,23 @@ void file_remove(void)
     // Get and format the file position 
     get_input(
         "\nFile to remove: ", 
-        hw125_test_record.file_name_buff, 
+        hw125_data.file_name_buff, 
         CMD_SIZE, 
-        &hw125_test_record.read_len, 
+        &hw125_data.read_len, 
         FORMAT_FILE_STRING); 
 
     // Attempt to remove the specified file 
-    hw125_test_record.fresult = f_unlink(hw125_test_record.file_name_buff); 
+    hw125_data.fresult = f_unlink(hw125_data.file_name_buff); 
 
-    if (hw125_test_record.fresult != FR_OK) 
+    if (hw125_data.fresult != FR_OK) 
     {
-        uart_send_str(USART2, "\r\nFailed to remove "); 
-        uart_send_str(USART2, hw125_test_record.file_name_buff); 
-        uart_send_new_line(USART2); 
+        uart_send_str(hw125_data.uart, "\r\nFailed to remove "); 
+        uart_send_str(hw125_data.uart, hw125_data.file_name_buff); 
+        uart_send_new_line(hw125_data.uart); 
     }
 }
 
-#endif   // HW125_CONTROLLER_TEST
+#endif
 
 // Get user inputs 
 void get_input(
@@ -998,9 +985,9 @@ void get_input(
     do 
     {
         // Get the info from the user 
-        uart_send_str(USART2, str); 
-        while(!uart_data_ready(USART2)); 
-        uart_get_data(USART2, buff); 
+        uart_send_str(hw125_data.uart, str); 
+        while(!uart_data_ready(hw125_data.uart)); 
+        uart_get_data(hw125_data.uart, buff); 
     }
     while (!format_input(buff, data, op)); 
 }
@@ -1094,9 +1081,9 @@ uint8_t format_input(
 // Display the contents of 'buffer' 
 void display_buffer(void)
 {
-    uart_send_str(USART2, "\r\nbuffer: \r\n\t"); 
-    uart_send_str(USART2, hw125_test_record.buffer); 
-    uart_send_new_line(USART2); 
+    uart_send_str(hw125_data.uart, "\r\nbuffer: \r\n\t"); 
+    uart_send_str(hw125_data.uart, hw125_data.buffer); 
+    uart_send_new_line(hw125_data.uart); 
 }
 
 //=======================================================================================
