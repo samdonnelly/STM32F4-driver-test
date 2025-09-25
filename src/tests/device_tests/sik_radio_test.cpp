@@ -286,7 +286,8 @@ const char
 sik_test_user_prompt[] = "\r\n>>> ", 
 sik_test_overwrite[] = "\r", 
 // Feedback 
-sik_test_user_msgid[] = "msgid: %lu\r\n", 
+sik_test_user_msgid[] = "msgid: %lu ", 
+sik_test_user_new_line[] = "\r\n", 
 // Commands 
 sik_test_user_exitui[] = "exitui", 
 // Status 
@@ -925,6 +926,8 @@ void sik_radio_test_mavlink_payload_decode(void)
         default: 
             break; 
     }
+
+    sik_radio_test_user_output(sik_test_user_new_line);
 }
 
 
@@ -1028,6 +1031,14 @@ void sik_radio_test_mavlink_request_data_stream(void)
         return; 
     }
 
+    snprintf((char *)user_data.data_out_buff, 
+             SIK_TEST_MSG_BUFF_SIZE, 
+             "--> ID: %u, Rate: %u, S/S: %u ", 
+             system_data.request_data_stream_msg_gcs.req_stream_id,
+             system_data.request_data_stream_msg_gcs.req_message_rate,
+             system_data.request_data_stream_msg_gcs.start_stop);
+    sik_radio_test_user_output((char *)user_data.data_out_buff);
+
     // This message comes with a cooresponding requested message rate. The calculated 
     // timer counter limit is the same calculation for each requested message so it's 
     // done once here and assigned to the requested message. Note that the periodic 
@@ -1107,6 +1118,19 @@ void sik_radio_test_mavlink_command_long(void)
     {
         return; 
     }
+
+    snprintf((char *)user_data.data_out_buff, 
+             SIK_TEST_MSG_BUFF_SIZE, 
+             "--> cmd: %u, p1: %d, p2: %d, p3: %d, p4: %d, p5: %d, p6: %d, p7: %d ", 
+             system_data.command_long_msg_gcs.command,
+             static_cast<int16_t>(system_data.command_long_msg_gcs.param1),
+             static_cast<int16_t>(system_data.command_long_msg_gcs.param2),
+             static_cast<int16_t>(system_data.command_long_msg_gcs.param3),
+             static_cast<int16_t>(system_data.command_long_msg_gcs.param4),
+             static_cast<int16_t>(system_data.command_long_msg_gcs.param5),
+             static_cast<int16_t>(system_data.command_long_msg_gcs.param6),
+             static_cast<int16_t>(system_data.command_long_msg_gcs.param7));
+    sik_radio_test_user_output((char *)user_data.data_out_buff);
 
     // Acknowledge the command 
     mavlink_msg_command_ack_pack_chan(
