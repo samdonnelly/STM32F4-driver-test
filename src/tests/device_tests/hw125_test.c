@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief HW125 test code 
+ * @brief HW125 driver test 
  * 
  * @version 0.1
  * @date 2022-08-28
@@ -16,12 +16,16 @@
 // Includes 
 
 #include "hw125_test.h"
+#include "stm32f4xx_it.h"
 
 //=======================================================================================
 
 
 //=======================================================================================
 // Macros 
+
+// Buffer sizes 
+#define HW125_TEST_USER_IN_SIZE 250
 
 // File system 
 #define BUFF_SIZE 255 
@@ -78,6 +82,10 @@ void file_put_string(void);   // Write to an open file using f_puts
 void file_printf(void);       // Write a formatted dtring 
 void display_buffer(void);    // Display the contents of 'buffer' 
 
+// Command control 
+void cmd_select(void);        // Select command based on user input 
+void cmd_end(void);           // Return to default state at the end of the command dispatch 
+
 // Get user inputs 
 void get_input(
     char *str, 
@@ -104,7 +112,20 @@ typedef struct hw125_test_record_s
     // Peripherals 
     SPI_TypeDef *spi;
     USART_TypeDef *uart;
+    DMA_Stream_TypeDef *dma_stream;
     TIM_TypeDef *tim;
+
+    // Serial interface data 
+    uint8_t cb[HW125_TEST_USER_IN_SIZE];              // Circular buffer populated by DMA 
+    cb_index_t cb_index;                              // Circular buffer indexing info 
+    dma_index_t dma_index;                            // DMA transfer indexing info 
+    uint8_t data_in_buff[HW125_TEST_USER_IN_SIZE];    // Buffer that stores latest UART input 
+    uint8_t data_out_buff[HW125_TEST_USER_IN_SIZE];   // Buffer that stores outgoing data 
+    uint16_t data_in_index;                           // Data input buffer index 
+
+    // State tracking 
+    uint8_t state_index;
+    void (*state_func_ptr)(void);
 
     // User data 
     BYTE access_mode;                     // File access mode (byte) 
@@ -138,7 +159,11 @@ typedef struct hw125_test_record_s
 
 #endif   // FORMAT_EXFAT
 } 
-hw125_test_record_t; 
+hw125_test_record_t;
+
+// Data record instance 
+static hw125_test_record_t hw125_data;
+
 
 // Command pointers 
 typedef struct hw125_user_cmds_s 
@@ -148,14 +173,8 @@ typedef struct hw125_user_cmds_s
 }
 hw125_user_cmds_t;
 
-// Data record instance 
-static hw125_test_record_t hw125_data; 
-
-// FatFs layer disk status - used for clearing the init status for re-mounting 
-extern Disk_drvTypeDef disk;
-
 // User commands 
-static hw125_user_cmds_t cmd_table[HW125_NUM_DRIVER_CMDS] = 
+static const hw125_user_cmds_t cmd_table[HW125_NUM_DRIVER_CMDS] = 
 {
     // Volume Management and System Configuration commands 
     {"mount",     &mount_card},
@@ -186,6 +205,10 @@ static hw125_user_cmds_t cmd_table[HW125_NUM_DRIVER_CMDS] =
     {"read_buffer", &display_buffer}
 };
 
+
+// FatFs layer disk status - used for clearing the init status for re-mounting 
+extern Disk_drvTypeDef disk;
+
 //=======================================================================================
 
 
@@ -199,8 +222,10 @@ void hw125_test_init()
     hw125_data.uart = USART2;
     hw125_data.tim = TIM9;
 
+    cmd_end();
+
     //==================================================
-    // Peripherals 
+    // General setup 
 
     // Initialize GPIO ports 
     gpio_port_init(); 
@@ -211,9 +236,14 @@ void hw125_test_init()
         TIM_84MHZ_1US_PSC, 
         0xFFFF,  // Max ARR value 
         TIM_UP_INT_DISABLE); 
-    tim_enable(hw125_data.tim); 
+    tim_enable(hw125_data.tim);
 
-    // UART2 for serial terminal communication 
+    //==================================================
+
+    //==================================================
+    // UART 
+    
+    // UART2 init - Serial terminal 
     uart_init(
         hw125_data.uart, 
         GPIOA, 
@@ -224,8 +254,24 @@ void hw125_test_init()
         UART_FRAC_42_9600, 
         UART_MANT_42_9600, 
         UART_PARAM_DISABLE, 
-        UART_PARAM_DISABLE); 
+        UART_PARAM_ENABLE); 
+        
+    // UART2 interrupt init - Serial terminal - IDLE line (RX) interrupts 
+    uart_interrupt_init(
+        hw125_data.uart, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_ENABLE, 
+        UART_PARAM_DISABLE, 
+        UART_PARAM_DISABLE);
+    
+    //==================================================
 
+    //==================================================
+    // SPI 
+    
     // SPI and slave select pin for SD card 
     spi_init(
         hw125_data.spi, 
@@ -236,7 +282,48 @@ void hw125_test_init()
         PIN_15,  // MOSI pin 
         SPI_BR_FPCLK_8, 
         SPI_CLOCK_MODE_0); 
-    spi_ss_init(GPIOB, PIN_12); 
+    spi_ss_init(GPIOB, PIN_12);
+    
+    //==================================================
+
+    //==================================================
+    // DMA 
+
+    // DMA1 stream init - UART2 - Serial terminal 
+    dma_stream_init(
+        DMA1, 
+        hw125_data.dma_stream, 
+        DMA_CHNL_4, 
+        DMA_DIR_PM, 
+        DMA_CM_ENABLE,
+        DMA_PRIOR_HI, 
+        DMA_DBM_DISABLE, 
+        DMA_ADDR_INCREMENT,   // Increment the buffer pointer to fill the buffer 
+        DMA_ADDR_FIXED,       // No peripheral increment - copy from DR only 
+        DMA_DATA_SIZE_BYTE, 
+        DMA_DATA_SIZE_BYTE);
+        
+    // DMA1 stream config - UART2 - Serial terminal 
+    dma_stream_config(
+        hw125_data.dma_stream, 
+        (uint32_t)(&hw125_data.uart->DR), 
+        (uint32_t)hw125_data.cb, 
+        (uint32_t)NULL, 
+        (uint16_t)HW125_TEST_USER_IN_SIZE); 
+        
+    // Enable DMA streams 
+    dma_stream_enable(hw125_data.dma_stream);    // UART2 - Serial terminal 
+    
+    //==================================================
+
+    //==================================================
+    // Interrupts 
+
+    // Initialize interrupt handler flags 
+    int_handler_init(); 
+
+    // Enable the interrupt handlers 
+    nvic_config(USART2_IRQn, EXTI_PRIORITY_0);          // UART2 - Serial terminal (user input) 
 
     //==================================================
 
@@ -246,14 +333,6 @@ void hw125_test_init()
     // SD card user initialization 
     hw125_user_init(hw125_data.spi, GPIOB, GPIOX_PIN_12); 
     
-    //==================================================
-
-    //==================================================
-    // Setup 
-
-    // Short delay to let the system set up 
-    tim_delay_ms(hw125_data.tim, 500); 
-
     //==================================================
 } 
 
@@ -265,6 +344,19 @@ void hw125_test_init()
 
 void hw125_test_app()
 {
+    // New serial terminal (user input) data received 
+    if (handler_flags.usart2_flag)
+    {
+        handler_flags.usart2_flag = CLEAR_BIT;
+
+        // Parse the new user message from the circular buffer into the data buffer 
+        dma_cb_index(hw125_data.dma_stream, &hw125_data.dma_index, &hw125_data.cb_index);
+        cb_parse(hw125_data.cb, &hw125_data.cb_index, hw125_data.data_in_buff);
+
+        // Dispatch using function pointer 
+        hw125_data.state_func_ptr();
+    }
+
     // Look for a user command 
     get_input(
         "\r\n>>> ", 
@@ -282,9 +374,6 @@ void hw125_test_app()
             break; 
         }
     }
-
-    // Delay 
-    tim_delay_ms(hw125_data.tim, 1);
 }
 
 //=======================================================================================
@@ -794,6 +883,32 @@ void display_buffer(void)
 //=======================================================================================
 // Helper functions 
 
+// Select state based on user input 
+void cmd_select(void)
+{
+    // format_input((char *)hw125_data.data_in_buff, data, FORMAT_FILE_STRING);
+
+    // Compare the input to the defined user commands 
+    for (uint8_t i = CLEAR; i < HW125_NUM_DRIVER_CMDS; i++)
+    {
+        if (str_compare(hw125_data.cmd_buff, cmd_table[i].user_cmds, BYTE_0)) 
+        {
+            hw125_data.state_func_ptr = cmd_table[i].fatfs_func_ptrs_t;
+            hw125_data.state_func_ptr();
+            break; 
+        }
+    }
+}
+
+
+// Return to default state at the end of the command dispatch 
+void cmd_end(void)
+{
+    hw125_data.state_func_ptr = &cmd_select;
+    uart_send_str(hw125_data.uart, "\r\n>>> ");
+}
+
+
 // Get user inputs 
 void get_input(
     char *str, 
@@ -805,9 +920,9 @@ void get_input(
     do 
     {
         // Get the info from the user 
-        uart_send_str(hw125_data.uart, str); 
-        while(!uart_data_ready(hw125_data.uart)); 
-        uart_get_data(hw125_data.uart, buff); 
+        uart_send_str(hw125_data.uart, str);
+        while(!uart_data_ready(hw125_data.uart));
+        uart_get_data(hw125_data.uart, buff);
     }
     while (!format_input(buff, data, op)); 
 }

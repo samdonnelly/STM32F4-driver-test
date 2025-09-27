@@ -3,7 +3,7 @@
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief HW125 test code interface 
+ * @brief HW125 driver test interface 
  * 
  * @version 0.1
  * @date 2022-08-28
@@ -23,30 +23,6 @@ extern "C" {
 // Includes 
 
 #include "includes_drivers.h"
-
-//=======================================================================================
-
-
-//=======================================================================================
-// Structs 
-
-// SD card data 
-typedef struct hw125_test_drive_data_s 
-{
-    // File variables 
-    FATFS   file_sys;                     // File system 
-    FIL     file;                         // File 
-    FRESULT fresult;                      // Store the result of each operation 
-    UINT    br, bw;                       // Stores f_read and f_write byte counters 
-    DIR     dj;                           // Directory object 
-    FILINFO fno;                          // File information 
-
-    // Card capacity 
-    FATFS *pfs;                           // Pointer to file system object 
-    DWORD fre_clust;                      // Stores number of free clusters 
-    DWORD total, free_space;              // Total and free volume space 
-} 
-hw125_test_drive_data_t; 
 
 //=======================================================================================
 
