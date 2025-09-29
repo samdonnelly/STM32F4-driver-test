@@ -1,9 +1,9 @@
 /**
- * @file hw125_test.h
+ * @file fatfs_test.h
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief HW125 driver test interface 
+ * @brief FATFS driver test interface 
  * 
  * @version 0.1
  * @date 2022-08-28
@@ -12,8 +12,8 @@
  * 
  */
 
-#ifndef _HW125_TEST_H_
-#define _HW125_TEST_H_
+#ifndef _FATFS_TEST_H_
+#define _FATFS_TEST_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,15 +31,15 @@ extern "C" {
 // Function prototypes 
 
 /**
- * @brief HW125 setup code 
+ * @brief FATFS setup code 
  */
-void hw125_test_init(void); 
+void fatfs_test_init(void); 
 
 
 /**
- * @brief HW125 test code 
+ * @brief FATFS test code 
  */
-void hw125_test_app(void); 
+void fatfs_test_app(void); 
 
 //=======================================================================================
 
@@ -47,4 +47,4 @@ void hw125_test_app(void);
 }
 #endif
 
-#endif  // _HW125_TEST_H_ 
+#endif  // _FATFS_TEST_H_ 

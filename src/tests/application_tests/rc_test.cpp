@@ -20,7 +20,7 @@
 #include "stm32f4xx_it.h" 
 
 #include "nrf24l01_test.h" 
-#include "hw125_test.h" 
+#include "fatfs_test.h" 
 #include "esc_test.h" 
 
 //=======================================================================================
@@ -431,7 +431,7 @@ void rc_sd_card_test_init(void)
     // Check for the test directory 
     // - If it doesn't exist then create it. 
 
-    // Open the file with FA_OPEN_APPEND (HW125_MODE_AA) to either open the existing 
+    // Open the file with FA_OPEN_APPEND (FATFS_MODE_AA) to either open the existing 
     // file or create a new one and move to the end of the file. 
 
     // Close the file. Will be opened for each read/write operation. 
