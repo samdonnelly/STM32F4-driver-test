@@ -84,7 +84,7 @@ void display_buffer(void);    // Display the contents of 'buffer'
 
 // Command control 
 void cmd_select(void);        // Select command based on user input 
-void cmd_end(void);           // Return to default state at the end of the command dispatch 
+void cmd_reset(void);         // Return to default state at the end of the command dispatch 
 
 // Get user inputs 
 void get_input(
@@ -222,7 +222,7 @@ void hw125_test_init()
     hw125_data.uart = USART2;
     hw125_data.tim = TIM9;
 
-    cmd_end();
+    cmd_reset();
 
     //==================================================
     // General setup 
@@ -357,23 +357,23 @@ void hw125_test_app()
         hw125_data.state_func_ptr();
     }
 
-    // Look for a user command 
-    get_input(
-        "\r\n>>> ", 
-        hw125_data.cmd_buff,  
-        CMD_SIZE, 
-        &hw125_data.read_len, 
-        FORMAT_FILE_STRING); 
+    // // Look for a user command 
+    // get_input(
+    //     "\r\n>>> ", 
+    //     hw125_data.cmd_buff,  
+    //     CMD_SIZE, 
+    //     &hw125_data.read_len, 
+    //     FORMAT_FILE_STRING);
 
-    // Compare the input to the defined user commands 
-    for (uint8_t i = CLEAR; i < HW125_NUM_DRIVER_CMDS; i++)
-    {
-        if (str_compare(hw125_data.cmd_buff, cmd_table[i].user_cmds, BYTE_0)) 
-        {
-            (cmd_table[i].fatfs_func_ptrs_t)();
-            break; 
-        }
-    }
+    // // Compare the input to the defined user commands 
+    // for (uint8_t i = CLEAR; i < HW125_NUM_DRIVER_CMDS; i++)
+    // {
+    //     if (str_compare(hw125_data.cmd_buff, cmd_table[i].user_cmds, BYTE_0)) 
+    //     {
+    //         (cmd_table[i].fatfs_func_ptrs_t)();
+    //         break; 
+    //     }
+    // }
 }
 
 //=======================================================================================
@@ -886,23 +886,26 @@ void display_buffer(void)
 // Select state based on user input 
 void cmd_select(void)
 {
-    // format_input((char *)hw125_data.data_in_buff, data, FORMAT_FILE_STRING);
+    QWORD dummy_data = CLEAR;
+    uint8_t status = format_input((char *)hw125_data.data_in_buff, &dummy_data, FORMAT_FILE_STRING);
 
     // Compare the input to the defined user commands 
     for (uint8_t i = CLEAR; i < HW125_NUM_DRIVER_CMDS; i++)
     {
-        if (str_compare(hw125_data.cmd_buff, cmd_table[i].user_cmds, BYTE_0)) 
+        if (str_compare((char *)hw125_data.data_in_buff, cmd_table[i].user_cmds, BYTE_0)) 
         {
             hw125_data.state_func_ptr = cmd_table[i].fatfs_func_ptrs_t;
             hw125_data.state_func_ptr();
             break; 
         }
     }
+
+    cmd_reset();
 }
 
 
 // Return to default state at the end of the command dispatch 
-void cmd_end(void)
+void cmd_reset(void)
 {
     hw125_data.state_func_ptr = &cmd_select;
     uart_send_str(hw125_data.uart, "\r\n>>> ");
@@ -936,14 +939,14 @@ uint8_t format_input(
 {
     uint8_t result = FALSE; 
 
-    if (buff == NULL) 
+    if ((buff == NULL) || (data == NULL)) 
     {
         return result; 
     }
 
     switch (op)
     {
-        case FORMAT_FILE_STRING: 
+        case FORMAT_FILE_STRING:
             // Replace carriage return from input with a null character 
             for (uint8_t i = 0; i < CMD_SIZE; i++)
             {
@@ -959,7 +962,7 @@ uint8_t format_input(
 
             break; 
         
-        case FORMAT_FILE_MODE: 
+        case FORMAT_FILE_MODE:
             if (str_compare("0x", buff, BYTE_0))
             {
                 uint8_t nibble; 
@@ -978,22 +981,31 @@ uint8_t format_input(
                     {
                         nibble -= HEX_TO_LET_CHAR; 
                     }
-                    else break; 
+                    else
+                    {
+                        break;
+                    }
 
                     *data |= (nibble << SHIFT_4*(3-i)); 
 
-                    if (i == 3) result = TRUE; 
+                    if (i == 3)
+                    {
+                        result = TRUE;
+                    }
                 }
             }
 
             break; 
 
-        case FORMAT_FILE_NUM: ; 
+        case FORMAT_FILE_NUM:
             char *buff_copy = buff; 
 
             while (*buff_copy != CR_CHAR) 
             {
-                if (!((*buff_copy >= ZERO_CHAR) && (*buff_copy <= NINE_CHAR))) break; 
+                if (!((*buff_copy >= ZERO_CHAR) && (*buff_copy <= NINE_CHAR)))
+                {
+                    break; 
+                }
                 buff_copy++; 
             }
 
