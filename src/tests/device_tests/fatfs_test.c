@@ -24,12 +24,11 @@
 //=======================================================================================
 // Macros 
 
-// Buffer sizes 
-#define DATA_BUFF_SIZE 250
-#define CMD_SIZE 100         // Max user command string length 
-
-// User interface 
-#define NUM_TEST_CMDS 21     // Number of driver test commands for the user 
+#define DATA_BUFF_SIZE 250     // Data buffer size 
+#define FORMAT_BUFF_SIZE 512   // Size of buffer for formatting the volume 
+#define CMD_SIZE 50            // Max user command string length 
+#define NUM_USER_CMDS 21       // Number of driver test commands for the user 
+#define FORMAT_ATTEMPTS 20     // Number of attempts at formatting the volume before timeout 
 
 //=======================================================================================
 
@@ -81,19 +80,8 @@ void number_display(const char *str_format, const DWORD num_arg);  // Display st
 void fault_display(void);                                          // Display the error code related to the FATFS operation 
 void feedback_display(const char *string);                         // Display a string for the user to see 
 
-// // Get user inputs 
-// void get_input(
-//     char *str, 
-//     char *buff, 
-//     uint8_t buff_len, 
-//     QWORD *data, 
-//     format_user_input_t op);
-
 // Format user input 
-uint8_t format_input(
-    char *buff, 
-    DWORD *data, 
-    format_user_input_t op);
+uint8_t format_input(char *buff, DWORD *data, format_user_input_t op);
 
 //=======================================================================================
 
@@ -116,45 +104,19 @@ typedef struct fatfs_test_record_s
     dma_index_t dma_index;                   // DMA transfer indexing info 
     uint8_t data_in_buff[DATA_BUFF_SIZE];    // Buffer that stores latest UART input 
     uint8_t data_out_buff[DATA_BUFF_SIZE];   // Buffer that stores outgoing data 
-
-    DWORD data_in_num;
-
-    uint8_t state_seq;
-
+    DWORD data_in_num;                       // Number fetched from data input 
+    
     // State tracking 
-    void (*state_func_ptr)(void);
-
-    // // User data 
-    // BYTE access_mode;                     // File access mode (byte) 
-    // QWORD position;                       // File position (byte num) 
-    // QWORD read_len;                       // Read data size (bytes) 
-    // BYTE cmd_index;                       // For indixing function pointers 
-
-    // // User and data buffers 
-    // char cmd_buff[CMD_SIZE];              // Stores user commands 
-    // char feedback_buff[BUFF_SIZE];        // Stores user feedback 
-    // char buffer[BUFF_SIZE];               // To store the data that we can read or write
-    // char path_buff[CMD_SIZE];             // Stores path to file or directory 
-    // char file_mode_buff[CMD_SIZE];        // Stores file access modes input by the user 
+    uint8_t state_seq;                       // Contorls action within a state/command 
+    void (*state_func_ptr)(void);            // Dispatches to a chosen command 
     
     // File variables 
-    FATFS   file_sys;                     // File system 
-    FIL     file;                         // File 
-    FRESULT fresult;                      // Store the result of each operation 
-    UINT    br, bw;                       // Stores f_read and f_write byte counters 
-    DIR     dj;                           // Directory object 
-    FILINFO fno;                          // File information 
-
-    // Card capacity 
-    FATFS *pfs;                           // Pointer to file system object 
-    DWORD fre_clust;                      // Stores number of free clusters 
-    DWORD total, free_space;              // Total and free volume space 
-
-// #if FORMAT_EXFAT 
-
-    BYTE work[512];                       // Used to format the volume 
-
-// #endif   // FORMAT_EXFAT
+    FATFS file_sys;                          // File system 
+    FIL file;                                // File 
+    FRESULT fresult;                         // Store the result of each operation 
+    UINT br, bw;                             // Stores f_read and f_write byte counters 
+    DIR dj;                                  // Directory object 
+    FILINFO fno;                             // File information 
 } 
 fatfs_test_record_t;
 
@@ -171,7 +133,7 @@ typedef struct fatfs_user_cmds_s
 fatfs_user_cmds_t;
 
 // User commands 
-static const fatfs_user_cmds_t cmd_table[NUM_TEST_CMDS] = 
+static const fatfs_user_cmds_t cmd_table[NUM_USER_CMDS] = 
 {
     // Volume Management and System Configuration commands 
     {"mount",     &mount_card},
@@ -329,7 +291,7 @@ void fatfs_test_init()
     int_handler_init(); 
 
     // Enable the interrupt handlers 
-    nvic_config(USART2_IRQn, EXTI_PRIORITY_0);          // UART2 - Serial terminal (user input) 
+    nvic_config(USART2_IRQn, EXTI_PRIORITY_0);   // UART2 - Serial terminal (user input) 
 
     //==================================================
 
@@ -364,24 +326,6 @@ void fatfs_test_app()
         // Dispatch using function pointer 
         fatfs_data.state_func_ptr();
     }
-
-    // // Look for a user command 
-    // get_input(
-    //     "\r\n>>> ", 
-    //     fatfs_data.cmd_buff,  
-    //     CMD_SIZE, 
-    //     &fatfs_data.read_len, 
-    //     FORMAT_FILE_STRING);
-
-    // // Compare the input to the defined user commands 
-    // for (uint8_t i = CLEAR; i < NUM_TEST_CMDS; i++)
-    // {
-    //     if (str_compare(fatfs_data.cmd_buff, cmd_table[i].user_cmds, BYTE_0)) 
-    //     {
-    //         (cmd_table[i].fatfs_func_ptrs_t)();
-    //         break; 
-    //     }
-    // }
 }
 
 //=======================================================================================
@@ -393,20 +337,14 @@ void fatfs_test_app()
 // Format the card 
 void file_mkfs(void)
 {
-    uint8_t timer = 20;
+    uint8_t timer = FORMAT_ATTEMPTS;
+    BYTE work[FORMAT_BUFF_SIZE];
 
     do
     {
-        fatfs_data.fresult = f_mkfs("", FM_EXFAT, 0, fatfs_data.work, sizeof(fatfs_data.work));
-
-        if (fatfs_data.fresult == FR_OK)
-        {
-            feedback_display("SD Card formatted successfully.\r\n");
-        }
-        else
-        {
-            feedback_display("Error mounting card.\r\n");
-        }
+        fatfs_data.fresult = f_mkfs("", FM_EXFAT, 0, work, sizeof(work));
+        (fatfs_data.fresult == FR_OK) ? feedback_display("SD Card formatted successfully.\r\n") : 
+                                        feedback_display("Error formatting volume.\r\n");
     }
     while (fatfs_data.fresult != FR_OK && --timer);
 
@@ -417,45 +355,6 @@ void file_mkfs(void)
 // Mount card 
 void mount_card(void)
 {
-// #if FORMAT_EXFAT
-    
-    // Test to see if this will erase existing data 
-
-    // uint8_t timer = 10;
-    
-    // Format the drive 
-    // fatfs_data.fresult = f_mkfs("", FM_EXFAT, 0, fatfs_data.work, sizeof(fatfs_data.work));
-
-    // if (fatfs_data.fresult == FR_OK)
-    // // if (timer)
-    // {
-    //     feedback_display("SD Card formatted successfully.\r\n");
-    // }
-    // else
-    // {
-    //     // fault_display();
-    //     feedback_display("\r\nError mounting card.\r\n");
-    // }
-
-    // do
-    // {
-    //     fatfs_data.fresult = f_mkfs("", FM_EXFAT, 0, fatfs_data.work, sizeof(fatfs_data.work));
-
-    //     if (fatfs_data.fresult == FR_OK)
-    //     {
-    //         feedback_display("SD Card formatted successfully.\r\n");
-    //     }
-    //     else
-    //     {
-    //         feedback_display("Error mounting card.\r\n");
-    //     }
-    // }
-    // while (fatfs_data.fresult != FR_OK && --timer);
-
-    // tim_delay_ms(fatfs_data.tim, 1000);
-
-// #endif
-
     fatfs_data.fresult = f_mount(&fatfs_data.file_sys, "", FATFS_MOUNT_NOW); 
 
     if (fatfs_data.fresult == FR_OK) 
@@ -500,7 +399,6 @@ void unmount_card(void)
 
     (fatfs_data.fresult == FR_OK) ? feedback_display("\nVolume unmounted successfully.\r\n") : 
                                     feedback_display("\nError in unmounting volume.\r\n");
-
     cmd_reset();
 }
 
@@ -510,16 +408,19 @@ void card_capacity(void)
 {
     // These calcs assume 512 bytes/sector 
 
+    FATFS *pfs;                // Pointer to file system object 
+    DWORD fre_clust;           // Stores number of free clusters 
+
     // Check free space 
-    f_getfree("", &fatfs_data.fre_clust, &fatfs_data.pfs);
+    f_getfree("", &fre_clust, &pfs);
 
     // Calculate the total space 
-    fatfs_data.total = (uint32_t)((fatfs_data.pfs->n_fatent - 2) * fatfs_data.pfs->csize / 2);
-    number_display("\nVolume Total Size (KB): ", fatfs_data.total);
+    DWORD total = (uint32_t)((pfs->n_fatent - 2) * pfs->csize / 2);
+    number_display("\nVolume Total Size (KB): ", total);
     
     // Calculate the free space 
-    fatfs_data.free_space = (uint32_t)(fatfs_data.fre_clust * fatfs_data.pfs->csize / 2);
-    number_display("Volume Free Space (KB): ", fatfs_data.free_space);
+    DWORD free_space = (uint32_t)(fre_clust * pfs->csize / 2);
+    number_display("Volume Free Space (KB): ", free_space);
 
     cmd_reset();
 }
@@ -572,18 +473,8 @@ void file_remove(void)
 
         // Attempt to remove the specified file 
         fatfs_data.fresult = f_unlink((TCHAR *)fatfs_data.data_in_buff);
-
-        switch(fatfs_data.fresult)
-        {
-            case FR_OK:
-                string_display("\r\nSuccessfully removed: ", (char *)fatfs_data.data_in_buff);
-                break;
-
-            default:
-                fault_display();
-                break;
-        }
-
+        (fatfs_data.fresult == FR_OK) ? string_display("\r\nSuccessfully removed: ", (char *)fatfs_data.data_in_buff) : 
+                                        fault_display();
         cmd_reset();
     }
 }
@@ -602,18 +493,8 @@ void file_mkdir(void)
 
         // Write to the file 
         fatfs_data.fresult = f_mkdir((TCHAR *)fatfs_data.data_in_buff);
-
-        switch(fatfs_data.fresult)
-        {
-            case FR_OK:
-                string_display("\r\nNew directory: ", (char *)fatfs_data.data_in_buff);
-                break;
-
-            default:
-                fault_display();
-                break;
-        }
-
+        (fatfs_data.fresult == FR_OK) ? string_display("\r\nNew directory: ", (char *)fatfs_data.data_in_buff) : 
+                                        fault_display();
         cmd_reset();
     }
 }
@@ -632,18 +513,8 @@ void file_chdir(void)
 
         // Change the directory 
         fatfs_data.fresult = f_chdir((TCHAR *)fatfs_data.data_in_buff);
-
-        switch(fatfs_data.fresult)
-        {
-            case FR_OK:
-                string_display("\r\nNew directory: ", (char *)fatfs_data.data_in_buff);
-                break;
-
-            default:
-                fault_display();
-                break;
-        }
-
+        (fatfs_data.fresult == FR_OK) ? string_display("\r\nNow in: ", (char *)fatfs_data.data_in_buff) : 
+                                        fault_display();
         cmd_reset();
     }
 }
@@ -661,18 +532,8 @@ void file_getcwd(void)
 
     // Get the current directory 
     fatfs_data.fresult = f_getcwd(path, DATA_BUFF_SIZE);
-
-    switch(fatfs_data.fresult)
-    {
-        case FR_OK:
-            string_display("\r\nCurrent directory: ", path);
-            break;
-
-        default:
-            fault_display();
-            break;
-    }
-
+    (fatfs_data.fresult == FR_OK) ? string_display("\r\nCurrent directory: ", path) : 
+                                    fault_display();
     cmd_reset();
 }
 
@@ -690,18 +551,8 @@ void file_opendir(void)
 
         // Open the specified directory 
         fatfs_data.fresult = f_opendir(&fatfs_data.dj, (TCHAR *)fatfs_data.data_in_buff);
-
-        switch(fatfs_data.fresult)
-        {
-            case FR_OK:
-                string_display("\r\nOpened: ", (char *)fatfs_data.data_in_buff);
-                break;
-
-            default:
-                fault_display();
-                break;
-        }
-
+        (fatfs_data.fresult == FR_OK) ? string_display("\r\nOpened: ", (char *)fatfs_data.data_in_buff) : 
+                                        fault_display();
         cmd_reset();
     }
 }
@@ -712,19 +563,8 @@ void file_closedir(void)
 {
     // Close the current directory 
     fatfs_data.fresult = f_closedir(&fatfs_data.dj);
-
-    switch(fatfs_data.fresult)
-    {
-        case FR_OK:
-            feedback_display("\r\nDirectory closed.");
-            file_getcwd();
-            break;
-
-        default:
-            fault_display();
-            break;
-    }
-
+    (fatfs_data.fresult == FR_OK) ? feedback_display("\r\nDirectory closed.") : 
+                                    fault_display();
     cmd_reset();
 }
 
@@ -781,18 +621,8 @@ void file_open(void)
 
         // Open a file (and create if it doesn't exist) 
         fatfs_data.fresult = f_open(&fatfs_data.file, path, (BYTE)fatfs_data.data_in_num);
-
-        switch(fatfs_data.fresult)
-        {
-            case FR_OK:
-                string_display("\r\nOpened: ", (char *)fatfs_data.data_in_buff);
-                break;
-
-            default:
-                fault_display();
-                break;
-        }
-
+        (fatfs_data.fresult == FR_OK) ? string_display("\r\nOpened: ", (char *)fatfs_data.data_in_buff) : 
+                                        fault_display();
         cmd_reset();
     }
 }
@@ -803,18 +633,8 @@ void file_close(void)
 {
     // Close the open file 
     fatfs_data.fresult = f_close(&fatfs_data.file);
-
-    switch(fatfs_data.fresult)
-    {
-        case FR_OK:
-            feedback_display("\r\nFile closed.");
-            break;
-
-        default:
-            fault_display();
-            break;
-    }
-
+    (fatfs_data.fresult == FR_OK) ? feedback_display("\r\nFile closed.") : 
+                                    fault_display();
     cmd_reset();
 }
 
@@ -835,19 +655,9 @@ void file_read(void)
         fatfs_data.fresult = f_read(&fatfs_data.file, 
                                     (void *)file_data, 
                                     fatfs_data.data_in_num, 
-                                    &fatfs_data.br); 
-
-        switch(fatfs_data.fresult)
-        {
-            case FR_OK:
-                string_display("\r\nFile data: ", file_data);
-                break;
-
-            default:
-                fault_display();
-                break;
-        }
-
+                                    &fatfs_data.br);
+        (fatfs_data.fresult == FR_OK) ? string_display("\r\nFile data: ", file_data) : 
+                                        fault_display();
         cmd_reset();
     }
 }
@@ -868,19 +678,9 @@ void file_write(void)
         fatfs_data.fresult = f_write(&fatfs_data.file, 
                                      (void *)fatfs_data.data_in_buff, 
                                      strlen(fatfs_data.data_in_buff), 
-                                     &fatfs_data.bw); 
-
-        switch(fatfs_data.fresult)
-        {
-            case FR_OK:
-                string_display("\r\nFile data: ", (char *)fatfs_data.data_in_buff);
-                break;
-
-            default:
-                fault_display();
-                break;
-        }
-
+                                     &fatfs_data.bw);
+        (fatfs_data.fresult == FR_OK) ? string_display("\r\nFile data: ", (char *)fatfs_data.data_in_buff) : 
+                                        fault_display();
         cmd_reset();
     }
 }
@@ -899,18 +699,8 @@ void file_seek(void)
 
         // Move to the specified position in the file 
         fatfs_data.fresult = f_lseek(&fatfs_data.file, fatfs_data.data_in_num);
-
-        switch(fatfs_data.fresult)
-        {
-            case FR_OK:
-                number_display("\r\nNew file position: ", fatfs_data.data_in_num);
-                break;
-
-            default:
-                fault_display();
-                break;
-        }
-
+        (fatfs_data.fresult == FR_OK) ? number_display("\r\nNew file position: ", fatfs_data.data_in_num) : 
+                                        fault_display();
         cmd_reset();
     }
 }
@@ -920,18 +710,8 @@ void file_seek(void)
 void file_rewind(void) 
 {
     fatfs_data.fresult = f_lseek(&fatfs_data.file, RESET_ZERO);
-
-    switch(fatfs_data.fresult)
-    {
-        case FR_OK:
-            feedback_display("\r\nNow at the beginning of the file.");
-            break;
-
-        default:
-            fault_display();
-            break;
-    }
-
+    (fatfs_data.fresult == FR_OK) ? feedback_display("\r\nNow at the beginning of the file.\r\n") : 
+                                    fault_display();
     cmd_reset();
 }
 
@@ -940,18 +720,8 @@ void file_rewind(void)
 void file_fast_fwd(void) 
 {
     fatfs_data.fresult = f_lseek(&fatfs_data.file, f_size(&fatfs_data.file));
-
-    switch(fatfs_data.fresult)
-    {
-        case FR_OK:
-            feedback_display("\r\nNow at the end of the file.");
-            break;
-
-        default:
-            fault_display();
-            break;
-    }
-
+    (fatfs_data.fresult == FR_OK) ? feedback_display("\r\nNow at the end of the file.\r\n") : 
+                                    fault_display();
     cmd_reset();
 }
 
@@ -999,31 +769,21 @@ void file_puts(void)
     {
         format_input((char *)fatfs_data.data_in_buff, &fatfs_data.data_in_num, FORMAT_FILE_STRING);
 
-        // Write a string to the file 
-        int num_characters = f_puts((TCHAR *)fatfs_data.data_in_buff, &fatfs_data.file);
-        num_characters += f_puts("\r\n", &fatfs_data.file);
+        // Format the input to end with a line break. This separates the provided data 
+        // from "f_puts" into their own lines which also allows for each line to be 
+        // retrieved individually when using "f_gets". 
+        uint8_t buff_size = DATA_BUFF_SIZE + 2; 
+        char line_of_data[buff_size];
+        snprintf(line_of_data, buff_size, "%s\r\n", (char *)fatfs_data.data_in_buff);
 
-        if (num_characters >= 0)
-        {
-            number_display("\r\nData written to file. Number of characters written: ", (DWORD)num_characters);
-        }
-        else
-        {
-            feedback_display("Write failed.");
-        }
+        // Write a string to the file 
+        int num_chars = f_puts(line_of_data, &fatfs_data.file);
+        (num_chars >= 0) ? number_display("\r\nData written to file. Characters written: ", (DWORD)num_chars) : 
+                           feedback_display("Write failed.");
 
         cmd_reset();
     }
 }
-
-
-// // Display the contents of 'buffer' 
-// void display_buffer(void)
-// {
-//     uart_send_str(fatfs_data.uart, "\r\nbuffer: \r\n\t"); 
-//     uart_send_str(fatfs_data.uart, fatfs_data.buffer); 
-//     uart_send_new_line(fatfs_data.uart); 
-// }
 
 //=======================================================================================
 
@@ -1047,9 +807,9 @@ void cmd_select(void)
             break; 
         }
     }
-    while (++index < NUM_TEST_CMDS);
+    while (++index < NUM_USER_CMDS);
 
-    if (index >= NUM_TEST_CMDS)
+    if (index >= NUM_USER_CMDS)
     {
         cmd_reset();
     }
@@ -1105,25 +865,6 @@ void feedback_display(const char *string)
 {
     uart_send_str(fatfs_data.uart, string);
 }
-
-
-// // Get user inputs 
-// void get_input(
-//     char *str, 
-//     char *buff, 
-//     uint8_t buff_len, 
-//     QWORD *data, 
-//     format_user_input_t op)
-// {
-//     do 
-//     {
-//         // Get the info from the user 
-//         uart_send_str(fatfs_data.uart, str);
-//         while(!uart_data_ready(fatfs_data.uart));
-//         uart_get_data(fatfs_data.uart, buff);
-//     }
-//     while (!format_input(buff, data, op)); 
-// }
 
 
 // Format user input 
