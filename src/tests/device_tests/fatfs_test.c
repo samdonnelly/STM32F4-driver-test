@@ -563,7 +563,7 @@ void file_closedir(void)
 {
     // Close the current directory 
     fatfs_data.fresult = f_closedir(&fatfs_data.dj);
-    (fatfs_data.fresult == FR_OK) ? feedback_display("\r\nDirectory closed.") : 
+    (fatfs_data.fresult == FR_OK) ? feedback_display("\r\nDirectory closed.\r\n") : 
                                     fault_display();
     cmd_reset();
 }
@@ -621,8 +621,17 @@ void file_open(void)
 
         // Open a file (and create if it doesn't exist) 
         fatfs_data.fresult = f_open(&fatfs_data.file, path, (BYTE)fatfs_data.data_in_num);
-        (fatfs_data.fresult == FR_OK) ? string_display("\r\nOpened: ", (char *)fatfs_data.data_in_buff) : 
-                                        fault_display();
+        
+        if (fatfs_data.fresult == FR_OK)
+        {
+            string_display("\r\nOpened: ", path);
+            string_display("With permissions: ", (char *)fatfs_data.data_in_buff);
+        }
+        else
+        {
+            fault_display();
+        }
+
         cmd_reset();
     }
 }
@@ -633,7 +642,7 @@ void file_close(void)
 {
     // Close the open file 
     fatfs_data.fresult = f_close(&fatfs_data.file);
-    (fatfs_data.fresult == FR_OK) ? feedback_display("\r\nFile closed.") : 
+    (fatfs_data.fresult == FR_OK) ? feedback_display("\r\nFile closed.\r\n") : 
                                     fault_display();
     cmd_reset();
 }
@@ -742,15 +751,15 @@ void file_gets(void)
     {
         if (f_eof(&fatfs_data.file) != 0)
         {
-            feedback_display("\r\nEnd of file reached.");
+            feedback_display("\r\nEnd of file reached.\r\n");
         }
         else if (f_error(&fatfs_data.file) != 0)
         {
-            feedback_display("\r\nHard file error occured.");
+            feedback_display("\r\nHard file error occured.\r\n");
         }
         else
         {
-            feedback_display("\r\nUnknown error.");
+            feedback_display("\r\nUnknown error.\r\n");
         }
     }
 
