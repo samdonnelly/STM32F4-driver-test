@@ -21,21 +21,7 @@
 
 
 //=======================================================================================
-// Macros 
-
-#define HC05_NUM_USER_CMDS 10      // Number of defined user commands for controller test 
-#define HC05_MAX_SETTER_ARGS 1     // Maximum arguments of all function pointer below 
-
-//=======================================================================================
-
-
-//=======================================================================================
 // Function prototypes 
-
-#if HC05_CONTROLLER_TEST
-
-
-#else   // HC05_CONTROLLER_TEST
 
 // Print user prompt 
 void print_usr_prompt(void); 
@@ -59,51 +45,11 @@ void print_at_cmd_resp(void);
 
 #endif   // HC05_AT_ENABLE 
 
-#endif   // HC05_CONTROLLER_TEST 
-
 //=======================================================================================
 
 
 //=======================================================================================
 // Global Variables 
-
-#if HC05_CONTROLLER_TEST 
-
-// Write/read data buffers - 2 spots, one for read and one for write 
-static char hc05_wr_buff[2][STATE_USER_TEST_INPUT]; 
-
-// User command table 
-static state_request_t state_cmds[HC05_NUM_USER_CMDS] =
-{
-    {"send",        SMT_ARGS_1, SMT_STATE_FUNC_PTR_2, 0}, 
-    {"read_set",    SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, 0}, 
-    {"read_clear",  SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, 0}, 
-    {"lp_set",      SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, 0}, 
-    {"lp_clear",    SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, 0}, 
-    {"reset",       SMT_ARGS_0, SMT_STATE_FUNC_PTR_1, 0}, 
-    {"state",       SMT_ARGS_0, SMT_STATE_FUNC_PTR_3, 0}, 
-    {"read_status", SMT_ARGS_0, SMT_STATE_FUNC_PTR_3, 0}, 
-    {"read_data",   SMT_ARGS_0, SMT_STATE_FUNC_PTR_2, 1}, 
-    {"execute",     0, 0, 0} 
-}; 
-
-
-// Function pointer table 
-static hc05_func_ptrs_t state_func[HC05_NUM_USER_CMDS] = 
-{
-    {NULL, &hc05_set_send, NULL}, 
-    {&hc05_set_read, NULL, NULL}, 
-    {&hc05_clear_read, NULL, NULL}, 
-    {&hc05_set_low_power, NULL, NULL}, 
-    {&hc05_clear_low_power, NULL, NULL}, 
-    {&hc05_set_reset, NULL, NULL}, 
-    {NULL, NULL, &hc05_get_state}, 
-    {NULL, NULL, &hc05_get_read_status}, 
-    {NULL, &hc05_get_read_data, NULL}, 
-    {NULL, NULL, NULL} 
-}; 
-
-#else   // HC05_CONTROLLER_TEST
 
 char buffer[HC05_AT_CMD_LEN];       // String to hold user input 
 uint8_t command;                    // AT Command to send 
@@ -111,8 +57,6 @@ uint8_t operation;                  // Operation of AT command
 char parameter[HC05_AT_CMD_LEN];    // Parameter of AT command
 char cmd_resp[HC05_AT_CMD_LEN];     // AT command string 
 char bt_input[HC05_AT_CMD_LEN];     // Bluetooth input 
-
-#endif   // HC05_CONTROLLER_TEST 
 
 //=======================================================================================
 
@@ -206,16 +150,6 @@ void hc05_test_init()
         GPIOA,          // STATE pin GPIO 
         PIN_11);        // STATE pin 
 
-#if HC05_CONTROLLER_TEST 
-
-    // hc05 controller 
-    hc05_controller_init(TIM9); 
-
-    // State machine test 
-    state_machine_init(HC05_NUM_USER_CMDS); 
-
-#endif   // HC05_CONTROLLER_TEST
-
     //===================================================
 
     //==================================================
@@ -236,14 +170,6 @@ void hc05_test_init()
     //===================================================
     // Setup 
 
-#if HC05_CONTROLLER_TEST
-
-    // Initialize buffers 
-    memset(hc05_wr_buff[0], NULL_CHAR, STATE_USER_TEST_INPUT); 
-    memset(hc05_wr_buff[1], NULL_CHAR, STATE_USER_TEST_INPUT); 
-
-#else   // HC05_CONTROLLER_TEST
-
 #if HC05_AT_ENABLE 
 
     print_setup(); 
@@ -252,8 +178,6 @@ void hc05_test_init()
     
     clear_params(); 
     print_usr_prompt(); 
-
-#endif   // HC05_CONTROLLER_TEST
 
     //===================================================
 } 
@@ -266,124 +190,6 @@ void hc05_test_init()
 
 void hc05_test_app()
 {
-#if HC05_CONTROLLER_TEST 
-
-    // Controller test 
-
-    //===================================================
-    // Local variables 
-
-    // General purpose arguments array - holds arguments during user input 
-    static char user_args[HC05_MAX_SETTER_ARGS][STATE_USER_TEST_INPUT]; 
-
-    // Control flags 
-    uint8_t arg_convert = 0; 
-    uint32_t set_get_status = 0; 
-    uint8_t cmd_index = 0; 
-    uint8_t return_val = 0; 
-
-    //===================================================
-
-    //===================================================
-    // State machine tester 
-
-    // Determine what to do from user input 
-    state_machine_test(state_cmds, user_args[0], &cmd_index, &arg_convert, &set_get_status); 
-
-    // Check if there are any setters or getters requested ("execute" cmd called) 
-    if (set_get_status)
-    {
-        for (uint8_t i = 0; i < (HC05_NUM_USER_CMDS-1); i++)
-        {
-            if ((set_get_status >> i) & SET_BIT)
-            {
-                switch (state_cmds[i].func_ptr_index)
-                {
-                    case SMT_STATE_FUNC_PTR_1: 
-                        (state_func[i].func1)(); 
-                        break; 
-
-                    case SMT_STATE_FUNC_PTR_2: 
-                        (state_func[i].func2)(
-                            (uint8_t *)hc05_wr_buff[state_cmds[i].arg_buff_index], 
-                            STATE_USER_TEST_INPUT); 
-                        break; 
-
-                    case SMT_STATE_FUNC_PTR_3: 
-                        return_val = (state_func[i].func3)(); 
-                        uart_send_str(USART2, "\nReturn value: "); 
-                        uart_send_integer(USART2, (int16_t)return_val); 
-                        uart_send_new_line(USART2); 
-
-                    default: 
-                        break; 
-                }
-            }
-        }
-    }
-
-    // Check if argument input should be converted and assigned (all function args provided) 
-    if (arg_convert)
-    {
-        switch (state_cmds[cmd_index].func_ptr_index)
-        {
-            case SMT_STATE_FUNC_PTR_2: 
-                // Only for hc05_set_send 
-                memcpy(
-                    hc05_wr_buff[state_cmds[cmd_index].arg_buff_index], 
-                    user_args[0], 
-                    STATE_USER_TEST_INPUT); 
-                break; 
-
-            default: 
-                break; 
-        }
-    }
-
-    //===================================================
-
-    //===================================================
-    // Controller test 
-
-    // Call the device controller 
-    hc05_controller(); 
-
-    // State check 
-    switch (hc05_get_state())
-    {
-        case HC05_INIT_STATE: 
-            uart_send_str(USART2, "\r\n\ninit state\r\n\n"); 
-            uart_send_str(USART2, "cmd >>> "); 
-            break; 
-
-        case HC05_SEND_STATE: 
-            uart_send_str(USART2, "\r\nsend state\r\n"); 
-            break; 
-
-        case HC05_READ_STATE: 
-            // Requires updating if the read data command index changes in state_cmds 
-            if ((set_get_status >> SHIFT_8) & SET_BIT)
-            {
-                uart_send_str(USART2, "\r\nRead data: "); 
-                uart_send_str(USART2, hc05_wr_buff[1]); 
-                uart_send_new_line(USART2); 
-            }
-            break; 
-
-        case HC05_RESET_STATE: 
-            uart_send_str(USART2, "\r\nreset state\r\n"); 
-            break; 
-
-        default: 
-            break; 
-    }
-
-    //===================================================
-
-#else   // HC05_CONTROLLER_TEST
-
-    // Driver test 
-
     static uint8_t function = HC05_DATA_MODE; 
 
 #if HC05_AT_ENABLE 
@@ -490,8 +296,6 @@ void hc05_test_app()
     }
 
     //===================================================
-
-#endif   // HC05_CONTROLLER_TEST
 }
 
 //=======================================================================================
@@ -499,11 +303,6 @@ void hc05_test_app()
 
 //=======================================================================================
 // Testing functions 
-
-#if HC05_CONTROLLER_TEST
-
-
-#else   // HC05_CONTROLLER_TEST
 
 // Print user prompt 
 void print_usr_prompt(void)
@@ -551,7 +350,6 @@ void print_setup(void)
 // Parse the user input 
 void parse_input(void)
 {
-    // local variables 
     uint8_t parse_state = 0; 
     int8_t parse_index = 0; 
     char parse_buffer[HC05_AT_CMD_LEN]; 
@@ -637,7 +435,5 @@ void print_at_cmd_resp(void)
 }
 
 #endif   // HC05_AT_ENABLE 
-
-#endif   // HC05_CONTROLLER_TEST
 
 //=======================================================================================

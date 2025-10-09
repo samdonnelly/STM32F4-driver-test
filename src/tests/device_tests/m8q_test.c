@@ -51,12 +51,6 @@
 #define M8Q_TEST_1_LP_COUNT_LIM 90 
 #define M8Q_TEST_1_NUM_PARAMS 12 
 
-// Test 2 
-#define M8Q_TEST_2_IDLE_COUNT 30 
-#define M8Q_TEST_2_READ_COUNT 60 
-#define M8Q_TEST_2_LP_EN_COUNT 90 
-#define M8Q_TEST_2_LP_EX_COUNT 120 
-
 //=======================================================================================
 
 
@@ -129,13 +123,7 @@ void m8q_test_general(void);
  */
 void m8q_test_1_print(
     M8Q_STATUS driver_status, 
-    m8q_test_state_t output_state); 
-
-
-/**
- * @brief Output driver and controller data from test 2 
- */
-void m8q_test_2_print(); 
+    m8q_test_state_t output_state);
 
 //=======================================================================================
 
@@ -173,15 +161,6 @@ void m8q_test_1_init(void)
 {
     m8q_test_general_init(); 
     m8q_test_config_init(); 
-}
-
-
-// Setup code for Test 2 
-void m8q_test_2_init(void)
-{
-    m8q_test_general_init(); 
-    m8q_test_config_init(); 
-    m8q_controller_init(TIM9); 
 }
 
 
@@ -235,14 +214,6 @@ void m8q_test_general_init(void)
     // Initialize interrupt handler flags and enable the periodic timer interrupt handler 
     int_handler_init(); 
     nvic_config(TIM1_UP_TIM10_IRQn, EXTI_PRIORITY_0); 
-
-    // Screen initialization 
-#if HD44780U_ON_I2C_BUS 
-    hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH); 
-    hd44780u_clear(); 
-    hd44780u_display_off(); 
-    hd44780u_backlight_off(); 
-#endif   // HD44780U_ON_I2C_BUS 
 
     // Initialize variables 
     memset((void *)&test_data, CLEAR, sizeof(test_data)); 
@@ -353,7 +324,6 @@ void m8q_test_0(void)
 // Test 1 code - device configured, driver data record messages used, additional pins used 
 void m8q_test_1(void)
 {
-    // Local variables 
     M8Q_STATUS driver_status = M8Q_OK; 
 
     m8q_test_general(); 
@@ -403,58 +373,6 @@ void m8q_test_1(void)
 }
 
 
-// Test 2 code - device configured, device controller used 
-void m8q_test_2(void)
-{
-    m8q_test_general(); 
-    m8q_controller(); 
-
-    // Only interact with the device once per periodic interrupt. 
-    if (test_data.attempt_flag)
-    {
-        test_data.attempt_flag = CLEAR_BIT; 
-
-        // If in the fault state then reset 
-        if (m8q_get_state() == M8Q_FAULT_STATE)
-        {
-            m8q_set_reset_flag(); 
-            test_data.schedule_counter = CLEAR; 
-        }
-
-        // Cycle between read, idle and low power states 
-        switch (test_data.schedule_counter)
-        {
-            // If at time 1 then go to idle state 
-            case M8Q_TEST_2_IDLE_COUNT: 
-                m8q_set_idle_flag(); 
-                break; 
-
-            // If at time 2 then go back to read state 
-            case M8Q_TEST_2_READ_COUNT: 
-                m8q_set_read_flag(); 
-                break; 
-
-            // Go to the low power state 
-            case M8Q_TEST_2_LP_EN_COUNT: 
-                m8q_set_low_pwr_flag(); 
-                break; 
-
-            // Exit the low power state back to the read state 
-            case M8Q_TEST_2_LP_EX_COUNT: 
-                m8q_clear_low_pwr_flag(); 
-                test_data.schedule_counter = CLEAR; 
-                break; 
-
-            default: 
-                break; 
-        }
-
-        // Output the test information and data to the serial terminal 
-        m8q_test_2_print(); 
-    }
-}
-
-
 // Common/shared test code 
 void m8q_test_general(void)
 {
@@ -477,7 +395,6 @@ void m8q_test_1_print(
     M8Q_STATUS driver_status, 
     m8q_test_state_t output_state)
 {
-    // Local variables 
     char latitude_str[M8Q_TEST_1_COO_STR_LEN], longitude_str[M8Q_TEST_1_COO_STR_LEN]; 
     GPIO_STATE lp_pin_state = GPIO_HIGH - gpio_read(GPIOC, (SET_BIT << PIN_10)); 
     int16_t lat_int, lon_int; 
@@ -561,47 +478,6 @@ void m8q_test_1_print(
         default: 
             break; 
     }
-
-}
-
-
-// Output the driver and controller data from test 2 
-void m8q_test_2_print(void)
-{
-    char latitude_str[M8Q_TEST_1_COO_STR_LEN], longitude_str[M8Q_TEST_1_COO_STR_LEN]; 
-    int16_t lat_int, lon_int; 
-    int32_t lat_frac, lon_frac; 
-
-    // Get and format the coordinates 
-    test_data.latitude = m8q_get_position_lat(); 
-    test_data.longitude = m8q_get_position_lon(); 
-
-    lat_int = (int16_t)test_data.latitude; 
-    lat_frac = (int32_t)(SCALE_1E6*(test_data.latitude - (double)lat_int)); 
-    if (lat_frac < 0) lat_frac = -lat_frac; 
-
-    lon_int = (int16_t)test_data.longitude; 
-    lon_frac = (int32_t)(SCALE_1E6*(test_data.longitude - (double)lon_int)); 
-    if (lon_frac < 0) lon_frac = -lon_frac; 
-
-    // Go to the top of the output block in the serial terminal 
-    for (uint8_t i = CLEAR; i < 6; i++)
-    {
-        uart_send_str(USART2, "\033[1A"); 
-    }
-
-    // Output all the data to the serial terminal for viewing 
-    uart_send_str(USART2, "\r\nState: "); 
-    uart_send_integer(USART2, (int16_t)m8q_get_state()); 
-    uart_send_str(USART2, "\r\nLP flag: "); 
-    uart_send_integer(USART2, (int16_t)m8q_get_lp_flag()); 
-    sprintf(latitude_str, "\r\nLatitude: %d.%ld", lat_int, lat_frac); 
-    uart_send_str(USART2, latitude_str); 
-    sprintf(longitude_str, "\r\nLongitude: %d.%ld", lon_int, lon_frac); 
-    uart_send_str(USART2, longitude_str); 
-    uart_send_str(USART2, "\r\nFault code = "); 
-    uart_send_integer(USART2, (int16_t)m8q_get_fault_code()); 
-    uart_send_new_line(USART2); 
 }
 
 //=======================================================================================

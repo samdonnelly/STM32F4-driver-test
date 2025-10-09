@@ -230,16 +230,6 @@ void gps_nav_test_init(void)
         I2C_CCR_SM_42_100,
         I2C_TRISE_1000_42);
 
-    // HD44780U screen initialization 
-#if HD44780U_ON_I2C_BUS 
-    // If the HD44780U screen is on the same I2C bus as the LSM303AGR then the screen 
-    // must be set up first to prevent it from interfering with the bus. 
-    hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH); 
-    hd44780u_clear(); 
-    hd44780u_display_off(); 
-    hd44780u_backlight_off(); 
-#endif   // HD44780U_ON_I2C_BUS 
-
     // M8Q setup 
     gps_nav_test_m8q_init(); 
 
@@ -279,9 +269,6 @@ void gps_nav_test_m8q_init(void)
 
         while (TRUE); 
     }
-
-    // M8Q controller setup 
-    m8q_controller_init(TIM9); 
 }
 
 
@@ -324,7 +311,6 @@ void gps_nav_test::non_blocking_timer_config(void)
 
 void gps_nav_test_app(void)
 {
-    m8q_controller(); 
     gps_nav.gps_navigation(); 
 }
 
@@ -441,11 +427,9 @@ void gps_nav_test::nav_info_output(void)
 // Check for device driver faults 
 void gps_nav_test::nav_status_check(void)
 {
-    if ((m8q_get_state() == M8Q_FAULT_STATE) || lsm303agr_status)
+    if (lsm303agr_status)
     {
-        uart_send_new_line(USART2); 
-        uart_send_str(USART2, "\r\nM8Q state: "); 
-        uart_send_integer(USART2, (int16_t)m8q_get_state()); 
+        uart_send_new_line(USART2);
         uart_send_str(USART2, "\r\nLSM303AGR status: "); 
         uart_send_integer(USART2, (int16_t)lsm303agr_status); 
         while (TRUE); 

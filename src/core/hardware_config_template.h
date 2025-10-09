@@ -113,10 +113,8 @@
 #define ESC_SECOND_DEVICE 0               // Add a second device 
 
 // HC-05 driver test 
-#define HC05_CONTROLLER_TEST 0            // For switching between driver and controller testing 
 
 // HD44780U driver test 
-#define HD44780U_CONTROLLER_TEST 0        // For switching between driver and controller testing 
 #define HD44780U_BACKLIGHT_TEST 0         // Backlight control test 
 #define HD44780U_DISPLAY_TEST 0           // Display on/off test 
 #define HD44780U_CURSOR_TEST 0            // Cursor visibility test 

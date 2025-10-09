@@ -33,19 +33,13 @@ extern "C" {
 /**
  * @brief Setup code for Test 0 
  */
-void m8q_test_0_init(void); 
+void m8q_test_0_init(void);
 
 
 /**
  * @brief Setup code for Test 1 
  */
-void m8q_test_1_init(void); 
-
-
-/**
- * @brief Setup code for Test 2 
- */
-void m8q_test_2_init(void); 
+void m8q_test_1_init(void);
 
 //=======================================================================================
 
@@ -71,7 +65,7 @@ void m8q_test_2_init(void);
  *          buffer size and a data stream flush (buffer overflow) will be triggers. In 
  *          other words, this is all done to demonstrate how the dirver works. 
  */
-void m8q_test_0(void); 
+void m8q_test_0(void);
 
 
 /**
@@ -84,17 +78,7 @@ void m8q_test_0(void);
  *          on the data stream is deliberately flushed before reading data normally. The 
  *          read data gets output over UART (to the serial terminal). 
  */
-void m8q_test_1(void); 
-
-
-/**
- * @brief Test 2 code 
- * 
- * @details The device is configured the same way as in Test 1 but this time the device 
- *          controller is used. The code alternates between idle, read and low power 
- *          states and outputs driver and controller data via UART. 
- */
-void m8q_test_2(void); 
+void m8q_test_1(void);
 
 //=======================================================================================
 

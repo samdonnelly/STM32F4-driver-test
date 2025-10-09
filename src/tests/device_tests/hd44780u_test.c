@@ -21,16 +21,6 @@
 
 
 //=======================================================================================
-// Macros 
-
-// Controller 
-#define HD44780U_NUM_USER_CMDS 19         // Number of defined user commands 
-#define HD44780U_MAX_FUNC_PTR_ARGS 3      // Maximum arguments of all function pointer below 
-
-//=======================================================================================
-
-
-//=======================================================================================
 // Global variables 
 
 static char* hd44780u_startup_screen[HD44780U_NUM_LINES] = 
@@ -41,59 +31,6 @@ static char* hd44780u_startup_screen[HD44780U_NUM_LINES] =
     "rumpus!" 
 };
 
-#if HD44780U_CONTROLLER_TEST
-
-// User command table 
-static state_request_t state_cmds[HD44780U_NUM_USER_CMDS] = 
-{
-    {"line_set",      3, HD44780U_SET_PTR_1, 0}, 
-    {"line_clear",    1, HD44780U_SET_PTR_2, 1}, 
-    {"send_str",      1, HD44780U_SET_PTR_3, 1}, 
-    {"cursor_pos",    2, HD44780U_SET_PTR_4, 1}, 
-    {"clear",         0, HD44780U_SET_PTR_5, 0}, 
-    {"display_on",    0, HD44780U_SET_PTR_5, 0}, 
-    {"display_off",   0, HD44780U_SET_PTR_5, 0}, 
-    {"cursor_on",     0, HD44780U_SET_PTR_5, 0}, 
-    {"cursor_off",    0, HD44780U_SET_PTR_5, 0}, 
-    {"blink_on",      0, HD44780U_SET_PTR_5, 0}, 
-    {"blink_off",     0, HD44780U_SET_PTR_5, 0}, 
-    {"backlight_on",  0, HD44780U_SET_PTR_5, 0}, 
-    {"backlight_off", 0, HD44780U_SET_PTR_5, 0}, 
-    {"write",         0, HD44780U_SET_PTR_5, 0}, 
-    {"reset",         0, HD44780U_SET_PTR_5, 0}, 
-    {"lp_set",        0, HD44780U_SET_PTR_5, 0}, 
-    {"lp_clear",      0, HD44780U_SET_PTR_5, 0}, 
-    {"state",         0, HD44780U_GET_PTR_1, 0}, 
-    {"execute", 0, 0, 0} 
-}; 
-
-
-// User command table 
-static hd44780u_func_ptrs_t state_func[HD44780U_NUM_USER_CMDS] = 
-{
-    {&hd44780u_line_set, NULL, NULL, NULL, NULL, NULL}, 
-    {NULL, &hd44780u_line_clear, NULL, NULL, NULL, NULL}, 
-    {NULL, NULL, &hd44780u_send_string, NULL, NULL, NULL}, 
-    {NULL, NULL, NULL, &hd44780u_cursor_pos, NULL, NULL}, 
-    {NULL, NULL, NULL, NULL, &hd44780u_clear, NULL}, 
-    {NULL, NULL, NULL, NULL, &hd44780u_display_on, NULL}, 
-    {NULL, NULL, NULL, NULL, &hd44780u_display_off, NULL}, 
-    {NULL, NULL, NULL, NULL, &hd44780u_cursor_on, NULL}, 
-    {NULL, NULL, NULL, NULL, &hd44780u_cursor_off, NULL}, 
-    {NULL, NULL, NULL, NULL, &hd44780u_blink_on, NULL}, 
-    {NULL, NULL, NULL, NULL, &hd44780u_blink_off, NULL}, 
-    {NULL, NULL, NULL, NULL, &hd44780u_backlight_on, NULL}, 
-    {NULL, NULL, NULL, NULL, &hd44780u_backlight_off, NULL}, 
-    {NULL, NULL, NULL, NULL, &hd44780u_set_write_flag, NULL}, 
-    {NULL, NULL, NULL, NULL, &hd44780u_set_reset_flag, NULL}, 
-    {NULL, NULL, NULL, NULL, &hd44780u_set_low_pwr_flag, NULL}, 
-    {NULL, NULL, NULL, NULL, &hd44780u_clear_low_pwr_flag, NULL}, 
-    {NULL, NULL, NULL, NULL, NULL, &hd44780u_get_state}, 
-    {NULL, NULL, NULL, NULL, NULL, NULL} 
-}; 
-
-#else 
-
 static char* hd44780u_test_text[HD44780U_NUM_LINES] = 
 { 
     "Rump",
@@ -101,8 +38,6 @@ static char* hd44780u_test_text[HD44780U_NUM_LINES] =
     "you", 
     "drop!" 
 };
-
-#endif 
 
 //================================================================================
 
@@ -112,8 +47,6 @@ static char* hd44780u_test_text[HD44780U_NUM_LINES] =
 
 void hd44780u_test_init()
 {
-    // Setup code for the hd44780u_test here 
-
     //=================================================
     // Peripheral initialization 
 
@@ -155,16 +88,6 @@ void hd44780u_test_init()
 
     // LCD screen init 
     hd44780u_init(I2C1, TIM9, PCF8574_ADDR_HHH);
-
-#if HD44780U_CONTROLLER_TEST
-
-    // Initialize the device controller 
-    hd44780u_controller_init(TIM9); 
-
-    // Initialize the state machine test code 
-    state_machine_init(HD44780U_NUM_USER_CMDS); 
-
-#endif
 
     //=================================================
 
@@ -218,126 +141,6 @@ void hd44780u_test_init()
 
 void hd44780u_test_app()
 {
-    // Test code for the hd44780u_test here 
-
-#if HD44780U_CONTROLLER_TEST
-
-    //==================================================
-    // Controller test code 
-
-    // General purpose arguments array 
-    static char user_args[HD44780U_MAX_FUNC_PTR_ARGS][STATE_USER_TEST_INPUT]; 
-
-    // Arguments for the hd44780u_state_data_tester function pointer 
-    static hd44780u_lines_t line[2]; 
-    static char line_input[2][STATE_USER_TEST_INPUT]; 
-    static uint8_t line_offset[2]; 
-    static hd44780u_line_start_position_t line_start; 
-
-    // Control flags 
-    uint32_t set_get_status = 0; 
-    uint8_t arg_convert = 0; 
-    uint8_t cmd_index = 0; 
-    uint8_t state = 0; 
-
-    // Determine what to do from user input 
-    state_machine_test(state_cmds, user_args[0], &cmd_index, &arg_convert, &set_get_status); 
-
-    // Check if there are any setters or getters requested 
-    if (set_get_status)
-    {
-        for (uint8_t i = 0; i < (HD44780U_NUM_USER_CMDS-1); i++)
-        {
-            if ((set_get_status >> i) & SET_BIT)
-            {
-                switch (state_cmds[i].func_ptr_index)
-                {
-                    case HD44780U_SET_PTR_1: 
-                        (state_func[i].set1)(
-                            line[state_cmds[i].arg_buff_index], 
-                            line_input[state_cmds[i].arg_buff_index], 
-                            line_offset[state_cmds[i].arg_buff_index]); 
-                        break; 
-
-                    case HD44780U_SET_PTR_2: 
-                        (state_func[i].set2)(
-                            line[state_cmds[i].arg_buff_index]); 
-                        break; 
-
-                    case HD44780U_SET_PTR_3: 
-                        (state_func[i].set3)(
-                            line_input[state_cmds[i].arg_buff_index]); 
-                        break; 
-
-                    case HD44780U_SET_PTR_4: 
-                        (state_func[i].set4)(
-                            line_start, 
-                            line_offset[state_cmds[i].arg_buff_index]); 
-                        break; 
-
-                    case HD44780U_SET_PTR_5: 
-                        (state_func[i].set5)(); 
-                        break; 
-
-                    case HD44780U_GET_PTR_1: 
-                        state = (state_func[i].get1)(); 
-                        uart_send_str(USART2, "\nState: "); 
-                        uart_send_integer(USART2, (int16_t)state); 
-                        uart_send_new_line(USART2); 
-
-                    default: 
-                        break; 
-                }
-            }
-        }
-    }
-
-    // Check if user argument input should be converted and assigned 
-    if (arg_convert)
-    {
-        switch (state_cmds[cmd_index].func_ptr_index)
-        {
-            case HD44780U_SET_PTR_1: 
-                line[state_cmds[cmd_index].arg_buff_index] = atoi(user_args[0]); 
-                strcpy(line_input[state_cmds[cmd_index].arg_buff_index], user_args[1]); 
-                line_offset[state_cmds[cmd_index].arg_buff_index] = atoi(user_args[2]); 
-                break; 
-
-            case HD44780U_SET_PTR_2: 
-                line[state_cmds[cmd_index].arg_buff_index] = atoi(user_args[0]); 
-                break; 
-
-            case HD44780U_SET_PTR_3: 
-                strcpy(line_input[state_cmds[cmd_index].arg_buff_index], user_args[0]); 
-                break; 
-
-            case HD44780U_SET_PTR_4: 
-                line_start = atoi(user_args[0]); 
-                line_offset[state_cmds[cmd_index].arg_buff_index] = atoi(user_args[1]); 
-                break; 
-
-            case HD44780U_SET_PTR_5: 
-                break; 
-
-            case HD44780U_GET_PTR_1: 
-                break; 
-
-            default: 
-                break; 
-        }
-    }
-
-    // Call the device controller 
-    hd44780u_controller(); 
-
-    //==================================================
-
-#else 
-
-   //==================================================
-    // Driver test code 
-
-    // Local variables 
     static int8_t counter = 0; 
 
 #if HD44780U_BACKLIGHT_TEST 
@@ -424,9 +227,6 @@ void hd44780u_test_app()
     tim_delay_ms(TIM9, 1000);
 
     //==================================================
-
-#endif
-
 }
 
 //=======================================================================================
