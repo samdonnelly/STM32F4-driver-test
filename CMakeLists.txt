@@ -62,10 +62,10 @@ set(STM32CUBEMX_INCLUDE_DIRECTORIES
 
 # Project and driver code 
 set(PROJECT_INCLUDE_DIRECTORIES 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/config_files
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/config
     ${CMAKE_CURRENT_SOURCE_DIR}/src/core
     ${CMAKE_CURRENT_SOURCE_DIR}/src/includes
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/interface
     ${CMAKE_CURRENT_SOURCE_DIR}/src/test_data
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/application_tests
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/device_tests
@@ -94,7 +94,6 @@ file(GLOB_RECURSE STM32CUBEMX_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stm32f4/stmcode/Middlewares/Third_Party/FatFs/src/diskio.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stm32f4/stmcode/Middlewares/Third_Party/FatFs/src/ff.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stm32f4/stmcode/Middlewares/Third_Party/FatFs/src/ff_gen_drv.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stm32f4/stmcode/Middlewares/Third_Party/FatFs/src/option/syscall.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stm32f4/stmcode/Middlewares/Third_Party/FatFs/src/option/ccsbcs.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stm32f4/stmcode/Middlewares/Third_Party/FreeRTOS/Source/*.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stm32f4/stmcode/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/*.c
@@ -122,7 +121,6 @@ file(GLOB_RECURSE STM32CUBEMX_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stm32f4/stmcode/Middlewares/Third_Party/FatFs/src/diskio.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stm32f4/stmcode/Middlewares/Third_Party/FatFs/src/ff.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stm32f4/stmcode/Middlewares/Third_Party/FatFs/src/ff_gen_drv.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stm32f4/stmcode/Middlewares/Third_Party/FatFs/src/option/syscall.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stm32f4/stmcode/Middlewares/Third_Party/FatFs/src/option/ccsbcs.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stm32f4/stmcode/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stm32f4/stmcode/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c
@@ -143,12 +141,12 @@ endif()
 
 # Project and driver code 
 file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/config_files/*.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/config_files/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/config/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/config/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/core/*.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/core/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/interface/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/interface/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/test_data/*.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/test_data/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/application_tests/*.c

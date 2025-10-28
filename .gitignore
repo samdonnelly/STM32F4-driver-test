@@ -20,8 +20,10 @@ src/.DS_Store
 #==================================================
 # Configuration 
 
-src/core/hardware_config.h
-src/config_files/driver_test_config.c
+src/config/driver_test_config.c
+src/config/ffconf.h
+src/config/FreeRTOSConfig.h
+src/config/hardware_config.h
 build_tools/SystemConfig.txt
 
 #==================================================

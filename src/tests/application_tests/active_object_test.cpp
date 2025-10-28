@@ -894,7 +894,7 @@ void SystemData::ThreadLowState0(
     switch (data->thread_low_event)
     {
         case ThreadLowEvents::SERIAL_OUT_EVENT: 
-            SerialOutEvent((char *)data->user_in_buff); 
+            SerialOutEvent((char *)data->data_buff); 
             break; 
 
         default: 
@@ -1483,7 +1483,7 @@ void SerialInEvent(
     handler_flags.usart2_flag = CLEAR; 
 
     // Get the user input from the circular buffer 
-    dma_cb_index(dma_stream, dma_index, &cb_index); 
+    dma_cb_index(dma_stream, dma_index, cb_index); 
     cb_parse(cb, cb_index, data_buff); 
 }
 
