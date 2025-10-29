@@ -48,8 +48,9 @@
 #include "switch_debounce.h"
 #include "tools.h"
 
-// STM drivers 
+// FatFs 
 #include "fatfs.h"
+#include "ff.h"
 
 //=======================================================================================
 
