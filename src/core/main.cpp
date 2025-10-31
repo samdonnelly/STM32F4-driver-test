@@ -82,8 +82,7 @@ int main(void)
     DriverTestInit(); 
 
     // Initialize all configured peripherals 
-    MX_GPIO_Init(); 
-    MX_FATFS_Init(); 
+    MX_GPIO_Init();
 
     // Infinite loop 
     while (1)

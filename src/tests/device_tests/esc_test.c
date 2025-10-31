@@ -131,7 +131,7 @@ static esc_test_data_t esc_data;
 typedef struct esc_test_cmds_s 
 {
     char esc_cmds[ESC_TEST_MAX_INPUT];       // Stores the defined user input commands 
-    void (*esc_test_func_ptrs_t)(void);      // Pointer to FatFs file operation function 
+    void (*esc_test_func_ptrs_t)(void);      // Pointer to command callback 
 }
 esc_test_cmds_t; 
 

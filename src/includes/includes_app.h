@@ -27,7 +27,7 @@
 #include "esc_test.h"
 #include "hc05_test.h"
 #include "hd44780u_test.h"
-#include "fatfs_test.h"
+#include "sd_test.h"
 #include "lsm303agr_test.h"
 #include "m8q_test.h"
 #include "mpu6050_test.h"

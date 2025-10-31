@@ -120,9 +120,7 @@
 #define HD44780U_CURSOR_TEST 0            // Cursor visibility test 
 #define HD44780U_BLINK_TEST 0             // Cursor blink test 
 
-// FATFS (SD card) driver test 
-#define FORMAT_EXFAT 0 
-#define FATFS_CONTROLLER_TEST 0           // For switching between driver and controller testing 
+// SD card driver test 
 
 // LSM303AGR driver test   
 #define LSM303AGR_TEST_CALIBRATION 0      // Magnetometer heading calibration mode 

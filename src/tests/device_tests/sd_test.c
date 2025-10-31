@@ -1,9 +1,9 @@
 /**
- * @file fatfs_test.c
+ * @file sd_test.c
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief FATFS driver test 
+ * @brief SD card driver test 
  * 
  * @version 0.1
  * @date 2022-08-28
@@ -15,7 +15,7 @@
 //=======================================================================================
 // Includes 
 
-#include "fatfs_test.h"
+#include "sd_test.h"
 #include "stm32f4xx_it.h"
 
 //=======================================================================================
@@ -90,10 +90,11 @@ uint8_t format_input(char *buff, DWORD *data, format_user_input_t op);
 // Global variables 
 
 // Data record 
-typedef struct fatfs_test_record_s 
+typedef struct sd_test_record_s 
 {
     // Peripherals 
     SPI_TypeDef *spi;
+    GPIO_TypeDef *gpio;
     USART_TypeDef *uart;
     DMA_Stream_TypeDef *dma_stream;
     TIM_TypeDef *tim;
@@ -118,22 +119,22 @@ typedef struct fatfs_test_record_s
     DIR dj;                                  // Directory object 
     FILINFO fno;                             // File information 
 } 
-fatfs_test_record_t;
+sd_test_record_t;
 
 // Data record instance 
-static fatfs_test_record_t fatfs_data;
+static sd_test_record_t sd_test_data;
 
 
 // Command pointers 
-typedef struct fatfs_user_cmds_s 
+typedef struct sd_user_cmds_s 
 {
-    char user_cmds[CMD_SIZE];              // Stores the defined user input commands 
-    void (*fatfs_func_ptrs_t)(void);       // Pointer to FatFs file operation function 
+    char user_cmds[CMD_SIZE];           // Stores the defined user input commands 
+    void (*sd_func_ptrs_t)(void);       // Pointer to FatFs file operation function 
 }
-fatfs_user_cmds_t;
+sd_user_cmds_t;
 
 // User commands 
-static const fatfs_user_cmds_t cmd_table[NUM_USER_CMDS] = 
+static const sd_user_cmds_t cmd_table[NUM_USER_CMDS] = 
 {
     // Volume Management and System Configuration commands 
     {"mount",     &mount_card},
@@ -162,35 +163,32 @@ static const fatfs_user_cmds_t cmd_table[NUM_USER_CMDS] =
     {"puts",      &file_puts}
 };
 
-
-// FatFs layer disk status - used for clearing the init status for re-mounting 
-extern Disk_drvTypeDef disk;
-
 //=======================================================================================
 
 
 //=======================================================================================
 // Setup code
 
-void fatfs_test_init()
+void sd_test_init()
 {
     // Initialize data 
-    fatfs_data.spi = SPI2;
-    fatfs_data.uart = USART2;
-    fatfs_data.dma_stream = DMA1_Stream5;
-    fatfs_data.tim = TIM9;
+    sd_test_data.spi = SPI2;
+    sd_test_data.gpio = GPIOB;
+    sd_test_data.uart = USART2;
+    sd_test_data.dma_stream = DMA1_Stream5;
+    sd_test_data.tim = TIM9;
 
-    memset((void *)fatfs_data.cb, CLEAR, sizeof(fatfs_data.cb)); 
-    fatfs_data.cb_index.cb_size = DATA_BUFF_SIZE; 
-    fatfs_data.cb_index.head = CLEAR; 
-    fatfs_data.cb_index.tail = CLEAR; 
-    fatfs_data.dma_index.data_size = CLEAR; 
-    fatfs_data.dma_index.ndt_old = dma_ndt_read(fatfs_data.dma_stream); 
-    fatfs_data.dma_index.ndt_new = CLEAR; 
-    memset((void *)fatfs_data.data_in_buff, CLEAR, sizeof(fatfs_data.data_in_buff)); 
-    memset((void *)fatfs_data.data_out_buff, CLEAR, sizeof(fatfs_data.data_out_buff)); 
+    memset((void *)sd_test_data.cb, CLEAR, sizeof(sd_test_data.cb)); 
+    sd_test_data.cb_index.cb_size = DATA_BUFF_SIZE; 
+    sd_test_data.cb_index.head = CLEAR; 
+    sd_test_data.cb_index.tail = CLEAR; 
+    sd_test_data.dma_index.data_size = CLEAR; 
+    sd_test_data.dma_index.ndt_old = dma_ndt_read(sd_test_data.dma_stream); 
+    sd_test_data.dma_index.ndt_new = CLEAR; 
+    memset((void *)sd_test_data.data_in_buff, CLEAR, sizeof(sd_test_data.data_in_buff)); 
+    memset((void *)sd_test_data.data_out_buff, CLEAR, sizeof(sd_test_data.data_out_buff)); 
 
-    fatfs_data.state_seq = CLEAR;
+    sd_test_data.state_seq = CLEAR;
 
     //==================================================
     // General setup 
@@ -200,11 +198,11 @@ void fatfs_test_init()
     
     // Initialize timers 
     tim_9_to_11_counter_init(
-        fatfs_data.tim, 
+        sd_test_data.tim, 
         TIM_84MHZ_1US_PSC, 
         0xFFFF,  // Max ARR value 
         TIM_UP_INT_DISABLE); 
-    tim_enable(fatfs_data.tim);
+    tim_enable(sd_test_data.tim);
 
     //==================================================
 
@@ -213,7 +211,7 @@ void fatfs_test_init()
     
     // UART2 init - Serial terminal 
     uart_init(
-        fatfs_data.uart, 
+        sd_test_data.uart, 
         GPIOA, 
         PIN_3, 
         PIN_2, 
@@ -226,7 +224,7 @@ void fatfs_test_init()
         
     // UART2 interrupt init - Serial terminal - IDLE line (RX) interrupts 
     uart_interrupt_init(
-        fatfs_data.uart, 
+        sd_test_data.uart, 
         UART_PARAM_DISABLE, 
         UART_PARAM_DISABLE, 
         UART_PARAM_DISABLE, 
@@ -242,15 +240,15 @@ void fatfs_test_init()
     
     // SPI and slave select pin for SD card 
     spi_init(
-        fatfs_data.spi, 
-        GPIOB,   // SCK pin GPIO port 
-        PIN_10,  // SCK pin 
-        GPIOB,   // Data (MISO/MOSI) pin GPIO port 
-        PIN_14,  // MISO pin 
-        PIN_15,  // MOSI pin 
+        sd_test_data.spi, 
+        sd_test_data.gpio,   // SCK pin GPIO port 
+        PIN_10,              // SCK pin 
+        sd_test_data.gpio,   // Data (MISO/MOSI) pin GPIO port 
+        PIN_14,              // MISO pin 
+        PIN_15,              // MOSI pin 
         SPI_BR_FPCLK_8, 
         SPI_CLOCK_MODE_0); 
-    spi_ss_init(GPIOB, PIN_12);
+    spi_ss_init(sd_test_data.gpio, PIN_12);
     
     //==================================================
 
@@ -260,7 +258,7 @@ void fatfs_test_init()
     // DMA1 stream init - UART2 - Serial terminal 
     dma_stream_init(
         DMA1, 
-        fatfs_data.dma_stream, 
+        sd_test_data.dma_stream, 
         DMA_CHNL_4, 
         DMA_DIR_PM, 
         DMA_CM_ENABLE,
@@ -273,14 +271,14 @@ void fatfs_test_init()
         
     // DMA1 stream config - UART2 - Serial terminal 
     dma_stream_config(
-        fatfs_data.dma_stream, 
-        (uint32_t)(&fatfs_data.uart->DR), 
-        (uint32_t)fatfs_data.cb, 
+        sd_test_data.dma_stream, 
+        (uint32_t)(&sd_test_data.uart->DR), 
+        (uint32_t)sd_test_data.cb, 
         (uint32_t)NULL, 
         (uint16_t)DATA_BUFF_SIZE); 
         
     // Enable DMA streams 
-    dma_stream_enable(fatfs_data.dma_stream);    // UART2 - Serial terminal 
+    dma_stream_enable(sd_test_data.dma_stream);    // UART2 - Serial terminal 
     
     //==================================================
 
@@ -299,7 +297,7 @@ void fatfs_test_init()
     // SD card init 
 
     // SD card user initialization 
-    fatfs_user_init(fatfs_data.spi, GPIOB, GPIOX_PIN_12); 
+    sd_user_init(sd_test_data.spi, sd_test_data.gpio, sd_test_data.tim, GPIOX_PIN_12); 
     
     //==================================================
 
@@ -312,7 +310,7 @@ void fatfs_test_init()
 //=======================================================================================
 // Test code 
 
-void fatfs_test_app()
+void sd_test_app()
 {
     // New serial terminal (user input) data received 
     if (handler_flags.usart2_flag)
@@ -320,11 +318,11 @@ void fatfs_test_app()
         handler_flags.usart2_flag = CLEAR_BIT;
 
         // Parse the new user message from the circular buffer into the data buffer 
-        dma_cb_index(fatfs_data.dma_stream, &fatfs_data.dma_index, &fatfs_data.cb_index);
-        cb_parse(fatfs_data.cb, &fatfs_data.cb_index, fatfs_data.data_in_buff);
+        dma_cb_index(sd_test_data.dma_stream, &sd_test_data.dma_index, &sd_test_data.cb_index);
+        cb_parse(sd_test_data.cb, &sd_test_data.cb_index, sd_test_data.data_in_buff);
 
         // Dispatch using function pointer 
-        fatfs_data.state_func_ptr();
+        sd_test_data.state_func_ptr();
     }
 }
 
@@ -342,11 +340,11 @@ void file_mkfs(void)
 
     do
     {
-        fatfs_data.fresult = f_mkfs("", FM_EXFAT, 0, work, sizeof(work));
-        (fatfs_data.fresult == FR_OK) ? feedback_display("SD Card formatted successfully.\r\n") : 
+        sd_test_data.fresult = f_mkfs("", NULL, work, sizeof(work));   // Use default config 
+        (sd_test_data.fresult == FR_OK) ? feedback_display("SD Card formatted successfully.\r\n") : 
                                         feedback_display("Error formatting volume.\r\n");
     }
-    while (fatfs_data.fresult != FR_OK && --timer);
+    while (sd_test_data.fresult != FR_OK && --timer);
 
     cmd_reset();
 }
@@ -355,25 +353,25 @@ void file_mkfs(void)
 // Mount card 
 void mount_card(void)
 {
-    fatfs_data.fresult = f_mount(&fatfs_data.file_sys, "", FATFS_MOUNT_NOW); 
+    sd_test_data.fresult = f_mount(&sd_test_data.file_sys, "", SD_MOUNT_NOW); 
 
-    if (fatfs_data.fresult == FR_OK) 
+    if (sd_test_data.fresult == FR_OK) 
     {
         feedback_display("\nMounted successfully. Volume type: ");
 
         // Check the volume type 
-        switch (fatfs_get_card_type())
+        switch (sd_get_card_type())
         {
-            case FATFS_CT_MMC: 
+            case SD_CT_MMC: 
                 feedback_display("MMC V3\r\n");
                 break;
-            case FATFS_CT_SDC1: 
+            case SD_CT_SDC1: 
                 feedback_display("SDC V1\r\n");
                 break;
-            case FATFS_CT_SDC2_BLOCK: 
+            case SD_CT_SDC2_BLOCK: 
                 feedback_display("SDC V2 block\r\n");
                 break;
-            case FATFS_CT_SDC2_BYTE: 
+            case SD_CT_SDC2_BYTE: 
                 feedback_display("SDC V2 byte\r\n");
                 break;
             default: 
@@ -394,10 +392,10 @@ void mount_card(void)
 void unmount_card(void) 
 {
     // Unmount the volume and clear the initialization status so it can be re-mounted. 
-    fatfs_data.fresult = f_unmount("");
-    disk.is_initialized[0] = CLEAR;
+    sd_test_data.fresult = f_unmount("");
+    // disk.is_initialized[0] = CLEAR;
 
-    (fatfs_data.fresult == FR_OK) ? feedback_display("\nVolume unmounted successfully.\r\n") : 
+    (sd_test_data.fresult == FR_OK) ? feedback_display("\nVolume unmounted successfully.\r\n") : 
                                     feedback_display("\nError in unmounting volume.\r\n");
     cmd_reset();
 }
@@ -429,25 +427,25 @@ void card_capacity(void)
 // Check existance of a file or sub-directory 
 void file_check(void)
 {
-    if (fatfs_data.state_seq++ == 0)
+    if (sd_test_data.state_seq++ == 0)
     {
         feedback_display("\nFile or directory to check: ");
     }
     else
     {
-        format_input((char *)fatfs_data.data_in_buff, &fatfs_data.data_in_num, FORMAT_FILE_STRING);
+        format_input((char *)sd_test_data.data_in_buff, &sd_test_data.data_in_num, FORMAT_FILE_STRING);
 
         // Check for the existance of the specified file or directory 
-        fatfs_data.fresult = f_stat((TCHAR *)fatfs_data.data_in_buff, &fatfs_data.fno);
+        sd_test_data.fresult = f_stat((TCHAR *)sd_test_data.data_in_buff, &sd_test_data.fno);
 
-        switch(fatfs_data.fresult)
+        switch(sd_test_data.fresult)
         {
             case FR_OK:
-                string_display("\r\nExists: ", (char *)fatfs_data.data_in_buff);
+                string_display("\r\nExists: ", (char *)sd_test_data.data_in_buff);
                 break;
 
             case FR_NO_FILE:
-                string_display("\r\nDoes not exists: ", (char *)fatfs_data.data_in_buff);
+                string_display("\r\nDoes not exists: ", (char *)sd_test_data.data_in_buff);
                 break;
 
             default:
@@ -463,17 +461,17 @@ void file_check(void)
 // Remove files on card 
 void file_remove(void) 
 {
-    if (fatfs_data.state_seq++ == 0)
+    if (sd_test_data.state_seq++ == 0)
     {
         feedback_display("\nFile to remove: ");
     }
     else
     {
-        format_input((char *)fatfs_data.data_in_buff, &fatfs_data.data_in_num, FORMAT_FILE_STRING);
+        format_input((char *)sd_test_data.data_in_buff, &sd_test_data.data_in_num, FORMAT_FILE_STRING);
 
         // Attempt to remove the specified file 
-        fatfs_data.fresult = f_unlink((TCHAR *)fatfs_data.data_in_buff);
-        (fatfs_data.fresult == FR_OK) ? string_display("\r\nSuccessfully removed: ", (char *)fatfs_data.data_in_buff) : 
+        sd_test_data.fresult = f_unlink((TCHAR *)sd_test_data.data_in_buff);
+        (sd_test_data.fresult == FR_OK) ? string_display("\r\nSuccessfully removed: ", (char *)sd_test_data.data_in_buff) : 
                                         fault_display();
         cmd_reset();
     }
@@ -483,17 +481,17 @@ void file_remove(void)
 // Make a new directory 
 void file_mkdir(void)
 {
-    if (fatfs_data.state_seq++ == 0)
+    if (sd_test_data.state_seq++ == 0)
     {
         feedback_display("\nDirectory: ");
     }
     else
     {
-        format_input((char *)fatfs_data.data_in_buff, &fatfs_data.data_in_num, FORMAT_FILE_STRING);
+        format_input((char *)sd_test_data.data_in_buff, &sd_test_data.data_in_num, FORMAT_FILE_STRING);
 
         // Write to the file 
-        fatfs_data.fresult = f_mkdir((TCHAR *)fatfs_data.data_in_buff);
-        (fatfs_data.fresult == FR_OK) ? string_display("\r\nNew directory: ", (char *)fatfs_data.data_in_buff) : 
+        sd_test_data.fresult = f_mkdir((TCHAR *)sd_test_data.data_in_buff);
+        (sd_test_data.fresult == FR_OK) ? string_display("\r\nNew directory: ", (char *)sd_test_data.data_in_buff) : 
                                         fault_display();
         cmd_reset();
     }
@@ -503,17 +501,17 @@ void file_mkdir(void)
 // Change the current directory 
 void file_chdir(void)
 {
-    if (fatfs_data.state_seq++ == 0)
+    if (sd_test_data.state_seq++ == 0)
     {
         feedback_display("\nDirectory to go to: ");
     }
     else
     {
-        format_input((char *)fatfs_data.data_in_buff, &fatfs_data.data_in_num, FORMAT_FILE_STRING);
+        format_input((char *)sd_test_data.data_in_buff, &sd_test_data.data_in_num, FORMAT_FILE_STRING);
 
         // Change the directory 
-        fatfs_data.fresult = f_chdir((TCHAR *)fatfs_data.data_in_buff);
-        (fatfs_data.fresult == FR_OK) ? string_display("\r\nNow in: ", (char *)fatfs_data.data_in_buff) : 
+        sd_test_data.fresult = f_chdir((TCHAR *)sd_test_data.data_in_buff);
+        (sd_test_data.fresult == FR_OK) ? string_display("\r\nNow in: ", (char *)sd_test_data.data_in_buff) : 
                                         fault_display();
         cmd_reset();
     }
@@ -523,7 +521,7 @@ void file_chdir(void)
 // Retrieve the current directory and drive 
 void file_getcwd(void)
 {
-    if (fatfs_data.file_sys.fs_type == FS_EXFAT)
+    if (sd_test_data.file_sys.fs_type == FS_EXFAT)
     {
         feedback_display("\r\nCan't fetch current directory of exFAT volumes. getcwd return root\r\n");
     }
@@ -531,8 +529,8 @@ void file_getcwd(void)
     char path[DATA_BUFF_SIZE];
 
     // Get the current directory 
-    fatfs_data.fresult = f_getcwd(path, DATA_BUFF_SIZE);
-    (fatfs_data.fresult == FR_OK) ? string_display("\r\nCurrent directory: ", path) : 
+    sd_test_data.fresult = f_getcwd(path, DATA_BUFF_SIZE);
+    (sd_test_data.fresult == FR_OK) ? string_display("\r\nCurrent directory: ", path) : 
                                     fault_display();
     cmd_reset();
 }
@@ -541,17 +539,17 @@ void file_getcwd(void)
 // Open a directory 
 void file_opendir(void)
 {
-    if (fatfs_data.state_seq++ == 0)
+    if (sd_test_data.state_seq++ == 0)
     {
         feedback_display("\nDirectory to open: ");
     }
     else
     {
-        format_input((char *)fatfs_data.data_in_buff, &fatfs_data.data_in_num, FORMAT_FILE_STRING);
+        format_input((char *)sd_test_data.data_in_buff, &sd_test_data.data_in_num, FORMAT_FILE_STRING);
 
         // Open the specified directory 
-        fatfs_data.fresult = f_opendir(&fatfs_data.dj, (TCHAR *)fatfs_data.data_in_buff);
-        (fatfs_data.fresult == FR_OK) ? string_display("\r\nOpened: ", (char *)fatfs_data.data_in_buff) : 
+        sd_test_data.fresult = f_opendir(&sd_test_data.dj, (TCHAR *)sd_test_data.data_in_buff);
+        (sd_test_data.fresult == FR_OK) ? string_display("\r\nOpened: ", (char *)sd_test_data.data_in_buff) : 
                                         fault_display();
         cmd_reset();
     }
@@ -562,8 +560,8 @@ void file_opendir(void)
 void file_closedir(void)
 {
     // Close the current directory 
-    fatfs_data.fresult = f_closedir(&fatfs_data.dj);
-    (fatfs_data.fresult == FR_OK) ? feedback_display("\r\nDirectory closed.\r\n") : 
+    sd_test_data.fresult = f_closedir(&sd_test_data.dj);
+    (sd_test_data.fresult == FR_OK) ? feedback_display("\r\nDirectory closed.\r\n") : 
                                     fault_display();
     cmd_reset();
 }
@@ -572,27 +570,27 @@ void file_closedir(void)
 // Check files on the card 
 void file_find(void)
 {
-    if (fatfs_data.state_seq++ == 0)
+    if (sd_test_data.state_seq++ == 0)
     {
         feedback_display("\nPath: ");
     }
     else
     {
-        format_input((char *)fatfs_data.data_in_buff, &fatfs_data.data_in_num, FORMAT_FILE_STRING);
+        format_input((char *)sd_test_data.data_in_buff, &sd_test_data.data_in_num, FORMAT_FILE_STRING);
         feedback_display("\nFiles in path: \r\n");
 
         // Start to search for files 
-        fatfs_data.fresult = f_findfirst(&fatfs_data.dj, &fatfs_data.fno, fatfs_data.data_in_buff, "*");
+        sd_test_data.fresult = f_findfirst(&sd_test_data.dj, &sd_test_data.fno, sd_test_data.data_in_buff, "*");
 
-        while ((fatfs_data.fresult == FR_OK) && fatfs_data.fno.fname[0])
+        while ((sd_test_data.fresult == FR_OK) && sd_test_data.fno.fname[0])
         {
-            uart_send_str(fatfs_data.uart, "\t- "); 
-            uart_send_str(fatfs_data.uart, fatfs_data.fno.fname); 
-            uart_send_new_line(fatfs_data.uart); 
-            fatfs_data.fresult = f_findnext(&fatfs_data.dj, &fatfs_data.fno); 
+            uart_send_str(sd_test_data.uart, "\t- "); 
+            uart_send_str(sd_test_data.uart, sd_test_data.fno.fname); 
+            uart_send_new_line(sd_test_data.uart); 
+            sd_test_data.fresult = f_findnext(&sd_test_data.dj, &sd_test_data.fno); 
         }
 
-        f_closedir(&fatfs_data.dj);
+        f_closedir(&sd_test_data.dj);
         cmd_reset();
     }
 }
@@ -603,29 +601,29 @@ void file_open(void)
 {
     static char path[DATA_BUFF_SIZE];
 
-    if (fatfs_data.state_seq == 0)
+    if (sd_test_data.state_seq == 0)
     {
         feedback_display("\nFile to open: ");
-        fatfs_data.state_seq++;
+        sd_test_data.state_seq++;
     }
-    else if (fatfs_data.state_seq == 1)
+    else if (sd_test_data.state_seq == 1)
     {
-        format_input((char *)fatfs_data.data_in_buff, &fatfs_data.data_in_num, FORMAT_FILE_STRING);
-        strcpy(path, (char *)fatfs_data.data_in_buff);
+        format_input((char *)sd_test_data.data_in_buff, &sd_test_data.data_in_num, FORMAT_FILE_STRING);
+        strcpy(path, (char *)sd_test_data.data_in_buff);
         feedback_display("\nAccess mode: ");
-        fatfs_data.state_seq++;
+        sd_test_data.state_seq++;
     }
     else
     {
-        format_input((char *)fatfs_data.data_in_buff, &fatfs_data.data_in_num, FORMAT_FILE_MODE);
+        format_input((char *)sd_test_data.data_in_buff, &sd_test_data.data_in_num, FORMAT_FILE_MODE);
 
         // Open a file (and create if it doesn't exist) 
-        fatfs_data.fresult = f_open(&fatfs_data.file, path, (BYTE)fatfs_data.data_in_num);
+        sd_test_data.fresult = f_open(&sd_test_data.file, path, (BYTE)sd_test_data.data_in_num);
         
-        if (fatfs_data.fresult == FR_OK)
+        if (sd_test_data.fresult == FR_OK)
         {
             string_display("\r\nOpened: ", path);
-            string_display("With permissions: ", (char *)fatfs_data.data_in_buff);
+            string_display("With permissions: ", (char *)sd_test_data.data_in_buff);
         }
         else
         {
@@ -641,8 +639,8 @@ void file_open(void)
 void file_close(void) 
 {
     // Close the open file 
-    fatfs_data.fresult = f_close(&fatfs_data.file);
-    (fatfs_data.fresult == FR_OK) ? feedback_display("\r\nFile closed.\r\n") : 
+    sd_test_data.fresult = f_close(&sd_test_data.file);
+    (sd_test_data.fresult == FR_OK) ? feedback_display("\r\nFile closed.\r\n") : 
                                     fault_display();
     cmd_reset();
 }
@@ -651,21 +649,21 @@ void file_close(void)
 // Read from an open file using using f_read 
 void file_read(void) 
 {
-    if (fatfs_data.state_seq++ == 0)
+    if (sd_test_data.state_seq++ == 0)
     {
         feedback_display("\nRead size (bytes): ");
     }
     else
     {
         char file_data[DATA_BUFF_SIZE];
-        format_input((char *)fatfs_data.data_in_buff, &fatfs_data.data_in_num, FORMAT_FILE_NUM);
+        format_input((char *)sd_test_data.data_in_buff, &sd_test_data.data_in_num, FORMAT_FILE_NUM);
 
         // Read from the file 
-        fatfs_data.fresult = f_read(&fatfs_data.file, 
+        sd_test_data.fresult = f_read(&sd_test_data.file, 
                                     (void *)file_data, 
-                                    fatfs_data.data_in_num, 
-                                    &fatfs_data.br);
-        (fatfs_data.fresult == FR_OK) ? string_display("\r\nFile data: ", file_data) : 
+                                    sd_test_data.data_in_num, 
+                                    &sd_test_data.br);
+        (sd_test_data.fresult == FR_OK) ? string_display("\r\nFile data: ", file_data) : 
                                         fault_display();
         cmd_reset();
     }
@@ -675,20 +673,20 @@ void file_read(void)
 // Write to an open file using f_write 
 void file_write(void) 
 {
-    if (fatfs_data.state_seq++ == 0)
+    if (sd_test_data.state_seq++ == 0)
     {
         feedback_display("\nFile data: ");
     }
     else
     {
-        format_input((char *)fatfs_data.data_in_buff, &fatfs_data.data_in_num, FORMAT_FILE_STRING);
+        format_input((char *)sd_test_data.data_in_buff, &sd_test_data.data_in_num, FORMAT_FILE_STRING);
 
         // Write to the file 
-        fatfs_data.fresult = f_write(&fatfs_data.file, 
-                                     (void *)fatfs_data.data_in_buff, 
-                                     strlen(fatfs_data.data_in_buff), 
-                                     &fatfs_data.bw);
-        (fatfs_data.fresult == FR_OK) ? string_display("\r\nFile data: ", (char *)fatfs_data.data_in_buff) : 
+        sd_test_data.fresult = f_write(&sd_test_data.file, 
+                                     (void *)sd_test_data.data_in_buff, 
+                                     strlen(sd_test_data.data_in_buff), 
+                                     &sd_test_data.bw);
+        (sd_test_data.fresult == FR_OK) ? string_display("\r\nFile data: ", (char *)sd_test_data.data_in_buff) : 
                                         fault_display();
         cmd_reset();
     }
@@ -698,17 +696,17 @@ void file_write(void)
 // Navigate the file 
 void file_seek(void) 
 {
-    if (fatfs_data.state_seq++ == 0)
+    if (sd_test_data.state_seq++ == 0)
     {
         feedback_display("\nFile position: ");
     }
     else
     {
-        format_input((char *)fatfs_data.data_in_buff, &fatfs_data.data_in_num, FORMAT_FILE_NUM);
+        format_input((char *)sd_test_data.data_in_buff, &sd_test_data.data_in_num, FORMAT_FILE_NUM);
 
         // Move to the specified position in the file 
-        fatfs_data.fresult = f_lseek(&fatfs_data.file, fatfs_data.data_in_num);
-        (fatfs_data.fresult == FR_OK) ? number_display("\r\nNew file position: ", fatfs_data.data_in_num) : 
+        sd_test_data.fresult = f_lseek(&sd_test_data.file, sd_test_data.data_in_num);
+        (sd_test_data.fresult == FR_OK) ? number_display("\r\nNew file position: ", sd_test_data.data_in_num) : 
                                         fault_display();
         cmd_reset();
     }
@@ -718,8 +716,8 @@ void file_seek(void)
 // Navigate to the beginning of the file 
 void file_rewind(void) 
 {
-    fatfs_data.fresult = f_lseek(&fatfs_data.file, RESET_ZERO);
-    (fatfs_data.fresult == FR_OK) ? feedback_display("\r\nNow at the beginning of the file.\r\n") : 
+    sd_test_data.fresult = f_lseek(&sd_test_data.file, RESET_ZERO);
+    (sd_test_data.fresult == FR_OK) ? feedback_display("\r\nNow at the beginning of the file.\r\n") : 
                                     fault_display();
     cmd_reset();
 }
@@ -728,8 +726,8 @@ void file_rewind(void)
 // Navigate to the end of the file 
 void file_fast_fwd(void) 
 {
-    fatfs_data.fresult = f_lseek(&fatfs_data.file, f_size(&fatfs_data.file));
-    (fatfs_data.fresult == FR_OK) ? feedback_display("\r\nNow at the end of the file.\r\n") : 
+    sd_test_data.fresult = f_lseek(&sd_test_data.file, f_size(&sd_test_data.file));
+    (sd_test_data.fresult == FR_OK) ? feedback_display("\r\nNow at the end of the file.\r\n") : 
                                     fault_display();
     cmd_reset();
 }
@@ -741,7 +739,7 @@ void file_gets(void)
     char file_data[DATA_BUFF_SIZE];
 
     // Read from the file 
-    TCHAR *data_buff = f_gets(file_data, DATA_BUFF_SIZE, &fatfs_data.file);
+    TCHAR *data_buff = f_gets(file_data, DATA_BUFF_SIZE, &sd_test_data.file);
 
     if (data_buff != NULL)
     {
@@ -749,11 +747,11 @@ void file_gets(void)
     }
     else
     {
-        if (f_eof(&fatfs_data.file) != 0)
+        if (f_eof(&sd_test_data.file) != 0)
         {
             feedback_display("\r\nEnd of file reached.\r\n");
         }
-        else if (f_error(&fatfs_data.file) != 0)
+        else if (f_error(&sd_test_data.file) != 0)
         {
             feedback_display("\r\nHard file error occured.\r\n");
         }
@@ -770,23 +768,23 @@ void file_gets(void)
 // Write to an open file using f_puts 
 void file_puts(void)
 {
-    if (fatfs_data.state_seq++ == 0)
+    if (sd_test_data.state_seq++ == 0)
     {
         feedback_display("\nFile data: ");
     }
     else
     {
-        format_input((char *)fatfs_data.data_in_buff, &fatfs_data.data_in_num, FORMAT_FILE_STRING);
+        format_input((char *)sd_test_data.data_in_buff, &sd_test_data.data_in_num, FORMAT_FILE_STRING);
 
         // Format the input to end with a line break. This separates the provided data 
         // from "f_puts" into their own lines which also allows for each line to be 
         // retrieved individually when using "f_gets". 
         uint8_t buff_size = DATA_BUFF_SIZE + 2; 
         char line_of_data[buff_size];
-        snprintf(line_of_data, buff_size, "%s\r\n", (char *)fatfs_data.data_in_buff);
+        snprintf(line_of_data, buff_size, "%s\r\n", (char *)sd_test_data.data_in_buff);
 
         // Write a string to the file 
-        int num_chars = f_puts(line_of_data, &fatfs_data.file);
+        int num_chars = f_puts(line_of_data, &sd_test_data.file);
         (num_chars >= 0) ? number_display("\r\nData written to file. Characters written: ", (DWORD)num_chars) : 
                            feedback_display("Write failed.");
 
@@ -804,15 +802,15 @@ void file_puts(void)
 void cmd_select(void)
 {
     uint8_t index = CLEAR;
-    format_input((char *)fatfs_data.data_in_buff, &fatfs_data.data_in_num, FORMAT_FILE_STRING);
+    format_input((char *)sd_test_data.data_in_buff, &sd_test_data.data_in_num, FORMAT_FILE_STRING);
 
     // Compare the input to the defined user commands 
     do
     {
-        if (str_compare((char *)fatfs_data.data_in_buff, cmd_table[index].user_cmds, BYTE_0)) 
+        if (str_compare((char *)sd_test_data.data_in_buff, cmd_table[index].user_cmds, BYTE_0)) 
         {
-            fatfs_data.state_func_ptr = cmd_table[index].fatfs_func_ptrs_t;
-            fatfs_data.state_func_ptr();
+            sd_test_data.state_func_ptr = cmd_table[index].sd_func_ptrs_t;
+            sd_test_data.state_func_ptr();
             break; 
         }
     }
@@ -828,8 +826,8 @@ void cmd_select(void)
 // Return to default state at the end of the command dispatch 
 void cmd_reset(void)
 {
-    fatfs_data.state_seq = CLEAR;
-    fatfs_data.state_func_ptr = &cmd_select;
+    sd_test_data.state_seq = CLEAR;
+    sd_test_data.state_func_ptr = &cmd_select;
     feedback_display("\r\n>>> ");
 }
 
@@ -840,9 +838,9 @@ void string_display(
     const char *str_arg)
 {
     const char str_format[] = "%s\r\n";
-    snprintf(fatfs_data.data_out_buff, DATA_BUFF_SIZE, str_format, str_arg);
+    snprintf(sd_test_data.data_out_buff, DATA_BUFF_SIZE, str_format, str_arg);
     feedback_display(string);
-    feedback_display(fatfs_data.data_out_buff);
+    feedback_display(sd_test_data.data_out_buff);
 }
 
 
@@ -852,27 +850,27 @@ void number_display(
     const DWORD num_arg)
 {
     const char str_format[] = "%lu\r\n";
-    snprintf(fatfs_data.data_out_buff, DATA_BUFF_SIZE, str_format, num_arg);
+    snprintf(sd_test_data.data_out_buff, DATA_BUFF_SIZE, str_format, num_arg);
     feedback_display(string);
-    feedback_display(fatfs_data.data_out_buff);
+    feedback_display(sd_test_data.data_out_buff);
 }
 
 
 // Display the error code related to the FATFS operation 
 void fault_display(void)
 {
-    snprintf(fatfs_data.data_out_buff,
+    snprintf(sd_test_data.data_out_buff,
              DATA_BUFF_SIZE,
              "\r\nProblem occurred --> FRESULT == %u\r\n",
-             (uint8_t)fatfs_data.fresult);
-    feedback_display(fatfs_data.data_out_buff);
+             (uint8_t)sd_test_data.fresult);
+    feedback_display(sd_test_data.data_out_buff);
 }
 
 
 // Display a string for the user to see 
 void feedback_display(const char *string)
 {
-    uart_send_str(fatfs_data.uart, string);
+    uart_send_str(sd_test_data.uart, string);
 }
 
 

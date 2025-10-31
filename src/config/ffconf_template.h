@@ -14,8 +14,8 @@
  * 
  */
 
-#ifndef _FFCONF_TEMPLATE_H_
-#define _FFCONF_TEMPLATE_H_ 80386   // Revision ID 
+#ifndef FFCONF_DEF
+#define FFCONF_DEF 80386   // Revision ID 
 
 //=======================================================================================
 // Function Configurations 
@@ -323,4 +323,4 @@
 
 //=======================================================================================
 
-#endif   // _FFCONF_TEMPLATE_H_ 
+#endif   // FFCONF_DEF 

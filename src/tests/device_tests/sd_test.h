@@ -1,9 +1,9 @@
 /**
- * @file fatfs_test.h
+ * @file sd_test.h
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief FATFS driver test interface 
+ * @brief SD card driver test interface 
  * 
  * @version 0.1
  * @date 2022-08-28
@@ -12,8 +12,8 @@
  * 
  */
 
-#ifndef _FATFS_TEST_H_
-#define _FATFS_TEST_H_
+#ifndef _SD_CARD_TEST_H_
+#define _SD_CARD_TEST_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,15 +31,15 @@ extern "C" {
 // Function prototypes 
 
 /**
- * @brief FATFS setup code 
+ * @brief SD card setup code 
  */
-void fatfs_test_init(void); 
+void sd_test_init(void); 
 
 
 /**
- * @brief FATFS test code 
+ * @brief SD card test code 
  */
-void fatfs_test_app(void); 
+void sd_test_app(void); 
 
 //=======================================================================================
 
@@ -47,4 +47,4 @@ void fatfs_test_app(void);
 }
 #endif
 
-#endif  // _FATFS_TEST_H_ 
+#endif  // _SD_CARD_TEST_H_ 
