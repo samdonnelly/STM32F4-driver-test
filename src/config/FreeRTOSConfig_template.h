@@ -1,5 +1,5 @@
 /**
- * @file FreeRTOSConfig.h
+ * @file FreeRTOSConfig_template.h
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
