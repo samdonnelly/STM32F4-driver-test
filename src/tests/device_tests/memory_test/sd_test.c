@@ -50,35 +50,35 @@ typedef enum {
 // Prototypes 
 
 // User command functions 
-void file_mkfs(void);         // Format the volume 
-void mount_card(void);        // Mount the volume 
-void unmount_card(void);      // Unmount the volume 
-void card_capacity(void);     // Card Capacity 
-void file_check(void);        // Check existance of a file or sub-directory 
-void file_remove(void);       // Remove files from the drive 
-void file_mkdir(void);        // Make a new directory 
-void file_chdir(void);        // Change the current directory 
-void file_getcwd(void);       // Retrieve the current directory and drive 
-void file_opendir(void);      // Open a directory 
-void file_closedir(void);     // Close an open directory 
-void file_find(void);         // Find files on card 
-void file_open(void);         // Open a file 
-void file_close(void);        // Close the open file 
-void file_read(void);         // Read from an open file using using f_read 
-void file_write(void);        // Write to an open file using f_write 
-void file_seek(void);         // Navigate the file 
-void file_rewind(void);       // Navigate to the beginning of the file 
-void file_fast_fwd(void);     // Navigate to the end of the file 
-void file_gets(void);         // Read from an open file using f_gets 
-void file_puts(void);         // Write to an open file using f_puts 
+void file_mkfs(void);       // Format the volume 
+void mount_card(void);      // Mount the volume 
+void unmount_card(void);    // Unmount the volume 
+void card_capacity(void);   // Card Capacity 
+void file_check(void);      // Check existance of a file or sub-directory 
+void file_remove(void);     // Remove files from the drive 
+void file_mkdir(void);      // Make a new directory 
+void file_chdir(void);      // Change the current directory 
+void file_getcwd(void);     // Retrieve the current directory and drive 
+void file_opendir(void);    // Open a directory 
+void file_closedir(void);   // Close an open directory 
+void file_find(void);       // Find files on card 
+void file_open(void);       // Open a file 
+void file_close(void);      // Close the open file 
+void file_read(void);       // Read from an open file using using f_read 
+void file_write(void);      // Write to an open file using f_write 
+void file_seek(void);       // Navigate the file 
+void file_rewind(void);     // Navigate to the beginning of the file 
+void file_fast_fwd(void);   // Navigate to the end of the file 
+void file_gets(void);       // Read from an open file using f_gets 
+void file_puts(void);       // Write to an open file using f_puts 
 
 // Command control 
-void cmd_select(void);                                             // Select command based on user input 
-void cmd_reset(void);                                              // Return to default state at the end of the command dispatch 
-void string_display(const char *str_format, const char *str_arg);  // Display string with string argument 
-void number_display(const char *str_format, const DWORD num_arg);  // Display string with number argument 
-void fault_display(void);                                          // Display the error code related to the FATFS operation 
-void feedback_display(const char *string);                         // Display a string for the user to see 
+void cmd_select(void);                                              // Select command based on user input 
+void cmd_reset(void);                                               // Return to default state at the end of the command dispatch 
+void string_display(const char *str_format, const char *str_arg);   // Display string with string argument 
+void number_display(const char *str_format, const DWORD num_arg);   // Display string with number argument 
+void fault_display(void);                                           // Display the error code related to the FATFS operation 
+void feedback_display(const char *string);                          // Display a string for the user to see 
 
 // Format user input 
 uint8_t format_input(char *buff, DWORD *data, format_user_input_t op);
@@ -178,15 +178,15 @@ void sd_test_init()
     sd_test_data.dma_stream = DMA1_Stream5;
     sd_test_data.tim = TIM9;
 
-    memset((void *)sd_test_data.cb, CLEAR, sizeof(sd_test_data.cb)); 
-    sd_test_data.cb_index.cb_size = DATA_BUFF_SIZE; 
-    sd_test_data.cb_index.head = CLEAR; 
-    sd_test_data.cb_index.tail = CLEAR; 
-    sd_test_data.dma_index.data_size = CLEAR; 
-    sd_test_data.dma_index.ndt_old = dma_ndt_read(sd_test_data.dma_stream); 
-    sd_test_data.dma_index.ndt_new = CLEAR; 
-    memset((void *)sd_test_data.data_in_buff, CLEAR, sizeof(sd_test_data.data_in_buff)); 
-    memset((void *)sd_test_data.data_out_buff, CLEAR, sizeof(sd_test_data.data_out_buff)); 
+    memset((void *)sd_test_data.cb, CLEAR, sizeof(sd_test_data.cb));
+    sd_test_data.cb_index.cb_size = DATA_BUFF_SIZE;
+    sd_test_data.cb_index.head = CLEAR;
+    sd_test_data.cb_index.tail = CLEAR;
+    sd_test_data.dma_index.data_size = CLEAR;
+    sd_test_data.dma_index.ndt_old = dma_ndt_read(sd_test_data.dma_stream);
+    sd_test_data.dma_index.ndt_new = CLEAR;
+    memset((void *)sd_test_data.data_in_buff, CLEAR, sizeof(sd_test_data.data_in_buff));
+    memset((void *)sd_test_data.data_out_buff, CLEAR, sizeof(sd_test_data.data_out_buff));
 
     sd_test_data.state_seq = CLEAR;
 
@@ -194,14 +194,14 @@ void sd_test_init()
     // General setup 
 
     // Initialize GPIO ports 
-    gpio_port_init(); 
+    gpio_port_init();
     
     // Initialize timers 
     tim_9_to_11_counter_init(
         sd_test_data.tim, 
         TIM_84MHZ_1US_PSC, 
         0xFFFF,  // Max ARR value 
-        TIM_UP_INT_DISABLE); 
+        TIM_UP_INT_DISABLE);
     tim_enable(sd_test_data.tim);
 
     //==================================================
@@ -220,7 +220,7 @@ void sd_test_init()
         UART_FRAC_42_9600, 
         UART_MANT_42_9600, 
         UART_PARAM_DISABLE, 
-        UART_PARAM_ENABLE); 
+        UART_PARAM_ENABLE);
         
     // UART2 interrupt init - Serial terminal - IDLE line (RX) interrupts 
     uart_interrupt_init(
@@ -247,7 +247,7 @@ void sd_test_init()
         PIN_14,              // MISO pin 
         PIN_15,              // MOSI pin 
         SPI_BR_FPCLK_8, 
-        SPI_CLOCK_MODE_0); 
+        SPI_CLOCK_MODE_0);
     spi_ss_init(sd_test_data.gpio, PIN_12);
     
     //==================================================
@@ -275,10 +275,10 @@ void sd_test_init()
         (uint32_t)(&sd_test_data.uart->DR), 
         (uint32_t)sd_test_data.cb, 
         (uint32_t)NULL, 
-        (uint16_t)DATA_BUFF_SIZE); 
+        (uint16_t)DATA_BUFF_SIZE);
         
     // Enable DMA streams 
-    dma_stream_enable(sd_test_data.dma_stream);    // UART2 - Serial terminal 
+    dma_stream_enable(sd_test_data.dma_stream);   // UART2 - Serial terminal 
     
     //==================================================
 
@@ -286,7 +286,7 @@ void sd_test_init()
     // Interrupts 
 
     // Initialize interrupt handler flags 
-    int_handler_init(); 
+    int_handler_init();
 
     // Enable the interrupt handlers 
     nvic_config(USART2_IRQn, EXTI_PRIORITY_0);   // UART2 - Serial terminal (user input) 
@@ -297,7 +297,7 @@ void sd_test_init()
     // SD card init 
 
     // SD card user initialization 
-    sd_user_init(sd_test_data.spi, sd_test_data.gpio, sd_test_data.tim, GPIOX_PIN_12); 
+    sd_user_init(sd_test_data.spi, sd_test_data.gpio, sd_test_data.tim, GPIOX_PIN_12);
     
     //==================================================
 
@@ -342,7 +342,7 @@ void file_mkfs(void)
     {
         sd_test_data.fresult = f_mkfs("", NULL, work, sizeof(work));   // Use default config 
         (sd_test_data.fresult == FR_OK) ? feedback_display("SD Card formatted successfully.\r\n") : 
-                                        feedback_display("Error formatting volume.\r\n");
+                                          feedback_display("Error formatting volume.\r\n");
     }
     while (sd_test_data.fresult != FR_OK && --timer);
 
@@ -353,25 +353,25 @@ void file_mkfs(void)
 // Mount card 
 void mount_card(void)
 {
-    sd_test_data.fresult = f_mount(&sd_test_data.file_sys, "", SD_MOUNT_NOW); 
+    sd_test_data.fresult = f_mount(&sd_test_data.file_sys, "", SD_MOUNT_NOW);
 
-    if (sd_test_data.fresult == FR_OK) 
+    if (sd_test_data.fresult == FR_OK)
     {
         feedback_display("\nMounted successfully. Volume type: ");
 
         // Check the volume type 
         switch (sd_get_card_type())
         {
-            case SD_CT_MMC: 
+            case SD_CT_MMC:
                 feedback_display("MMC V3\r\n");
                 break;
-            case SD_CT_SDC1: 
+            case SD_CT_SDC1:
                 feedback_display("SDC V1\r\n");
                 break;
-            case SD_CT_SDC2_BLOCK: 
+            case SD_CT_SDC2_BLOCK:
                 feedback_display("SDC V2 block\r\n");
                 break;
-            case SD_CT_SDC2_BYTE: 
+            case SD_CT_SDC2_BYTE:
                 feedback_display("SDC V2 byte\r\n");
                 break;
             default: 
@@ -389,14 +389,13 @@ void mount_card(void)
 
 
 // Unmount card 
-void unmount_card(void) 
+void unmount_card(void)
 {
     // Unmount the volume and clear the initialization status so it can be re-mounted. 
     sd_test_data.fresult = f_unmount("");
-    // disk.is_initialized[0] = CLEAR;
 
     (sd_test_data.fresult == FR_OK) ? feedback_display("\nVolume unmounted successfully.\r\n") : 
-                                    feedback_display("\nError in unmounting volume.\r\n");
+                                      feedback_display("\nError in unmounting volume.\r\n");
     cmd_reset();
 }
 
@@ -406,8 +405,8 @@ void card_capacity(void)
 {
     // These calcs assume 512 bytes/sector 
 
-    FATFS *pfs;                // Pointer to file system object 
-    DWORD fre_clust;           // Stores number of free clusters 
+    FATFS *pfs;        // Pointer to file system object 
+    DWORD fre_clust;   // Stores number of free clusters 
 
     // Check free space 
     f_getfree("", &fre_clust, &pfs);
@@ -459,7 +458,7 @@ void file_check(void)
 
 
 // Remove files on card 
-void file_remove(void) 
+void file_remove(void)
 {
     if (sd_test_data.state_seq++ == 0)
     {
@@ -472,7 +471,7 @@ void file_remove(void)
         // Attempt to remove the specified file 
         sd_test_data.fresult = f_unlink((TCHAR *)sd_test_data.data_in_buff);
         (sd_test_data.fresult == FR_OK) ? string_display("\r\nSuccessfully removed: ", (char *)sd_test_data.data_in_buff) : 
-                                        fault_display();
+                                          fault_display();
         cmd_reset();
     }
 }
@@ -492,7 +491,7 @@ void file_mkdir(void)
         // Write to the file 
         sd_test_data.fresult = f_mkdir((TCHAR *)sd_test_data.data_in_buff);
         (sd_test_data.fresult == FR_OK) ? string_display("\r\nNew directory: ", (char *)sd_test_data.data_in_buff) : 
-                                        fault_display();
+                                          fault_display();
         cmd_reset();
     }
 }
@@ -512,7 +511,7 @@ void file_chdir(void)
         // Change the directory 
         sd_test_data.fresult = f_chdir((TCHAR *)sd_test_data.data_in_buff);
         (sd_test_data.fresult == FR_OK) ? string_display("\r\nNow in: ", (char *)sd_test_data.data_in_buff) : 
-                                        fault_display();
+                                          fault_display();
         cmd_reset();
     }
 }
@@ -531,7 +530,7 @@ void file_getcwd(void)
     // Get the current directory 
     sd_test_data.fresult = f_getcwd(path, DATA_BUFF_SIZE);
     (sd_test_data.fresult == FR_OK) ? string_display("\r\nCurrent directory: ", path) : 
-                                    fault_display();
+                                      fault_display();
     cmd_reset();
 }
 
@@ -550,7 +549,7 @@ void file_opendir(void)
         // Open the specified directory 
         sd_test_data.fresult = f_opendir(&sd_test_data.dj, (TCHAR *)sd_test_data.data_in_buff);
         (sd_test_data.fresult == FR_OK) ? string_display("\r\nOpened: ", (char *)sd_test_data.data_in_buff) : 
-                                        fault_display();
+                                          fault_display();
         cmd_reset();
     }
 }
@@ -562,7 +561,7 @@ void file_closedir(void)
     // Close the current directory 
     sd_test_data.fresult = f_closedir(&sd_test_data.dj);
     (sd_test_data.fresult == FR_OK) ? feedback_display("\r\nDirectory closed.\r\n") : 
-                                    fault_display();
+                                      fault_display();
     cmd_reset();
 }
 
@@ -584,10 +583,10 @@ void file_find(void)
 
         while ((sd_test_data.fresult == FR_OK) && sd_test_data.fno.fname[0])
         {
-            uart_send_str(sd_test_data.uart, "\t- "); 
-            uart_send_str(sd_test_data.uart, sd_test_data.fno.fname); 
-            uart_send_new_line(sd_test_data.uart); 
-            sd_test_data.fresult = f_findnext(&sd_test_data.dj, &sd_test_data.fno); 
+            uart_send_str(sd_test_data.uart, "\t- ");
+            uart_send_str(sd_test_data.uart, sd_test_data.fno.fname);
+            uart_send_new_line(sd_test_data.uart);
+            sd_test_data.fresult = f_findnext(&sd_test_data.dj, &sd_test_data.fno);
         }
 
         f_closedir(&sd_test_data.dj);
@@ -636,18 +635,18 @@ void file_open(void)
 
 
 // Close the open file 
-void file_close(void) 
+void file_close(void)
 {
     // Close the open file 
     sd_test_data.fresult = f_close(&sd_test_data.file);
     (sd_test_data.fresult == FR_OK) ? feedback_display("\r\nFile closed.\r\n") : 
-                                    fault_display();
+                                      fault_display();
     cmd_reset();
 }
 
 
 // Read from an open file using using f_read 
-void file_read(void) 
+void file_read(void)
 {
     if (sd_test_data.state_seq++ == 0)
     {
@@ -660,18 +659,18 @@ void file_read(void)
 
         // Read from the file 
         sd_test_data.fresult = f_read(&sd_test_data.file, 
-                                    (void *)file_data, 
-                                    sd_test_data.data_in_num, 
-                                    &sd_test_data.br);
+                                      (void *)file_data, 
+                                      sd_test_data.data_in_num, 
+                                      &sd_test_data.br);
         (sd_test_data.fresult == FR_OK) ? string_display("\r\nFile data: ", file_data) : 
-                                        fault_display();
+                                          fault_display();
         cmd_reset();
     }
 }
 
 
 // Write to an open file using f_write 
-void file_write(void) 
+void file_write(void)
 {
     if (sd_test_data.state_seq++ == 0)
     {
@@ -683,18 +682,18 @@ void file_write(void)
 
         // Write to the file 
         sd_test_data.fresult = f_write(&sd_test_data.file, 
-                                     (void *)sd_test_data.data_in_buff, 
-                                     strlen(sd_test_data.data_in_buff), 
-                                     &sd_test_data.bw);
+                                       (void *)sd_test_data.data_in_buff, 
+                                       strlen(sd_test_data.data_in_buff), 
+                                       &sd_test_data.bw);
         (sd_test_data.fresult == FR_OK) ? string_display("\r\nFile data: ", (char *)sd_test_data.data_in_buff) : 
-                                        fault_display();
+                                          fault_display();
         cmd_reset();
     }
 }
 
 
 // Navigate the file 
-void file_seek(void) 
+void file_seek(void)
 {
     if (sd_test_data.state_seq++ == 0)
     {
@@ -707,28 +706,28 @@ void file_seek(void)
         // Move to the specified position in the file 
         sd_test_data.fresult = f_lseek(&sd_test_data.file, sd_test_data.data_in_num);
         (sd_test_data.fresult == FR_OK) ? number_display("\r\nNew file position: ", sd_test_data.data_in_num) : 
-                                        fault_display();
+                                          fault_display();
         cmd_reset();
     }
 }
 
 
 // Navigate to the beginning of the file 
-void file_rewind(void) 
+void file_rewind(void)
 {
     sd_test_data.fresult = f_lseek(&sd_test_data.file, RESET_ZERO);
     (sd_test_data.fresult == FR_OK) ? feedback_display("\r\nNow at the beginning of the file.\r\n") : 
-                                    fault_display();
+                                      fault_display();
     cmd_reset();
 }
 
 
 // Navigate to the end of the file 
-void file_fast_fwd(void) 
+void file_fast_fwd(void)
 {
     sd_test_data.fresult = f_lseek(&sd_test_data.file, f_size(&sd_test_data.file));
     (sd_test_data.fresult == FR_OK) ? feedback_display("\r\nNow at the end of the file.\r\n") : 
-                                    fault_display();
+                                      fault_display();
     cmd_reset();
 }
 
@@ -779,7 +778,7 @@ void file_puts(void)
         // Format the input to end with a line break. This separates the provided data 
         // from "f_puts" into their own lines which also allows for each line to be 
         // retrieved individually when using "f_gets". 
-        uint8_t buff_size = DATA_BUFF_SIZE + 2; 
+        uint8_t buff_size = DATA_BUFF_SIZE + 2;
         char line_of_data[buff_size];
         snprintf(line_of_data, buff_size, "%s\r\n", (char *)sd_test_data.data_in_buff);
 
@@ -811,7 +810,7 @@ void cmd_select(void)
         {
             sd_test_data.state_func_ptr = cmd_table[index].sd_func_ptrs_t;
             sd_test_data.state_func_ptr();
-            break; 
+            break;
         }
     }
     while (++index < NUM_USER_CMDS);
@@ -880,54 +879,54 @@ uint8_t format_input(
     DWORD *data, 
     format_user_input_t op)
 {
-    uint8_t result = FALSE; 
+    uint8_t result = FALSE;
 
     if ((buff == NULL) || (data == NULL)) 
     {
-        return result; 
+        return result;
     }
 
     if (op == FORMAT_FILE_STRING)
     {
         // Replace carriage return from input with a null character 
-        for (uint8_t i = 0; i < CMD_SIZE; i++)
+        for (uint8_t i = CLEAR; i < CMD_SIZE; i++)
         {
             if (*buff == CR_CHAR)
             {
-                *buff = NULL_CHAR; 
-                break; 
+                *buff = NULL_CHAR;
+                break;
             }
-            buff++; 
+            buff++;
         }
 
-        result = TRUE; 
+        result = TRUE;
     }
     else if (op == FORMAT_FILE_MODE)
     {
         if (str_compare("0x", buff, BYTE_0))
         {
-            uint8_t nibble; 
-            *data = CLEAR; 
+            uint8_t nibble;
+            *data = CLEAR;
             
             // Check the character validity 
             for (uint8_t i = 2; i < 4; i++) 
             {
-                nibble = buff[i]; 
+                nibble = buff[i];
 
                 if ((nibble >= ZERO_CHAR) && (nibble <= NINE_CHAR))
                 {
-                    nibble -= NUM_TO_CHAR_OFFSET; 
+                    nibble -= NUM_TO_CHAR_OFFSET;
                 }
                 else if ((nibble >= A_UP_CHAR) && (nibble <= F_UP_CHAR)) 
                 {
-                    nibble -= HEX_TO_LET_CHAR; 
+                    nibble -= HEX_TO_LET_CHAR;
                 }
                 else
                 {
                     break;
                 }
 
-                *data |= (nibble << SHIFT_4*(3-i)); 
+                *data |= (nibble << SHIFT_4*(3-i));
 
                 if (i == 3)
                 {
@@ -938,25 +937,25 @@ uint8_t format_input(
     }
     else if (op == FORMAT_FILE_NUM)
     {
-        char *buff_copy = buff; 
+        char *buff_copy = buff;
 
         while (*buff_copy != CR_CHAR) 
         {
             if (!((*buff_copy >= ZERO_CHAR) && (*buff_copy <= NINE_CHAR)))
             {
-                break; 
+                break;
             }
-            buff_copy++; 
+            buff_copy++;
         }
 
         if (*buff_copy == CR_CHAR) 
         {
-            *data = (DWORD)atoi(buff); 
-            result = TRUE; 
+            *data = (DWORD)atoi(buff);
+            result = TRUE;
         }
     }
 
-    return result; 
+    return result;
 }
 
 //=======================================================================================

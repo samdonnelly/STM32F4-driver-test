@@ -92,13 +92,6 @@
 // Pose estimate test 
 #define POSE_LOG_OUTPUT 0
 
-// RC Test 
-#define RC_SYSTEM_1 0 
-#define RC_SYSTEM_2 0 
-#define RC_SD_CARD_TEST 0 
-#define RC_MOTOR_TEST 0 
-#define RC_GROUND_STATION_TEST 0 
-
 //=======================================================================================
 
 

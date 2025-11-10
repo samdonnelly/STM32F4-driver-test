@@ -1,42 +1,50 @@
 /**
- * @file rc_test.h
+ * @file sd_test.h
  * 
  * @author Sam Donnelly (samueldonnelly11@gmail.com)
  * 
- * @brief Remote control (RC) test interface 
+ * @brief SD card driver test interface 
  * 
  * @version 0.1
- * @date 2024-05-05
+ * @date 2022-08-28
  * 
- * @copyright Copyright (c) 2024
+ * @copyright Copyright (c) 2022
  * 
  */
 
-#ifndef _RC_TEST_H_ 
-#define _RC_TEST_H_ 
+#ifndef _SD_CARD_TEST_H_
+#define _SD_CARD_TEST_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 //=======================================================================================
 // Includes 
 
-#include "includes_drivers.h" 
+#include "includes_drivers.h"
 
 //=======================================================================================
 
 
 //=======================================================================================
-// Functions 
+// Function prototypes 
 
 /**
- * @brief Remote control test setup code 
+ * @brief SD card setup code 
  */
-void rc_test_init(void); 
+void sd_test_init(void);
 
 
 /**
- * @brief Remote control test code 
+ * @brief SD card test code 
  */
-void rc_test_app(void); 
+void sd_test_app(void);
 
 //=======================================================================================
 
-#endif   // _RC_TEST_H_ 
+#ifdef __cplusplus
+}
+#endif
+
+#endif  // _SD_CARD_TEST_H_
