@@ -5,6 +5,34 @@
  * 
  * @brief SD card driver test 
  * 
+ * @details Setup 
+ *          - Hardware 
+ *            * STM32F4 microcontroller with a serial connection to a PC. 
+ *            * An SD card connected to the STM32F4 via SPI 
+ *          - Software 
+ *            * Serial monitor on a PC to allow the exchange of info with the STM32F4. 
+ *          
+ *          Configuration 
+ *          - TIM 
+ *            * A generic blocking timer is configured for the SD card driver. 
+ *          - UART 
+ *            * UART is configured to allow for user input at the serial terminal and 
+ *              feedback output. 
+ *          - SPI 
+ *            * SPI is configured to communicate with the SD card. 
+ *          - Interrupts 
+ *            * An interrupt is configured to detect UART RX idle line for capturing 
+ *              user inputs at the serial terminal. 
+ *          
+ *          Dependencies 
+ *          - STM32F4 driver library 
+ *            * This library provides an interface to the device and the peripherals 
+ *              used in the test. This includes both the SD card driver and the FatFs 
+ *              library. 
+ *          
+ *          Procedure 
+ *          - 
+ * 
  * @version 0.1
  * @date 2022-08-28
  * 
