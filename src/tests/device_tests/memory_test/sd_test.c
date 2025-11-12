@@ -31,7 +31,15 @@
  *              library. 
  *          
  *          Procedure 
- *          - 
+ *          - A prompt is provided in the serial terminal where the user can input 
+ *            commands. If an input matches one of the commands in the command table 
+ *            then the associated command function will be called, otherwise the input 
+ *            is discarded. The commands correspond to various FatFs functions which 
+ *            carry out file system operations. This allows the user to manually control 
+ *            files on the connected SD card. Feedback from the file system operations 
+ *            is provided in the serial terminal as needed (ex. when reading a line from 
+ *            an open file). See the FatFs documentation for more details on what each 
+ *            FatFs function does. 
  * 
  * @version 0.1
  * @date 2022-08-28
