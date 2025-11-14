@@ -65,8 +65,16 @@ set(PROJECT_INCLUDE_DIRECTORIES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/includes
     ${CMAKE_CURRENT_SOURCE_DIR}/src/interface
     ${CMAKE_CURRENT_SOURCE_DIR}/src/test_data
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/application_tests
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/device_tests
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/application_tests/data_handling_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/application_tests/external_input_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/application_tests/pose_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/application_tests/rtos_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/device_tests/actuator_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/device_tests/display_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/device_tests/gnss_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/device_tests/imu_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/device_tests/memory_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/device_tests/wireless_test
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/peripheral_tests
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stm32f4/core
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stm32f4/devices/actuators
@@ -142,10 +150,26 @@ file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/interface/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/test_data/*.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/test_data/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/application_tests/*.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/application_tests/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/device_tests/*.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/device_tests/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/application_tests/data_handling_test/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/application_tests/data_handling_test/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/application_tests/external_input_test/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/application_tests/external_input_test/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/application_tests/pose_test/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/application_tests/pose_test/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/application_tests/rtos_test/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/application_tests/rtos_test/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/device_tests/actuator_test/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/device_tests/actuator_test/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/device_tests/display_test/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/device_tests/display_test/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/device_tests/gnss_test/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/device_tests/gnss_test/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/device_tests/imu_test/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/device_tests/imu_test/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/device_tests/memory_test/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/device_tests/memory_test/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/device_tests/wireless_test/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/device_tests/wireless_test/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/peripheral_tests/*.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/peripheral_tests/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../STM32F4-driver-library/stm32f4/devices/actuators/*.c
