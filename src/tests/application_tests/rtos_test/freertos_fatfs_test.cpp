@@ -5,6 +5,41 @@
  * 
  * @brief FreeRTOS with FatFs test 
  * 
+ * @details Setup 
+ *          - Hardware 
+ *            * STM32F4 microcontroller with a serial connection to a PC. 
+ *          - Software 
+ *            * Serial monitor on a PC to allow the exchange of info with the STM32F4. 
+ *          
+ *          Configuration 
+ *          - TIM 
+ *            * A timer is configured to create a periodic interrupt which controls when 
+ *              to read data and calculate the orientation. 
+ *            * A second timer is configured also as a periodic interrupt which is used 
+ *              to control when data is output. This is done so the calculation frequency 
+ *              can be updated without affecting the output rate. 
+ *          - UART 
+ *            * UART is configured to provide a serial terminal output both for device 
+ *              data and driver status faults. 
+ *          - I2C 
+ *            * I2C is configured to communicate with the MPU-6050, LSM303AGR and SAM-M8Q 
+ *              devices. 
+ *            * It is set to run in standard mode (SM) where SCL runs at 100kHz which 
+ *              should handle a typical transaction with the MPU-6050 in ~1ms. 
+ *          - Interrupts 
+ *            * Interrupts are configured for both timers to create periodic interrupts 
+ *              that control when to read and output device data. 
+ *          - User Config 
+ *            * 
+ *          
+ *          Dependencies 
+ *          - STM32F4 driver library 
+ *            * This library provides an interface to the device and the peripherals 
+ *              used in the test. 
+ *          
+ *          Procedure 
+ *          - 
+ * 
  * @version 0.1
  * @date 2025-11-12
  * 
