@@ -13,22 +13,13 @@
  *          
  *          Configuration 
  *          - TIM 
- *            * A timer is configured to create a periodic interrupt which controls when 
- *              to read data and calculate the orientation. 
- *            * A second timer is configured also as a periodic interrupt which is used 
- *              to control when data is output. This is done so the calculation frequency 
- *              can be updated without affecting the output rate. 
+ *            * 
  *          - UART 
- *            * UART is configured to provide a serial terminal output both for device 
- *              data and driver status faults. 
- *          - I2C 
- *            * I2C is configured to communicate with the MPU-6050, LSM303AGR and SAM-M8Q 
- *              devices. 
- *            * It is set to run in standard mode (SM) where SCL runs at 100kHz which 
- *              should handle a typical transaction with the MPU-6050 in ~1ms. 
+ *            * 
+ *          - SPI 
+ *            * 
  *          - Interrupts 
- *            * Interrupts are configured for both timers to create periodic interrupts 
- *              that control when to read and output device data. 
+ *            * 
  *          - User Config 
  *            * 
  *          
