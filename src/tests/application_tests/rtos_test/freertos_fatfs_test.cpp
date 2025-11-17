@@ -29,7 +29,33 @@
  *              used in the test. 
  *          
  *          Procedure 
- *          - 
+ *          - This test was created to test how to use the FatFs library when using an 
+ *            RTOS. There are certain settings in "ffconf.h" that change the re-entrancy 
+ *            of the FatFs module to make it thread safe using synchronization handlers 
+ *            in "ffsystem.c". 
+ *          
+ *          - This test simulates a simple logging feature in an arbitrary system. The 
+ *            system contains 4 threads which are explained in more detail below: 
+ *            
+ *            - "main" thread - low priority 
+ *              - This thread will periodically compile collected data into a format that 
+ *                can be logged. Once formatted, it will queue an event in the "comms" 
+ *                thread that will write the formatted data to the connected SD card with 
+ *                an open log file. Logging happends when nothing of a higher priority 
+ *                needs to take place. 
+ *            
+ *            - "data" thread - medium-low priority 
+ *              - This thread generates arbitrary data that can be thought of as sensor 
+ *                data collected by the system, This is the data that will get logged. 
+ *            
+ *            - "timer" thread - medium-high priority 
+ *              - This a periodic timer thread that triggers the "data" thread every so 
+ *                often to get new data. 
+ *            
+ *            - "comms" thread - high priority 
+ *              - This thread will communicate directly with hardware to write formatted 
+ *                data to an SD card. This is the highest priority thread so that it 
+ *                won't be preempted during external communication. 
  * 
  * @version 0.1
  * @date 2025-11-12
